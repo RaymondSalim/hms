@@ -1,81 +1,197 @@
+/*.sidebar {*/
+/*    @apply*/
+/*    flex items-center*/
+/*    flex-col*/
+/*    min-h-screen*/
+/*    ;*/
+
+/*    width: 250px;*/
+/*    height: 100vh;*/
+/*    background-color: #333;*/
+/*    color: #fff;*/
+/*    padding: 20px;*/
+/*    position: relative;*/
+/*    transition: width 0.3s ease;*/
+/*    overflow: hidden;*/
+/*}*/
+
+/*.toggleButton {*/
+/*    background-color: #333;*/
+/*    color: #fff;*/
+/*    border: none;*/
+/*    cursor: pointer;*/
+/*    padding: 10px;*/
+/*    border-radius: 5px;*/
+
+/*    @apply self-end;*/
+/*}*/
+
+/*.sidebarContent {*/
+/*    opacity: 1;*/
+/*    transition: opacity 0.3s ease;*/
+/*}*/
+
+/*.sidebarHeader {*/
+/*    margin-bottom: 20px;*/
+/*    display: block;*/
+/*}*/
+
+/*.sidebarMenu {*/
+/*    list-style: none;*/
+/*    padding: 0;*/
+/*}*/
+/*.sidebarMenu li {*/
+/*    margin-bottom: 10px;*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*}*/
+/*.sidebarMenu li.active a {*/
+/*    font-weight: bold;*/
+/*    color: #4caf50;*/
+/*}*/
+/*.sidebarMenu li a {*/
+/*    color: #fff;*/
+/*    text-decoration: none;*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*}*/
+/*.sidebarMenu li a:hover {*/
+/*    color: #4caf50;*/
+/*}*/
+
+/*.item {*/
+/*    @apply*/
+/*    w-full*/
+/*    flex flex-row items-center*/
+/*    min-h-12*/
+/*    ;*/
+/*}*/
+
+/*.text {*/
+/*    display: inline;*/
+/*}*/
+
+/*.icon {*/
+/*    margin-right: 10px;*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    justify-content: center;*/
+/*    width: 24px;*/
+/*    aspect-ratio: 1;*/
+/*}*/
+
 .sidebar {
     @apply
-    flex items-center
-    flex-col
-    min-h-screen
+    p-5
+    relative
+    w-64 h-screen
+    bg-gray-800
+    text-white
+    flex flex-col items-center
     ;
-
-    width: 250px;
-    height: 100vh;
-    background-color: #333;
-    color: #fff;
-    padding: 20px;
-    position: relative;
-    transition: width 0.3s ease;
-    overflow: hidden;
-}
-
-.toggleButton {
-    background-color: #333;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 5px;
-
-    @apply self-end;
 }
 
 .sidebarContent {
-    opacity: 1;
-    transition: opacity 0.3s ease;
+    @apply flex flex-col flex-grow;
 }
 
 .sidebarHeader {
-    margin-bottom: 20px;
-    display: block;
+    @apply mb-5;
+}
+
+.sidebarHeader h2 {
+    @apply text-xl font-bold;
 }
 
 .sidebarMenu {
-    list-style: none;
-    padding: 0;
+    @apply list-none p-0;
 }
-.sidebarMenu li {
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
+
+/*.sidebarMenu li {*/
+/*    @apply*/
+/*    mb-2.5*/
+/*}*/
+
+/*.sidebarMenu li a {*/
+/*    @apply*/
+/*    text-white hover:text-[#4caf50]*/
+/*    no-underline*/
+/*    flex items-center*/
+/*    ;*/
+/*}*/
+
+/*.sidebarMenu li.active a {*/
+/*    @apply*/
+/*    font-bold*/
+/*    text-[#4caf50]*/
+/*    ;*/
+/*}*/
+
+.menuItem {
+    @apply mb-2;
 }
-.sidebarMenu li.active a {
-    font-weight: bold;
-    color: #4caf50;
-}
-.sidebarMenu li a {
-    color: #fff;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-}
-.sidebarMenu li a:hover {
-    color: #4caf50;
+
+.itemHeader {
+    @apply flex justify-between items-center;
 }
 
 .item {
     @apply
-    w-full
-    flex flex-row items-center
+    flex flex-grow items-center
     min-h-12
+    text-white hover:text-green-500
+    ;
+}
+
+.icon {
+    @apply
+    mr-2
+    aspect-square
+    w-[16px]
     ;
 }
 
 .text {
-    display: inline;
+    @apply flex-1;
 }
 
-.icon {
-    margin-right: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    aspect-ratio: 1;
+.dropdownIcon {
+    @apply
+    text-gray-500
+    hover:text-white
+    cursor-pointer
+    h-3
+    aspect-square
+
+    transition-all
+    -rotate-90
+    ;
+}
+
+.dropdownIcon.open {
+    @apply
+    rotate-0
+}
+
+.dropdownMenu {
+    @apply
+    overflow-hidden
+
+    list-none
+    pl-10
+    transition-all
+    max-h-0
+    ;
+}
+
+.dropdownMenu .menuItem {
+    @apply mb-1;
+}
+
+.dropdownMenu.open {
+    @apply max-h-none;
+}
+
+.active .itemHeader .item {
+    @apply font-bold text-green-500;
 }
