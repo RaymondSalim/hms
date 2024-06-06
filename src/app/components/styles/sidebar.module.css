@@ -1,0 +1,81 @@
+.sidebar {
+    @apply
+    flex items-center
+    flex-col
+    min-h-screen
+    ;
+
+    width: 250px;
+    height: 100vh;
+    background-color: #333;
+    color: #fff;
+    padding: 20px;
+    position: relative;
+    transition: width 0.3s ease;
+    overflow: hidden;
+}
+
+.toggleButton {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 5px;
+
+    @apply self-end;
+}
+
+.sidebarContent {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.sidebarHeader {
+    margin-bottom: 20px;
+    display: block;
+}
+
+.sidebarMenu {
+    list-style: none;
+    padding: 0;
+}
+.sidebarMenu li {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+.sidebarMenu li.active a {
+    font-weight: bold;
+    color: #4caf50;
+}
+.sidebarMenu li a {
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+.sidebarMenu li a:hover {
+    color: #4caf50;
+}
+
+.item {
+    @apply
+    w-full
+    flex flex-row items-center
+    min-h-12
+    ;
+}
+
+.text {
+    display: inline;
+}
+
+.icon {
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    aspect-ratio: 1;
+}
