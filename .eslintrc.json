@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    "@stylistic"
+  ],
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "semi": "error"
+  }
+}
