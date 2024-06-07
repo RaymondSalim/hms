@@ -1,12 +1,23 @@
 "use client";
 
-import { IconContext } from "react-icons";
-import { FaTachometerAlt, FaDatabase, FaUserPlus, FaBed, FaMoneyBill, FaFileInvoiceDollar, FaChartBar, FaUserFriends, FaCog } from "react-icons/fa";
+import {useState} from "react";
+import {IconContext} from "react-icons";
+import {
+  FaBed,
+  FaChartBar,
+  FaCog,
+  FaDatabase,
+  FaFileInvoiceDollar,
+  FaMoneyBill,
+  FaTachometerAlt,
+  FaUserFriends,
+  FaUserPlus
+} from "react-icons/fa";
 import styles from "./styles/sidebar.module.css";
 import {usePathname} from "next/navigation";
-import {useState} from "react";
 import Link from "next/link";
-import {FaChevronDown, FaChevronRight} from "react-icons/fa6";
+import {FaChevronDown} from "react-icons/fa6";
+import {motion} from "framer-motion";
 
 export default function Sidebar() {
   const menuItems = [
@@ -85,7 +96,11 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ name, path, icon, children })
         )}
       </div>
       {children && (
-        <ul className={`${styles.dropdownMenu} ${isOpen ? styles.open : ''}`}>
+        <motion.ul
+          initial={{height: 0}}
+          animate={isOpen ? {height: "auto"} : undefined}
+          className={styles.dropdownMenu}
+        >
           {children.map((child, index) => (
             <li key={index} className={`${styles.menuItem} ${pathName === child.path ? styles.active : ''}`}>
               <Link href={child.path} className={styles.item}>
@@ -93,7 +108,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ name, path, icon, children })
               </Link>
             </li>
           ))}
-        </ul>
+        </motion.ul>
       )}
     </li>
   );

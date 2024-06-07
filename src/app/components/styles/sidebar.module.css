@@ -179,17 +179,11 @@
 
     list-none
     pl-10
-    transition-all
-    max-h-0
     ;
 }
 
 .dropdownMenu .menuItem {
     @apply mb-1;
-}
-
-.dropdownMenu.open {
-    @apply max-h-none;
 }
 
 .active .itemHeader .item {
