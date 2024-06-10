@@ -1,6 +1,6 @@
 "use client";
 
-import {ReactNode, useRef, useState} from "react";
+import React, {ReactNode, useEffect, useRef, useState} from "react";
 import {IconContext} from "react-icons";
 import {
   FaBed,
@@ -23,17 +23,29 @@ import {CiLogout} from "react-icons/ci";
 export default function Sidebar() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userAvatarRef = useRef<HTMLDivElement>(null);
 
   const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
-    //TODO! Fix
-    if (event.relatedTarget && !dropdownRef.current?.contains(event.relatedTarget as Node)) {
-      setIsUserDropdownOpen(false);
+    if (!event.relatedTarget || !dropdownRef.current?.contains(event.relatedTarget as Node)) {
+      if (event.relatedTarget != userAvatarRef.current) {
+        setIsUserDropdownOpen(false);
+      }
     }
   };
 
   const toggleUserDropdown = () => {
-    setIsUserDropdownOpen(!isUserDropdownOpen);
+    setIsUserDropdownOpen(prevState => {
+      if (!prevState) {
+        dropdownRef.current?.focus();
+      }
+
+      return !prevState;
+    });
   };
+
+  useEffect(() => {
+    console.log(isUserDropdownOpen);
+  }, [isUserDropdownOpen]);
 
 
   const menuItems = [
@@ -83,8 +95,8 @@ export default function Sidebar() {
             <div
               className={`group/footerUser ${styles.footerUser}`}
               onClick={toggleUserDropdown}
+              ref={userAvatarRef}
               tabIndex={0}
-              onBlur={handleBlur}
             >
               <div className={`${styles.userAvatar} group-hover/footerUser:border-opacity-100`}>
                 {/*TODO! Image*/}
@@ -101,6 +113,7 @@ export default function Sidebar() {
               className={styles.footerUserDropdown}
               ref={dropdownRef}
               tabIndex={-1}
+              onBlur={handleBlur}
             >
               <div className={styles.userInfo}>
                 {/*TODO! User Info*/}
