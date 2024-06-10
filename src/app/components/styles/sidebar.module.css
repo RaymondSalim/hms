@@ -1,98 +1,24 @@
-/*.sidebar {*/
-/*    @apply*/
-/*    flex items-center*/
-/*    flex-col*/
-/*    min-h-screen*/
-/*    ;*/
-
-/*    width: 250px;*/
-/*    height: 100vh;*/
-/*    background-color: #333;*/
-/*    color: #fff;*/
-/*    padding: 20px;*/
-/*    position: relative;*/
-/*    transition: width 0.3s ease;*/
-/*    overflow: hidden;*/
-/*}*/
-
-/*.toggleButton {*/
-/*    background-color: #333;*/
-/*    color: #fff;*/
-/*    border: none;*/
-/*    cursor: pointer;*/
-/*    padding: 10px;*/
-/*    border-radius: 5px;*/
-
-/*    @apply self-end;*/
-/*}*/
-
-/*.sidebarContent {*/
-/*    opacity: 1;*/
-/*    transition: opacity 0.3s ease;*/
-/*}*/
-
-/*.sidebarHeader {*/
-/*    margin-bottom: 20px;*/
-/*    display: block;*/
-/*}*/
-
-/*.sidebarMenu {*/
-/*    list-style: none;*/
-/*    padding: 0;*/
-/*}*/
-/*.sidebarMenu li {*/
-/*    margin-bottom: 10px;*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*}*/
-/*.sidebarMenu li.active a {*/
-/*    font-weight: bold;*/
-/*    color: #4caf50;*/
-/*}*/
-/*.sidebarMenu li a {*/
-/*    color: #fff;*/
-/*    text-decoration: none;*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*}*/
-/*.sidebarMenu li a:hover {*/
-/*    color: #4caf50;*/
-/*}*/
-
-/*.item {*/
-/*    @apply*/
-/*    w-full*/
-/*    flex flex-row items-center*/
-/*    min-h-12*/
-/*    ;*/
-/*}*/
-
-/*.text {*/
-/*    display: inline;*/
-/*}*/
-
-/*.icon {*/
-/*    margin-right: 10px;*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*    justify-content: center;*/
-/*    width: 24px;*/
-/*    aspect-ratio: 1;*/
-/*}*/
-
 .sidebar {
     @apply
-    p-5
     relative
     w-64 h-screen
-    bg-gray-800
+    bg-[#151719]
     text-white
     flex flex-col items-center
     ;
 }
 
 .sidebarContent {
-    @apply flex flex-col flex-grow;
+    @apply
+    flex flex-col flex-grow
+    max-h-full
+    py-5
+    ;
+}
+
+.sidebarContent > * {
+    @apply
+    px-5
 }
 
 .sidebarHeader {
@@ -104,42 +30,31 @@
 }
 
 .sidebarMenu {
-    @apply list-none p-0;
+    @apply
+    px-0
+    flex-1
+    overflow-y-auto
+    list-none;
 }
-
-/*.sidebarMenu li {*/
-/*    @apply*/
-/*    mb-2.5*/
-/*}*/
-
-/*.sidebarMenu li a {*/
-/*    @apply*/
-/*    text-white hover:text-[#4caf50]*/
-/*    no-underline*/
-/*    flex items-center*/
-/*    ;*/
-/*}*/
-
-/*.sidebarMenu li.active a {*/
-/*    @apply*/
-/*    font-bold*/
-/*    text-[#4caf50]*/
-/*    ;*/
-/*}*/
 
 .menuItem {
     @apply mb-2;
 }
 
 .itemHeader {
-    @apply flex justify-between items-center;
+    @apply
+    px-5
+    flex justify-between items-center
+    hover:bg-[#ebeef0] hover:bg-opacity-10
+    hover:text-white
+    ;
 }
 
 .item {
     @apply
     flex flex-grow items-center
     min-h-12
-    text-white hover:text-green-500
+    text-[#80868e]
     ;
 }
 
@@ -178,14 +93,110 @@
     overflow-hidden
 
     list-none
-    pl-10
     ;
 }
 
 .dropdownMenu .menuItem {
-    @apply mb-1;
+    @apply
+    mb-1
+    pl-16
+    hover:bg-[#ebeef0] hover:bg-opacity-10
+    ;
 }
 
 .active .itemHeader .item {
-    @apply font-bold text-green-500;
+    @apply font-bold text-white;
+}
+
+.sidebarFooter {
+    @apply
+    relative
+    mt-auto
+    pt-5
+    flex items-center justify-between
+}
+
+.footerUser {
+    @apply
+    flex items-center justify-between gap-x-2
+    px-2 py-1.5
+    rounded-3xl
+    hover:bg-[#ebeef0] hover:bg-opacity-10
+    cursor-pointer
+    ;
+}
+
+.userAvatar {
+    @apply
+    border border-[#ebeef0] border-opacity-60
+    rounded-full
+    h-[32px]
+    w-[32px]
+    py-0.5
+    p-4
+
+    flex items-center justify-center
+    ;
+}
+
+.userAvatar > span {
+    @apply
+    text-center
+}
+
+.userDropdownIcon {
+    @apply
+    text-[#ebeef0]
+    opacity-60
+    h-3 w-3
+}
+
+.userInfo {
+    @apply mb-4;
+}
+
+.userInfo span:first-child {
+    @apply block text-lg font-semibold;
+}
+
+.userInfo span:last-child {
+    @apply block text-sm text-gray-400;
+}
+
+.dropdownList {
+    @apply list-none p-0 m-0;
+}
+
+.dropdownList li {
+    @apply mb-2;
+}
+
+.dropdownList li a {
+    @apply text-white hover:text-green-500;
+}
+
+.footerUserDropdown {
+    @apply bg-gray-700 p-4 rounded-lg mt-2 shadow-lg absolute left-4 bottom-full w-56;
+}
+
+.footerOptions {
+    @apply
+    flex items-center
+}
+
+.logoutBtn {
+    @apply
+    p-2
+    rounded-md
+    transition-all
+    cursor-pointer
+    border border-[#ebeef0] border-opacity-60
+    hover:border-opacity-100
+    hover:bg-[#ebeef0] hover:bg-opacity-10
+}
+
+.logoutBtn > svg {
+    @apply
+    h-5 w-5
+    opacity-60 hover:opacity-100;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {ReactNode, useRef, useState} from "react";
 import {IconContext} from "react-icons";
 import {
   FaBed,
@@ -18,8 +18,24 @@ import {usePathname} from "next/navigation";
 import Link from "next/link";
 import {FaChevronDown} from "react-icons/fa6";
 import {motion} from "framer-motion";
+import {CiLogout} from "react-icons/ci";
 
 export default function Sidebar() {
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    //TODO! Fix
+    if (event.relatedTarget && !dropdownRef.current?.contains(event.relatedTarget as Node)) {
+      setIsUserDropdownOpen(false);
+    }
+  };
+
+  const toggleUserDropdown = () => {
+    setIsUserDropdownOpen(!isUserDropdownOpen);
+  };
+
+
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt size={"none"} /> },
     {
@@ -52,6 +68,7 @@ export default function Sidebar() {
     <div className={`${styles.sidebar}`}>
       <div className={styles.sidebarContent}>
         <div className={styles.sidebarHeader}>
+          {/*TODO! Dynamically get Icon*/}
           <h2>Hotel Management System</h2>
         </div>
         <ul className={styles.sidebarMenu}>
@@ -61,6 +78,51 @@ export default function Sidebar() {
             ))}
           </IconContext.Provider>
         </ul>
+        <div className={styles.sidebarFooter}>
+          <div>
+            <div
+              className={`group/footerUser ${styles.footerUser}`}
+              onClick={toggleUserDropdown}
+              tabIndex={0}
+              onBlur={handleBlur}
+            >
+              <div className={`${styles.userAvatar} group-hover/footerUser:border-opacity-100`}>
+                {/*TODO! Image*/}
+                <span>US</span>
+              </div>
+              <FaChevronDown className={`${styles.userDropdownIcon} group-hover/footerUser:opacity-100`}/>
+            </div>
+            <motion.div
+              initial={{
+                scale: 0,
+                transformOrigin: "left bottom"
+              }}
+              animate={isUserDropdownOpen ? {scale: 1} : undefined}
+              className={styles.footerUserDropdown}
+              ref={dropdownRef}
+              tabIndex={-1}
+            >
+              <div className={styles.userInfo}>
+                {/*TODO! User Info*/}
+                <span>Frank O'Neil</span>
+                <span>relations@firepress.org</span>
+              </div>
+              <ul className={styles.dropdownList}>
+                {/*TODO! Links!*/}
+                <li><Link href="/whats-new">What's new?</Link></li>
+                <li><Link href="/profile">Your profile</Link></li>
+                <li><Link href="/help-center">Help center</Link></li>
+                <li><Link href="/resources-guides">Resources & guides</Link></li>
+                <li><Link href="/sign-out">Sign out</Link></li>
+              </ul>
+            </motion.div>
+          </div>
+          <div className={styles.footerOptions}>
+            <div title={"Logout"} className={styles.logoutBtn}>
+              <CiLogout/>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -70,11 +132,11 @@ export default function Sidebar() {
 interface SidebarItemProps {
   name: string;
   path: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   children?: Array<{ name: string; path: string }>;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ name, path, icon, children }) => {
+function SidebarItem({ name, path, icon, children }: SidebarItemProps) {
   const pathName = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -84,8 +146,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ name, path, icon, children })
 
   return (
     <li className={`${styles.menuItem} ${pathName.startsWith(path) ? styles.active : ''}`}>
-      <div className={styles.itemHeader}>
-        <Link href={path} className={styles.item}>
+      <div className={`group/itemHeader ${styles.itemHeader}`}>
+        <Link href={path} className={`${styles.item} group-hover/itemHeader:text-white`}>
           <span className={styles.icon}>{icon}</span>
           <span className={styles.text}>{name}</span>
         </Link>
@@ -102,8 +164,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ name, path, icon, children })
           className={styles.dropdownMenu}
         >
           {children.map((child, index) => (
-            <li key={index} className={`${styles.menuItem} ${pathName === child.path ? styles.active : ''}`}>
-              <Link href={child.path} className={styles.item}>
+            <li key={index} className={`group/childMenuItem ${styles.menuItem} ${pathName === child.path ? styles.active : ''}`}>
+              <Link href={child.path} className={`${styles.item} group-hover/childMenuItem:text-white`}>
                 <span className={styles.text}>{child.name}</span>
               </Link>
             </li>
