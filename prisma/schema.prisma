@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model bookings {
+  id              Int              @id @default(autoincrement())
+  user_id         Int?
+  room_id         Int?
+  check_in        DateTime         @db.Date
+  duration_id     Int?
+  status_id       Int?
+  fee             Decimal          @db.Decimal(10, 2)
+  durations       durations?       @relation(fields: [duration_id], references: [id], onUpdate: NoAction)
+  rooms           rooms?           @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  bookingstatuses bookingstatuses? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  users           users?           @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  guestbookings   guestbookings[]
+  payments        payments[]
+}
+
+model bookingstatuses {
+  id       Int        @id @default(autoincrement())
+  status   String     @db.VarChar(255)
+  bookings bookings[]
+}
+
+model categories {
+  id       Int        @id @default(autoincrement())
+  category String     @db.VarChar(255)
+  expenses expenses[]
+}
+
+model durations {
+  id                Int                 @id @default(autoincrement())
+  duration          String              @db.VarChar(255)
+  day_count         Int
+  bookings          bookings[]
+  roomtypedurations roomtypedurations[]
+}
+
+model expenses {
+  id          Int         @id @default(autoincrement())
+  amount      Decimal     @db.Decimal(10, 2)
+  description String      @db.VarChar(255)
+  date        DateTime    @db.Date
+  category_id Int?
+  categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+}
+
+model guestbookings {
+  guest_id   Int
+  booking_id Int
+  bookings   bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  guests     guests   @relation(fields: [guest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([guest_id, booking_id])
+}
+
+model guests {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(255)
+  email         String?         @db.VarChar(255)
+  phone         String?         @db.VarChar(255)
+  guestbookings guestbookings[]
+}
+
+model logs {
+  id        Int       @id @default(autoincrement())
+  user_id   Int
+  action    String    @db.VarChar(255)
+  timestamp DateTime? @default(now()) @db.Timestamp(6)
+  users     users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model payments {
+  id              Int              @id @default(autoincrement())
+  booking_id      Int
+  amount          Decimal          @db.Decimal(10, 2)
+  payment_date    DateTime         @db.Date
+  payment_proof   String?          @db.VarChar(255)
+  status_id       Int?
+  bookings        bookings         @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  paymentstatuses paymentstatuses? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+}
+
+model paymentstatuses {
+  id       Int        @id @default(autoincrement())
+  status   String     @db.VarChar(255)
+  payments payments[]
+}
+
+model permissions {
+  id              Int               @id @default(autoincrement())
+  permission      String            @db.VarChar(255)
+  rolepermissions rolepermissions[]
+}
+
+model reports {
+  id           Int      @id @default(autoincrement())
+  type         String   @db.VarChar(255)
+  generated_at DateTime @db.Date
+  content      String
+}
+
+model rolepermissions {
+  role_id       Int
+  permission_id Int
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, permission_id])
+}
+
+model roles {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(255)
+  description     String?           @db.VarChar(255)
+  rolepermissions rolepermissions[]
+  users           users[]
+}
+
+model rooms {
+  id           Int           @id @default(autoincrement())
+  room_number  String        @unique @db.VarChar(255)
+  room_type_id Int?
+  status_id    Int?
+  bookings     bookings[]
+  roomtypes    roomtypes?    @relation(fields: [room_type_id], references: [id], onUpdate: NoAction)
+  roomstatuses roomstatuses? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+}
+
+model roomstatuses {
+  id     Int     @id @default(autoincrement())
+  status String  @db.VarChar(255)
+  rooms  rooms[]
+}
+
+model roomtypedurations {
+  id              Int       @id @default(autoincrement())
+  room_type_id    Int
+  duration_id     Int
+  suggested_price Decimal   @db.Decimal(10, 2)
+  durations       durations @relation(fields: [duration_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roomtypes       roomtypes @relation(fields: [room_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model roomtypes {
+  id                Int                 @id @default(autoincrement())
+  type              String              @db.VarChar(255)
+  rooms             rooms[]
+  roomtypedurations roomtypedurations[]
+}
+
+model rules {
+  id          Int    @id @default(autoincrement())
+  description String
+}
+
+model settings {
+  id            Int    @id @default(autoincrement())
+  setting_key   String @db.VarChar(255)
+  setting_value String @db.VarChar(255)
+}
+
+model users {
+  id       Int        @id @default(autoincrement())
+  name     String     @db.VarChar(255)
+  email    String     @unique @db.VarChar(255)
+  password String     @db.VarChar(255)
+  role_id  Int?
+  bookings bookings[]
+  logs     logs[]
+  roles    roles?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+}
