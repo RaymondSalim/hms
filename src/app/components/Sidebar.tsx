@@ -1,29 +1,36 @@
 "use client";
 
 import React, {ReactNode, useEffect, useRef, useState} from "react";
-import {IconContext} from "react-icons";
-import {
-  FaBed,
-  FaChartBar,
-  FaCog,
-  FaDatabase,
-  FaFileInvoiceDollar,
-  FaMoneyBill,
-  FaTachometerAlt,
-  FaUserFriends,
-  FaUserPlus
-} from "react-icons/fa";
-import styles from "./styles/sidebar.module.css";
-import {usePathname} from "next/navigation";
+
 import Link from "next/link";
-import {FaChevronDown} from "react-icons/fa6";
+import {usePathname} from "next/navigation";
+
+import styles from "./styles/sidebar.module.css";
 import {motion} from "framer-motion";
+
+import {IconContext} from "react-icons";
+import {FaChevronDown} from "react-icons/fa6";
 import {CiLogout} from "react-icons/ci";
+import {
+    FaBed,
+    FaChartBar,
+    FaCog,
+    FaDatabase,
+    FaFileInvoiceDollar,
+    FaMoneyBill,
+    FaTachometerAlt,
+    FaUserFriends,
+    FaUserPlus
+} from "react-icons/fa";
+
+import {getUser, User} from "@/app/db/user";
 
 export default function Sidebar() {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const userAvatarRef = useRef<HTMLDivElement>(null);
+
+    const [user, setUser] = useState<User | null>(null);
 
     const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
         if (!event.relatedTarget || !dropdownRef.current?.contains(event.relatedTarget as Node)) {
@@ -43,13 +50,8 @@ export default function Sidebar() {
         });
     };
 
-    useEffect(() => {
-        console.log(isUserDropdownOpen);
-    }, [isUserDropdownOpen]);
-
-
     const menuItems = [
-        {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt size={"none"}/>},
+        {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt/>},
         {
             name: 'Data Center',
             path: '/data-center',
@@ -76,68 +78,73 @@ export default function Sidebar() {
         {name: 'Settings', path: '/settings', icon: <FaCog/>},
     ];
 
+    useEffect(() => {
+        // TODO! Use Session
+        getUser().then((r => setUser(r as User)));
+    }, []);
+
     return (
-        <div className={`${styles.sidebar}`}>
-            <div className={styles.sidebarContent}>
-                <div className={styles.sidebarHeader}>
-                    {/*TODO! Dynamically get Icon*/}
-                    <h2>Hotel Management System</h2>
-                </div>
-                <ul className={styles.sidebarMenu}>
-                    <IconContext.Provider value={{size: "none"}}>
-                        {menuItems.map((item, index) => (
-                            <SidebarItem key={index} {...item} />
-                        ))}
-                    </IconContext.Provider>
-                </ul>
-                <div className={styles.sidebarFooter}>
-                    <div>
-                        <div
-                            className={`group/footerUser ${styles.footerUser}`}
-                            onClick={toggleUserDropdown}
-                            ref={userAvatarRef}
-                            tabIndex={0}
-                        >
-                            <div className={`${styles.userAvatar} group-hover/footerUser:border-opacity-100`}>
-                                {/*TODO! Image*/}
-                                <span>US</span>
-                            </div>
-                            <FaChevronDown className={`${styles.userDropdownIcon} group-hover/footerUser:opacity-100`}/>
-                        </div>
-                        <motion.div
-                            initial={{
-                                scale: 0,
-                                transformOrigin: "left bottom"
-                            }}
-                            animate={isUserDropdownOpen ? {scale: 1} : undefined}
-                            className={styles.footerUserDropdown}
-                            ref={dropdownRef}
-                            tabIndex={-1}
-                            onBlur={handleBlur}
-                        >
-                            <div className={styles.userInfo}>
-                                {/*TODO! User Info*/}
-                                <span>Frank O'Neil</span>
-                                <span>relations@firepress.org</span>
-                            </div>
-                            <ul className={styles.dropdownList}>
-                                {/*TODO! Links!*/}
-                                <li><Link href="/whats-new">What's new?</Link></li>
-                                <li><Link href="/profile">Your profile</Link></li>
-                                <li><Link href="/help-center">Help center</Link></li>
-                                <li><Link href="/resources-guides">Resources & guides</Link></li>
-                                <li><Link href="/sign-out">Sign out</Link></li>
-                            </ul>
-                        </motion.div>
-                    </div>
-                    <div className={styles.footerOptions}>
-                        <div title={"Logout"} className={styles.logoutBtn}>
-                            <CiLogout/>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div className={`${styles.sidebar}`}>
+          <div className={styles.sidebarContent}>
+              <div className={styles.sidebarHeader}>
+                  {/*TODO! Dynamically get Icon*/}
+                  <h2>Hotel Management System</h2>
+              </div>
+              <ul className={styles.sidebarMenu}>
+                  <IconContext.Provider value={{}}>
+                      {menuItems.map((item, index) => (
+                        <SidebarItem key={index} {...item} />
+                      ))}
+                  </IconContext.Provider>
+              </ul>
+              <div className={styles.sidebarFooter}>
+                  <div>
+                      <div
+                        className={`group/footerUser ${styles.footerUser}`}
+                        onClick={toggleUserDropdown}
+                        ref={userAvatarRef}
+                        tabIndex={0}
+                      >
+                          <div className={`${styles.userAvatar} group-hover/footerUser:border-opacity-100`}>
+                              {/*TODO! Image*/}
+                              <span>US</span>
+                          </div>
+                          <FaChevronDown className={`${styles.userDropdownIcon} group-hover/footerUser:opacity-100`}/>
+                      </div>
+                      <motion.div
+                        initial={{
+                            scale: 0,
+                            transformOrigin: "left bottom"
+                        }}
+                        animate={isUserDropdownOpen ? {scale: 1} : undefined}
+                        className={styles.footerUserDropdown}
+                        ref={dropdownRef}
+                        tabIndex={-1}
+                        onBlur={handleBlur}
+                      >
+                          <div className={styles.userInfo}>
+                              {/*TODO! User Info*/}
+                              <span>{user?.name}</span>
+                              <span>{user?.email}</span>
+                          </div>
+                          <ul className={styles.dropdownList}>
+                              {/*TODO! Links!*/}
+                              <li><Link href="/whats-new">What's new?</Link></li>
+                              <li><Link href="/profile">Your profile</Link></li>
+                              <li><Link href="/help-center">Help center</Link></li>
+                              <li><Link href="/resources-guides">Resources & guides</Link></li>
+                              <li><Link href="/sign-out">Sign out</Link></li>
+                          </ul>
+                      </motion.div>
+                  </div>
+                  <div className={styles.footerOptions}>
+                      <div title={"Logout"} className={styles.logoutBtn}>
+                          <CiLogout/>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
     );
 };
 
