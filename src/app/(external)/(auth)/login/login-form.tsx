@@ -4,7 +4,7 @@ import React, {useCallback, useEffect, useState} from "react";
 import styles from "./signinpage.module.css";
 import { useFormState } from "react-dom";
 import {loginUser, LoginUserType} from "@/app/(external)/(auth)/login/login-action";
-import LoginButton from "@/app/(external)/(auth)/login/login-button";
+import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
 import {useSession} from "next-auth/react";
 import {redirect, useSearchParams} from "next/navigation";
 import { delay } from "@/app/_lib/util";
@@ -50,7 +50,7 @@ export default function LoginForm() {
         <span className={`${styles.extraText} ${state.failure && styles.error} ${state.success && styles.success}`}>{state.failure ?? state.success}</span>
       </div>
       <div className={styles.buttonContainer}>
-        <LoginButton />
+        <AuthFormButton text={"Sign in →"} />
       </div>
     </form>
   );

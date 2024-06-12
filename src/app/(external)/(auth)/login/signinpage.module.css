@@ -26,25 +26,6 @@
     @apply flex items-center justify-center;
 }
 
-.button {
-    @apply
-    bg-black
-    text-white
-    font-bold
-    w-full
-    rounded
-    focus:outline-none
-    py-2
-
-    flex
-    justify-center items-center
-    ;
-}
-
-.button.loading > * {
-    @apply animate-spin;
-}
-
 .extraText {
     @apply text-black;
 }
