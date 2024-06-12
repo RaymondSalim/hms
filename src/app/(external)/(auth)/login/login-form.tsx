@@ -3,8 +3,8 @@
 import React, {useCallback, useEffect, useState} from "react";
 import styles from "./signinpage.module.css";
 import { useFormState } from "react-dom";
-import {loginUser, LoginUserType} from "@/app/(external)/login/login-action";
-import LoginButton from "@/app/(external)/login/login-button";
+import {loginUser, LoginUserType} from "@/app/(external)/(auth)/login/login-action";
+import LoginButton from "@/app/(external)/(auth)/login/login-button";
 import {useSession} from "next-auth/react";
 import {redirect, useSearchParams} from "next/navigation";
 import { delay } from "@/app/_lib/util";

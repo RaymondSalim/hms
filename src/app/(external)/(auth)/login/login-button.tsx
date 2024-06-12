@@ -1,5 +1,5 @@
 import { useFormStatus } from "react-dom";
-import styles from "@/app/(external)/login/signinpage.module.css";
+import styles from "@/app/(external)/(auth)/login/signinpage.module.css";
 import React from "react";
 import { AiOutlineLoading } from "react-icons/ai";
 
