@@ -1,6 +1,6 @@
 import "next-auth";
 import { User as BaseUser } from "@auth/core";
-import { User as UserModel } from "@/app/db/user";
+import { User as UserModel } from "@/app/_db/user";
 import type {CommonProviderOptions} from "@auth/core/src/providers";
 import type {Awaitable} from "@auth/core/src/types";
 import {DefaultSession} from "next-auth";

@@ -4,7 +4,7 @@ import "./globals.css";
 import styles from "./layout.module.css";
 import React from "react";
 import {SessionProvider} from "next-auth/react";
-import {auth} from "@/auth";
+import {auth} from "@/app/_lib/auth";
 
 const inter = Inter({subsets: ["latin"]});
 
