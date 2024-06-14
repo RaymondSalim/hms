@@ -1,5 +1,5 @@
 export async function getCompanyName() {
-  const res = await prisma.settings.findFirst({
+  const res = await prisma.setting.findFirst({
     where: {
       setting_key: "company_name",
     },

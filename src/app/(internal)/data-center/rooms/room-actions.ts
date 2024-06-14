@@ -2,10 +2,10 @@ import {roomObject, roomObjectWithID} from "@/app/_lib/zod/rooms/zod";
 import {number, object, typeToFlattenedError} from "zod";
 import {createRoom, deleteRoom, updateRoomByID} from "@/app/_db/room";
 import {OmitIDType} from "@/app/_db/db";
-import {rooms} from "@prisma/client";
+import {Room} from "@prisma/client";
 
-export type RoomActionsType<T = OmitIDType<rooms>> = {
-    success?: rooms,
+export type RoomActionsType<T = OmitIDType<Room>> = {
+    success?: Room,
     failure?: string,
     errors?: typeToFlattenedError<T>
 }
@@ -20,7 +20,7 @@ export async function createRoomAction(prevState: RoomActionsType, formData: For
     if (!success) {
         return {
             errors: error?.flatten()
-        }
+        };
     }
 
     try {
@@ -28,13 +28,13 @@ export async function createRoomAction(prevState: RoomActionsType, formData: For
 
         return {
             success: res
-        }
+        };
     } catch (error) {
         console.error(error);
 
         return {
             failure: "error"
-        }
+        };
     }
 }
 
@@ -49,7 +49,7 @@ export async function updateRoomAction(prevState: RoomActionsType, formData: For
     if (!success) {
         return {
             errors: error?.flatten()
-        }
+        };
     }
 
     try {
@@ -61,17 +61,17 @@ export async function updateRoomAction(prevState: RoomActionsType, formData: For
 
         return {
             success: res
-        }
+        };
     } catch (error) {
         console.error(error);
 
         return {
             failure: "error"
-        }
+        };
     }
 }
 
-export async function deleteRoomAction(prevState: RoomActionsType<Pick<rooms, "id">>, formData: FormData): Promise<RoomActionsType<Pick<rooms, "id">>> {
+export async function deleteRoomAction(prevState: RoomActionsType<Pick<Room, "id">>, formData: FormData): Promise<RoomActionsType<Pick<Room, "id">>> {
     const {success, error, data} = object({id: number().positive()}).safeParse({
         id: formData.get('id'),
     });
@@ -79,7 +79,7 @@ export async function deleteRoomAction(prevState: RoomActionsType<Pick<rooms, "i
     if (!success) {
         return {
             errors: error?.flatten()
-        }
+        };
     }
 
     try {
@@ -87,12 +87,12 @@ export async function deleteRoomAction(prevState: RoomActionsType<Pick<rooms, "i
 
         return {
             success: res
-        }
+        };
     } catch (error) {
         console.error(error);
 
         return {
             failure: "error"
-        }
+        };
     }
 }
