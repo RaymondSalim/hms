@@ -8,7 +8,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model bookings {
+model Booking {
   id              Int              @id @default(autoincrement())
   user_id         String?
   room_id         Int?
@@ -16,156 +16,194 @@ model bookings {
   duration_id     Int?
   status_id       Int?
   fee             Decimal          @db.Decimal(10, 2)
-  durations       durations?       @relation(fields: [duration_id], references: [id], onUpdate: NoAction)
-  rooms           rooms?           @relation(fields: [room_id], references: [id], onUpdate: NoAction)
-  bookingstatuses bookingstatuses? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  durations       Duration?      @relation(fields: [duration_id], references: [id], onUpdate: NoAction)
+  rooms           Room?          @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  bookingstatuses BookingStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
   users           User?            @relation(fields: [user_id], references: [id], onUpdate: NoAction)
-  guestbookings   guestbookings[]
-  payments        payments[]
+  guestbookings   GuestBooking[]
+  payments        Payment[]
+
+  @@map("bookings")
 }
 
-model bookingstatuses {
+model BookingStatus {
   id       Int        @id @default(autoincrement())
   status   String     @db.VarChar(255)
-  bookings bookings[]
+  bookings Booking[]
+
+  @@map("bookingstatuses")
 }
 
-model categories {
+model Category {
   id       Int        @id @default(autoincrement())
   category String     @db.VarChar(255)
-  expenses expenses[]
+  expenses Expense[]
+
+  @@map("categories")
 }
 
-model durations {
+model Duration {
   id                Int                 @id @default(autoincrement())
   duration          String              @db.VarChar(255)
   day_count         Int
-  bookings          bookings[]
-  roomtypedurations roomtypedurations[]
+  bookings          Booking[]
+  roomtypedurations RoomTypeDuration[]
+
+  @@map("durations")
 }
 
-model expenses {
+model Expense {
   id          Int         @id @default(autoincrement())
   amount      Decimal     @db.Decimal(10, 2)
   description String      @db.VarChar(255)
   date        DateTime    @db.Date
   category_id Int?
-  categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  categories Category? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+
+  @@map("expenses")
 }
 
-model guestbookings {
+model GuestBooking {
   guest_id   Int
   booking_id Int
-  bookings   bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  guests     guests   @relation(fields: [guest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  bookings Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  guests   Guest   @relation(fields: [guest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([guest_id, booking_id])
+  @@map("guestbookings")
 }
 
-model guests {
+model Guest {
   id            Int             @id @default(autoincrement())
   name          String          @db.VarChar(255)
   email         String?         @db.VarChar(255)
   phone         String?         @db.VarChar(255)
-  guestbookings guestbookings[]
+  guestbookings GuestBooking[]
+
+  @@map("guests")
 }
 
-model logs {
+model Log {
   id        Int       @id @default(autoincrement())
   user_id   String
   action    String    @db.VarChar(255)
   timestamp DateTime? @default(now()) @db.Timestamp(6)
   users     User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("logs")
 }
 
-model payments {
+model Payment {
   id              Int              @id @default(autoincrement())
   booking_id      Int
   amount          Decimal          @db.Decimal(10, 2)
   payment_date    DateTime         @db.Date
   payment_proof   String?          @db.VarChar(255)
   status_id       Int?
-  bookings        bookings         @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  paymentstatuses paymentstatuses? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  bookings        Booking        @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  paymentstatuses PaymentStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+
+  @@map("payments")
 }
 
-model paymentstatuses {
+model PaymentStatus {
   id       Int        @id @default(autoincrement())
   status   String     @db.VarChar(255)
-  payments payments[]
+  payments Payment[]
+
+  @@map("paymentstatuses")
 }
 
-model permissions {
+model Permission {
   id              Int               @id @default(autoincrement())
   permission      String            @db.VarChar(255)
-  rolepermissions rolepermissions[]
+  rolepermissions RolePermission[]
+
+  @@map("permissions")
 }
 
-model reports {
+model Report {
   id           Int      @id @default(autoincrement())
   type         String   @db.VarChar(255)
   generated_at DateTime @db.Date
   content      String
+
+  @@map("reports")
 }
 
-model rolepermissions {
+model RolePermission {
   role_id       Int
   permission_id Int
-  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  permissions Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([role_id, permission_id])
+  @@map("rolepermissions")
 }
 
-model roles {
+model Role {
   id              Int               @id @default(autoincrement())
   name            String            @db.VarChar(255)
   description     String?           @db.VarChar(255)
-  rolepermissions rolepermissions[]
+  rolepermissions RolePermission[]
   users           User[]
+
+  @@map("roles")
 }
 
-model rooms {
+model Room {
   id           Int           @id @default(autoincrement())
   room_number  String        @unique @db.VarChar(255)
   room_type_id Int?
   status_id    Int?
-  bookings     bookings[]
-  roomtypes    roomtypes?    @relation(fields: [room_type_id], references: [id], onUpdate: NoAction)
-  roomstatuses roomstatuses? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  bookings     Booking[]
+  roomtypes    RoomType?   @relation(fields: [room_type_id], references: [id], onUpdate: NoAction)
+  roomstatuses RoomStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+
+  @@map("rooms")
 }
 
-model roomstatuses {
+model RoomStatus {
   id     Int     @id @default(autoincrement())
   status String  @db.VarChar(255)
-  rooms  rooms[]
+  rooms Room[]
+
+  @@map("roomstatuses")
 }
 
-model roomtypedurations {
+model RoomTypeDuration {
   id              Int       @id @default(autoincrement())
   room_type_id    Int
   duration_id     Int
   suggested_price Decimal   @db.Decimal(10, 2)
-  durations       durations @relation(fields: [duration_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  roomtypes       roomtypes @relation(fields: [room_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  durations Duration @relation(fields: [duration_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roomtypes RoomType @relation(fields: [room_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("roomtypedurations")
 }
 
-model roomtypes {
+model RoomType {
   id                Int                 @id @default(autoincrement())
   type              String              @db.VarChar(255)
-  rooms             rooms[]
-  roomtypedurations roomtypedurations[]
+  rooms             Room[]
+  roomtypedurations RoomTypeDuration[]
+
+  @@map("roomtypes")
 }
 
-model rules {
+model Rule {
   id          Int    @id @default(autoincrement())
   description String
+
+  @@map("rules")
 }
 
-model settings {
+model Setting {
   id            Int    @id @default(autoincrement())
   setting_key   String @db.VarChar(255)
   setting_value String @db.VarChar(255)
+
+  @@map("settings")
 }
 
 model User {
@@ -179,10 +217,10 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   accounts      Account[]
-  bookings      bookings[]
-  logs          logs[]
+  bookings Booking[]
+  logs     Log[]
   sessions      Session[]
-  roles         roles?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  roles    Role?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
 
   @@map("users")
 }
