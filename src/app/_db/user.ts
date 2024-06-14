@@ -15,3 +15,9 @@ export async function findUserByEmail(email: string): Promise<User | null>  {
     }
   });
 }
+
+export async function createUser(user: Omit<User, "id" | "createdAt" | "updatedAt" | "emailVerified" | "image" >): Promise<User | null> {
+  return prismaClient.user.create({
+    data: user,
+  });
+}
