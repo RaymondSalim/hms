@@ -1,0 +1,13 @@
+.container {
+    @apply flex items-center justify-center min-h-screen bg-gray-100;
+}
+
+.formContainer {
+    @apply bg-white p-8 rounded-lg shadow-lg w-full max-w-md;
+}
+
+.iconContainer {
+    @apply flex justify-center mb-6 relative;
+}
+
+.icon {}

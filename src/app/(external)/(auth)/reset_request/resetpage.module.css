@@ -1,0 +1,91 @@
+.title {
+    @apply text-2xl text-black font-bold text-center mb-6;
+}
+
+.inputGroup {
+    @apply mb-4;
+}
+
+.label {
+    @apply block text-gray-700 font-bold mb-2;
+}
+
+.input {
+    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none;
+}
+
+.input.error {
+    @apply outline outline-red-600 outline-offset-0;
+}
+
+.errorDesc {
+    @apply overflow-hidden block text-red-600 transition-all;
+}
+
+.passwordContainer {
+    @apply relative mb-6;
+}
+
+.forgotLink {
+    @apply absolute inset-y-0 right-0 flex items-center px-3 text-sm text-gray-600 hover:text-gray-900;
+}
+
+.buttonContainer {
+    @apply flex items-center justify-center my-4;
+}
+
+.extraText {
+    @apply text-black;
+}
+
+span.extraText:empty:before {
+    content: "\200b";
+}
+
+.extraText.error {
+    @apply text-red-600;
+}
+
+.extraText.success {
+    @apply text-green-400;
+}
+
+.background {
+    @apply bg-gradient-to-br from-gray-100 to-gray-200;
+}
+
+.registerGroup {
+    @apply my-4 flex items-center justify-center;
+}
+
+.registerCta {
+    @apply text-gray-600
+}
+
+.registerCta > a {
+    @apply text-blue-600 hover:underline;
+}
+
+.successText {
+    @apply text-black;
+}
+
+.button {
+    @apply
+    bg-black
+    text-white
+    font-bold
+    w-full
+    rounded
+    focus:outline-none
+    py-2
+
+    flex
+    justify-center items-center
+    ;
+}
+
+.button.loading > * {
+    @apply animate-spin;
+}
+

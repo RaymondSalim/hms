@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -9,7 +10,7 @@ datasource db {
 
 model bookings {
   id              Int              @id @default(autoincrement())
-  user_id         Int?
+  user_id         String?
   room_id         Int?
   check_in        DateTime         @db.Date
   duration_id     Int?
@@ -18,7 +19,7 @@ model bookings {
   durations       durations?       @relation(fields: [duration_id], references: [id], onUpdate: NoAction)
   rooms           rooms?           @relation(fields: [room_id], references: [id], onUpdate: NoAction)
   bookingstatuses bookingstatuses? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
-  users           users?           @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  users           User?            @relation(fields: [user_id], references: [id], onUpdate: NoAction)
   guestbookings   guestbookings[]
   payments        payments[]
 }
@@ -71,10 +72,10 @@ model guests {
 
 model logs {
   id        Int       @id @default(autoincrement())
-  user_id   Int
+  user_id   String
   action    String    @db.VarChar(255)
   timestamp DateTime? @default(now()) @db.Timestamp(6)
-  users     users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users     User      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model payments {
@@ -121,7 +122,7 @@ model roles {
   name            String            @db.VarChar(255)
   description     String?           @db.VarChar(255)
   rolepermissions rolepermissions[]
-  users           users[]
+  users           User[]
 }
 
 model rooms {
@@ -167,13 +168,61 @@ model settings {
   setting_value String @db.VarChar(255)
 }
 
-model users {
-  id       Int        @id @default(autoincrement())
-  name     String     @db.VarChar(255)
-  email    String     @unique @db.VarChar(255)
-  password String     @db.VarChar(255)
-  role_id  Int?
-  bookings bookings[]
-  logs     logs[]
-  roles    roles?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  role_id       Int?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  accounts      Account[]
+  bookings      bookings[]
+  logs          logs[]
+  sessions      Session[]
+  roles         roles?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+
+  @@map("users")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verificationtokens")
 }
