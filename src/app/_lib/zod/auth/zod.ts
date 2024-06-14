@@ -1,4 +1,4 @@
-import { object, string } from "zod";
+import {object, string} from "zod";
 
 const emailObject = object({
     email: string({ required_error: "Email is required" })
