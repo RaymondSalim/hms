@@ -11,13 +11,13 @@ import { useFormState } from "react-dom";
 import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
 import {redirect} from "next/navigation";
 import { delay } from "@/app/_lib/util";
-import {registerUser, RegisterUserType} from "@/app/(external)/(auth)/register/register-action";
+import {registerUser, ResetUserType} from "@/app/(external)/(auth)/register/register-action";
 import {registerSchema} from "@/app/_lib/zod";
 import {AnimatePresence, motion} from "framer-motion";
 import {typeToFlattenedError} from "zod";
 import Link from "next/link";
 
-const initialState: RegisterUserType = {};
+const initialState: ResetUserType = {};
 
 export default function RegisterForm() {
   const [state, formAction ] = useFormState(registerUser, initialState);

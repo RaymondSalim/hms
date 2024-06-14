@@ -44,7 +44,7 @@ export default function LoginForm() {
         <label htmlFor="password" className={styles.label}>Password</label>
         <div className={styles.passwordContainer}>
           <input type="password" name="password" className={styles.input} placeholder="********" required />
-          <a href="#" className={styles.forgotLink}>Forgot?</a>
+          <Link href="/reset_request" className={styles.forgotLink}>Forgot?</Link>
         </div>
       </div>
       <div className={styles.inputGroup}>

@@ -5,7 +5,7 @@ import {createUser, findUserByEmail} from "@/app/_db/user";
 import bcrypt from "bcrypt";
 import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
 
-export type RegisterUserType = {
+export type ResetUserType = {
     success?: string,
     failure?: string,
     errors?: {
@@ -15,7 +15,7 @@ export type RegisterUserType = {
     }
 }
 
-export async function registerUser(prevState: RegisterUserType, formData: FormData): Promise<RegisterUserType> {
+export async function registerUser(prevState: ResetUserType, formData: FormData): Promise<ResetUserType> {
     const {success, data, error} = registerSchema.safeParse({
         email: formData.get('email'),
         password: formData.get('password'),
