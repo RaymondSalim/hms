@@ -9,7 +9,7 @@ import {ZodError} from "zod";
 import bcrypt from "bcrypt";
 
 class InvalidCredentialsError extends CredentialsSignin {
-  code: "Invalid username or password";
+  code!: "Invalid username or password";
 }
 
 const providers: Provider[] = [
