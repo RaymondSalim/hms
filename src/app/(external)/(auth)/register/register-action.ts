@@ -1,9 +1,9 @@
 "use server";
 
-import {registerSchema} from "@/app/_lib/zod";
+import {registerSchema} from "@/app/_lib/zod/auth/zod";
 import {createUser, findUserByEmail} from "@/app/_db/user";
 import bcrypt from "bcrypt";
-import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
+import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 
 export type ResetUserType = {
     success?: string,

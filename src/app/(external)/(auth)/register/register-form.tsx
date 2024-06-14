@@ -1,18 +1,13 @@
 "use client";
 
-import React, {
-  FormEvent,
-  useCallback,
-  useEffect,
-  useState
-} from "react";
+import React, {FormEvent, useCallback, useEffect, useState} from "react";
 import styles from "./registerpage.module.css";
-import { useFormState } from "react-dom";
+import {useFormState} from "react-dom";
 import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
 import {redirect} from "next/navigation";
-import { delay } from "@/app/_lib/util";
+import {delay} from "@/app/_lib/util";
 import {registerUser, ResetUserType} from "@/app/(external)/(auth)/register/register-action";
-import {registerSchema} from "@/app/_lib/zod";
+import {registerSchema} from "@/app/_lib/zod/auth/zod";
 import {AnimatePresence, motion} from "framer-motion";
 import {typeToFlattenedError} from "zod";
 import Link from "next/link";
