@@ -45,3 +45,15 @@ span.extraText:empty:before {
 .background {
     @apply bg-gradient-to-br from-gray-100 to-gray-200;
 }
+
+.registerGroup {
+    @apply my-4 flex items-center justify-center;
+}
+
+.registerCta {
+    @apply text-gray-600
+}
+
+.registerCta > a {
+    @apply text-blue-600 hover:underline;
+}

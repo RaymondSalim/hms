@@ -8,6 +8,7 @@ import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button
 import {useSession} from "next-auth/react";
 import {redirect, useSearchParams} from "next/navigation";
 import { delay } from "@/app/_lib/util";
+import Link from "next/link";
 
 const initialState: LoginUserType = {};
 
@@ -51,6 +52,9 @@ export default function LoginForm() {
       </div>
       <div className={styles.buttonContainer}>
         <AuthFormButton text={"Sign in →"} />
+      </div>
+      <div className={styles.registerGroup}>
+        <span className={styles.registerCta}>Don't have an account? <Link href={"/register"}>Sign Up</Link></span>
       </div>
     </form>
   );
