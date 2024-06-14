@@ -16,7 +16,7 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
 
   const [state, formAction ] = useFormState(loginUser, initialState);
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   const [shouldRedirect, setIsShouldRedirect] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState("/dashboard");
