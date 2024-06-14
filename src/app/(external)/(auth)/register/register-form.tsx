@@ -14,7 +14,7 @@ import { delay } from "@/app/_lib/util";
 import {registerUser, RegisterUserType} from "@/app/(external)/(auth)/register/register-action";
 import {registerSchema} from "@/app/_lib/zod";
 import {AnimatePresence, motion} from "framer-motion";
-import {inferFlattenedErrors, typeToFlattenedError, ZodError} from "zod";
+import {typeToFlattenedError} from "zod";
 import Link from "next/link";
 
 const initialState: RegisterUserType = {};
@@ -22,14 +22,10 @@ const initialState: RegisterUserType = {};
 export default function RegisterForm() {
   const [state, formAction ] = useFormState(registerUser, initialState);
   const [error, setError] = useState<typeToFlattenedError<typeof registerSchema.shape> | undefined>(undefined);
-  const [shouldRedirect, setIsShouldRedirect] = useState(false);
-  const [redirectTarget, setRedirectTarget] = useState("/dashboard");
 
   const redirectToLoginPage = useCallback(() => delay(1000).then(() => {
-    setIsShouldRedirect(true);
+    redirect("/login");
   }), []);
-
-  if (shouldRedirect) redirect(redirectTarget);
 
   useEffect(() => {
     if (state.success) redirectToLoginPage();
