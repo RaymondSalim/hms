@@ -1,7 +1,7 @@
-import {OmitIDType} from "@/app/_db/db";
+import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {Booking} from "@prisma/client";
 
-export async function createBooking(data: OmitIDType<Booking>) {
+export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>) {
   return prisma.booking.create({
     data: data
   });
@@ -20,7 +20,7 @@ export async function getAllBookings(limit?: number, offset?: number) {
   });
 }
 
-export async function updateBooking(id: number, data: OmitIDType<Booking>) {
+export async function updateBooking(id: number, data: OmitIDTypeAndTimestamp<Booking>) {
   return prisma.booking.update({
     where: {id},
     data: data,

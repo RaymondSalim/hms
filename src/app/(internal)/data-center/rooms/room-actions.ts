@@ -8,10 +8,10 @@ import {
     getAllRooms,
     getRoomsByLocationId,
 } from "@/app/_db/room";
-import { OmitIDType } from "@/app/_db/db";
+import { OmitIDTypeAndTimestamp } from "@/app/_db/db";
 import { Room } from "@prisma/client";
 
-export type RoomActionsType<T = OmitIDType<Room>> = {
+export type RoomActionsType<T = OmitIDTypeAndTimestamp<Room>> = {
     success?: Room | Room[];
     failure?: string;
     errors?: typeToFlattenedError<T>;

@@ -1,5 +1,5 @@
 import {Room} from "@prisma/client";
-import {OmitIDType} from "@/app/_db/db";
+import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 
 export async function getRooms(id?: number, limit?: number, offset?: number) {
     return prisma.room.findMany({
@@ -11,7 +11,7 @@ export async function getRooms(id?: number, limit?: number, offset?: number) {
     });
 }
 
-export async function createRoom(roomData: OmitIDType<Room>) {
+export async function createRoom(roomData: OmitIDTypeAndTimestamp<Room>) {
     return prisma.room.create({
         data: {
             room_number: roomData.room_number,
@@ -22,7 +22,7 @@ export async function createRoom(roomData: OmitIDType<Room>) {
     });
 }
 
-export async function updateRoomByID(id: number, roomData: OmitIDType<Room>) {
+export async function updateRoomByID(id: number, roomData: OmitIDTypeAndTimestamp<Room>) {
     return prisma.room.update({
         data: {
             room_number: roomData.room_number,
