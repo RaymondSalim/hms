@@ -16,9 +16,9 @@ model Booking {
   duration_id     Int?
   status_id       Int?
   fee             Decimal          @db.Decimal(10, 2)
-  durations       Duration?      @relation(fields: [duration_id], references: [id], onUpdate: NoAction)
-  rooms           Room?          @relation(fields: [room_id], references: [id], onUpdate: NoAction)
-  bookingstatuses BookingStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  durations       Duration?        @relation(fields: [duration_id], references: [id], onUpdate: NoAction)
+  rooms           Room?            @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  bookingstatuses BookingStatus?   @relation(fields: [status_id], references: [id], onUpdate: NoAction)
   users           User?            @relation(fields: [user_id], references: [id], onUpdate: NoAction)
   guestbookings   GuestBooking[]
   payments        Payment[]
@@ -59,7 +59,7 @@ model Expense {
   description String      @db.VarChar(255)
   date        DateTime    @db.Date
   category_id Int?
-  categories Category? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  categories  Category?   @relation(fields: [category_id], references: [id], onUpdate: NoAction)
 
   @@map("expenses")
 }
@@ -67,8 +67,8 @@ model Expense {
 model GuestBooking {
   guest_id   Int
   booking_id Int
-  bookings Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  guests   Guest   @relation(fields: [guest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  bookings   Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  guests     Guest   @relation(fields: [guest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([guest_id, booking_id])
   @@map("guestbookings")
@@ -135,8 +135,8 @@ model Report {
 model RolePermission {
   role_id       Int
   permission_id Int
-  permissions Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  roles       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  permissions   Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles         Role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([role_id, permission_id])
   @@map("rolepermissions")
@@ -157,9 +157,11 @@ model Room {
   room_number  String        @unique @db.VarChar(255)
   room_type_id Int?
   status_id    Int?
+  location_id  Int?
   bookings     Booking[]
-  roomtypes    RoomType?   @relation(fields: [room_type_id], references: [id], onUpdate: NoAction)
-  roomstatuses RoomStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  roomtypes    RoomType?     @relation(fields: [room_type_id], references: [id], onUpdate: NoAction)
+  roomstatuses RoomStatus?   @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  locations    Location?     @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
   @@map("rooms")
 }
@@ -167,7 +169,7 @@ model Room {
 model RoomStatus {
   id     Int     @id @default(autoincrement())
   status String  @db.VarChar(255)
-  rooms Room[]
+  rooms  Room[]
 
   @@map("roomstatuses")
 }
@@ -177,8 +179,8 @@ model RoomTypeDuration {
   room_type_id    Int
   duration_id     Int
   suggested_price Decimal   @db.Decimal(10, 2)
-  durations Duration @relation(fields: [duration_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  roomtypes RoomType @relation(fields: [room_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  durations       Duration  @relation(fields: [duration_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roomtypes       RoomType  @relation(fields: [room_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("roomtypedurations")
 }
@@ -218,10 +220,10 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   accounts      Account[]
-  bookings Booking[]
-  logs     Log[]
+  bookings      Booking[]
+  logs          Log[]
   sessions      Session[]
-  roles    Role?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  roles         Role?      @relation(fields: [role_id], references: [id], onUpdate: NoAction)
 
   @@map("users")
 }
@@ -276,4 +278,15 @@ model Penalty {
   bookings    Booking   @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("penalties")
+}
+
+model Location {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  address     String    @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  rooms       Room[]
+
+  @@map("locations")
 }
