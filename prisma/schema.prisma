@@ -23,7 +23,6 @@ model Booking {
   rooms           Room?          @relation(fields: [room_id], references: [id], onUpdate: NoAction)
   bookingstatuses BookingStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
   tenants         Tenant?        @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
-  guestbookings   GuestBooking[]
   payments        Payment[]
   penalties       Penalty[]
 
@@ -79,19 +78,6 @@ model Expense {
   @@map("expenses")
 }
 
-model GuestBooking {
-  guest_id   Int
-  booking_id Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
-
-  bookings Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  guests   Guest   @relation(fields: [guest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@id([guest_id, booking_id])
-  @@map("guestbookings")
-}
-
 model Guest {
   id        Int      @id @default(autoincrement())
   name      String   @db.VarChar(255)
@@ -100,17 +86,15 @@ model Guest {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  guestbookings GuestBooking[]
-
   @@map("guests")
 }
 
 model Log {
   id        Int       @id @default(autoincrement())
-  admin_id  String
+  site_user_id String
   action    String    @db.VarChar(255)
   timestamp DateTime? @default(now()) @db.Timestamp(6)
-  admins    Admin     @relation(fields: [admin_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  siteusers    SiteUser @relation(fields: [site_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("logs")
 }
@@ -185,7 +169,7 @@ model Role {
   updatedAt       DateTime @default(now()) @updatedAt
 
   rolepermissions RolePermission[]
-  admins          Admin[]
+  siteusers SiteUser[]
 
   @@map("roles")
 }
@@ -263,7 +247,7 @@ model Setting {
   @@map("settings")
 }
 
-model Admin {
+model SiteUser {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
@@ -279,7 +263,7 @@ model Admin {
   sessions      Session[]
   roles         Role?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
 
-  @@map("admins")
+  @@map("siteusers")
 }
 
 model Account {
@@ -297,7 +281,7 @@ model Account {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @default(now()) @updatedAt
 
-  admin  Admin @relation(fields: [userId], references: [id], onDelete: Cascade)
+  siteUser SiteUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
   @@map("accounts")
@@ -310,7 +294,7 @@ model Session {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 
-  admin Admin @relation(fields: [userId], references: [id], onDelete: Cascade)
+  siteUser SiteUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
