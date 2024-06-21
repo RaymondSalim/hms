@@ -5,7 +5,7 @@ import styles from "./resetpage.module.css";
 import {useFormState} from "react-dom";
 import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
 import {ResetUserType} from "@/app/(external)/(auth)/register/register-action";
-import {resetSchema} from "@/app/_lib/zod";
+import {resetSchema} from "@/app/_lib/zod/auth/zod";
 import {AnimatePresence, motion} from "framer-motion";
 import {typeToFlattenedError} from "zod";
 import Link from "next/link";

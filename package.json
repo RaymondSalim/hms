@@ -2,11 +2,17 @@
   "name": "hms",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma-gen": "prisma generate",
+    "prisma-migrate": "prisma migrate dev",
+    "pgm": "npm run prisma-gen && npm run prisma-migrate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.2.0",

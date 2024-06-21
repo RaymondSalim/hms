@@ -1,10 +1,9 @@
 import "next-auth";
-import { User as BaseUser } from "@auth/core";
-import { User as UserModel } from "@/app/_db/user";
+import {User as BaseUser} from "@auth/core";
 import type {CommonProviderOptions} from "@auth/core/src/providers";
 import type {Awaitable} from "@auth/core/src/types";
 import {DefaultSession} from "next-auth";
-import {User} from "@prisma/client";
+import {SiteUser, User} from "@prisma/client";
 
 declare module "next-auth" {
 
@@ -28,7 +27,7 @@ declare module "@auth/core/providers/credentials" {
 }
 
 declare module "@auth/core/types" {
-  export type CustomUser = BaseUser & UserModel;
+  export type CustomUser = BaseUser & SiteUser;
 
   export interface Session extends DefaultSession {
     user?: CustomUser

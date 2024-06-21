@@ -1,6 +1,6 @@
 "use server";
 
-import {resetSchema} from "@/app/_lib/zod";
+import {resetSchema} from "@/app/_lib/zod/auth/zod";
 import {findUserByEmail} from "@/app/_db/user";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 

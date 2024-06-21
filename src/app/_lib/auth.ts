@@ -4,7 +4,7 @@ import {PrismaAdapter} from "@auth/prisma-adapter";
 import prismaClient from "@/app/_lib/primsa";
 import NextAuth, {CredentialsSignin} from "next-auth";
 import {Provider} from "@auth/core/providers";
-import {signInSchema} from "@/app/_lib/zod";
+import {signInSchema} from "@/app/_lib/zod/auth/zod";
 import {ZodError} from "zod";
 import bcrypt from "bcrypt";
 

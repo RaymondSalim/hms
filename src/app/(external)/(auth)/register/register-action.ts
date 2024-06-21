@@ -1,9 +1,9 @@
 "use server";
 
-import {registerSchema} from "@/app/_lib/zod";
+import {registerSchema} from "@/app/_lib/zod/auth/zod";
 import {createUser, findUserByEmail} from "@/app/_db/user";
 import bcrypt from "bcrypt";
-import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
+import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 
 export type ResetUserType = {
     success?: string,
@@ -48,11 +48,13 @@ export async function registerUser(prevState: ResetUserType, formData: FormData)
         if (error instanceof PrismaClientKnownRequestError) {
             console.error("[register]", error.code, error.message);
             if (error.code == "P2002") {
-
+                return { failure: "Email address is taken" };
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             console.error("[register]", error.message);
         }
+
+        return { failure: "Registration unsuccessful" };
     }
 
     return { success: "Registration successful" };
