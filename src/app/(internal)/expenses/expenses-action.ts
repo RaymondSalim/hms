@@ -1,4 +1,4 @@
-import { expenseObject, expenseObjectWithID } from "@/app/_lib/zod/expenses/zod";
+import {expenseObject, expenseObjectWithID} from "@/app/_lib/zod/expenses/zod";
 import {Expense, Prisma} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {createExpense, deleteExpense, updateExpenseByID} from "@/app/_db/expense";
