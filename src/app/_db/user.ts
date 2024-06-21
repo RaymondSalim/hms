@@ -2,9 +2,12 @@
 
 import {User} from "@prisma/client";
 
-// TODO! getUser should take an argument (ID)
-export async function getUser(): Promise<User | null> {
-  return prisma.user.findFirst();
+export async function getUserByID(id: string): Promise<User | null> {
+  return prisma.user.findFirst({
+    where: {
+      id: id
+    }
+  });
 }
 
 export async function findUserByEmail(email: string): Promise<User | null>  {
@@ -18,5 +21,14 @@ export async function findUserByEmail(email: string): Promise<User | null>  {
 export async function createUser(user: Omit<User, "id" | "createdAt" | "updatedAt" | "emailVerified" | "image" >): Promise<User | null> {
   return prisma.user.create({
     data: user,
+  });
+}
+
+export async function updateUser(id: string, user: Pick<User, "email" | "password" | "name" | "role_id">): Promise<User | null> {
+  return prisma.user.update({
+    where: {
+      id: id,
+    },
+    data: user
   });
 }
