@@ -33,9 +33,9 @@ export async function deleteBooking(id: number) {
   });
 }
 
-export async function getBookingsByUserId(user_id: string) {
+export async function getBookingsByTenantId(tenant_id: string) {
   return prisma.booking.findMany({
-    where: {user_id},
+    where: {tenant_id},
   });
 }
 
