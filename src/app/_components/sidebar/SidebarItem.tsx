@@ -4,7 +4,7 @@ import styles from "@/app/_components/sidebar/sidebar.module.css";
 import Link from "next/link";
 import {FaChevronDown} from "react-icons/fa";
 import {motion} from "framer-motion";
-import {User} from "@prisma/client";
+import {SiteUser} from "@prisma/client";
 import {CiLogout} from "react-icons/ci";
 import React, {useRef, useState} from "react";
 import {signOut} from "next-auth/react";
@@ -52,7 +52,7 @@ export function SidebarItem({ name, path, icon, children }: SidebarItemProps) {
   );
 }
 
-export function InteractiveUserDropdown({ user }: { user: User }) {
+export function InteractiveUserDropdown({user}: { user: SiteUser }) {
   "use client";
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

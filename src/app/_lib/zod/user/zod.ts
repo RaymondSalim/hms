@@ -13,7 +13,7 @@ const passwordObject = object({
     .max(32, "Password must be less than 32 characters")
 });
 
-export const userSchemaWithID = object({
+export const siteUserSchemaWithID = object({
   id: string().cuid("Invalid User ID"),
   role_id: number().min(1, "Role ID is required"),
   name: string({ required_error: "Name is required" })

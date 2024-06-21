@@ -1,19 +1,19 @@
 "use server";
 
-import {User} from "@prisma/client";
+import {SiteUser} from "@prisma/client";
 import {Optional, PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
-import {userSchemaWithID} from "@/app/_lib/zod/user/zod";
+import {siteUserSchemaWithID} from "@/app/_lib/zod/user/zod";
 import {getUserByID, updateUser} from "@/app/_db/user";
 import {auth} from "@/app/_lib/auth";
 
 export type UpdateUserType = {
   success?: string,
   failure?: string,
-  errors?: Optional<User>
+  errors?: Optional<SiteUser>
 }
 
-// Action to update users (admin)
-export async function updateUserAction(prevState: UpdateUserType, formData: FormData): Promise<UpdateUserType> {
+// Action to update site users
+export async function updateSiteUserAction(prevState: UpdateUserType, formData: FormData): Promise<UpdateUserType> {
   const session = await auth();
 
   if (session && session.user) {
@@ -25,7 +25,7 @@ export async function updateUserAction(prevState: UpdateUserType, formData: Form
     }
   }
 
-  const {success, data, error} = userSchemaWithID.safeParse({
+  const {success, data, error} = siteUserSchemaWithID.safeParse({
     id: formData.get('user_id'),
     email: formData.get('email'),
     password: formData.get('password'),
