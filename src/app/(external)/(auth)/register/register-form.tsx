@@ -4,22 +4,25 @@ import React, {FormEvent, useCallback, useEffect, useState} from "react";
 import styles from "./registerpage.module.css";
 import {useFormState} from "react-dom";
 import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
-import {redirect} from "next/navigation";
+import {useRouter} from "next/navigation";
 import {delay} from "@/app/_lib/util";
 import {registerUser, ResetUserType} from "@/app/(external)/(auth)/register/register-action";
 import {registerSchema} from "@/app/_lib/zod/auth/zod";
 import {AnimatePresence, motion} from "framer-motion";
 import {typeToFlattenedError} from "zod";
 import Link from "next/link";
+import {useSession} from "next-auth/react";
 
 const initialState: ResetUserType = {};
 
 export default function RegisterForm() {
+  const router = useRouter();
+
   const [state, formAction ] = useFormState(registerUser, initialState);
   const [error, setError] = useState<typeToFlattenedError<typeof registerSchema.shape> | undefined>(undefined);
 
   const redirectToLoginPage = useCallback(() => delay(1000).then(() => {
-    redirect("/login");
+    router.push("/login");
   }), []);
 
   useEffect(() => {
