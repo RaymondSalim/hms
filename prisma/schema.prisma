@@ -52,11 +52,12 @@ model Category {
 }
 
 model Duration {
-  id        Int      @id @default(autoincrement())
-  duration  String   @db.VarChar(255)
-  day_count Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id          Int      @id @default(autoincrement())
+  duration    String   @db.VarChar(255)
+  day_count   Int
+  month_count Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   bookings          Booking[]
   roomtypedurations RoomTypeDuration[]
