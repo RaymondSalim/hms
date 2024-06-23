@@ -1,0 +1,40 @@
+.dashboardContainer {
+    @apply
+    p-8
+    text-header
+    select-none
+    ;
+}
+
+.dashboardContainer h2 {
+    @apply
+    text-xl font-medium
+    mb-4
+}
+
+.headerContainer {
+    @apply
+    w-full
+    flex
+    gap-x-8
+    mb-8;
+}
+
+.header {
+    @apply
+    text-2xl font-semibold;
+}
+
+.content {
+    @apply
+    flex flex-col
+    gap-8
+}
+
+.content > * {
+    @apply
+    rounded-2xl
+    bg-white
+    shadow-md;
+}
+
