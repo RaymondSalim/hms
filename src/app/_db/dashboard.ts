@@ -1,6 +1,7 @@
 "use server";
 
 import {Prisma} from "@prisma/client";
+import {format} from "date-fns";
 
 export async function getOverviewData(locationID?: number) {
   const firstDateOfWeek = getFirstDateOfWeek(new Date());
@@ -100,8 +101,139 @@ export async function getUpcomingEvents(locationID?: number) {
 
       return resp;
     });
+}
 
+interface IncomeExpenseResult {
+  date: string;
+  income: number;
+  expense: number;
+}
 
+enum Period {
+  SEVEN_DAYS = '7 D',
+  ONE_MONTH = '1 M',
+  THREE_MONTHS = '3 M',
+  SIX_MONTHS = '6 M',
+  ONE_YEAR = '1 Y'
+}
+
+export async function getIncomeAndExpense(period: Period, locationID?: number) {
+  const now = new Date();
+  let startDate: Date;
+  let groupBy: string;
+
+  switch (period) {
+    case Period.SEVEN_DAYS:
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      groupBy = 'day';
+      break;
+    case Period.ONE_MONTH:
+      startDate = new Date(now);
+      startDate.setMonth(now.getMonth() - 1);
+      groupBy = 'day';
+      break;
+    case Period.THREE_MONTHS:
+      startDate = new Date(now);
+      startDate.setMonth(now.getMonth() - 3);
+      groupBy = 'day';
+      break;
+    case Period.SIX_MONTHS:
+      startDate = new Date(now);
+      startDate.setMonth(now.getMonth() - 6);
+      groupBy = 'day';
+      break;
+    case Period.ONE_YEAR:
+      startDate = new Date(now);
+      startDate.setFullYear(now.getFullYear() - 1);
+      groupBy = 'month';
+      break;
+    default:
+      throw new Error('Invalid period');
+  }
+  const dateFormat = `${groupBy === 'day' ? 'dd-' : ''}${groupBy === 'month' ? 'MMM ' : 'MM-'}yyyy`;
+
+  // Function to generate array of dates between startDate and endDate
+  function getDatesInRange(startDate: Date, endDate: Date): string[] {
+
+    const dates: string[] = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      dates.push(format(currentDate, dateFormat));
+      if (groupBy === 'day') {
+        currentDate.setDate(currentDate.getDate() + 1);
+      } else if (groupBy === 'month') {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        currentDate.setDate(1); // Move to the first day of the next month
+      }
+    }
+
+    return dates;
+  }
+
+  const dateRange = getDatesInRange(startDate, now);
+
+  const joinClause = locationID ? Prisma.sql`LEFT JOIN bookings b on b.id = p.booking_id LEFT JOIN rooms r ON r.id = b.room_id` : Prisma.sql``;
+
+  const incomeLocationClause = locationID ? Prisma.sql`r.location_id = ${locationID}` : Prisma.sql`TRUE`;
+  const incomeDateClause = groupBy == "day" ? Prisma.sql`payment_date` : Prisma.sql`DATE_TRUNC('month', payment_date)`;
+  const income = prisma.$queryRaw<IncomeExpenseResult[]>`
+      SELECT to_char(${incomeDateClause}, ${groupBy === 'day' ? "DD-MM-YYYY" : "Mon YYYY"}) AS date,
+             SUM(p.amount)                                                                  AS income
+      FROM payments p
+          ${joinClause}
+      WHERE payment_date BETWEEN ${startDate}
+        AND ${now}
+        AND ${incomeLocationClause}
+      GROUP BY ${incomeDateClause}
+      ORDER BY date;
+  `;
+
+  const expenseLocationClause = locationID ? Prisma.sql`location_id = ${locationID}` : Prisma.sql`TRUE`;
+  const expenseDateClause = groupBy == "day" ? Prisma.sql`e.date` : Prisma.sql`DATE_TRUNC('month', e.date)`;
+  const expenses = prisma.$queryRaw<IncomeExpenseResult[]>`
+      SELECT to_char(${expenseDateClause}, ${groupBy === 'day' ? "DD-MM-YYYY" : "Mon YYYY"}) AS date,
+             SUM(e.amount)                                                                   AS expense
+      FROM expenses e
+      WHERE e.date BETWEEN ${startDate} AND ${now}
+        AND ${expenseLocationClause}
+      GROUP BY ${expenseDateClause}
+      ORDER BY date;
+  `;
+
+  // Merge income and expenses by date
+  const results: { [key: string]: IncomeExpenseResult } = {};
+
+  return Promise.all([income, expenses])
+    .then(([incomeRes, expensesRes]) => {
+      dateRange.forEach(date => {
+        results[date] = {date, income: 0, expense: 0};
+      });
+
+      incomeRes.forEach(item => {
+        results[item.date] = {date: item.date, income: item.income || 0, expense: 0};
+      });
+
+      expensesRes.forEach(item => {
+        if (results[item.date]) {
+          results[item.date].expense = item.expense || 0;
+        } else {
+          results[item.date] = {date: item.date, income: 0, expense: item.expense || 0};
+        }
+      });
+
+      const sortedResults = Object.values(results).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      const labels = sortedResults.map(item => item.date);
+      const incomeData = sortedResults.map(item => item.income);
+      const expenseData = sortedResults.map(item => item.expense);
+
+      return {
+        labels,
+        incomeData,
+        expenseData
+      };
+    });
 }
 
 async function getCheckInWithExtras(now: Date, sevenDaysAhead: Date, locationID?: number) {
