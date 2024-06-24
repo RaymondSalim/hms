@@ -1,6 +1,7 @@
 import styles from "./dashboard.module.css";
 import Overview from "@/app/(internal)/dashboard/_components/overview";
 import Events from "@/app/(internal)/dashboard/_components/events";
+import IncomeExpense from "@/app/(internal)/dashboard/_components/income-expense";
 
 export default async function DashboardPage() {
   return (
@@ -16,7 +17,9 @@ export default async function DashboardPage() {
           <div>
             <Events/>
           </div>
-          <div></div>
+          <div>
+            <IncomeExpense/>
+          </div>
         </div>
       </div>
     </>

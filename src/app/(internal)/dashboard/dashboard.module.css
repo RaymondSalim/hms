@@ -33,6 +33,8 @@
     *:rounded-2xl
     *:bg-white
     *:shadow-md
+    *:min-h-0
+    *:h-fit
 }
 
 .overviewContent {
