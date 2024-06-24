@@ -3,6 +3,15 @@
     p-4
 }
 
+.overviewHeaderContainer {
+    @apply
+    flex justify-between
+}
+
+.overviewDate {
+    @apply text-[#8094ae];
+}
+
 .overviewContent {
     @apply
     overflow-y-auto
