@@ -1,6 +1,6 @@
 "use client";
 
-import {useContext, useMemo, useState} from "react";
+import React, {useContext, useMemo, useState} from "react";
 import {DashboardContext} from "@/app/_context/DashboardContext";
 import {useQuery} from "@tanstack/react-query";
 import {getPaymentData, getPaymentStatuses} from "@/app/_db/dashboard";
@@ -9,6 +9,7 @@ import styles from "./styles/payments.module.css";
 import {Button, Chip, Typography} from "@material-tailwind/react";
 import {createColumnHelper, flexRender, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {colors} from "@material-tailwind/react/types/generic";
+import {AiOutlineLoading} from "react-icons/ai";
 
 const fallbackData: never[] = [];
 
@@ -16,7 +17,7 @@ export default function Payments() {
   const dashboardContext = useContext(DashboardContext);
   const [status, setStatus] = useState<number | undefined>(undefined);
 
-  const {data: paymentStatuses, isLoading: statusIsLoading, isSuccess: statusIsSuccess} = useQuery({
+  const {data: paymentStatuses, isSuccess: statusIsSuccess} = useQuery({
     queryKey: ['dashboard.paymentStatus'],
     queryFn: () => getPaymentStatuses()
   });
@@ -94,48 +95,56 @@ export default function Payments() {
         }
       </div>
       <div className={styles.paymentsContent}>
-        <table className="block w-full h-full min-w-max table-auto text-left rounded-t-lg">
-          <thead className={"sticky top-0 z-10"}>
-          {tanTable.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th key={header.id} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="font-normal leading-none opacity-70"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  </Typography>
+        {
+          paymentsIsLoading && <div className={"w-full flex items-center justify-center"}>
+                <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
+            </div>
+        }
+        {
+          paymentsIsSuccess &&
+            <table className="block w-full h-full min-w-max table-auto text-left rounded-t-lg">
+                <thead className={"sticky top-0 z-10"}>
+                {tanTable.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th key={header.id} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal leading-none opacity-70"
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                        </Typography>
 
-                </th>
-              ))}
-            </tr>
-          ))}
-          </thead>
-          <tbody>
-          {tanTable.getRowModel().rows.map((row, index) => {
-            const isLast = index === tanTable.getRowModel().rows.length - 1;
-            const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
-
-            return (<tr key={row.id}>
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className={classes}>
-                    <div className={"text-sm text-gray-700 font-normal"}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </div>
-                  </td>
+                      </th>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            );
-          })}
-          </tbody>
-        </table>
+                </thead>
+                <tbody>
+                {tanTable.getRowModel().rows.map((row, index) => {
+                  const isLast = index === tanTable.getRowModel().rows.length - 1;
+                  const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
+
+                  return (<tr key={row.id}>
+                      {row.getVisibleCells().map(cell => (
+                        <td key={cell.id} className={classes}>
+                          <div className={"text-sm text-gray-700 font-normal"}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+                </tbody>
+            </table>
+        }
       </div>
     </div>
   );
