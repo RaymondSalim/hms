@@ -12,7 +12,9 @@
 
 .btn {
     @apply
+    min-w-fit
     rounded-full
+    whitespace-nowrap
 }
 
 .paymentsContent {
