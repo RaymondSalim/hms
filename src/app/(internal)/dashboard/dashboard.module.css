@@ -30,6 +30,21 @@
     @apply
     grid grid-cols-2
     gap-8
+}
+
+.overviewContent {
+    @apply
+    *:rounded-2xl
+    *:bg-white
+    *:shadow-md
+    *:min-h-0
+    *:h-fit
+}
+
+.content > * {
+    @apply
+    flex flex-col
+    gap-y-8
     *:rounded-2xl
     *:bg-white
     *:shadow-md
