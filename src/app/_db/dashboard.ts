@@ -289,6 +289,36 @@ export async function getPaymentData(status?: number, locationID?: number) {
   });
 }
 
+export async function getDurations() {
+  return prisma.duration.findMany();
+}
+
+export async function getBills(durationID?: number, locationID?: number): Promise<{
+  id: string,
+  fee: string,
+  tenant_id: string,
+  tenant_name: string,
+  room_number: string,
+  total_paid: string
+}[]> {
+  return prisma.$queryRaw`
+      SELECT b.id,
+             b.fee,
+             t.id                       AS tenant_id,
+             t.name                     AS tenant_name,
+             r.room_number,
+             COALESCE(SUM(p.amount), 0) AS total_paid
+      FROM bookings b
+               LEFT JOIN tenants t ON b.tenant_id = t.id
+               LEFT JOIN rooms r ON b.room_id = r.id
+               LEFT JOIN payments p ON b.id = p.booking_id
+      WHERE b.duration_id = ${durationID ?? Prisma.sql`b.duration_id`}
+        AND r.location_id = ${locationID ?? Prisma.sql`r.location_id`}
+      GROUP BY b.id, t.id, t.name, r.room_number
+      HAVING (b.fee - COALESCE(SUM(p.amount), 0)) > 0;
+  `;
+}
+
 async function getCheckInWithExtras(now: Date, sevenDaysAhead: Date, locationID?: number) {
   return prisma.booking.findMany({
     where: {
