@@ -1,0 +1,40 @@
+.billsContainer {
+    @apply
+    p-4
+}
+
+.billsTableContainer {
+    @apply
+    flex
+    flex-col
+    overflow-y-auto
+    h-96
+    gap-y-2
+}
+
+.durationContent {
+    @apply
+    flex
+    gap-x-2
+    overflow-x-auto
+}
+
+.btn {
+    @apply
+    min-w-fit
+    rounded-full
+    whitespace-nowrap
+}
+
+.billsContent {
+    @apply
+    overflow-auto
+    flex
+    divide-x
+    *:px-6
+    first:*:pl-0
+    last:*:pr-0
+    max-h-[320px]
+    mt-4
+    ;
+}

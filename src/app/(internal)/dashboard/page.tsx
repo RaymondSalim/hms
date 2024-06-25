@@ -3,6 +3,7 @@ import Overview from "@/app/(internal)/dashboard/_components/overview";
 import Events from "@/app/(internal)/dashboard/_components/events";
 import IncomeExpense from "@/app/(internal)/dashboard/_components/income-expense";
 import Payments from "@/app/(internal)/dashboard/_components/payments";
+import Bills from "./_components/bills";
 
 export default async function DashboardPage() {
   return (
@@ -21,6 +22,7 @@ export default async function DashboardPage() {
           </div>
           <div>
             <IncomeExpense/>
+            <Bills/>
           </div>
         </div>
       </div>
