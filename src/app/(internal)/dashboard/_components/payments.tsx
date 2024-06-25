@@ -102,7 +102,7 @@ export default function Payments() {
         }
         {
           paymentsIsSuccess &&
-            <table className="block w-full h-full min-w-max table-auto text-left rounded-t-lg">
+            <table className="w-full min-w-max table-auto text-left rounded-t-lg">
                 <thead className={"sticky top-0 z-10"}>
                 {tanTable.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
