@@ -72,60 +72,63 @@ export default function IncomeExpense() {
         }
         {
           isSuccess &&
-            <Line
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: {
-                      position: 'top' as const,
-                    },
-                    tooltip: {
-                      callbacks: {
-                        label: (value) => `IDR ${value.formattedValue}`
-                      }
-                    }
-                  },
-                  interaction: {
-                    intersect: false,
-                    mode: 'index',
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                    },
-                    x: {
-                      ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 15
-                      }
-                    }
-                  },
+            <div className={"aspect-[2/1]"}>
+                <Line
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: true,
+                      plugins: {
+                        legend: {
+                          position: 'top' as const,
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: (value) => `IDR ${value.formattedValue}`
+                          }
+                        }
+                      },
+                      interaction: {
+                        intersect: false,
+                        mode: 'index',
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                        },
+                        x: {
+                          ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 15
+                          }
+                        }
+                      },
 
-                }}
-                data={{
-                  labels: data?.labels,
-                  datasets: [{
-                    label: 'Income',
-                    data: data?.incomeData,
-                    fill: 'origin',
-                    borderWidth: 1,
-                    borderColor: '#798bff',
-                    backgroundColor: 'rgb(235, 238, 255, 0.5)',
-                    tension: 0.2,
-                    order: 100,
-                    pointStyle: false
-                  }, {
-                    label: 'Expense',
-                    data: data?.expenseData,
-                    borderColor: '#e85347',
-                    borderWidth: 1,
-                    borderDash: [10, 5],
-                    tension: 0.2,
-                    order: 50,
-                    pointStyle: false
-                  }]
-                }}
-            />
+                    }}
+                    data={{
+                      labels: data?.labels,
+                      datasets: [{
+                        label: 'Income',
+                        data: data?.incomeData,
+                        fill: 'origin',
+                        borderWidth: 1,
+                        borderColor: '#798bff',
+                        backgroundColor: 'rgb(235, 238, 255, 0.5)',
+                        tension: 0.2,
+                        order: 100,
+                        pointStyle: false
+                      }, {
+                        label: 'Expense',
+                        data: data?.expenseData,
+                        borderColor: '#e85347',
+                        borderWidth: 1,
+                        borderDash: [10, 5],
+                        tension: 0.2,
+                        order: 50,
+                        pointStyle: false
+                      }]
+                    }}
+                />
+            </div>
         }
       </div>
     </div>
