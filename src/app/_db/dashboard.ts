@@ -73,29 +73,29 @@ export async function getUpcomingEvents(locationID?: number) {
 
   return Promise.all([checkInPromise, checkOutPromise])
     .then(([checkIns, checkOuts]) => {
-      let resp: Map<number, Prisma.PromiseReturnType<typeof getCheckInWithExtras>> = new Map();
+      type OriginalReturnType = Awaited<ReturnType<typeof getCheckInWithExtras>>[number];
+      type ExtendedReturnType = OriginalReturnType & { type: string, checkout_date: number };
+      let resp: Map<number, ExtendedReturnType[]> = new Map();
 
       for (const ci of checkIns) {
-        // @ts-ignore
-        ci.type = "CHECKIN";
-        let hasKey = resp.has(ci.check_in.valueOf());
+        let newCI = ci as ExtendedReturnType;
+        newCI.type = "CHECKIN";
+        let hasKey = resp.has(newCI.check_in.valueOf());
         if (hasKey) {
-          resp.get(ci.check_in.valueOf())?.push(ci);
+          resp.get(newCI.check_in.valueOf())?.push(newCI);
         } else {
-          resp.set(ci.check_in.valueOf(), [ci]);
+          resp.set(newCI.check_in.valueOf(), [newCI]);
         }
       }
 
       for (const co of checkOuts) {
-        // @ts-ignore
-        co.type = "CHECKOUT";
-        let hasKey = resp.has(co.checkout_date.valueOf());
+        let newCO = co as unknown as ExtendedReturnType;
+        newCO.type = "CHECKOUT";
+        let hasKey = resp.has(newCO.checkout_date.valueOf());
         if (hasKey) {
-          // @ts-ignore
-          resp.get(co.checkout_date.valueOf())?.push(co);
+          resp.get(newCO.checkout_date.valueOf())?.push(newCO);
         } else {
-          // @ts-ignore
-          resp.set(co.checkout_date.valueOf(), [co]);
+          resp.set(newCO.checkout_date.valueOf(), [newCO]);
         }
       }
 
@@ -234,6 +234,59 @@ export async function getIncomeAndExpense(period: Period, locationID?: number) {
         expenseData
       };
     });
+}
+
+export async function getPaymentStatuses() {
+  return prisma.paymentStatus.findMany();
+}
+
+export async function getPaymentData(status?: number, locationID?: number) {
+  return prisma.payment.findMany({
+    select: {
+      id: true,
+      bookings: {
+        select: {
+          id: true,
+          tenants: {
+            select: {
+              id: true,
+              name: true,
+            }
+          },
+          rooms: {
+            select: {
+              id: true,
+              room_number: true,
+            }
+          },
+          durations: {
+            select: {
+              duration: true
+            }
+          }
+        }
+      },
+      amount: true,
+      paymentstatuses: {
+        select: {
+          id: true,
+          status: true
+        }
+      }
+    },
+    where: {
+      bookings: {
+        rooms: {
+          location_id: locationID
+        }
+      },
+      status_id: status
+    },
+    take: 15,
+    orderBy: {
+      payment_date: 'desc'
+    },
+  });
 }
 
 async function getCheckInWithExtras(now: Date, sevenDaysAhead: Date, locationID?: number) {
