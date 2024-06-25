@@ -15,7 +15,8 @@ export async function createExpenseAction(prevState: ExpenseActionsType, formDat
     amount: parseFloat(formData.get("amount") as string),
     description: formData.get("description"),
     date: formData.get("date"),
-    category_id: formData.get("category_id") ? parseInt(formData.get("category_id") as string) : undefined,
+    category_id: formData.get("category_id") ? parseInt(formData.get("category_id") as string) : null,
+    location_id: formData.get("location_id") ? parseInt(formData.get("category_id") as string) : null
   });
 
   if (!parsedData.success) {
@@ -27,7 +28,7 @@ export async function createExpenseAction(prevState: ExpenseActionsType, formDat
   try {
     let res = await createExpense({
       ...parsedData.data,
-      category_id: parsedData.data.category_id ?? null,
+      category_id: parsedData.data.category_id,
       date: new Date(parsedData.data.date),
       amount: new Prisma.Decimal(parsedData.data.amount)
     });
