@@ -84,27 +84,29 @@ export default function Payments() {
   return (
     <div className={styles.paymentsContainer}>
       <h2>Payments</h2>
-      <div className={styles.statusContent}>
-        <Button variant={status == null ? 'filled' : 'outlined'} size={"sm"} className={styles.btn}
-                onClick={() => setStatus(undefined)}>All</Button>
-        {
-          statusIsSuccess &&
-          paymentStatuses.map((s) => (
-            <Button variant={status == s.id ? 'filled' : 'outlined'} size={"sm"} key={s.id}
-                    onClick={() => setStatus(s.id)} className={styles.btn}>{s.status}</Button>
-          ))
-        }
-      </div>
-      <div className={styles.paymentsContent}>
-        {
-          paymentsIsLoading && <div className={"w-full flex items-center justify-center"}>
-                <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
-            </div>
-        }
-        {
-          paymentsIsSuccess &&
-            <TanTable tanTable={tanTable}/>
-        }
+      <div className={styles.statusPaymentContainer}>
+        <div className={styles.statusContent}>
+          <Button variant={status == null ? 'filled' : 'outlined'} size={"sm"} className={styles.btn}
+                  onClick={() => setStatus(undefined)}>All</Button>
+          {
+            statusIsSuccess &&
+            paymentStatuses.map((s) => (
+              <Button variant={status == s.id ? 'filled' : 'outlined'} size={"sm"} key={s.id}
+                      onClick={() => setStatus(s.id)} className={styles.btn}>{s.status}</Button>
+            ))
+          }
+        </div>
+        <div className={styles.paymentsContent}>
+          {
+            paymentsIsLoading && <div className={"w-full flex items-center justify-center"}>
+                  <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
+              </div>
+          }
+          {
+            paymentsIsSuccess &&
+              <TanTable tanTable={tanTable}/>
+          }
+        </div>
       </div>
     </div>
   );

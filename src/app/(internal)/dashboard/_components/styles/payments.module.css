@@ -3,6 +3,11 @@
     p-4
 }
 
+.statusPaymentContainer {
+    @apply
+    h-96
+}
+
 .statusContent {
     @apply
     flex

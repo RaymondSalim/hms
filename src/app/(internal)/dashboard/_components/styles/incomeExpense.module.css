@@ -23,6 +23,7 @@
     py-2
     text-xs
     font-semibold
+    cursor-pointer
     transition-colors ease-in-out duration-300
 }
 
