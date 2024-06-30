@@ -1,6 +1,7 @@
 "use server";
 
 import {SiteUser} from "@prisma/client";
+import prisma from "@/app/_lib/primsa";
 
 export async function getUserByID(id: string): Promise<SiteUser | null> {
   return prisma.siteUser.findFirst({

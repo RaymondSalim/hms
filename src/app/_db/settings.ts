@@ -1,3 +1,5 @@
+import prisma from "@/app/_lib/primsa";
+
 export async function getCompanyName() {
   const res = await prisma.setting.findFirst({
     where: {

@@ -1,7 +1,6 @@
-import {Expense, PrismaClient} from "@prisma/client";
+import {Expense} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-
-const prisma = new PrismaClient();
+import prisma from "@/app/_lib/primsa";
 
 export async function getExpenses(id?: number, limit?: number, offset?: number) {
   return prisma.expense.findMany({

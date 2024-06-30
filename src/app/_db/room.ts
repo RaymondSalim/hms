@@ -1,5 +1,6 @@
 import {Room} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
+import prisma from "@/app/_lib/primsa";
 
 export async function getRooms(id?: number, limit?: number, offset?: number) {
     return prisma.room.findMany({

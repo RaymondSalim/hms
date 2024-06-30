@@ -1,5 +1,6 @@
-import { Location } from "@prisma/client";
-import { OmitIDTypeAndTimestamp } from "@/app/_db/db";
+import {Location} from "@prisma/client";
+import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
+import prisma from "@/app/_lib/primsa";
 
 export async function getLocations(id?: number, limit?: number, offset?: number) {
   return prisma.location.findMany({

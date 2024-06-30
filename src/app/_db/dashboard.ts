@@ -2,6 +2,7 @@
 
 import {Prisma} from "@prisma/client";
 import {format} from "date-fns";
+import prisma from "@/app/_lib/primsa";
 
 export async function getOverviewData(locationID?: number) {
   const firstDateOfWeek = getFirstDateOfWeek(new Date());
