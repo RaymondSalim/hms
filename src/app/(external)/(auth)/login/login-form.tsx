@@ -2,12 +2,12 @@
 
 import React, {useCallback, useEffect, useState} from "react";
 import styles from "./signinpage.module.css";
-import { useFormState } from "react-dom";
+import {useFormState} from "react-dom";
 import {loginUser, LoginUserType} from "@/app/(external)/(auth)/login/login-action";
 import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
 import {useSession} from "next-auth/react";
 import {redirect, useSearchParams} from "next/navigation";
-import { delay } from "@/app/_lib/util";
+import {delay} from "@/app/_lib/util";
 import Link from "next/link";
 
 const initialState: LoginUserType = {};
@@ -54,7 +54,7 @@ export default function LoginForm() {
         <AuthFormButton text={"Sign in →"} />
       </div>
       <div className={styles.registerGroup}>
-        <span className={styles.registerCta}>Don't have an account? <Link href={"/register"}>Sign Up</Link></span>
+        <span className={styles.registerCta}>Don&apos;t have an account? <Link href={"/register"}>Sign Up</Link></span>
       </div>
     </form>
   );

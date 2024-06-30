@@ -49,7 +49,7 @@ export default function ResetForm() {
               transition={{duration: 0.5}}
               className={styles.successText}
             >
-              <span>If an account exists with the provided email, you'll receive an email with a password reset link shortly. Please check your inbox and follow the instructions.</span>
+              <span>If an account exists with the provided email, you&apos;ll receive an email with a password reset link shortly. Please check your inbox and follow the instructions.</span>
               <div className={styles.buttonContainer}>
                 <button onClick={handleBack} type="button" className={styles.button}>Back</button>
               </div>

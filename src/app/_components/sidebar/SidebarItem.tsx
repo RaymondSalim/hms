@@ -103,7 +103,7 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
         </div>
         <ul className={styles.dropdownList}>
           <li>
-            <Link href="/whats-new">What's new?</Link>
+            <Link href="/whats-new">What&apos;s new?</Link>
           </li>
           <li>
             <Link href="/profile">Your profile</Link>
