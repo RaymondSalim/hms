@@ -1,0 +1,36 @@
+.paymentsContainer {
+    @apply
+    p-4
+}
+
+.statusPaymentContainer {
+    @apply
+    h-96
+}
+
+.statusContent {
+    @apply
+    flex
+    gap-x-2
+    overflow-x-auto
+}
+
+.btn {
+    @apply
+    min-w-fit
+    rounded-full
+    whitespace-nowrap
+}
+
+.paymentsContent {
+    @apply
+    overflow-auto
+    flex
+    divide-x
+    *:px-6
+    first:*:pl-0
+    last:*:pr-0
+    max-h-[320px]
+    mt-4
+    ;
+}

@@ -1,5 +1,4 @@
-import { Expense } from "@prisma/client";
-import { PrismaClient } from "@prisma/client";
+import {Expense, PrismaClient} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 
 const prisma = new PrismaClient();
@@ -19,6 +18,7 @@ export async function createExpense(expenseData: OmitIDTypeAndTimestamp<Expense>
       description: expenseData.description,
       date: expenseData.date,
       category_id: expenseData.category_id,
+      location_id: expenseData.location_id,
     },
   });
 }

@@ -52,11 +52,12 @@ model Category {
 }
 
 model Duration {
-  id        Int      @id @default(autoincrement())
-  duration  String   @db.VarChar(255)
-  day_count Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id          Int      @id @default(autoincrement())
+  duration    String   @db.VarChar(255)
+  day_count   Int
+  month_count Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   bookings          Booking[]
   roomtypedurations RoomTypeDuration[]
@@ -70,10 +71,13 @@ model Expense {
   description String   @db.VarChar(255)
   date        DateTime @db.Date
   category_id Int?
+  location_id Int?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
   categories Category? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  locations Location? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
   @@map("expenses")
 }
@@ -329,6 +333,7 @@ model Location {
   updatedAt DateTime @default(now()) @updatedAt
 
   rooms     Room[]
+  expenses Expense[]
 
   @@map("locations")
 }

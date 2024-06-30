@@ -1,0 +1,59 @@
+.overviewContainer {
+    @apply
+    p-4
+}
+
+.overviewHeaderContainer {
+    @apply
+    flex justify-between
+}
+
+.overviewDate {
+    @apply text-[#8094ae];
+}
+
+.overviewContent {
+    @apply
+    overflow-y-auto
+    flex
+    divide-x
+    *:px-6
+    first:*:pl-0
+    last:*:pr-0
+    ;
+}
+
+.contentItem {
+    @apply
+    min-w-[128px]
+    flex-shrink-0
+    flex
+    gap-x-6
+    items-center justify-between;
+}
+
+.itemText {
+    @apply
+    flex flex-col
+}
+
+.itemTextHead {
+    @apply
+    text-sm
+    text-[#8094ae]
+    ;
+}
+
+.itemTextTopic {
+    @apply
+    text-lg;
+}
+
+.itemValue {
+    @apply
+    text-4xl font-bold;
+}
+
+.itemValue > svg {
+    @apply w-6 h-6
+}

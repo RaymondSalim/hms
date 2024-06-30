@@ -1,6 +1,7 @@
 {
   "plugins": [
-    "@stylistic"
+    "@stylistic",
+    "@tanstack/eslint-plugin-query"
   ],
   "extends": "next/core-web-vitals",
   "rules": {

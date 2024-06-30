@@ -1,0 +1,60 @@
+.dashboardContainer {
+    @apply
+    p-8
+    text-header
+    select-none
+    ;
+}
+
+.dashboardContainer h2 {
+    @apply
+    text-xl font-medium
+    mb-4
+}
+
+.headerContainer {
+    @apply
+    w-full
+    flex
+    gap-x-8
+    mb-8;
+}
+
+.header {
+    @apply
+    text-2xl font-semibold;
+}
+
+.content,
+.overviewContent {
+    @apply
+    grid grid-cols-2
+    gap-8
+}
+
+.overviewContent {
+    @apply
+    *:rounded-2xl
+    *:bg-white
+    *:shadow-md
+    *:min-h-0
+    *:h-fit
+}
+
+.content > * {
+    @apply
+    flex flex-col
+    gap-y-8
+    *:rounded-2xl
+    *:bg-white
+    *:shadow-md
+    *:min-h-0
+    *:h-fit
+}
+
+.overviewContent {
+    @apply
+    mb-8
+    *:col-span-full
+}
+

@@ -1,0 +1,39 @@
+.incomeExpenseContainer {
+    @apply
+    p-4
+}
+
+.headerContainer {
+    @apply
+    flex
+    justify-between
+}
+
+.datePicker {
+    @apply
+    min-h-0 h-fit
+    border rounded-md
+    flex
+    divide-x
+}
+
+.datePickerItem {
+    @apply
+    px-2
+    py-2
+    text-xs
+    font-semibold
+    cursor-pointer
+    transition-colors ease-in-out duration-300
+}
+
+.datePickerItem.active {
+    @apply
+    bg-[#f4f6fa];
+}
+
+.incomeExpenseContent {
+    @apply
+    transition-all
+    min-h-0;
+}

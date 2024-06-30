@@ -1,0 +1,56 @@
+.eventsContainer {
+    @apply
+    p-4
+}
+
+.weeksContainer {
+    @apply
+    flex
+    flex-col
+    overflow-y-auto
+    h-96
+    gap-y-2
+}
+
+.dayContainer {
+    @apply
+    flex
+    gap-x-4
+    items-center
+    px-4
+    h-24
+    border
+    rounded-lg
+}
+
+.dateContainer {
+    @apply
+    flex flex-col
+    justify-center
+    min-w-[42px]
+    *:text-center
+}
+
+.day {
+    @apply text-sm;
+}
+
+.date {
+    @apply
+    text-3xl font-bold
+}
+
+.dayEventContainer {
+    @apply
+    flex
+    gap-x-4
+}
+
+.chipValue {
+    @apply
+    flex
+    divide-x
+    *:px-2
+    first:*:pl-0
+    last:*:pr-0
+}
