@@ -1,5 +1,6 @@
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {Booking} from "@prisma/client";
+import prisma from "@/app/_lib/primsa";
 
 export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>) {
   return prisma.booking.create({
