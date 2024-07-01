@@ -1,9 +1,23 @@
-import { FaBed, FaChartBar, FaCog, FaDatabase, FaFileInvoiceDollar, FaMoneyBill, FaTachometerAlt, FaUserFriends, FaUserPlus } from 'react-icons/fa';
+import {
+    FaBed,
+    FaChartBar,
+    FaCog,
+    FaDatabase,
+    FaFileInvoiceDollar,
+    FaMoneyBill,
+    FaTachometerAlt,
+    FaUserFriends,
+    FaUserPlus
+} from 'react-icons/fa';
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
-import {auth, signIn} from "@/app/_lib/auth";
+import {Session} from 'next-auth';
 
-export default async function Sidebar() {
+export interface SidebarProps {
+    session: Session | null
+}
+
+export default function Sidebar({session}: SidebarProps) {
     const menuItems = [
         { name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt /> },
         {
@@ -31,9 +45,6 @@ export default async function Sidebar() {
         { name: 'Guests', path: '/guests', icon: <FaUserFriends /> },
         { name: 'Settings', path: '/settings', icon: <FaCog /> },
     ];
-    const session = await auth();
-
-    if (!session?.user) return signIn(undefined, {redirectTo: "/"});
 
     return (
       <div className={`${styles.sidebar}`}>
@@ -47,7 +58,7 @@ export default async function Sidebar() {
                       ))}
               </ul>
               <div className={styles.sidebarFooter}>
-                  <InteractiveUserDropdown user={session.user} />
+                  <InteractiveUserDropdown user={session?.user}/>
               </div>
           </div>
       </div>

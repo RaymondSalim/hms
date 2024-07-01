@@ -1,3 +1,5 @@
+"use server";
+
 import styles from "./dashboard.module.css";
 import Overview from "@/app/(internal)/dashboard/_components/overview";
 import Events from "@/app/(internal)/dashboard/_components/events";
