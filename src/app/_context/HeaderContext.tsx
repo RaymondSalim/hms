@@ -2,27 +2,26 @@
 
 import React, {createContext, useState} from "react";
 
-export interface DashboardContextProps {
+export interface HeaderContextProps {
   locationID?: number,
-
   setLocationID: (locationID: number) => void,
 }
 
-export const DashboardContext = createContext<DashboardContextProps>({
+export const HeaderContext = createContext<HeaderContextProps>({
   locationID: 1,
   setLocationID: locationID => {
   }
 });
 
-export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
+export const HeaderProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
   const [locationID, setLocationID] = useState(1);
 
   return (
-    <DashboardContext.Provider
+    <HeaderContext.Provider
       value={{locationID, setLocationID}}>
       {children}
-    </DashboardContext.Provider>
+    </HeaderContext.Provider>
   );
 };
 
-export default DashboardProvider;
+export default HeaderProvider;
