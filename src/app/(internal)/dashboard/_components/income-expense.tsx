@@ -2,7 +2,7 @@
 
 import React, {useContext, useState} from "react";
 import styles from "./styles/incomeExpense.module.css";
-import {DashboardContext} from "@/app/_context/DashboardContext";
+import {HeaderContext} from "@/app/_context/HeaderContext";
 import {
   CategoryScale,
   Chart as ChartJS,
@@ -39,7 +39,7 @@ enum Period {
 }
 
 export default function IncomeExpense() {
-  const dashboardContext = useContext(DashboardContext);
+  const dashboardContext = useContext(HeaderContext);
   const [period, setPeriod] = useState<Period>(Period.ONE_YEAR);
   const {data, isLoading, isSuccess} = useQuery({
     queryKey: ['dashboard.incomeExpense', dashboardContext.locationID, period],

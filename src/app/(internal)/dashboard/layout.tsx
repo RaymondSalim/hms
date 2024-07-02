@@ -1,30 +1,22 @@
 "use client";
 
-import React, {ReactNode, useState} from "react";
-import {DashboardContext} from "@/app/_context/DashboardContext";
-import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {PropsWithChildren, useContext, useEffect} from "react";
+import {HeaderContext} from "@/app/_context/HeaderContext";
+import Link from "next/link";
 
-export default function Layout({children}: { children: ReactNode }) {
-  const [locationID, setLocationID] = useState(1);
-  const [queryClient] = React.useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            // With SSR, we usually want to set some default staleTime
-            // above 0 to avoid refetching immediately on the client
-            staleTime: 60 * 1000,
-          },
-        },
-      }),
-  );
+export default function Layout({children}: PropsWithChildren) {
+  const headerContext = useContext(HeaderContext);
+
+  useEffect(() => {
+    headerContext.setTitle("Dashboard");
+    headerContext.setPaths([
+      <Link key={"dashboard"} href={"/dashboard"}>Dashboard</Link>
+    ]);
+  }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <DashboardContext.Provider
-        value={{locationID, setLocationID}}>
-        {children}
-      </DashboardContext.Provider>
-    </QueryClientProvider>
+    <>
+      {children}
+    </>
   );
 }

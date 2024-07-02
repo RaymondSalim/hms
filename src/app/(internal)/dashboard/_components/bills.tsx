@@ -2,7 +2,7 @@
 
 import styles from "./styles/bills.module.css";
 import React, {useContext, useMemo, useState} from "react";
-import {DashboardContext} from "@/app/_context/DashboardContext";
+import {HeaderContext} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
 import {getBills, getDurations} from "@/app/_db/dashboard";
 import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/react-table";
@@ -11,7 +11,7 @@ import {AiOutlineLoading} from "react-icons/ai";
 import TanTable from "@/app/_components/tanTable";
 
 export default function Bills() {
-  const dashboardContext = useContext(DashboardContext);
+  const dashboardContext = useContext(HeaderContext);
   const [durationID, setDurationID] = useState<number | undefined>(undefined);
 
   const {data: durationData, isSuccess: durationIsSuccess} = useQuery({

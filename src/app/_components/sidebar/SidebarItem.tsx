@@ -17,7 +17,6 @@ interface SidebarItemProps {
 }
 
 export function SidebarItem({ name, path, icon, children }: SidebarItemProps) {
-  "use client";
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleDropdown = () => {
