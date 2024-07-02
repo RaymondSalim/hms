@@ -11,9 +11,6 @@ export default async function DashboardPage() {
   return (
     <>
       <div className={styles.dashboardContainer}>
-        <div className={styles.headerContainer}>
-          <h1 className={styles.header}>Dashboard</h1>
-        </div>
         <div className={styles.overviewContent}>
           <Overview/>
         </div>

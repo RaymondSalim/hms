@@ -4,11 +4,11 @@ import Sidebar from "@/app/_components/sidebar/Sidebar";
 import styles from "@/app/(internal)/styles/layout.module.css";
 import React, {useEffect, useState} from "react";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {HeaderProvider} from "@/app/_context/HeaderContext";
 import {signIn, useSession} from "next-auth/react";
+import Header from "@/app/_components/header/header";
 
 export default function Layout({children}: {children?: React.ReactNode}) {
-  const [locationID, setLocationID] = useState(1);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -33,17 +33,17 @@ export default function Layout({children}: {children?: React.ReactNode}) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <HeaderContext.Provider
-        value={{locationID, setLocationID}}>
+      <HeaderProvider>
         <>
           <nav>
             <Sidebar session={session}/>
           </nav>
           <main className={styles.content}>
+            <Header/>
             {children}
           </main>
         </>
-      </HeaderContext.Provider>
+      </HeaderProvider>
     </QueryClientProvider>
   );
 }
