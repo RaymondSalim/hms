@@ -1,0 +1,27 @@
+.header {
+    @apply
+    text-2xl
+    font-semibold
+    text-header;
+}
+
+.headerTitleContainer {
+}
+
+.breadcrumbsLocationContainer {
+    @apply
+    flex
+    flex-row
+    gap-x-4
+    justify-between
+    items-center
+    mb-8
+}
+
+.breadcrumbs {
+    @apply
+    bg-transparent
+    !px-0
+    !w-full
+}
+

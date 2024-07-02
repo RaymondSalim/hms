@@ -1,0 +1,27 @@
+.locationContainer {
+    @apply
+    flex
+    flex-col
+    items-start
+}
+
+.locationName {
+    @apply
+    font-medium
+}
+
+.locationAddress {
+    @apply
+    overflow-ellipsis
+    font-light
+    text-sm
+    text-[#8094ae]
+}
+
+.button {
+    @apply
+    flex
+    flex-row
+    gap-x-2
+    items-center
+}
