@@ -14,11 +14,11 @@ import styles from "@/app/(internal)/data-center/locations/components/searchBarA
 import {Button, Input} from "@material-tailwind/react";
 import {FaPlus} from "react-icons/fa6";
 
-export interface LocationTableProps {
+export interface LocationsContentProps {
   locations: Location[]
 }
 
-export function LocationTable({locations}: LocationTableProps) {
+export function LocationsContent({locations}: LocationsContentProps) {
   const [searchValue, setSearchValue] = useState("");
 
   const columnHelper = createColumnHelper<Location>();
