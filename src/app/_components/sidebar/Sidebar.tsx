@@ -27,7 +27,7 @@ export default function Sidebar({session}: SidebarProps) {
             children: [
                 { name: 'Administrators', path: '/data-center/administrators' },
                 { name: 'Normal Users', path: '/data-center/normal-users' },
-                { name: 'Property Locations', path: '/data-center/property-locations' },
+                {name: 'Property Locations', path: '/data-center/locations'},
                 { name: 'Email Settings', path: '/data-center/email-settings' },
                 { name: 'Rooms', path: '/data-center/rooms' },
                 { name: 'Penalties', path: '/data-center/penalties' },
