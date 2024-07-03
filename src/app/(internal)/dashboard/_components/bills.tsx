@@ -8,7 +8,7 @@ import {getBills, getDurations} from "@/app/_db/dashboard";
 import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Button} from "@material-tailwind/react";
 import {AiOutlineLoading} from "react-icons/ai";
-import TanTable from "@/app/_components/tanTable";
+import TanTable from "@/app/_components/tanTable/tanTable";
 
 export default function Bills() {
   const dashboardContext = useContext(HeaderContext);
