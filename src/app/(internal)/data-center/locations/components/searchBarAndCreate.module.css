@@ -1,0 +1,22 @@
+.searchBarAndCreate {
+    @apply
+    flex
+    gap-x-4
+}
+
+.input {
+    @apply
+    flex-grow
+}
+
+.btn {
+    @apply
+    flex-shrink-0
+    flex
+    gap-x-3
+    items-center
+}
+
+.btn > svg {
+    @apply w-4 h-4
+}
