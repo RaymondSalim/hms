@@ -10,7 +10,6 @@ import Link from "next/link";
 
 export default function Header({children}: PropsWithChildren) {
   const headerContext = useContext(HeaderContext);
-
   return (
     <div className={"p-8 pb-0"}>
       <div className={styles.breadcrumbsLocationContainer}>
@@ -20,8 +19,11 @@ export default function Header({children}: PropsWithChildren) {
           </Link>
           {headerContext.paths.map((value, index, array) => value)}
         </Breadcrumbs>
-        {/*@ts-ignore*/}
-        <LocationPicker setLocationID={headerContext.setLocationID} locationID={headerContext.locationID}/>
+        {
+          headerContext.showLocationPicker &&
+          /*@ts-ignore*/
+            <LocationPicker setLocationID={headerContext.setLocationID} locationID={headerContext.locationID}/>
+        }
       </div>
       <div className={styles.headerTitleContainer}>
         <span className={styles.header}>{headerContext.title}</span>

@@ -6,11 +6,13 @@ export interface HeaderContextProps {
   locationID?: number,
   title?: string,
   show: boolean,
+  showLocationPicker: boolean,
   paths: ReactNode[]
 
   setLocationID: (locationID: number) => void,
   setTitle: (title: string) => void,
   setShow: (show: boolean) => void,
+  setShowLocationPicker: (show: boolean) => void,
   setPaths: (setPaths: ReactNode[]) => void,
 }
 
@@ -18,6 +20,7 @@ export const HeaderContext = createContext<HeaderContextProps>({
   locationID: 1,
   title: "",
   show: true,
+  showLocationPicker: true,
   paths: [],
 
   setLocationID: locationID => {
@@ -25,6 +28,8 @@ export const HeaderContext = createContext<HeaderContextProps>({
   setTitle: (title: string) => {
   },
   setShow: (show: boolean) => {
+  },
+  setShowLocationPicker: (show: boolean) => {
   },
   setPaths: (setPaths: ReactNode[]) => {
   }
@@ -37,6 +42,7 @@ export const HeaderProvider: React.FC<{ children: React.ReactNode, props?: Parti
   const [locationID, setLocationID] = useState(1);
   const [title, setTitle] = useState("");
   const [show, setShow] = useState(true);
+  const [showLocationPicker, setShowLocationPicker] = useState(true);
   const [paths, setPaths] = useState<ReactNode[]>([]);
 
   return (
@@ -48,6 +54,8 @@ export const HeaderProvider: React.FC<{ children: React.ReactNode, props?: Parti
         setTitle: props?.setTitle ?? setTitle,
         show: props?.show ?? show,
         setShow: props?.setShow ?? setShow,
+        showLocationPicker: props?.showLocationPicker ?? showLocationPicker,
+        setShowLocationPicker: props?.setShowLocationPicker ?? setShowLocationPicker,
         paths: props?.paths ?? paths,
         setPaths: props?.setPaths ?? setPaths
       }}>
