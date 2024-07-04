@@ -30,7 +30,6 @@ export function LocationsContent({locations}: LocationsContentProps) {
     mutationFn: upsertLocationAction,
     onSuccess: (resp) => {
       if (resp.success) {
-        console.group("success");
         setLocationsState(prevState => {
           let newArr = [...prevState];
           let index = newArr.findIndex(l => l.id == resp.success!.id);
@@ -41,7 +40,6 @@ export function LocationsContent({locations}: LocationsContentProps) {
           }
           return newArr;
         });
-        console.groupEnd();
       }
 
       setActiveLocation(undefined);
