@@ -1,7 +1,7 @@
 "use server";
 
 import {Location} from "@prisma/client";
-import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
+import {OmitIDTypeAndTimestamp, OmitTimestamp, PartialBy} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 
 export async function getLocations(id?: number, limit?: number, offset?: number) {
@@ -35,6 +35,22 @@ export async function updateLocationByID(id: number, locationData: OmitIDTypeAnd
   });
 }
 
+export async function upsertLocation(location: PartialBy<OmitTimestamp<Location>, "id">) {
+  return prisma.location.upsert({
+    where: {
+      id: location.id || 0,
+    },
+    update: {
+      id: undefined,
+      ...location
+    },
+    create: {
+      id: undefined,
+      ...location
+    }
+  });
+}
+
 export async function deleteLocation(id: number) {
   return prisma.location.delete({
     where: {
@@ -52,6 +68,9 @@ export async function getLocationById(id: number) {
 export async function getAllLocations(limit?: number, offset?: number) {
   return prisma.location.findMany({
     skip: offset,
-    take: limit
+    take: limit,
+    orderBy: {
+      id: 'asc'
+    }
   });
 }

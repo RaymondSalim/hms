@@ -10,7 +10,7 @@ import {Button, Chip} from "@material-tailwind/react";
 import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {colors} from "@material-tailwind/react/types/generic";
 import {AiOutlineLoading} from "react-icons/ai";
-import TanTable from "@/app/_components/tanTable";
+import TanTable from "@/app/_components/tanTable/tanTable";
 
 const fallbackData: never[] = [];
 

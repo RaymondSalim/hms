@@ -1,8 +1,10 @@
-import { locationObject, locationObjectWithID } from "@/app/_lib/zod/locations/zod";
-import { number, object, typeToFlattenedError } from "zod";
-import { OmitIDTypeAndTimestamp } from "@/app/_db/db";
-import { Location } from "@prisma/client";
-import {createLocation, deleteLocation, updateLocationByID} from "@/app/_db/location";
+"use server";
+
+import {locationObject, locationObjectWithID, locationObjectWithOptionalID} from "@/app/_lib/zod/locations/zod";
+import {number, object, typeToFlattenedError} from "zod";
+import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
+import {Location} from "@prisma/client";
+import {createLocation, deleteLocation, updateLocationByID, upsertLocation} from "@/app/_db/location";
 
 export type LocationActionsType<T = OmitIDTypeAndTimestamp<Location>> = {
   success?: Location,
@@ -69,9 +71,33 @@ export async function updateLocationAction(prevState: LocationActionsType, formD
   }
 }
 
-export async function deleteLocationAction(prevState: LocationActionsType<Pick<Location, "id">>, formData: FormData): Promise<LocationActionsType<Pick<Location, "id">>> {
+export async function upsertLocationAction(locationData: Partial<Location>): Promise<LocationActionsType> {
+  const {success, error, data} = locationObjectWithOptionalID.safeParse(locationData);
+
+  if (!success) {
+    return {
+      errors: error?.flatten()
+    };
+  }
+
+  try {
+    let res = await upsertLocation(data);
+
+    return {
+      success: res
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      failure: "error"
+    };
+  }
+}
+
+export async function deleteLocationAction(id: number): Promise<LocationActionsType<Pick<Location, "id">>> {
   const { success, error, data } = object({ id: number().positive() }).safeParse({
-    id: formData.get('id'),
+    id: id
   });
 
   if (!success) {
