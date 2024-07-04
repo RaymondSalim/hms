@@ -253,7 +253,7 @@ model Setting {
 
 model SiteUser {
   id            String    @id @default(cuid())
-  name          String?
+  name String
   email         String    @unique
   emailVerified DateTime?
   password      String
