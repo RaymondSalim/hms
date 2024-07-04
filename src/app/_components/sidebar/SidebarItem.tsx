@@ -97,8 +97,8 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
         onBlur={handleBlur}
       >
         <div className={styles.userInfo}>
-          <span>{user.name}</span>
-          <span>{user.email}</span>
+          <span>{user?.name}</span>
+          <span>{user?.email}</span>
         </div>
         <ul className={styles.dropdownList}>
           <li>
