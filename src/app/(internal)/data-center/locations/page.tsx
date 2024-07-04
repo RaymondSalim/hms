@@ -1,5 +1,5 @@
 import {getAllLocations} from "@/app/_db/location";
-import {LocationsContent} from "@/app/(internal)/data-center/locations/components/table";
+import {LocationsContent} from "@/app/(internal)/data-center/locations/content";
 import styles from "./location.module.css";
 
 export default async function LocationsPage() {
