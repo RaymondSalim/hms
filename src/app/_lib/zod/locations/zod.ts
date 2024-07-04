@@ -8,3 +8,7 @@ export const locationObject = object({
 export const locationObjectWithID = locationObject.extend({
   id: number().positive("ID must be a positive number"),
 });
+
+export const locationObjectWithOptionalID = locationObject.extend({
+  id: number().positive("ID must be a positive number").optional(),
+});
