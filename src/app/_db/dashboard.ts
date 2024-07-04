@@ -38,7 +38,8 @@ export async function getOverviewData(locationID?: number) {
     where: {
       roomstatuses: {
         id: 1,
-      }
+      },
+      location_id: locationID,
     }
   });
 
@@ -46,7 +47,8 @@ export async function getOverviewData(locationID?: number) {
     where: {
       roomstatuses: {
         id: 2,
-      }
+      },
+      location_id: locationID,
     }
   });
 
