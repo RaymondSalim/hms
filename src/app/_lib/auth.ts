@@ -37,6 +37,8 @@ const providers: Provider[] = [
         const match = await bcrypt.compare(password, user.password);
         if (!match) throw new InvalidCredentialsError();
 
+        // @ts-ignore
+        delete user.password;
         return user;
       } catch (error: any) {
         if (error instanceof InvalidCredentialsError || error instanceof ZodError) {} else {
@@ -82,6 +84,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return urlObj.toString();
       }
       return baseUrl;
-    }
+    },
+    async jwt({token, user}) {
+      if (user) {
+        token.user = user;
+      }
+
+      return token;
+    },
+    async session({session, token}) {
+      // @ts-ignore
+      session.user.id = token.user.id;
+      return session;
+    },
   }
 });
