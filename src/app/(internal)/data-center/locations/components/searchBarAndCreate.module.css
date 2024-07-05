@@ -2,6 +2,7 @@
     @apply
     flex
     gap-x-4
+    mb-4
 }
 
 .input {
