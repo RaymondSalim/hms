@@ -19,6 +19,8 @@ export default function TanTable({tanTable}: TanTableProps) {
           {headerGroup.headers.map(header => (
             <th
               key={header.id}
+              colSpan={header.colSpan}
+              style={{width: `${header.getSize()}px`}}
               className={`${styles.th} ${header.column.getCanSort() ? "cursor-pointer" : ""}`}
               onClick={header.column.getToggleSortingHandler()}
             >
