@@ -119,7 +119,7 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
         </ul>
       </motion.div>
       <div className={styles.footerOptions}>
-        <div title="Logout" className={styles.logoutBtn} onClick={() => signOut()}>
+        <div title="Logout" className={styles.logoutBtn} onClick={() => signOut({callbackUrl: "/login"})}>
           <CiLogout />
         </div>
       </div>
