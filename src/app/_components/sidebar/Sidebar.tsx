@@ -25,7 +25,6 @@ export default function Sidebar({session}: SidebarProps) {
             path: '/data-center',
             icon: <FaDatabase />,
             children: [
-                { name: 'Administrators', path: '/data-center/administrators' },
                 { name: 'Normal Users', path: '/data-center/normal-users' },
                 {name: 'Property Locations', path: '/data-center/locations'},
                 { name: 'Email Settings', path: '/data-center/email-settings' },
@@ -43,7 +42,14 @@ export default function Sidebar({session}: SidebarProps) {
         { name: 'Expenses', path: '/expenses', icon: <FaFileInvoiceDollar /> },
         { name: 'Reports', path: '/reports', icon: <FaChartBar /> },
         { name: 'Guests', path: '/guests', icon: <FaUserFriends /> },
-        { name: 'Settings', path: '/settings', icon: <FaCog /> },
+        {
+            name: 'Settings',
+            path: '/settings',
+            icon: <FaCog/>,
+            children: [
+                {name: 'Site Users', path: '/settings/users'},
+            ]
+        },
     ];
 
     return (
