@@ -1,38 +1,19 @@
-"use client";
-
 import Sidebar from "@/app/_components/sidebar/Sidebar";
 import styles from "@/app/(internal)/styles/layout.module.css";
-import React, {useEffect, useState} from "react";
-import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import React from "react";
 import {HeaderProvider} from "@/app/_context/HeaderContext";
-import {signIn, useSession} from "next-auth/react";
 import Header from "@/app/_components/header/header";
+import QueryClientProviderWrapper from "@/app/(internal)/_providers/queryClientProvider";
+import {auth} from "@/app/_lib/auth";
+import {redirect} from "next/navigation";
 
-export default function Layout({children}: {children?: React.ReactNode}) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            // With SSR, we usually want to set some default staleTime
-            // above 0 to avoid refetching immediately on the client
-            staleTime: 60 * 1000,
-          },
-        },
-      }),
-  );
+export default async function Layout({children}: { children?: React.ReactNode }) {
+  const session = await auth();
 
-  const {data: session, status} = useSession();
-
-  useEffect(() => {
-    if (status == "unauthenticated" || !session?.user) {
-      signIn(undefined, {redirectTo: "/"});
-    }
-
-  }, [status]);
+  if (!session) redirect("/login");
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProviderWrapper>
       <HeaderProvider>
         <>
           <nav>
@@ -44,6 +25,6 @@ export default function Layout({children}: {children?: React.ReactNode}) {
           </main>
         </>
       </HeaderProvider>
-    </QueryClientProvider>
+    </QueryClientProviderWrapper>
   );
 }
