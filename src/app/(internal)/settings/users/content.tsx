@@ -10,11 +10,11 @@ import {formatToDateTime} from "@/app/_lib/util";
 import {useSession} from "next-auth/react";
 
 export interface UsersContentProps {
-  users: SiteUser[]
+  users: Omit<SiteUser, "password">[]
 }
 
 export default function UsersContent({users}: UsersContentProps) {
-  const columnHelper = createColumnHelper<SiteUser>();
+  const columnHelper = createColumnHelper<Omit<SiteUser, "password">>();
   const columns = [
     columnHelper.accessor(row => row.id, {
       header: "ID",
@@ -40,7 +40,7 @@ export default function UsersContent({users}: UsersContentProps) {
 
   return (
     <div className={"p-8"}>
-      <TableContent<SiteUser>
+      <TableContent<Omit<SiteUser, "password">>
         name={"User"}
         initialContents={users}
         columns={columns}
