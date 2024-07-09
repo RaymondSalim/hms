@@ -79,6 +79,7 @@ export function GuestForm(props: GuestFormProps) {
               </Typography>
             </label>
             <PhoneInput
+              phoneNumber={guestData.phone}
               setPhoneNumber={(p) => setGuestData(prevGuest => ({...prevGuest, phone: p}))}
               type="tel"
               placeholder="Mobile Number"
@@ -98,7 +99,7 @@ export function GuestForm(props: GuestFormProps) {
                 Tenant
               </Typography>
             </label>
-            <TenantSelect/>
+            <TenantSelect setTenantId={(v) => setGuestData(prevGuest => ({...prevGuest, tenant_id: v}))}/>
           </div>
           {
             props.mutationResponse?.failure &&
@@ -127,7 +128,11 @@ type Option = {
   label: string
 }
 
-export function TenantSelect() {
+interface TenantSelectProps {
+  setTenantId: (value: string) => void;
+}
+
+export function TenantSelect({setTenantId}: TenantSelectProps) {
   const headerContext = useContext(HeaderContext);
 
   const {data, isLoading, isSuccess} = useQuery({
@@ -144,7 +149,8 @@ export function TenantSelect() {
         value: t.id,
         label: t.name + (t.bookings[0]?.rooms?.room_number ? ` | ${t.bookings[0]?.rooms?.room_number}` : ''),
         name: t.name,
-        room_number: t.bookings[0]?.rooms?.room_number
+        room_number: t.bookings[0]?.rooms?.room_number,
+
       }));
 
       if (inputValue.length <= 2) {
@@ -162,7 +168,9 @@ export function TenantSelect() {
 
   return (
     <AsyncSelect
+      onChange={(n) => n && setTenantId(n.value)}
       isLoading={isLoading}
+      isClearable={true}
       cacheOptions
       loadOptions={loadOptions}
       placeholder={"Enter Tenant Name or Room Name"}
