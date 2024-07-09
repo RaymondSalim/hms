@@ -2,10 +2,14 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {Guest} from "@prisma/client";
-import React, {useState} from "react";
+import React, {useContext, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {GuestWithTenant} from "@/app/_db/guest";
 import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
+import {useQuery} from "@tanstack/react-query";
+import {getTenantsWithRoomNumber} from "@/app/_db/tenant";
+import AsyncSelect from "react-select/async";
+import {HeaderContext} from "@/app/_context/HeaderContext";
 
 interface GuestFormProps extends TableFormProps<GuestWithTenant> {
 }
@@ -88,27 +92,14 @@ export function GuestForm(props: GuestFormProps) {
               }}
             />
           </div>
-          {/*TODO!*/}
-          {/*<div>*/}
-          {/*    <label htmlFor="tenant">*/}
-          {/*        <Typography variant="h6" color="blue-gray">*/}
-          {/*            Tenant*/}
-          {/*        </Typography>*/}
-          {/*    </label>*/}
-          {/*    <Input*/}
-          {/*        variant="outlined"*/}
-          {/*        name="password"*/}
-          {/*        type={"password"}*/}
-          {/*        value={guestData.tenant_id}*/}
-          {/*        onChange={(e) => setGuestData(prevGuest => ({...prevGuest, tenant_id: e.target.value}))}*/}
-          {/*        size="lg"*/}
-          {/*        error={!!fieldErrors.password}*/}
-          {/*        className={`${!!fieldErrors.password ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}*/}
-          {/*        labelProps={{*/}
-          {/*          className: "before:content-none after:content-none",*/}
-          {/*        }}*/}
-          {/*    />*/}
-          {/*</div>*/}
+          <div>
+            <label htmlFor="tenant">
+              <Typography variant="h6" color="blue-gray">
+                Tenant
+              </Typography>
+            </label>
+            <TenantSelect/>
+          </div>
           {
             props.mutationResponse?.failure &&
               <Typography variant="h6" color="blue-gray" className="-mb-4">
@@ -128,5 +119,53 @@ export function GuestForm(props: GuestFormProps) {
 
       </form>
     </div>
+  );
+}
+
+type Option = {
+  value: string,
+  label: string
+}
+
+export function TenantSelect() {
+  const headerContext = useContext(HeaderContext);
+
+  const {data, isLoading, isSuccess} = useQuery({
+    queryKey: ['tenant.select', headerContext.locationID],
+    queryFn: () => getTenantsWithRoomNumber(headerContext.locationID),
+  });
+
+  const loadOptions = (
+    inputValue: string,
+    callback: (options: Option[]) => void
+  ) => {
+    if (isSuccess) {
+      let options = data?.map(t => ({
+        value: t.id,
+        label: t.name + (t.bookings[0]?.rooms?.room_number ? ` | ${t.bookings[0]?.rooms?.room_number}` : ''),
+        name: t.name,
+        room_number: t.bookings[0]?.rooms?.room_number
+      }));
+
+      if (inputValue.length <= 2) {
+        callback(options);
+        return;
+      }
+
+      let filtered = options?.filter(o => (
+        o.name.toLowerCase().includes(inputValue.toLowerCase()) || o.room_number?.toLowerCase().includes(inputValue.toLowerCase())
+      ));
+
+      callback(filtered);
+    }
+  };
+
+  return (
+    <AsyncSelect
+      isLoading={isLoading}
+      cacheOptions
+      loadOptions={loadOptions}
+      placeholder={"Enter Tenant Name or Room Name"}
+    />
   );
 }
