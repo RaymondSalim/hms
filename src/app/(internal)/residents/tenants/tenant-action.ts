@@ -1,15 +1,15 @@
 "use server";
 
-import {Guest} from "@prisma/client";
+import {Tenant} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
-import {number, object} from "zod";
-import {guestSchemaWithOptionalID} from "@/app/_lib/zod/guests/zod";
-import {createGuest, deleteGuest, GuestWithTenant, updateGuestByID} from "@/app/_db/guest";
+import {object, string} from "zod";
+import {createTenant, deleteTenant, TenantWithRooms, updateTenantByID} from "@/app/_db/tenant";
+import {tenantSchemaWithOptionalID} from "@/app/_lib/zod/tenant/zod";
 
-// Action to update guests
-export async function upsertGuestAction(guestData: Partial<Guest>): Promise<GenericActionsType<GuestWithTenant>> {
-  const {success, data, error} = guestSchemaWithOptionalID.safeParse(guestData);
+// Action to update tenants
+export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<GenericActionsType<TenantWithRooms>> {
+  const {success, data, error} = tenantSchemaWithOptionalID.safeParse(tenantData);
 
   if (!success) {
     return {
@@ -21,9 +21,9 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
     let res;
     // Update
     if (data?.id) {
-      res = await updateGuestByID(data.id, data);
+      res = await updateTenantByID(data.id, data);
     } else {
-      res = await createGuest(data);
+      res = await createTenant(data);
     }
 
     return {
@@ -43,8 +43,8 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
   }
 }
 
-export async function deleteGuestAction(id: string): Promise<GenericActionsType<GuestWithTenant>> {
-  const parsedData = object({id: number().positive()}).safeParse({
+export async function deleteTenantAction(id: string): Promise<GenericActionsType<TenantWithRooms>> {
+  const parsedData = object({id: string().min(1, "ID is required")}).safeParse({
     id: id,
   });
 
@@ -55,14 +55,14 @@ export async function deleteGuestAction(id: string): Promise<GenericActionsType<
   }
 
   try {
-    let res = await deleteGuest(parsedData.data.id);
+    let res = await deleteTenant(parsedData.data.id);
     return {
       success: res,
     };
   } catch (error) {
     console.error(error);
     return {
-      failure: "Error deleting guest",
+      failure: "Error deleting tenant",
     };
   }
 }

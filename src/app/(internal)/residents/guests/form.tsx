@@ -2,7 +2,7 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {Guest} from "@prisma/client";
-import React, {useContext, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {GuestWithTenant} from "@/app/_db/guest";
 import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
@@ -79,6 +79,7 @@ export function GuestForm(props: GuestFormProps) {
               </Typography>
             </label>
             <PhoneInput
+              phoneNumber={guestData.phone}
               setPhoneNumber={(p) => setGuestData(prevGuest => ({...prevGuest, phone: p}))}
               type="tel"
               placeholder="Mobile Number"
@@ -98,7 +99,8 @@ export function GuestForm(props: GuestFormProps) {
                 Tenant
               </Typography>
             </label>
-            <TenantSelect/>
+            <TenantSelect tenantId={guestData.tenant_id}
+                          setTenantId={(v) => setGuestData(prevGuest => ({...prevGuest, tenant_id: v}))}/>
           </div>
           {
             props.mutationResponse?.failure &&
@@ -124,11 +126,20 @@ export function GuestForm(props: GuestFormProps) {
 
 type Option = {
   value: string,
-  label: string
+  label: string,
+  name: string,
+  room_number?: string
 }
 
-export function TenantSelect() {
+interface TenantSelectProps {
+  tenantId?: string
+  setTenantId: (value?: string) => void;
+}
+
+export function TenantSelect(props: TenantSelectProps) {
   const headerContext = useContext(HeaderContext);
+  const [initialValue, setInitialValue] = useState<Option | null>(null);
+  const [options, setOptions] = useState<Option[]>([]);
 
   const {data, isLoading, isSuccess} = useQuery({
     queryKey: ['tenant.select', headerContext.locationID],
@@ -140,13 +151,6 @@ export function TenantSelect() {
     callback: (options: Option[]) => void
   ) => {
     if (isSuccess) {
-      let options = data?.map(t => ({
-        value: t.id,
-        label: t.name + (t.bookings[0]?.rooms?.room_number ? ` | ${t.bookings[0]?.rooms?.room_number}` : ''),
-        name: t.name,
-        room_number: t.bookings[0]?.rooms?.room_number
-      }));
-
       if (inputValue.length <= 2) {
         callback(options);
         return;
@@ -160,11 +164,37 @@ export function TenantSelect() {
     }
   };
 
+  useEffect(() => {
+    if (props.tenantId) {
+      let initial = options.find(o => o.value == props.tenantId);
+      setInitialValue(initial ?? null);
+    }
+  }, [options]);
+
+  useEffect(() => {
+    if (isSuccess) {
+      let options = data?.map(t => ({
+        value: t.id,
+        label: t.name + (t.bookings[0]?.rooms?.room_number ? ` | ${t.bookings[0]?.rooms?.room_number}` : ''),
+        name: t.name,
+        room_number: t.bookings[0]?.rooms?.room_number,
+      }));
+
+      setOptions(options);
+    }
+  }, [data, isSuccess]);
+
   return (
     <AsyncSelect
+      onChange={(n) => {
+        setInitialValue(n);
+        props.setTenantId(n?.value);
+      }}
       isLoading={isLoading}
+      isClearable={true}
       cacheOptions
       loadOptions={loadOptions}
+      value={initialValue}
       placeholder={"Enter Tenant Name or Room Name"}
     />
   );

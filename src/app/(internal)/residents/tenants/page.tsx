@@ -1,28 +1,28 @@
 "use client";
 
 import React, {useContext, useEffect} from "react";
-import {getGuests} from "@/app/_db/guest";
-import GuestsContent from "@/app/(internal)/residents/guests/content";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
+import {getTenantsWithRooms} from "@/app/_db/tenant";
+import TenantsContent from "@/app/(internal)/residents/tenants/content";
 
-export default function GuestsPage() {
+export default function TenantsPage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
-    headerContext.setTitle("Guests");
+    headerContext.setTitle("Tenants");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
       <Link key={"residents"} href={"/residents"}>Residents</Link>,
-      <Link key={"guests"} href={"/guests"}>Guests</Link>
+      <Link key={"tenants"} href={"/tenants"}>Tenants</Link>
     ]);
   }, []);
 
-  const {data: guests, isLoading, isSuccess} = useQuery({
-    queryKey: ['guests', headerContext.locationID],
-    queryFn: () => getGuests(undefined, headerContext.locationID),
+  const {data: tenants, isLoading, isSuccess} = useQuery({
+    queryKey: ['tenants', headerContext.locationID],
+    queryFn: () => getTenantsWithRooms(undefined, headerContext.locationID, undefined, undefined),
   });
 
   return (
@@ -33,7 +33,7 @@ export default function GuestsPage() {
       }
       {
         isSuccess &&
-          <GuestsContent guests={guests}/>
+          <TenantsContent tenants={tenants}/>
       }
     </>
   );

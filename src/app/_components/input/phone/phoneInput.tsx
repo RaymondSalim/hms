@@ -1,19 +1,20 @@
 "use client";
 
 import React, {useEffect, useMemo, useState} from "react";
-import {useCountries, useCountriesFunctionType} from "use-react-countries";
+import {useCountries} from "use-react-countries";
 import {Button, Input, InputProps, Menu, MenuHandler, MenuItem, MenuList,} from "@material-tailwind/react";
+import {parsePhoneNumber} from "libphonenumber-js";
 
 export interface PhoneInputProps extends InputProps {
+  phoneNumber?: string | null;
   setPhoneNumber(pn: string): void
 }
 
 export function PhoneInput(props: PhoneInputProps) {
+  const [hasSetup, setHasSetup] = useState(false);
   const [number, setNumber] = useState("");
-  const {countries}: useCountriesFunctionType = useCountries();
-  const [country, setCountry] = React.useState(0);
-  const {name, flags, countryCallingCode} = countries[country];
 
+  const {countries} = useCountries();
   const sortedCountries = useMemo(() => {
     let tempArr = countries.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -29,8 +30,27 @@ export function PhoneInput(props: PhoneInputProps) {
     return tempArr;
   }, [countries]);
 
+  const [country, setCountry] = React.useState(0);
+  const {name, flags, countryCallingCode} = sortedCountries[country];
+
   useEffect(() => {
-    props.setPhoneNumber(`${countryCallingCode}${number}`);
+    if (props.phoneNumber) {
+      let phoneNumber = parsePhoneNumber(props.phoneNumber);
+      let countryIndex = sortedCountries.findIndex(c => {
+        return c.isoCountryCode == phoneNumber.country;
+      });
+      setNumber(phoneNumber.nationalNumber);
+      if (countryIndex != -1) {
+        setCountry(countryIndex);
+      }
+    }
+    setHasSetup(true);
+  }, []);
+
+  useEffect(() => {
+    if (hasSetup) {
+      props.setPhoneNumber(`${countryCallingCode}${number}`);
+    }
   }, [number, countryCallingCode]);
 
   return (
@@ -44,7 +64,7 @@ export function PhoneInput(props: PhoneInputProps) {
             className="flex h-10 items-center gap-2 rounded-r-none border border-r-0 border-blue-gray-200 bg-blue-gray-500/10 pl-3"
           >
             <img
-              src={flags.svg}
+              src={flags?.svg}
               alt={name}
               className="h-4 w-4 rounded-full object-cover"
             />
@@ -61,7 +81,7 @@ export function PhoneInput(props: PhoneInputProps) {
                 onClick={() => setCountry(index)}
               >
                 <img
-                  src={flags.svg}
+                  src={flags?.svg}
                   alt={name}
                   className="h-5 w-5 rounded-full object-cover"
                 />

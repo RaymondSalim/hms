@@ -4,18 +4,19 @@ import {createColumnHelper} from "@tanstack/react-table";
 import React from "react";
 import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {GuestWithTenant} from "@/app/_db/guest";
-import {GuestForm} from "@/app/(internal)/residents/guests/form";
-import {deleteGuestAction, upsertGuestAction} from "@/app/(internal)/residents/guests/guest-action";
+import {TenantWithRooms} from "@/app/_db/tenant";
+import {TenantForm} from "@/app/(internal)/residents/tenants/form";
+import {deleteTenantAction, upsertTenantAction} from "@/app/(internal)/residents/tenants/tenant-action";
 import Link from "next/link";
+import {useSearchParams} from "next/navigation";
 
 
-export interface GuestsContentProps {
-  guests: GuestWithTenant[]
+export interface TenantsContentProps {
+  tenants: TenantWithRooms[]
 }
 
-export default function GuestsContent({guests}: GuestsContentProps) {
-  const columnHelper = createColumnHelper<GuestWithTenant>();
+export default function TenantsContent({tenants}: TenantsContentProps) {
+  const columnHelper = createColumnHelper<TenantWithRooms>();
   const columns = [
     columnHelper.accessor(row => row.id, {
       header: "ID",
@@ -27,16 +28,16 @@ export default function GuestsContent({guests}: GuestsContentProps) {
     columnHelper.accessor(row => row.email, {
       header: "Email Address"
     }),
-    columnHelper.accessor(row => row.tenants.name, {
-      header: "Guest of",
+    columnHelper.accessor(row => row.bookings.length, {
+      header: "Bookings",
       cell: props => {
         return (
           <Link href={{
-            pathname: "/residents/tenants",
+            pathname: "/bookings",
             query: {
-              tenant_id: props.cell.row.original.tenant_id,
+              tenant_id: props.cell.row.original.id,
             }
-          }}>{props.cell.getValue()}</Link>
+          }}>{props.cell.getValue()} bookings</Link>
         );
       }
     }),
@@ -46,24 +47,27 @@ export default function GuestsContent({guests}: GuestsContentProps) {
     }),
   ];
 
+  const query = useSearchParams();
+
   return (
     <div className={"p-8"}>
-      <TableContent<GuestWithTenant>
-        name={"Guests"}
-        initialContents={guests}
+      <TableContent<TenantWithRooms>
+        name={"Tenants"}
+        initialContents={tenants}
+        initialSearchValue={query.get("tenant_id") ?? undefined}
         columns={columns}
         form={
           // @ts-ignore
-          <GuestForm/>
+          <TenantForm/>
         }
         searchPlaceholder={"Search by name or email address"}
         upsert={{
-          mutationFn: upsertGuestAction,
+          mutationFn: upsertTenantAction,
         }}
 
         delete={{
           // @ts-ignore
-          mutationFn: deleteGuestAction,
+          mutationFn: deleteTenantAction,
         }}
       />
     </div>
