@@ -1,3 +1,5 @@
+"use server";
+
 import {Guest, Prisma} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
@@ -16,9 +18,29 @@ export type GuestWithTenant = Prisma.GuestGetPayload<{
   }
 }>
 
-export async function getGuests(id?: number, limit?: number, offset?: number) {
+export async function getGuests(id?: number, locationID?: number, limit?: number, offset?: number) {
   return prisma.guest.findMany({
-    where: id ? {id} : undefined,
+    where: {
+      id: id,
+      tenants: {
+        OR: [
+          {
+            bookings: {
+              some: {
+                rooms: {
+                  location_id: locationID
+                }
+              }
+            }
+          },
+          {
+            bookings: {
+              none: {}
+            }
+          }
+        ],
+      }
+    },
     skip: offset,
     take: limit,
     include: {
