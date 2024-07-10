@@ -8,11 +8,7 @@ import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
 
-interface GuestsPageProps {
-  locationID?: number
-}
-
-export default function GuestsPage(props: GuestsPageProps) {
+export default function GuestsPage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {

@@ -8,11 +8,7 @@ import {AiOutlineLoading} from "react-icons/ai";
 import {getTenantsWithRooms} from "@/app/_db/tenant";
 import TenantsContent from "@/app/(internal)/residents/tenants/content";
 
-interface TenantsPageProps {
-  locationID?: number
-}
-
-export default function TenantsPage(props: TenantsPageProps) {
+export default function TenantsPage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
