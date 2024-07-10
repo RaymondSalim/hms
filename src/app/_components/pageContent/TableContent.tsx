@@ -27,6 +27,7 @@ export interface TableFormProps<T> {
 export interface TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> {
   name: string,
   initialContents: T[],
+  initialSearchValue?: string
   upsert: MutationOptions<_TReturn, DefaultError, Partial<T>>,
   delete: MutationOptions<_TReturn, DefaultError, string | number>,
   columns: ColumnDef<T, any>[],
@@ -38,7 +39,7 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
   const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState(props.initialSearchValue);
   const [activeContent, setActiveContent] = useState<T | undefined>(undefined);
   const [mutationResponse, setMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
 
