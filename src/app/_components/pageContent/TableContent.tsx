@@ -136,6 +136,10 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     }
   }, [dialogOpen]);
 
+  useEffect(() => {
+    setContentsState(props.initialContents);
+  }, [props.initialContents]);
+
   return (
     <>
       <div className={styles.searchBarAndCreate}>
