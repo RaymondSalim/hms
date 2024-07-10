@@ -2,26 +2,13 @@
 
 import {Guest} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
-import {getUserByID} from "@/app/_db/user";
-import {auth} from "@/app/_lib/auth";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {number, object} from "zod";
 import {guestSchemaWithOptionalID} from "@/app/_lib/zod/guests/zod";
 import {createGuest, deleteGuest, GuestWithTenant, updateGuestByID} from "@/app/_db/guest";
 
-// Action to update site users
+// Action to update guests
 export async function upsertGuestAction(guestData: Partial<Guest>): Promise<GenericActionsType<GuestWithTenant>> {
-  const session = await auth();
-
-  if (session && session.user) {
-    const currUser = await getUserByID(session.user.id);
-    if (currUser) {
-      if (currUser.role_id != 1) {
-        return {failure: "Unauthorized"};
-      }
-    }
-  }
-
   const {success, data, error} = guestSchemaWithOptionalID.safeParse(guestData);
 
   if (!success) {
