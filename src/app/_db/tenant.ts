@@ -1,14 +1,70 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
+import {Prisma, Tenant} from "@prisma/client";
+import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 
-export async function getTenants(id?: string, limit?: number, offset?: number, includeBookings = false) {
+export type TenantWithRooms = Prisma.TenantGetPayload<{
+  include: {
+    bookings: {
+      include: {
+        rooms: true
+      }
+    }
+  }
+}>;
+
+export async function getTenants(id?: string, locationID?: number, limit?: number, offset?: number) {
   return prisma.tenant.findMany({
-    where: id ? {id: id} : undefined,
+    where: {
+      id: id,
+      OR: [
+        {
+          bookings: {
+            some: {
+              rooms: {
+                location_id: locationID
+              }
+            }
+          }
+        },
+        {
+          bookings: {
+            none: {}
+          }
+        }
+      ],
+    },
+    skip: offset,
+    take: limit,
+  });
+}
+
+export async function getTenantsWithRooms(id?: string, locationID?: number, limit?: number, offset?: number) {
+  return prisma.tenant.findMany({
+    where: {
+      id: id,
+      OR: [
+        {
+          bookings: {
+            some: {
+              rooms: {
+                location_id: locationID
+              }
+            }
+          }
+        },
+        {
+          bookings: {
+            none: {}
+          }
+        }
+      ],
+    },
     skip: offset,
     take: limit,
     include: {
-      bookings: includeBookings && {
+      bookings: {
         include: {
           rooms: true
         },
@@ -46,4 +102,48 @@ export async function getTenantsWithRoomNumber(locationID?: number) {
       }
     }
   });
+}
+
+export async function createTenant(tenantData: OmitIDTypeAndTimestamp<Tenant>) {
+  return prisma.tenant.create({
+    data: tenantData,
+    include: {
+      bookings: {
+        include: {
+          rooms: true
+        }
+      }
+    }
+  })
+}
+
+export async function updateTenantByID(id: string, tenantData: OmitIDTypeAndTimestamp<Tenant>) {
+  return prisma.tenant.update({
+    data: {
+      id: undefined,
+      ...tenantData,
+    },
+    where: {id},
+    include: {
+      bookings: {
+        include: {
+          rooms: true
+        }
+      }
+    }
+  })
+}
+
+export async function deleteTenant(id: string) {
+  return prisma.tenant.delete({
+    where: {id},
+    include: {
+      bookings: {
+        include: {
+          rooms: true
+        }
+      }
+    }
+  })
+
 }
