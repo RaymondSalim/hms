@@ -31,12 +31,14 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
     columnHelper.accessor(row => row.bookings.length, {
       header: "Bookings",
       cell: props => {
-        return <Link href={{
-          pathname: "/bookings",
-          query: {
-            tenant_id: props.cell.row.original.id,
-          }
-        }}>{props.cell.getValue()} bookings</Link>
+        return (
+          <Link href={{
+            pathname: "/bookings",
+            query: {
+              tenant_id: props.cell.row.original.id,
+            }
+          }}>{props.cell.getValue()} bookings</Link>
+        );
       }
     }),
     columnHelper.accessor(row => row.createdAt, {

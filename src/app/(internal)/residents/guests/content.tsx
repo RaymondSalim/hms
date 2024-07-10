@@ -37,7 +37,7 @@ export default function GuestsContent({guests}: GuestsContentProps) {
               tenant_id: props.cell.row.original.tenant_id,
             }
           }}>{props.cell.getValue()}</Link>
-        )
+        );
       }
     }),
     columnHelper.accessor(row => row.createdAt, {

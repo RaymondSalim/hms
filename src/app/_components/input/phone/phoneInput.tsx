@@ -37,7 +37,7 @@ export function PhoneInput(props: PhoneInputProps) {
     if (props.phoneNumber) {
       let phoneNumber = parsePhoneNumber(props.phoneNumber);
       let countryIndex = sortedCountries.findIndex(c => {
-        return c.isoCountryCode == phoneNumber.country
+        return c.isoCountryCode == phoneNumber.country;
       });
       setNumber(phoneNumber.nationalNumber);
       if (countryIndex != -1) {

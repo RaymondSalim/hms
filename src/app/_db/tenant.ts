@@ -114,7 +114,7 @@ export async function createTenant(tenantData: OmitIDTypeAndTimestamp<Tenant>) {
         }
       }
     }
-  })
+  });
 }
 
 export async function updateTenantByID(id: string, tenantData: OmitIDTypeAndTimestamp<Tenant>) {
@@ -131,7 +131,7 @@ export async function updateTenantByID(id: string, tenantData: OmitIDTypeAndTime
         }
       }
     }
-  })
+  });
 }
 
 export async function deleteTenant(id: string) {
@@ -144,6 +144,5 @@ export async function deleteTenant(id: string) {
         }
       }
     }
-  })
-
+  });
 }
