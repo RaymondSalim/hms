@@ -7,6 +7,7 @@ import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {GuestWithTenant} from "@/app/_db/guest";
 import {GuestForm} from "@/app/(internal)/residents/guests/form";
 import {deleteGuestAction, upsertGuestAction} from "@/app/(internal)/residents/guests/guest-action";
+import Link from "next/link";
 
 
 export interface GuestsContentProps {
@@ -27,7 +28,17 @@ export default function GuestsContent({guests}: GuestsContentProps) {
       header: "Email Address"
     }),
     columnHelper.accessor(row => row.tenants.name, {
-      header: "Guest of"
+      header: "Guest of",
+      cell: props => {
+        return (
+          <Link href={{
+            pathname: "/residents/tenants",
+            query: {
+              tenant_id: props.cell.row.original.tenant_id,
+            }
+          }}>{props.cell.getValue()}</Link>
+        )
+      }
     }),
     columnHelper.accessor(row => row.createdAt, {
       header: "Created At",
