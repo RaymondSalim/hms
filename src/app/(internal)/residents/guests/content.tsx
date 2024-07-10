@@ -2,7 +2,6 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React from "react";
-import {useSession} from "next-auth/react";
 import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {GuestWithTenant} from "@/app/_db/guest";
@@ -36,12 +35,10 @@ export default function GuestsContent({guests}: GuestsContentProps) {
     }),
   ];
 
-  const {data: session, status} = useSession();
-
   return (
     <div className={"p-8"}>
       <TableContent<GuestWithTenant>
-        name={"User"}
+        name={"Guests"}
         initialContents={guests}
         columns={columns}
         form={
@@ -57,7 +54,6 @@ export default function GuestsContent({guests}: GuestsContentProps) {
           // @ts-ignore
           mutationFn: deleteGuestAction,
         }}
-        shouldShowRowAction={props => props.row.original.id != session?.user?.id}
       />
     </div>
   );
