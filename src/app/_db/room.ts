@@ -1,11 +1,41 @@
-import {Room} from "@prisma/client";
+"use server";
+
+import {Prisma, Room} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 
-export async function getRooms(id?: number, limit?: number, offset?: number) {
+export type RoomsWithType = Prisma.RoomGetPayload<{
+    include: {
+        roomtypes: {
+            include: {
+                roomtypedurations: {
+                    include: {
+                        durations: true
+                    }
+                }
+            }
+        },
+        roomstatuses: true
+    }
+}>
+
+export async function getRooms(id?: number, locationID?: number, limit?: number, offset?: number) {
     return prisma.room.findMany({
         where: {
-            id: id
+            id: id,
+            location_id: locationID
+        },
+        include: {
+            roomtypes: {
+                include: {
+                    roomtypedurations: {
+                        include: {
+                            durations: true
+                        }
+                    }
+                }
+            },
+            roomstatuses: true
         },
         skip: offset,
         take: limit
@@ -19,7 +49,19 @@ export async function createRoom(roomData: OmitIDTypeAndTimestamp<Room>) {
             room_type_id: roomData.room_type_id,
             status_id: roomData.status_id,
             location_id: roomData.location_id,
-        }
+        },
+        include: {
+            roomtypes: {
+                include: {
+                    roomtypedurations: {
+                        include: {
+                            durations: true
+                        }
+                    }
+                }
+            },
+            roomstatuses: true
+        },
     });
 }
 
@@ -33,7 +75,19 @@ export async function updateRoomByID(id: number, roomData: OmitIDTypeAndTimestam
         },
         where: {
             id: id
-        }
+        },
+        include: {
+            roomtypes: {
+                include: {
+                    roomtypedurations: {
+                        include: {
+                            durations: true
+                        }
+                    }
+                }
+            },
+            roomstatuses: true
+        },
     });
 }
 
@@ -41,7 +95,19 @@ export async function deleteRoom(id: number) {
     return prisma.room.delete({
         where: {
             id: id
-        }
+        },
+        include: {
+            roomtypes: {
+                include: {
+                    roomtypedurations: {
+                        include: {
+                            durations: true
+                        }
+                    }
+                }
+            },
+            roomstatuses: true
+        },
     });
 }
 
@@ -64,4 +130,12 @@ export async function getRoomsByLocationId(location_id: number) {
             location_id: location_id
         },
     });
+}
+
+export async function getRoomTypes() {
+    return prisma.roomType.findMany();
+}
+
+export async function getRoomStatuses() {
+    return prisma.roomStatus.findMany();
 }
