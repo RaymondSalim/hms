@@ -183,7 +183,7 @@ model Role {
 
 model Room {
   id           Int      @id @default(autoincrement())
-  room_number  String   @unique @db.VarChar(255)
+  room_number String @db.VarChar(255)
   room_type_id Int?
   status_id    Int?
   location_id  Int?
@@ -196,6 +196,7 @@ model Room {
   locations    Location?   @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
   @@map("rooms")
+  @@unique([room_number, location_id])
 }
 
 model RoomStatus {
