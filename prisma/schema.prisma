@@ -226,7 +226,7 @@ model RoomTypeDuration {
 
 model RoomType {
   id                Int      @id @default(autoincrement())
-  type              String   @db.VarChar(255)
+  type String @unique @db.VarChar(255)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @default(now()) @updatedAt
 
