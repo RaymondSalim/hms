@@ -2,8 +2,8 @@ import {number, object, string, z} from "zod";
 
 export const durationSchema = object({
     duration: string({required_error: "Duration Name is required"}),
-    day_count: number().min(0, "Day Count should be greater than 0").nullable(),
-    month_count: number().min(0, "Month Count should be greater than 0").nullable(),
+  day_count: number().min(0, "Day Count should be greater than 0").optional().nullable(),
+  month_count: number().min(0, "Month Count should be greater than 0").optional().nullable(),
   })
     .superRefine((input, ctx) => {
       if (input.day_count == undefined && input.month_count == undefined) {
@@ -24,6 +24,14 @@ export const durationSchema = object({
         });
 
         return z.NEVER;
+      }
+
+      if (input.day_count == 0) {
+        input.day_count = null;
+      }
+
+      if (input.month_count == 0) {
+        input.month_count = null;
       }
     })
 ;
