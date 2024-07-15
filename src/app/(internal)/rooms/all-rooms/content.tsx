@@ -1,20 +1,23 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React from "react";
+import React, {useContext} from "react";
 import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {RoomsWithType} from "@/app/_db/room";
+import {RoomsWithTypeAndLocation} from "@/app/_db/room";
 import {RoomForm} from "@/app/(internal)/rooms/all-rooms/form";
 import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/rooms/all-rooms/room-actions";
+import {HeaderContext} from "@/app/_context/HeaderContext";
 
 
 export interface RoomsContentProps {
-  rooms: RoomsWithType[]
+  rooms: RoomsWithTypeAndLocation[]
 }
 
 export default function RoomsContent({rooms}: RoomsContentProps) {
-  const columnHelper = createColumnHelper<RoomsWithType>();
+  const headerContext = useContext(HeaderContext);
+
+  const columnHelper = createColumnHelper<RoomsWithTypeAndLocation>();
   const columns = [
     columnHelper.accessor(row => row.id, {
       header: "ID",
@@ -35,9 +38,18 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
     }),
   ];
 
+  if (!headerContext.locationID) {
+    // @ts-ignore
+    columns.splice(1, 0, columnHelper.accessor(row => row.locations?.name, {
+        header: "Location",
+        size: 20
+      })
+    );
+  }
+
   return (
     <div className={"p-8"}>
-      <TableContent<RoomsWithType>
+      <TableContent<RoomsWithTypeAndLocation>
         name={"Rooms"}
         initialContents={rooms}
         columns={columns}
