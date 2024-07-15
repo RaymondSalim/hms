@@ -1,0 +1,54 @@
+"use client";
+
+import {createColumnHelper} from "@tanstack/react-table";
+import React from "react";
+import {formatToDateTime} from "@/app/_lib/util";
+import {TableContent} from "@/app/_components/pageContent/TableContent";
+import {RoomType} from "@prisma/client";
+import {RoomTypesForm} from "@/app/(internal)/rooms/types/form";
+import {deleteRoomTypeAction, upsertRoomTypeAction} from "@/app/(internal)/rooms/types/room-type-actions";
+
+
+export interface RoomTypesContentProps {
+  types: RoomType[]
+}
+
+export default function RoomTypesContent({types}: RoomTypesContentProps) {
+  const columnHelper = createColumnHelper<RoomType>();
+  const columns = [
+    columnHelper.accessor(row => row.id, {
+      header: "ID",
+      size: 20
+    }),
+    columnHelper.accessor(row => row.type, {
+      header: "Type"
+    }),
+    columnHelper.accessor(row => row.createdAt, {
+      header: "Created At",
+      cell: props => formatToDateTime(props.cell.getValue())
+    }),
+  ];
+
+  return (
+    <div className={"p-8"}>
+      <TableContent<RoomType>
+        name={"Types"}
+        initialContents={types}
+        columns={columns}
+        form={
+          // @ts-ignore
+          <RoomTypesForm/>
+        }
+        searchPlaceholder={"Search by type"}
+        upsert={{
+          mutationFn: upsertRoomTypeAction,
+        }}
+
+        delete={{
+          // @ts-ignore
+          mutationFn: deleteRoomTypeAction,
+        }}
+      />
+    </div>
+  );
+}
