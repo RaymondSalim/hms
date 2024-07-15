@@ -191,7 +191,7 @@ model Room {
   updatedAt    DateTime @default(now()) @updatedAt
 
   bookings     Booking[]
-  roomtypes    RoomType?   @relation(fields: [room_type_id], references: [id], onUpdate: NoAction)
+  roomtypes RoomType? @relation(fields: [room_type_id], references: [id], onUpdate: NoAction, onDelete: Restrict)
   roomstatuses RoomStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
   locations    Location?   @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
