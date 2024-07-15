@@ -12,7 +12,7 @@ import {
 import {cloneElement, ReactElement, useEffect, useMemo, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/data-center/locations/components/searchBarAndCreate.module.css";
-import {Button, Dialog, Input} from "@material-tailwind/react";
+import {Button, Dialog, Input, Typography} from "@material-tailwind/react";
 import {FaPlus} from "react-icons/fa6";
 import {DefaultError, MutationOptions, useMutation, UseMutationResult} from "@tanstack/react-query";
 import {GenericActionsType} from "@/app/_lib/actions";
@@ -41,13 +41,14 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
   const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
   const [searchValue, setSearchValue] = useState(props.initialSearchValue);
   const [activeContent, setActiveContent] = useState<T | undefined>(undefined);
-  const [mutationResponse, setMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
+  const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
+  const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
 
   const upsertContentMutation = useMutation({
     ...props.upsert,
     onSuccess: (data, variables, context) => {
       props.upsert.onSuccess?.(data, variables, context);
-      setMutationResponse(data);
+      setUpsertMutationResponse(data);
       let shoudCloseDialog = false;
 
       if (data.success) {
@@ -75,11 +76,17 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     ...props.delete,
     onSuccess: (data, variables, context) => {
       props.delete.onSuccess?.(data, variables, context);
+      setDeleteMutationResponse(data);
+      let shouldCloseDialog = false;
+
       if (data.success) {
         setContentsState(p => p.filter(a => a.id != data.success!.id));
+        shouldCloseDialog = true;
       }
 
-      setDeleteDialogOpen(false);
+      if (shouldCloseDialog) {
+        setDeleteDialogOpen(false);
+      }
       // TODO! Alert
     }
   });
@@ -131,9 +138,16 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
+    if (!deleteDialogOpen) {
+      setActiveContent(undefined);
+      setDeleteMutationResponse(undefined);
+    }
+  }, [deleteDialogOpen]);
+
+  useEffect(() => {
     if (!dialogOpen) {
       setActiveContent(undefined);
-      setMutationResponse(undefined);
+      setUpsertMutationResponse(undefined);
     }
   }, [dialogOpen]);
 
@@ -171,7 +185,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
           cloneElement(props.form, {
             contentData: activeContent,
             mutation: upsertContentMutation,
-            mutationResponse: mutationResponse,
+            mutationResponse: upsertMutationResponse,
             setDialogOpen: setDialogOpen
           })
         }
@@ -179,21 +193,26 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       <Dialog
         open={deleteDialogOpen}
         size={"md"}
-        handler={() => setDeleteDialogOpen(prev => {
-          if (prev) setActiveContent(undefined);
-          return !prev;
-        })}
+        handler={() => setDeleteDialogOpen(prev => !prev)}
         className={"p-8"}
       >
         <h2 className={"text-xl font-semibold text-black mb-4"}>Delete {props.name}</h2>
         <span>Are you sure you want to delete this item? This action cannot be undone.</span>
+        {
+          deleteMutationResponse?.failure &&
+            <Typography className="whitespace-pre-wrap" color="red">{deleteMutationResponse.failure}</Typography>
+        }
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => setDeleteDialogOpen(false)} variant={"outlined"} className="mt-6">
             Cancel
           </Button>
-          <Button onClick={() => activeContent && deleteContentMutation.mutate(activeContent.id)} color={"red"}
-                  className="mt-6"
-                  loading={deleteContentMutation.isPending}>
+          <Button
+            onClick={() => activeContent && deleteContentMutation.mutate(activeContent.id)}
+            color={"red"}
+            className="mt-6"
+            loading={deleteContentMutation.isPending}
+            disabled={!!deleteMutationResponse?.failure}
+          >
             Delete
           </Button>
         </div>
