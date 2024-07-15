@@ -41,7 +41,8 @@ export default function Sidebar({session}: SidebarProps) {
             children: [
                 {name: 'All Rooms', path: '/rooms/all-rooms'},
                 {name: 'Room Types', path: '/rooms/types'},
-                {name: 'Room Status', path: '/rooms/status'}
+                {name: 'Room Status', path: '/rooms/status'},
+                {name: 'Durations', path: '/rooms/durations'},
             ]
         },
         { name: 'Registrations', path: '/registration', icon: <FaUserPlus /> },
