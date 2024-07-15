@@ -6,10 +6,10 @@ VALUES (1, 'Standard Room'),
        (5, 'Penthouse');
 
 INSERT INTO durations (id, duration, day_count, month_count)
-VALUES (1, '1 month', 0, 1),
-       (2, '3 months', 0, 3),
-       (3, '6 months', 0, 6),
-       (4, '12 months', 0, 12);
+VALUES (1, '1 month', NULL, 1),
+       (2, '3 months', NULL, 3),
+       (3, '6 months', NULL, 6),
+       (4, '12 months', NULL, 12);
 
 INSERT INTO roomtypedurations (id, room_type_id, duration_id, suggested_price)
 VALUES (1, 1, 1, 100.00),
