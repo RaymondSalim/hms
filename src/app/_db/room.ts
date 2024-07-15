@@ -1,6 +1,6 @@
 "use server";
 
-import {Prisma, Room} from "@prisma/client";
+import {Prisma, Room, RoomType} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 
@@ -138,4 +138,31 @@ export async function getRoomTypes() {
 
 export async function getRoomStatuses() {
     return prisma.roomStatus.findMany();
+}
+
+export async function createRoomType(data: OmitIDTypeAndTimestamp<RoomType>) {
+    return prisma.roomType.create({
+        data: data
+    });
+}
+
+export async function updateRoomTypeByID(id: number, data: OmitIDTypeAndTimestamp<RoomType>) {
+    return prisma.roomType.update({
+        where: {
+            id: id
+        },
+        data: {
+            ...data,
+            id: undefined
+        }
+    });
+}
+
+
+export async function deleteRoomType(id: number) {
+    return prisma.roomType.delete({
+        where: {
+            id
+        }
+    });
 }
