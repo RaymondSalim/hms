@@ -39,7 +39,7 @@ export default function Sidebar({session}: SidebarProps) {
             path: '/rooms',
             icon: <FaKey/>,
             children: [
-                {name: 'All Rooms', path: '/rooms/all'},
+                {name: 'All Rooms', path: '/rooms/all-rooms'},
                 {name: 'Room Types', path: '/rooms/types'},
                 {name: 'Room Status', path: '/rooms/status'}
             ]
