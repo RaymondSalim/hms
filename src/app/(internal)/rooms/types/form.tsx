@@ -2,16 +2,13 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {RoomType} from "@prisma/client";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
 
 interface RoomFormProps extends TableFormProps<RoomType> {
 }
 
 export function RoomTypesForm(props: RoomFormProps) {
-  const headerContext = useContext(HeaderContext);
-
   const [roomTypeData, setRoomTypeData] = useState<Partial<RoomType>>(props.contentData ?? {});
 
   const fieldErrors = {
