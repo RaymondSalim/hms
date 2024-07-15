@@ -4,8 +4,9 @@ import {Prisma, Room, RoomType} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 
-export type RoomsWithType = Prisma.RoomGetPayload<{
+export type RoomsWithTypeAndLocation = Prisma.RoomGetPayload<{
     include: {
+        locations: true,
         roomtypes: {
             include: {
                 roomtypedurations: {
@@ -26,6 +27,7 @@ export async function getRooms(id?: number, locationID?: number, limit?: number,
             location_id: locationID
         },
         include: {
+            locations: true,
             roomtypes: {
                 include: {
                     roomtypedurations: {
@@ -51,6 +53,7 @@ export async function createRoom(roomData: OmitIDTypeAndTimestamp<Room>) {
             location_id: roomData.location_id,
         },
         include: {
+            locations: true,
             roomtypes: {
                 include: {
                     roomtypedurations: {
@@ -77,6 +80,7 @@ export async function updateRoomByID(id: number, roomData: OmitIDTypeAndTimestam
             id: id
         },
         include: {
+            locations: true,
             roomtypes: {
                 include: {
                     roomtypedurations: {
@@ -97,6 +101,7 @@ export async function deleteRoom(id: number) {
             id: id
         },
         include: {
+            locations: true,
             roomtypes: {
                 include: {
                     roomtypedurations: {

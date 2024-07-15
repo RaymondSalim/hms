@@ -3,11 +3,11 @@
 import {Room} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {roomSchemaWithOptionalID} from "@/app/_lib/zod/rooms/zod";
-import {createRoom, deleteRoom, RoomsWithType, updateRoomByID} from "@/app/_db/room";
+import {createRoom, deleteRoom, RoomsWithTypeAndLocation, updateRoomByID} from "@/app/_db/room";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {number, object} from "zod";
 
-export async function upsertRoomAction(roomData: Partial<Room>): Promise<GenericActionsType<RoomsWithType>> {
+export async function upsertRoomAction(roomData: Partial<Room>): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
   const {success, data, error} = roomSchemaWithOptionalID.safeParse(roomData);
 
   if (!success) {
@@ -42,7 +42,7 @@ export async function upsertRoomAction(roomData: Partial<Room>): Promise<Generic
   }
 }
 
-export async function deleteRoomAction(id: string): Promise<GenericActionsType<RoomsWithType>> {
+export async function deleteRoomAction(id: string): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
   const parsedData = object({id: number().positive()}).safeParse({
     id: id,
   });

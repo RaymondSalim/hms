@@ -6,11 +6,11 @@ import React, {useContext, useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {HeaderContext} from "@/app/_context/HeaderContext";
-import {getRoomStatuses, getRoomTypes, RoomsWithType} from "@/app/_db/room";
+import {getRoomStatuses, getRoomTypes, RoomsWithTypeAndLocation} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
 
-interface RoomFormProps extends TableFormProps<RoomsWithType> {
+interface RoomFormProps extends TableFormProps<RoomsWithTypeAndLocation> {
 }
 
 export function RoomForm(props: RoomFormProps) {
