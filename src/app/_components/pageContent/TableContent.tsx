@@ -35,6 +35,8 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
   searchPlaceholder?: string,
   form: ReactElement<TableFormProps<T>>
   shouldShowRowAction?: (props: CellContext<T, unknown>) => boolean
+
+  customDialog?: ReactElement
 }
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
@@ -217,6 +219,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
           </Button>
         </div>
       </Dialog>
+      {
+        props.customDialog
+      }
     </>
 
   );
