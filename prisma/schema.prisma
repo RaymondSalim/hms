@@ -222,6 +222,7 @@ model RoomTypeDuration {
   roomtypes RoomType @relation(fields: [room_type_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 
   @@map("roomtypedurations")
+  @@unique([room_type_id, duration_id])
 }
 
 model RoomType {
