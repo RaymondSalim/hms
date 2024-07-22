@@ -30,7 +30,6 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
     queryFn: () => getDurations(),
   });
 
-
   const columnHelper = createColumnHelper<RoomsWithTypeAndLocation>();
   const columns = [
     columnHelper.accessor(row => row.id, {

@@ -1,7 +1,6 @@
 "use client";
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
-import {Room} from "@prisma/client";
 import React, {useContext, useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
@@ -9,6 +8,8 @@ import {HeaderContext} from "@/app/_context/HeaderContext";
 import {getRoomStatuses, getRoomTypes, RoomsWithTypeAndLocation} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
+import {getDurations} from "@/app/_db/duration";
+import {Prisma} from "@prisma/client";
 
 interface RoomFormProps extends TableFormProps<RoomsWithTypeAndLocation> {
 }
@@ -16,11 +17,16 @@ interface RoomFormProps extends TableFormProps<RoomsWithTypeAndLocation> {
 export function RoomForm(props: RoomFormProps) {
   const headerContext = useContext(HeaderContext);
 
-  const [roomData, setRoomData] = useState<Partial<Room>>(props.contentData ?? {});
+  const [roomData, setRoomData] = useState<Partial<RoomsWithTypeAndLocation>>(props.contentData ?? {});
 
   const fieldErrors = {
     ...props.mutationResponse?.errors?.fieldErrors
   };
+
+  const {data: durationsData, isSuccess, isLoading} = useQuery({
+    queryKey: ['rooms.durations'],
+    queryFn: () => getDurations(),
+  });
 
   // Room Type Data
   const {data: roomTypeData, isSuccess: roomTypeDataSuccess} = useQuery({
@@ -83,7 +89,7 @@ export function RoomForm(props: RoomFormProps) {
               variant="outlined"
               name="room_number"
               value={roomData.room_number}
-              onChange={(e) => setRoomData(prevRoom => ({...prevRoom, name: e.target.value}))}
+              onChange={(e) => setRoomData(prevRoom => ({...prevRoom, room_number: e.target.value}))}
               size="lg"
               placeholder="Room 205"
               error={!!fieldErrors.room_number}
@@ -104,9 +110,10 @@ export function RoomForm(props: RoomFormProps) {
               </Typography>
             </label>
             <SelectComponent<number>
-              setValue={(v) => setRoomData(prevState => ({...prevState, room_type_id: v}))}
+              // @ts-ignore
+              setValue={(v) => setRoomData(prevState => ({...prevState, roomtypes: {id: v, roomtypedurations: []}}))}
               data={roomTypeDataMapped}
-              selectedData={roomTypeDataMapped.find(r => r.value == roomData.room_type_id)}
+              selectedData={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
               placeholder={"Enter room type"}
             />
           </div>
@@ -117,9 +124,10 @@ export function RoomForm(props: RoomFormProps) {
               </Typography>
             </label>
             <SelectComponent<number>
-              setValue={(v) => setRoomData(prevState => ({...prevState, status_id: v}))}
+              // @ts-ignore
+              setValue={(v) => setRoomData(prevState => ({...prevState, roomstatuses: {id: v}}))}
               data={statusDataMapped}
-              selectedData={statusDataMapped.find(r => r.value == roomData.status_id)}
+              selectedData={statusDataMapped.find(r => r.value == roomData.roomstatuses?.id)}
               placeholder={"Enter status"}
             />
           </div>
@@ -139,7 +147,67 @@ export function RoomForm(props: RoomFormProps) {
               placeholder={"Enter location"}
             />
           </div>
+          {
+            isSuccess &&
+              <div>
+                  <Typography variant="h5" color="blue-gray">
+                      Pricing
+                  </Typography>
+                {
+                  durationsData?.map((d, index) => (
+                    <div key={d.id}>
+                      <label htmlFor={d.duration}>
+                        <Typography variant="h6" color="blue-gray">
+                          {d.duration}
+                        </Typography>
+                      </label>
+                      <Input
+                        disabled={roomData.roomtypes == undefined}
+                        variant="outlined"
+                        min="0" onInput={({currentTarget}) => currentTarget.validity.valid || currentTarget.value == ''}
+                        type="number"
+                        name={d.duration}
+                        value={Number(roomData.roomtypes?.roomtypedurations?.[index]?.suggested_price) || ""}
+                        onChange={(e) => setRoomData(prevRoom => {
+                          if (e.target.value.length == 0) {
+                            delete prevRoom.roomtypes!.roomtypedurations[index];
+                            return {...prevRoom};
+                          }
+                          if (!prevRoom.roomtypes?.roomtypedurations) {
+                            prevRoom.roomtypes!.roomtypedurations = [];
+                          }
 
+                          if (!prevRoom.roomtypes!.roomtypedurations[index]) {
+                            // @ts-ignore
+                            prevRoom.roomtypes!.roomtypedurations[index] = {
+                              room_type_id: prevRoom.roomtypes!.id,
+                              durations: d,
+                            };
+                          }
+
+                          prevRoom.roomtypes!.roomtypedurations[index].suggested_price = new Prisma.Decimal(e.target.value);
+
+                          return {...prevRoom};
+                        })}
+                        size="lg"
+                        placeholder="5000000"
+                        error={!!fieldErrors.room_number} /*TODO*/
+                        className={`${!!fieldErrors.room_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`} /*TODO!*/
+                        labelProps={{
+                          className: "before:content-none after:content-none",
+                        }}
+                      />
+                      {
+                        /*TODO!*/
+                        fieldErrors.room_number &&
+                          <Typography color="red">{fieldErrors.room_number}</Typography>
+                      }
+                    </div>
+                  ))
+                }
+
+              </div>
+          }
           {
             props.mutationResponse?.failure &&
               <Typography variant="h6" color="blue-gray" className="-mb-4">
