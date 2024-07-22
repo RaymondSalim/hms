@@ -1,6 +1,6 @@
 "use server";
 
-import {Prisma, Room, RoomType} from "@prisma/client";
+import {Prisma, RoomType} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 
@@ -44,55 +44,124 @@ export async function getRooms(id?: number, locationID?: number, limit?: number,
     });
 }
 
-export async function createRoom(roomData: OmitIDTypeAndTimestamp<Room>) {
-    return prisma.room.create({
-        data: {
-            room_number: roomData.room_number,
-            room_type_id: roomData.room_type_id,
-            status_id: roomData.status_id,
-            location_id: roomData.location_id,
-        },
-        include: {
-            locations: true,
-            roomtypes: {
-                include: {
-                    roomtypedurations: {
-                        include: {
-                            durations: true
-                        }
-                    }
-                }
-            },
-            roomstatuses: true
-        },
+export async function createRoom(roomData: OmitIDTypeAndTimestamp<RoomsWithTypeAndLocation>) {
+    const trxs = [];
+
+    roomData.roomtypes?.roomtypedurations.map(rtd => {
+        rtd.duration_id = rtd.durations.id;
+        // @ts-ignore
+        delete rtd.durations;
+        return rtd;
     });
+
+    trxs.push(
+      prisma.roomTypeDuration.createMany({
+          data: roomData.roomtypes?.roomtypedurations ?? []
+      })
+    );
+    trxs.push(
+      prisma.room.create({
+          data: {
+              room_number: roomData.room_number,
+              room_type_id: roomData.roomtypes?.id,
+              status_id: roomData.roomstatuses?.id,
+              location_id: roomData.location_id,
+          },
+          include: {
+              locations: true,
+              roomtypes: {
+                  include: {
+                      roomtypedurations: {
+                          include: {
+                              durations: true
+                          }
+                      }
+                  }
+              },
+              roomstatuses: true
+          },
+      })
+    );
+    return prisma.$transaction(trxs);
 }
 
-export async function updateRoomByID(id: number, roomData: OmitIDTypeAndTimestamp<Room>) {
-    return prisma.room.update({
-        data: {
-            room_number: roomData.room_number,
-            room_type_id: roomData.room_type_id,
-            status_id: roomData.status_id,
-            location_id: roomData.location_id,
-        },
-        where: {
-            id: id
-        },
-        include: {
-            locations: true,
-            roomtypes: {
-                include: {
-                    roomtypedurations: {
-                        include: {
-                            durations: true
-                        }
-                    }
-                }
-            },
-            roomstatuses: true
-        },
+export async function updateRoomByID(id: number, roomData: OmitIDTypeAndTimestamp<RoomsWithTypeAndLocation>) {
+    const trxs = [];
+
+    roomData.roomtypes?.roomtypedurations.forEach(rtd => {
+        trxs.push(
+          prisma.roomTypeDuration.upsert({
+              where: {
+                  id: rtd.id ?? 0
+              },
+              // @ts-ignore
+              update: {
+                  ...rtd,
+                  duration_id: rtd.durations.id,
+                  durations: undefined,
+                  // durations: {
+                  //     connect: {
+                  //         id: rtd.durations.id,
+                  //     }
+                  // },
+                  id: undefined
+              },
+              // @ts-ignore
+              create: {
+                  ...rtd,
+                  duration_id: rtd.durations.id,
+                  durations: undefined,
+                  // durations: {
+                  //     connect: {
+                  //         id: rtd.durations.id,
+                  //     }
+                  // },
+                  id: undefined,
+              }
+          })
+        );
     });
+
+    trxs.push(
+      prisma.room.update({
+          where: {
+              id: id
+          },
+          data: {
+              room_number: roomData.room_number,
+              roomtypes: {
+                  connect: {
+                      id: roomData.roomtypes?.id ?? undefined,
+                  }
+              },
+              roomstatuses: {
+                  connect: {
+                      id: roomData.roomstatuses?.id ?? undefined
+                  }
+              },
+              locations: {
+                  connect: {
+                      id: roomData.location_id ?? undefined
+                  }
+              }
+          },
+          include: {
+              locations: true,
+              roomtypes: {
+                  include: {
+                      roomtypedurations: {
+                          include: {
+                              durations: true
+                          }
+                      }
+                  }
+              },
+              roomstatuses: true
+          },
+      })
+    );
+
+    return prisma.$transaction(trxs);
 }
 
 export async function deleteRoom(id: number) {
