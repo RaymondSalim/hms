@@ -54,13 +54,18 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       let shoudCloseDialog = false;
 
       if (data.success) {
+        let target = data.success;
+        if (Array.isArray(target)) {
+          target = target[1];
+        }
+
         setContentsState(prevState => {
           let newArr = [...prevState];
-          let index = newArr.findIndex(l => l.id == data.success?.id);
+          let index = newArr.findIndex(l => l.id == target?.id);
           if (index == -1) {
-            return newArr.concat(data.success!);
+            return newArr.concat(target!);
           } else {
-            newArr[index] = data.success!;
+            newArr[index] = target!;
           }
           return newArr;
         });
