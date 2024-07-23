@@ -26,7 +26,6 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
     inputValue: string,
     callback: (options: SelectOption<T>[]) => void
   ) => {
-    console.log(options);
     if (inputValue.length <= 2) {
       callback(options);
       return;
