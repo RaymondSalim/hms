@@ -215,7 +215,7 @@ model RoomTypeDuration {
   room_type_id    Int
   duration_id     Int
   location_id     Int
-  suggested_price Decimal @db.Decimal(12, 2)
+  suggested_price Decimal? @db.Decimal(12, 2)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now()) @updatedAt
 
