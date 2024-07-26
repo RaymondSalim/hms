@@ -21,6 +21,7 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
         id: number().min(1, "ID should be positive").optional(),
         room_type_id: number({required_error: "Room Type ID is required"}),
         duration_id: number().min(1, "Duration ID should be greater than zero").optional(),
+        location_id: number().min(1, "Location ID should be greater than zero"),
         durations: record(string(), any()).optional(),
         suggested_price: preprocess(
           (val) => {
@@ -31,7 +32,7 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
             return val;
           },
           number({required_error: "Suggested Price is required"})
-            .min(1, "Suggested Price should be greater than 0")
+            .min(1, "Suggested Price should be greater than 0").optional()
         ),
       })
     )
@@ -39,17 +40,20 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
 })
   .superRefine((input, ctx) => {
     input.roomtypes.roomtypedurations.forEach(rtd => {
-      if (rtd.duration_id == undefined && !rtd.durations) {
-        ctx.addIssue({
-          code: ZodIssueCode.custom,
-          message: "Either Duration ID or duration object should be set",
-          fatal: true,
-        });
+      if (rtd) {
+        if (rtd.duration_id == undefined && !rtd.durations) {
+          ctx.addIssue({
+            code: ZodIssueCode.custom,
+            message: "Either Duration ID or duration object should be set",
+            fatal: true,
+          });
 
-        return z.NEVER;
+          return z.NEVER;
+        }
+
+
+        // @ts-ignore
+        rtd.suggested_price = new Prisma.Decimal(rtd.suggested_price);
       }
-
-      // @ts-ignore
-      rtd.suggested_price = new Prisma.Decimal(rtd.suggested_price);
     });
   });
