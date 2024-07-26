@@ -190,7 +190,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       >
         {
           cloneElement(props.form, {
-            contentData: activeContent,
+            contentData: structuredClone(activeContent),
             mutation: upsertContentMutation,
             mutationResponse: upsertMutationResponse,
             setDialogOpen: setDialogOpen
