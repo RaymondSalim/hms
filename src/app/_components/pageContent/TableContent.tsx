@@ -9,7 +9,7 @@ import {
   getSortedRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import {cloneElement, ReactElement, useEffect, useMemo, useState} from "react";
+import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/data-center/locations/components/searchBarAndCreate.module.css";
 import {Button, Dialog, Input, Typography} from "@material-tailwind/react";
@@ -24,12 +24,23 @@ export interface TableFormProps<T> {
   mutationResponse?: GenericActionsType<T>
 }
 
+interface CustomMutationOptions<
+  OriginalT, TData = unknown, TError = DefaultError, TVariables = void, TContext = unknown
+> extends MutationOptions<TData, TError, TVariables> {
+  customOnSuccess?: (
+    data: TData, variables: TVariables, context: TContext,
+    setMutationResponse: Dispatch<SetStateAction<TData | undefined>>,
+    setContentsState: Dispatch<SetStateAction<OriginalT[]>>,
+    setDialogOpen: Dispatch<SetStateAction<boolean>>
+  ) => Promise<unknown> | unknown;
+}
+
 export interface TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> {
   name: string,
   initialContents: T[],
   initialSearchValue?: string
-  upsert: MutationOptions<_TReturn, DefaultError, Partial<T>>,
-  delete: MutationOptions<_TReturn, DefaultError, string | number>,
+  upsert: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
+  delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
   columns: ColumnDef<T, any>[],
 
   searchPlaceholder?: string,
@@ -49,32 +60,32 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
   const upsertContentMutation = useMutation({
     ...props.upsert,
     onSuccess: (data, variables, context) => {
-      props.upsert.onSuccess?.(data, variables, context);
-      setUpsertMutationResponse(data);
-      let shoudCloseDialog = false;
+      if (props.upsert.customOnSuccess) {
+        props.upsert.customOnSuccess(data, variables, context, setUpsertMutationResponse, setContentsState, setDialogOpen);
+      } else {
+        setUpsertMutationResponse(data);
+        let shouldCloseDialog = false;
 
-      if (data.success) {
-        let target = data.success;
-        if (Array.isArray(target)) {
-          target = target[1];
+        if (data.success) {
+          let target = data.success;
+
+          setContentsState(prevState => {
+            let newArr = [...prevState];
+            let index = newArr.findIndex(l => l.id == target?.id);
+            if (index == -1) {
+              return newArr.concat(target!);
+            } else {
+              newArr[index] = target!;
+            }
+            return newArr;
+          });
+          shouldCloseDialog = true;
         }
 
-        setContentsState(prevState => {
-          let newArr = [...prevState];
-          let index = newArr.findIndex(l => l.id == target?.id);
-          if (index == -1) {
-            return newArr.concat(target!);
-          } else {
-            newArr[index] = target!;
-          }
-          return newArr;
-        });
-        shoudCloseDialog = true;
-      }
-
-      if (shoudCloseDialog) {
-        setDialogOpen(false);
-        // TODO! Alert
+        if (shouldCloseDialog) {
+          setDialogOpen(false);
+          // TODO! Alert
+        }
       }
     }
   });
@@ -82,7 +93,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
   const deleteContentMutation = useMutation({
     ...props.delete,
     onSuccess: (data, variables, context) => {
-      props.delete.onSuccess?.(data, variables, context);
+      if (props.delete.customOnSuccess) {
+        props.delete.customOnSuccess(data, variables, context, setDeleteMutationResponse, setContentsState, setDeleteDialogOpen);
+      }
       setDeleteMutationResponse(data);
       let shouldCloseDialog = false;
 
