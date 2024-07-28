@@ -25,6 +25,7 @@ export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocatio
       // @ts-ignore
       res = await createRoom(data);
     }
+    res = res[res.length - 1];
 
     return {
       // @ts-ignore
