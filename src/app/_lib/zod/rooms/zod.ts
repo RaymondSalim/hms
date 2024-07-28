@@ -25,6 +25,10 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
         durations: record(string(), any()).optional(),
         suggested_price: preprocess(
           (val) => {
+            if (val == undefined) {
+              return undefined;
+            }
+
             if (typeof val == "string") {
               return Number(val);
             }
@@ -39,7 +43,7 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
   })
 })
   .superRefine((input, ctx) => {
-    input.roomtypes.roomtypedurations.forEach(rtd => {
+    input.roomtypes.roomtypedurations.forEach((rtd, index) => {
       if (rtd) {
         if (rtd.duration_id == undefined && !rtd.durations) {
           ctx.addIssue({
@@ -51,9 +55,19 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
           return z.NEVER;
         }
 
-
-        // @ts-ignore
-        rtd.suggested_price = new Prisma.Decimal(rtd.suggested_price);
+        if (rtd.suggested_price) {
+          // @ts-ignore
+          rtd.suggested_price = new Prisma.Decimal(rtd.suggested_price);
+        }
       }
     });
+  })
+  .transform(arg => {
+    arg.roomtypes.roomtypedurations.forEach((value, index) => {
+      if (value.suggested_price == undefined) {
+        arg.roomtypes.roomtypedurations.splice(index, 1);
+      }
+    });
+
+    return arg;
   });
