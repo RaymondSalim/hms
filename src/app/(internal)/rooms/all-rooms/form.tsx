@@ -5,7 +5,7 @@ import React, {useContext, useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {HeaderContext} from "@/app/_context/HeaderContext";
-import {getRoomStatuses, getRoomTypes, RoomsWithTypeAndLocation} from "@/app/_db/room";
+import {getRoomStatuses, getRoomTypes, RoomsWithTypeAndLocation, RoomTypeDurationWithDuration} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
 import {getDurations} from "@/app/_db/duration";
@@ -23,10 +23,38 @@ export function RoomForm(props: RoomFormProps) {
     ...props.mutationResponse?.errors?.fieldErrors
   };
 
-  const {data: durationsData, isSuccess, isLoading} = useQuery({
+  const {data: durationsData, isSuccess: durationsDataSuccess, isLoading} = useQuery({
     queryKey: ['rooms.durations'],
     queryFn: () => getDurations(),
   });
+  useEffect(() => {
+    if (durationsDataSuccess) {
+      let originalRoomTypeDurations: RoomTypeDurationWithDuration[] = structuredClone(roomData).roomtypes?.roomtypedurations ?? [];
+      setRoomData(prevRoom => {
+        durationsData?.forEach((d, index) => {
+
+          if (prevRoom.roomtypes && !prevRoom.roomtypes?.roomtypedurations) {
+            prevRoom.roomtypes!.roomtypedurations = [];
+          }
+
+          const target = originalRoomTypeDurations?.find(rtd => rtd && rtd.durations?.id == d.id);
+          if (!target) {
+            // @ts-ignore
+            prevRoom.roomtypes!.roomtypedurations[index] = {
+              room_type_id: prevRoom.roomtypes!.id,
+              location_id: prevRoom.location_id!,
+              durations: d,
+            };
+          } else {
+            prevRoom.roomtypes!.roomtypedurations[index] = target;
+          }
+        });
+
+        return {...prevRoom};
+      });
+    }
+
+  }, [durationsData, durationsDataSuccess]);
 
   // Room Type Data
   const {data: roomTypeData, isSuccess: roomTypeDataSuccess} = useQuery({
@@ -111,7 +139,10 @@ export function RoomForm(props: RoomFormProps) {
             </label>
             <SelectComponent<number>
               // @ts-ignore
-              setValue={(v) => setRoomData(prevState => ({...prevState, roomtypes: {id: v, roomtypedurations: []}}))}
+              setValue={(v) => setRoomData(prevState => ({
+                ...prevState,
+                roomtypes: v && {id: v, roomtypedurations: []}
+              }))}
               data={roomTypeDataMapped}
               selectedData={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
               placeholder={"Enter room type"}
@@ -148,64 +179,72 @@ export function RoomForm(props: RoomFormProps) {
             />
           </div>
           {
-            isSuccess &&
+            durationsDataSuccess &&
               <div>
                   <Typography variant="h5" color="blue-gray">
                       Pricing
                   </Typography>
                 {
-                  durationsData?.map((d, index) => (
-                    <div key={d.id}>
-                      <label htmlFor={d.duration}>
-                        <Typography variant="h6" color="blue-gray">
-                          {d.duration}
-                        </Typography>
-                      </label>
-                      <Input
-                        disabled={roomData.roomtypes == undefined}
-                        variant="outlined"
-                        min="0" onInput={({currentTarget}) => currentTarget.validity.valid || currentTarget.value == ''}
-                        type="number"
-                        name={d.duration}
-                        value={Number(roomData.roomtypes?.roomtypedurations?.[index]?.suggested_price) || ""}
-                        onChange={(e) => setRoomData(prevRoom => {
-                          if (e.target.value.length == 0) {
-                            delete prevRoom.roomtypes!.roomtypedurations[index];
-                            return {...prevRoom};
-                          }
-                          if (!prevRoom.roomtypes?.roomtypedurations) {
-                            prevRoom.roomtypes!.roomtypedurations = [];
-                          }
+                  durationsData?.map((d, index) => {
 
-                          if (!prevRoom.roomtypes!.roomtypedurations[index]) {
-                            // @ts-ignore
-                            prevRoom.roomtypes!.roomtypedurations[index] = {
-                              room_type_id: prevRoom.roomtypes!.id,
-                              durations: d,
-                            };
-                          }
+                    return (
+                      <div key={d.id}>
+                        <label htmlFor={d.duration}>
+                          <Typography variant="h6" color="blue-gray">
+                            {d.duration}
+                          </Typography>
+                        </label>
+                        <Input
+                          disabled={roomData.roomtypes == undefined || roomData.location_id == undefined}
+                          variant="outlined"
+                          min="0"
+                          type="number"
+                          name={d.duration}
+                          value={Number(roomData.roomtypes?.roomtypedurations[index]?.suggested_price) ?? ""}
+                          onChange={(e) => {
+                            if (isNaN(Number(e.currentTarget.value))) {
+                              return;
+                            }
 
-                          prevRoom.roomtypes!.roomtypedurations[index].suggested_price = new Prisma.Decimal(e.target.value);
+                            setRoomData(prevRoom => {
+                              if (e.target.value.length == 0) {
+                                // @ts-ignore
+                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = undefined;
+                                return {...prevRoom};
+                              }
 
-                          return {...prevRoom};
-                        })}
-                        size="lg"
-                        placeholder="5000000"
-                        error={!!fieldErrors.room_number} /*TODO*/
-                        className={`${!!fieldErrors.room_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`} /*TODO!*/
-                        labelProps={{
-                          className: "before:content-none after:content-none",
-                        }}
-                      />
-                      {
-                        /*TODO!*/
-                        fieldErrors.room_number &&
-                          <Typography color="red">{fieldErrors.room_number}</Typography>
-                      }
-                    </div>
-                  ))
+                              if (prevRoom.roomtypes?.roomtypedurations[index]) {
+                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = new Prisma.Decimal(e.target.value);
+                              } else {
+                                // @ts-ignore
+                                prevRoom.roomtypes.roomtypedurations[index] = {
+                                  room_type_id: prevRoom.roomtypes!.id,
+                                  location_id: prevRoom.location_id!,
+                                  durations: d,
+                                  suggested_price: new Prisma.Decimal(e.target.value)
+                                };
+                              }
+
+                              return {...prevRoom};
+                            });
+                          }}
+                          size="lg"
+                          placeholder="5000000"
+                          error={!!fieldErrors.room_number} /*TODO*/
+                          className={`${!!fieldErrors.room_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`} /*TODO!*/
+                          labelProps={{
+                            className: "before:content-none after:content-none",
+                          }}
+                        />
+                        {
+                          /*TODO!*/
+                          fieldErrors.room_number &&
+                            <Typography color="red">{fieldErrors.room_number}</Typography>
+                        }
+                      </div>
+                    );
+                  })
                 }
-
               </div>
           }
           {
@@ -225,7 +264,6 @@ export function RoomForm(props: RoomFormProps) {
             {props.contentData ? "Update" : "Create"}
           </Button>
         </div>
-
       </form>
     </div>
   );
