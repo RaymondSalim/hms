@@ -23,6 +23,18 @@ export function RoomForm(props: RoomFormProps) {
     ...props.mutationResponse?.errors?.fieldErrors
   };
 
+  useEffect(() => {
+    if (roomData.roomtypes == undefined) {
+      // @ts-ignore
+      setRoomData(p => ({
+        ...p,
+        roomtypes: {
+          roomtypedurations: [],
+        }
+      }));
+    }
+  }, []);
+
   const {data: durationsData, isSuccess: durationsDataSuccess, isLoading} = useQuery({
     queryKey: ['rooms.durations'],
     queryFn: () => getDurations(),
@@ -49,7 +61,6 @@ export function RoomForm(props: RoomFormProps) {
             prevRoom.roomtypes!.roomtypedurations[index] = target;
           }
         });
-
         return {...prevRoom};
       });
     }
@@ -173,7 +184,12 @@ export function RoomForm(props: RoomFormProps) {
               data={locationDataMapped}
               selectedData={
                 locationDataMapped.find(r => r.value == roomData.location_id) ??
-                locationDataMapped.find(r => r.value == headerContext.locationID)
+                locationDataMapped.find(r => {
+                  if (r.value == headerContext.locationID) {
+                    setRoomData(prevState => ({...prevState, location_id: r.value}));
+                    return true;
+                  }
+                })
               }
               placeholder={"Enter location"}
             />
