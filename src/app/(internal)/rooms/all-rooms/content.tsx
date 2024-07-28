@@ -82,11 +82,51 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
         searchPlaceholder={"Search by name or email address"}
         upsert={{
           mutationFn: upsertRoomAction,
+          customOnSuccess: (data, variables, context, setMutationResponse, setContentsState, setDialogOpen) => {
+            setMutationResponse(data);
+            let shouldCloseDialog = false;
+
+            if (data.success) {
+              let target = data.success;
+
+              setContentsState(prevState => {
+                let newArr = [...prevState];
+                let found = false;
+                newArr.forEach((value, arrIndex) => {
+                  // Replace row
+                  if (value.id == target?.id) {
+                    found = true;
+                    newArr[arrIndex] = target!;
+                  }
+
+                  // Replace rtd data
+                  if (value.roomtypes?.id == target.roomtypes?.id) {
+                    value.roomtypes = target.roomtypes;
+                  }
+                });
+
+                if (!found) {
+                  newArr.concat(target);
+                }
+
+                return newArr;
+              });
+              shouldCloseDialog = true;
+            }
+
+            if (shouldCloseDialog) {
+              setDialogOpen(false);
+              // TODO! Alert
+            }
+          }
         }}
 
         delete={{
           // @ts-ignore
           mutationFn: deleteRoomAction,
+          customOnSuccess: (data, variables, context, setMutationResponse, setContentsState, setDialogOpen) => {
+
+          }
         }}
         customDialog={
           <Dialog
@@ -123,6 +163,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
                       const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
 
                       const mapping = activeData.roomtypes?.roomtypedurations.find(e => e.duration_id == d.id);
+                      const hasPrice = mapping && mapping.suggested_price;
 
                       return (
                         <tr key={d.id}>
@@ -138,11 +179,11 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
                           <td className={classes}>
                             <Typography
                               variant="small"
-                              color={mapping ? "blue-gray" : "red"}
+                              color={hasPrice ? "blue-gray" : "red"}
                               className="font-normal"
                             >
                               {
-                                mapping ?
+                                hasPrice ?
                                   `IDR ${mapping.suggested_price}` :
                                   'Not Set'
                               }
