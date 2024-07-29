@@ -10,8 +10,8 @@ export type SelectOption<T> = {
 export interface SelectProps<T> {
   setValue: (value?: T) => void;
 
-  selectedData?: SelectOption<T>,
-  data: SelectOption<T>[]
+  selectedOption?: SelectOption<T>,
+  options: SelectOption<T>[]
 
   filterFn?: (o: SelectOption<T>) => boolean
 
@@ -20,7 +20,7 @@ export interface SelectProps<T> {
 
 export function SelectComponent<T = string>(props: SelectProps<T>) {
   const [value, setValue] = useState<SelectOption<T> | undefined>(undefined);
-  const [options, setOptions] = useState<SelectOption<T>[]>(props.data);
+  const [options, setOptions] = useState<SelectOption<T>[]>(props.options);
 
   const loadOptions = (
     inputValue: string,
@@ -43,14 +43,14 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
   };
 
   useEffect(() => {
-    if (props.selectedData) {
-      setValue(props.selectedData);
+    if (props.selectedOption) {
+      setValue(props.selectedOption);
     }
-  }, [props.selectedData]);
+  }, [props.selectedOption]);
 
   useEffect(() => {
-    setOptions(props.data);
-  }, [props.data]);
+    setOptions(props.options);
+  }, [props.options]);
 
   return (
     <AsyncSelect
