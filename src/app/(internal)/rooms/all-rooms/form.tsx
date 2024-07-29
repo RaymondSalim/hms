@@ -5,11 +5,18 @@ import React, {useContext, useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {HeaderContext} from "@/app/_context/HeaderContext";
-import {getRoomStatuses, getRoomTypes, RoomsWithTypeAndLocation, RoomTypeDurationWithDuration} from "@/app/_db/room";
+import {
+  getRoomStatuses,
+  getRoomTypeDurationsByRoomTypeIDAndLocationID,
+  getRoomTypes,
+  RoomsWithTypeAndLocation,
+  RoomTypeDurationWithDuration
+} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
-import {getDurations} from "@/app/_db/duration";
+import {getSortedDurations} from "@/app/_db/duration";
 import {Prisma} from "@prisma/client";
+import {AiOutlineLoading} from "react-icons/ai";
 
 interface RoomFormProps extends TableFormProps<RoomsWithTypeAndLocation> {
 }
@@ -18,6 +25,7 @@ export function RoomForm(props: RoomFormProps) {
   const headerContext = useContext(HeaderContext);
 
   const [roomData, setRoomData] = useState<Partial<RoomsWithTypeAndLocation>>(props.contentData ?? {});
+  const [durationReady, setDurationReady] = useState(false);
 
   const fieldErrors = {
     ...props.mutationResponse?.errors?.fieldErrors
@@ -37,18 +45,20 @@ export function RoomForm(props: RoomFormProps) {
 
   const {data: durationsData, isSuccess: durationsDataSuccess, isLoading} = useQuery({
     queryKey: ['rooms.durations'],
-    queryFn: () => getDurations(),
+    queryFn: () => getSortedDurations(),
   });
   useEffect(() => {
+    setDurationReady(false);
     if (durationsDataSuccess) {
       let originalRoomTypeDurations: RoomTypeDurationWithDuration[] = structuredClone(roomData).roomtypes?.roomtypedurations ?? [];
       setRoomData(prevRoom => {
         durationsData?.forEach((d, index) => {
-
-          if (prevRoom.roomtypes && !prevRoom.roomtypes?.roomtypedurations) {
-            prevRoom.roomtypes!.roomtypedurations = [];
+          if (!prevRoom.roomtypes || !prevRoom.roomtypes.roomtypedurations) {
+            // @ts-ignore
+            prevRoom.roomtypes = {
+              roomtypedurations: []
+            };
           }
-
           const target = originalRoomTypeDurations?.find(rtd => rtd && rtd.durations?.id == d.id);
           if (!target) {
             // @ts-ignore
@@ -64,8 +74,9 @@ export function RoomForm(props: RoomFormProps) {
         return {...prevRoom};
       });
     }
+    setDurationReady(true);
 
-  }, [durationsData, durationsDataSuccess]);
+  }, [durationsData, durationsDataSuccess, roomData.roomtypes?.id]);
 
   // Room Type Data
   const {data: roomTypeData, isSuccess: roomTypeDataSuccess} = useQuery({
@@ -81,6 +92,41 @@ export function RoomForm(props: RoomFormProps) {
       })));
     }
   }, [roomTypeData, roomTypeDataSuccess]);
+
+  // Room Type Duration Data
+  let {
+    data: roomTypeDurationData,
+    isSuccess: roomTypeDurationDataSuccess,
+    isLoading: roomTypeDurationDataLoading
+  } = useQuery({
+    queryKey: ['rooms.typeduration', roomData.roomtypes?.id, roomData.location_id],
+    queryFn: () => getRoomTypeDurationsByRoomTypeIDAndLocationID(roomData.roomtypes?.id, roomData.location_id),
+  });
+  useEffect(() => {
+    if (durationReady && roomTypeDurationDataSuccess) {
+      setRoomData(prevRoom => {
+        if (prevRoom.location_id && (roomTypeDurationData?.length ?? 0 > 0)) {
+          if (prevRoom.roomtypes) {
+            prevRoom.roomtypes.roomtypedurations.forEach((rtd, index) => {
+              prevRoom.roomtypes!.roomtypedurations[index] = roomTypeDurationData?.find(rtdf => rtdf.durations.id == rtd.durations.id) ?? rtd;
+            });
+          }
+        } else {
+          durationsData?.forEach((d, index) => {
+            // @ts-ignore
+            prevRoom.roomtypes!.roomtypedurations[index] = {
+              room_type_id: prevRoom.roomtypes!.id,
+              location_id: prevRoom.location_id!,
+              durations: d,
+              // @ts-ignore
+              suggested_price: undefined,
+            };
+          });
+        }
+        return structuredClone(prevRoom);
+      });
+    }
+  }, [durationReady, roomTypeDurationData, roomTypeDurationDataSuccess]);
 
   // Status Data
   const {data: statusData, isSuccess: statusDataSuccess} = useQuery({
@@ -111,7 +157,6 @@ export function RoomForm(props: RoomFormProps) {
       })));
     }
   }, [locationData, locationDataSuccess]);
-
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -154,8 +199,8 @@ export function RoomForm(props: RoomFormProps) {
                 ...prevState,
                 roomtypes: v && {id: v, roomtypedurations: []}
               }))}
-              data={roomTypeDataMapped}
-              selectedData={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
+              options={roomTypeDataMapped}
+              selectedOption={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
               placeholder={"Enter room type"}
             />
           </div>
@@ -168,8 +213,8 @@ export function RoomForm(props: RoomFormProps) {
             <SelectComponent<number>
               // @ts-ignore
               setValue={(v) => setRoomData(prevState => ({...prevState, roomstatuses: {id: v}}))}
-              data={statusDataMapped}
-              selectedData={statusDataMapped.find(r => r.value == roomData.roomstatuses?.id)}
+              options={statusDataMapped}
+              selectedOption={statusDataMapped.find(r => r.value == roomData.roomstatuses?.id)}
               placeholder={"Enter status"}
             />
           </div>
@@ -180,34 +225,35 @@ export function RoomForm(props: RoomFormProps) {
               </Typography>
             </label>
             <SelectComponent<number>
-              setValue={(v) => setRoomData(prevState => ({...prevState, location_id: v}))}
-              data={locationDataMapped}
-              selectedData={
-                locationDataMapped.find(r => r.value == roomData.location_id) ??
-                locationDataMapped.find(r => {
-                  if (r.value == headerContext.locationID) {
-                    setRoomData(prevState => ({...prevState, location_id: r.value}));
-                    return true;
-                  }
-                })
+              setValue={(v) => setRoomData(prevState => {
+                return structuredClone({...prevState, location_id: v});
+              })}
+              options={locationDataMapped}
+              selectedOption={
+                locationDataMapped.find(r => r.value == roomData.location_id)
               }
               placeholder={"Enter location"}
             />
           </div>
           {
-            durationsDataSuccess &&
+            roomTypeDurationDataLoading &&
+              <div className={"flex items-center justify-center"}>
+                  <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
+              </div>
+          }
+          {
+            roomData.roomtypes?.roomtypedurations && roomTypeDurationDataSuccess &&
               <div>
                   <Typography variant="h5" color="blue-gray">
                       Pricing
                   </Typography>
                 {
-                  durationsData?.map((d, index) => {
-
+                  roomData.roomtypes?.roomtypedurations?.map((d, index) => {
                     return (
                       <div key={d.id}>
-                        <label htmlFor={d.duration}>
+                        <label htmlFor={d.durations.duration}>
                           <Typography variant="h6" color="blue-gray">
-                            {d.duration}
+                            {d.durations.duration}
                           </Typography>
                         </label>
                         <Input
@@ -215,7 +261,7 @@ export function RoomForm(props: RoomFormProps) {
                           variant="outlined"
                           min="0"
                           type="number"
-                          name={d.duration}
+                          name={d.durations.duration}
                           value={Number(roomData.roomtypes?.roomtypedurations[index]?.suggested_price) ?? ""}
                           onChange={(e) => {
                             if (isNaN(Number(e.currentTarget.value))) {
@@ -236,7 +282,7 @@ export function RoomForm(props: RoomFormProps) {
                                 prevRoom.roomtypes.roomtypedurations[index] = {
                                   room_type_id: prevRoom.roomtypes!.id,
                                   location_id: prevRoom.location_id!,
-                                  durations: d,
+                                  durations: d.durations,
                                   suggested_price: new Prisma.Decimal(e.target.value)
                                 };
                               }
