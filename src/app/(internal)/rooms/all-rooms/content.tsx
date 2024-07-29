@@ -10,7 +10,7 @@ import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/rooms/all-roo
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
-import {getDurations} from "@/app/_db/duration";
+import {getSortedDurations} from "@/app/_db/duration";
 import Link from "next/link";
 
 
@@ -27,7 +27,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
 
   const {data: durationsData, isSuccess, isLoading} = useQuery({
     queryKey: ['rooms.durations'],
-    queryFn: () => getDurations(),
+    queryFn: () => getSortedDurations(),
   });
 
   const columnHelper = createColumnHelper<RoomsWithTypeAndLocation>();

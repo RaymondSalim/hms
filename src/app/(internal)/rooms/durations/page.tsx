@@ -6,7 +6,7 @@ import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
 import DurationsContent from "@/app/(internal)/rooms/durations/content";
-import {getDurations} from "@/app/_db/duration";
+import {getSortedDurations} from "@/app/_db/duration";
 
 export default function RoomsPage() {
   const headerContext = useContext(HeaderContext);
@@ -22,7 +22,7 @@ export default function RoomsPage() {
 
   const {data: durationsData, isSuccess, isLoading} = useQuery({
     queryKey: ['rooms.durations'],
-    queryFn: () => getDurations(),
+    queryFn: () => getSortedDurations(),
   });
 
 

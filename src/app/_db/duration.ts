@@ -4,11 +4,33 @@ import prisma from "@/app/_lib/primsa";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {Duration} from "@prisma/client";
 
-export async function getDurations() {
-  return prisma.duration.findMany({
+export async function getSortedDurations() {
+  let durations = prisma.duration.findMany({
     orderBy: {
       id: 'asc'
     }
+  });
+
+  const parseDuration = (duration: string): number => {
+    const [value, unit] = duration.split(' ');
+    switch (unit) {
+      case 'day':
+      case 'days':
+        return parseInt(value);
+      case 'month':
+      case 'months':
+        return parseInt(value) * 30;
+      case 'year':
+      case 'years':
+        return parseInt(value) * 365;
+      default:
+        return 0;
+    }
+  };
+
+  return durations.then(d => {
+    d.sort((a, b) => parseDuration(a.duration) - parseDuration(b.duration));
+    return d;
   });
 }
 

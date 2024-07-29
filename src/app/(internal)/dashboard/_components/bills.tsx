@@ -9,7 +9,7 @@ import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/reac
 import {Button} from "@material-tailwind/react";
 import {AiOutlineLoading} from "react-icons/ai";
 import TanTable from "@/app/_components/tanTable/tanTable";
-import {getDurations} from "@/app/_db/duration";
+import {getSortedDurations} from "@/app/_db/duration";
 
 export default function Bills() {
   const dashboardContext = useContext(HeaderContext);
@@ -17,7 +17,7 @@ export default function Bills() {
 
   const {data: durationData, isSuccess: durationIsSuccess} = useQuery({
     queryKey: ['dashboard.durations'],
-    queryFn: () => getDurations()
+    queryFn: () => getSortedDurations()
   });
 
   const {data: bills, isLoading: billsIsLoading, isSuccess: billsIsSuccess} = useQuery({
