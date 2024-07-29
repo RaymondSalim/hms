@@ -226,6 +226,18 @@ export async function getRoomTypes() {
     return prisma.roomType.findMany();
 }
 
+export async function getRoomTypeDurationsByRoomTypeIDAndLocationID(room_type_id?: number | null, location_id?: number | null) {
+    return prisma.roomTypeDuration.findMany({
+        where: {
+            room_type_id: (location_id && room_type_id) ?? -9999999,
+            location_id: (room_type_id && location_id) ?? -9999999
+        },
+        include: {
+            durations: true
+        }
+    });
+}
+
 export async function getRoomStatuses() {
     return prisma.roomStatus.findMany();
 }
