@@ -12,7 +12,7 @@ export async function upsertRoomTypeAction(roomData: Partial<RoomType>): Promise
 
   if (!success) {
     return {
-      errors: error?.formErrors
+      errors: error?.format()
     };
   }
 
@@ -53,7 +53,7 @@ export async function deleteRoomTypeAction(id: string): Promise<GenericActionsTy
 
   if (!parsedData.success) {
     return {
-      errors: parsedData.error.formErrors
+      errors: parsedData.error.format()
     };
   }
 

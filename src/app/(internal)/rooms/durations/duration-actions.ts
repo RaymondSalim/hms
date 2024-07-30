@@ -18,7 +18,7 @@ export async function upsertDurationAction(roomData: Partial<Duration>): Promise
       };
     }
     return {
-      errors: error?.formErrors
+      errors: error?.format()
     };
   }
 
@@ -61,7 +61,7 @@ export async function deleteDurationAction(id: string): Promise<GenericActionsTy
 
   if (!parsedData.success) {
     return {
-      errors: parsedData.error.formErrors
+      errors: parsedData.error.format()
     };
   }
 

@@ -124,9 +124,6 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
         delete={{
           // @ts-ignore
           mutationFn: deleteRoomAction,
-          customOnSuccess: (data, variables, context, setMutationResponse, setContentsState, setDialogOpen) => {
-
-          }
         }}
         customDialog={
           <Dialog

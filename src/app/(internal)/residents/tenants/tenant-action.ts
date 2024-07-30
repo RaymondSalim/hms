@@ -13,7 +13,7 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
 
   if (!success) {
     return {
-      errors: error?.formErrors
+      errors: error?.format()
     };
   }
 
@@ -50,7 +50,7 @@ export async function deleteTenantAction(id: string): Promise<GenericActionsType
 
   if (!parsedData.success) {
     return {
-      errors: parsedData.error.formErrors
+      errors: parsedData.error.format()
     };
   }
 

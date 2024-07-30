@@ -27,7 +27,7 @@ export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise
   if (!success) {
     return {
       // errors: Object.fromEntries(error.errors.entries())
-      errors: error?.formErrors
+      errors: error?.format()
     };
   }
 
@@ -86,7 +86,7 @@ export async function deleteUserAction(id: string): Promise<GenericActionsType<P
 
   if (!success) {
     return {
-      errors: error?.flatten()
+      errors: error?.format()
     };
   }
 

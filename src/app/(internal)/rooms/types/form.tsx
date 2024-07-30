@@ -2,18 +2,20 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {RoomType} from "@prisma/client";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
+import {ZodFormattedError} from "zod";
 
 interface RoomFormProps extends TableFormProps<RoomType> {
 }
 
 export function RoomTypesForm(props: RoomFormProps) {
   const [roomTypeData, setRoomTypeData] = useState<Partial<RoomType>>(props.contentData ?? {});
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<RoomType> | undefined>(props.mutationResponse?.errors);
 
-  const fieldErrors = {
-    ...props.mutationResponse?.errors?.fieldErrors
-  };
+  useEffect(() => {
+    setFieldErrors(props.mutationResponse?.errors);
+  }, [props.mutationResponse?.errors]);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -54,8 +56,8 @@ export function RoomTypesForm(props: RoomFormProps) {
               onChange={(e) => setRoomTypeData(prevRoomType => ({...prevRoomType, type: e.target.value}))}
               size="lg"
               placeholder="Presidential"
-              error={!!fieldErrors.type}
-              className={`${!!fieldErrors.type ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.type}
+              className={`${!!fieldErrors?.type ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}

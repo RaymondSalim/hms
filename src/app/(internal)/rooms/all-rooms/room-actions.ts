@@ -54,7 +54,7 @@ export async function deleteRoomAction(id: string): Promise<GenericActionsType<R
 
   if (!parsedData.success) {
     return {
-      errors: parsedData.error.formErrors
+      errors: parsedData.error.format()
     };
   }
 

@@ -2,18 +2,20 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {Duration} from "@prisma/client";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
+import {ZodFormattedError} from "zod";
 
 interface RoomFormProps extends TableFormProps<Duration> {
 }
 
 export function DurationForm(props: RoomFormProps) {
   const [durationData, setDurationData] = useState<Partial<Duration>>(props.contentData ?? {});
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<Duration> | undefined>(props.mutationResponse?.errors);
 
-  const fieldErrors = {
-    ...props.mutationResponse?.errors?.fieldErrors
-  };
+  useEffect(() => {
+    setFieldErrors(props.mutationResponse?.errors);
+  }, [props.mutationResponse?.errors]);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -54,8 +56,8 @@ export function DurationForm(props: RoomFormProps) {
               onChange={(e) => setDurationData(prevDuration => ({...prevDuration, duration: e.target.value}))}
               size="lg"
               placeholder="1 Year"
-              error={!!fieldErrors.duration}
-              className={`${!!fieldErrors.duration ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.duration}
+              className={`${!!fieldErrors?.duration ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
@@ -77,8 +79,8 @@ export function DurationForm(props: RoomFormProps) {
               onChange={(e) => setDurationData(prevDuration => ({...prevDuration, day_count: Number(e.target.value)}))}
               size="lg"
               placeholder="15"
-              error={!!fieldErrors.day_count}
-              className={`${!!fieldErrors.day_count ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.day_count}
+              className={`${!!fieldErrors?.day_count ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
@@ -103,8 +105,8 @@ export function DurationForm(props: RoomFormProps) {
               }))}
               size="lg"
               placeholder="15"
-              error={!!fieldErrors.day_count}
-              className={`${!!fieldErrors.day_count ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.day_count}
+              className={`${!!fieldErrors?.day_count ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
