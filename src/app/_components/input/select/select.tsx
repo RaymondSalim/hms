@@ -16,11 +16,13 @@ export interface SelectProps<T> {
   filterFn?: (o: SelectOption<T>) => boolean
 
   placeholder: string
+  isError: boolean
 }
 
 export function SelectComponent<T = string>(props: SelectProps<T>) {
   const [value, setValue] = useState<SelectOption<T> | undefined>(undefined);
   const [options, setOptions] = useState<SelectOption<T>[]>(props.options);
+  const [isError, setIsError] = useState(false);
 
   const loadOptions = (
     inputValue: string,
@@ -52,6 +54,10 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
     setOptions(props.options);
   }, [props.options]);
 
+  useEffect(() => {
+    setIsError(props.isError);
+  }, [props.isError]);
+
   return (
     <AsyncSelect
       onChange={(n: SelectOption<T> | null) => {
@@ -64,6 +70,11 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
       loadOptions={loadOptions}
       value={value}
       placeholder={props.placeholder}
+      classNames={{
+        control: (state) => {
+          return isError ? "!border-red-500" : "";
+        }
+      }}
     />
   );
 }
