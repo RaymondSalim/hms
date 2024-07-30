@@ -5,7 +5,7 @@ export const roomSchema = object({
   room_number: string({required_error: "Room Number is required"}),
   roomstatuses: object({
     id: number({required_error: "Status ID is required"})
-  }),
+  }, {required_error: "Status ID is required"}),
   location_id: number({required_error: "Location ID is required"}),
 });
 
