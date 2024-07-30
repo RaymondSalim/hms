@@ -11,7 +11,7 @@ export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocatio
 
   if (!success) {
     return {
-      errors: error?.formErrors
+      errors: error?.format()
     };
   }
 

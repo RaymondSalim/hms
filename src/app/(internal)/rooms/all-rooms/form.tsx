@@ -1,10 +1,9 @@
 "use client";
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
-import {HeaderContext} from "@/app/_context/HeaderContext";
 import {
   getRoomStatuses,
   getRoomTypeDurationsByRoomTypeIDAndLocationID,
@@ -17,21 +16,22 @@ import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
 import {Prisma} from "@prisma/client";
 import {AiOutlineLoading} from "react-icons/ai";
+import {ZodFormattedError} from "zod";
 
 interface RoomFormProps extends TableFormProps<RoomsWithTypeAndLocation> {
 }
 
 export function RoomForm(props: RoomFormProps) {
-  const headerContext = useContext(HeaderContext);
-
   const [roomData, setRoomData] = useState<Partial<RoomsWithTypeAndLocation>>(props.contentData ?? {});
   const [durationReady, setDurationReady] = useState(false);
-
-  const fieldErrors = {
-    ...props.mutationResponse?.errors?.fieldErrors
-  };
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<RoomsWithTypeAndLocation> | undefined>(props.mutationResponse?.errors);
 
   useEffect(() => {
+    setFieldErrors(props.mutationResponse?.errors);
+  }, [props.mutationResponse?.errors]);
+
+  useEffect(() => {
+    // @ts-ignore
     if (roomData.roomtypes == undefined) {
       // @ts-ignore
       setRoomData(p => ({
@@ -123,6 +123,7 @@ export function RoomForm(props: RoomFormProps) {
             };
           });
         }
+
         return structuredClone(prevRoom);
       });
     }
@@ -176,15 +177,15 @@ export function RoomForm(props: RoomFormProps) {
               onChange={(e) => setRoomData(prevRoom => ({...prevRoom, room_number: e.target.value}))}
               size="lg"
               placeholder="Room 205"
-              error={!!fieldErrors.room_number}
-              className={`${!!fieldErrors.room_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.room_number}
+              className={`${!!fieldErrors?.room_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
             />
             {
-              fieldErrors.room_number &&
-                <Typography color="red">{fieldErrors.room_number}</Typography>
+              fieldErrors?.room_number &&
+                <Typography color="red">{fieldErrors?.room_number._errors}</Typography>
             }
           </div>
           <div>
@@ -202,7 +203,12 @@ export function RoomForm(props: RoomFormProps) {
               options={roomTypeDataMapped}
               selectedOption={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
               placeholder={"Enter room type"}
+              isError={!!fieldErrors?.roomtypes?.id}
             />
+            {
+              fieldErrors?.roomtypes &&
+                <Typography color="red">{fieldErrors?.roomtypes?.id?._errors}</Typography>
+            }
           </div>
           <div>
             <label htmlFor="status">
@@ -216,7 +222,12 @@ export function RoomForm(props: RoomFormProps) {
               options={statusDataMapped}
               selectedOption={statusDataMapped.find(r => r.value == roomData.roomstatuses?.id)}
               placeholder={"Enter status"}
+              isError={!!fieldErrors?.roomstatuses}
             />
+            {
+              fieldErrors?.roomstatuses &&
+                <Typography color="red">{fieldErrors?.roomstatuses._errors}</Typography>
+            }
           </div>
           <div>
             <label htmlFor="location">
@@ -233,7 +244,12 @@ export function RoomForm(props: RoomFormProps) {
                 locationDataMapped.find(r => r.value == roomData.location_id)
               }
               placeholder={"Enter location"}
+              isError={!!fieldErrors?.location_id}
             />
+            {
+              fieldErrors?.location_id &&
+                <Typography color="red">{fieldErrors?.location_id._errors}</Typography>
+            }
           </div>
           {
             roomTypeDurationDataLoading &&
@@ -292,17 +308,11 @@ export function RoomForm(props: RoomFormProps) {
                           }}
                           size="lg"
                           placeholder="5000000"
-                          error={!!fieldErrors.room_number} /*TODO*/
-                          className={`${!!fieldErrors.room_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`} /*TODO!*/
+                          className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
                           labelProps={{
                             className: "before:content-none after:content-none",
                           }}
                         />
-                        {
-                          /*TODO!*/
-                          fieldErrors.room_number &&
-                            <Typography color="red">{fieldErrors.room_number}</Typography>
-                        }
                       </div>
                     );
                   })

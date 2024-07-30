@@ -1,7 +1,7 @@
-import {typeToFlattenedError} from "zod";
+import {ZodFormattedError} from "zod";
 
 export type GenericActionsType<T> = {
   success?: T | null,
   failure?: string,
-  errors?: typeToFlattenedError<T>
+  errors?: ZodFormattedError<T>
 }
