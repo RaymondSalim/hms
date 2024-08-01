@@ -162,7 +162,7 @@ export function RoomForm(props: RoomFormProps) {
 
   // Remove RTD
   useEffect(() => {
-    if (!(roomData.location_id && roomData.roomtypes?.id)) {
+    if (roomData.location_id == undefined && roomData.roomtypes?.id == undefined) {
       // @ts-ignore
       setRoomData(prevRoom => ({
         ...prevRoom,
