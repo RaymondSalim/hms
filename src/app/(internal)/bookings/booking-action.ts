@@ -1,10 +1,38 @@
+"use server";
+
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Booking} from "@prisma/client";
+import {Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
+import BookingInclude = Prisma.BookingInclude;
+
+const includeAll: BookingInclude = {
+  rooms: {
+    include: {
+      locations: true,
+    }
+  },
+  durations: true,
+  bookingstatuses: true,
+  tenants: true
+};
+
+export type BookingsIncludeAll = Prisma.BookingGetPayload<{
+  include: {
+    rooms: {
+      include: {
+        locations: true,
+      }
+    },
+    durations: true,
+    bookingstatuses: true,
+    tenants: true
+  },
+}>
 
 export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>) {
   return prisma.booking.create({
-    data: data
+    data: data,
+    include: includeAll
   });
 }
 
@@ -14,10 +42,16 @@ export async function getBookingById(id: number) {
   });
 }
 
-export async function getAllBookings(limit?: number, offset?: number) {
+export async function getAllBookings(location_id?: number, limit?: number, offset?: number) {
   return prisma.booking.findMany({
+    where: {
+      rooms: {
+        location_id: location_id,
+      }
+    },
     skip: offset,
-    take: limit
+    take: limit,
+    include: includeAll
   });
 }
 
