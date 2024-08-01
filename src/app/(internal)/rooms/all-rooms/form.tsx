@@ -101,6 +101,7 @@ export function RoomForm(props: RoomFormProps) {
   } = useQuery({
     queryKey: ['rooms.typeduration', roomData.roomtypes?.id, roomData.location_id],
     queryFn: () => getRoomTypeDurationsByRoomTypeIDAndLocationID(roomData.roomtypes?.id, roomData.location_id),
+    enabled: Boolean(roomData.roomtypes?.id && roomData.location_id)
   });
   useEffect(() => {
     if (durationReady && roomTypeDurationDataSuccess) {
@@ -158,6 +159,20 @@ export function RoomForm(props: RoomFormProps) {
       })));
     }
   }, [locationData, locationDataSuccess]);
+
+  // Remove RTD
+  useEffect(() => {
+    if (!(roomData.location_id && roomData.roomtypes?.id)) {
+      // @ts-ignore
+      setRoomData(prevRoom => ({
+        ...prevRoom,
+        roomtypes: {
+          ...prevRoom.roomtypes,
+          roomtypedurations: []
+        }
+      }));
+    }
+  }, [roomData.location_id, roomData.roomtypes?.id]);
 
   return (
     <div className={"w-full px-8 py-4"}>
