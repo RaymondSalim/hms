@@ -292,9 +292,6 @@ export async function getPaymentData(status?: number, locationID?: number) {
   });
 }
 
-export async function getDurations() {
-  return prisma.duration.findMany();
-}
 
 export async function getBills(durationID?: number, locationID?: number): Promise<{
   id: string,

@@ -2,20 +2,22 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {Tenant} from "@prisma/client";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {TenantWithRooms} from "@/app/_db/tenant";
 import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
+import {ZodFormattedError} from "zod";
 
 interface TenantFormProps extends TableFormProps<TenantWithRooms> {
 }
 
 export function TenantForm(props: TenantFormProps) {
   const [tenantData, setTenantData] = useState<Partial<Tenant>>(props.contentData ?? {});
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<TenantWithRooms> | undefined>(props.mutationResponse?.errors);
 
-  const fieldErrors = {
-    ...props.mutationResponse?.errors?.fieldErrors
-  };
+  useEffect(() => {
+    setFieldErrors(props.mutationResponse?.errors);
+  }, [props.mutationResponse?.errors]);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -35,15 +37,15 @@ export function TenantForm(props: TenantFormProps) {
               onChange={(e) => setTenantData(prevTenant => ({...prevTenant, name: e.target.value}))}
               size="lg"
               placeholder="John Smith"
-              error={!!fieldErrors.name}
-              className={`${!!fieldErrors.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.name}
+              className={`${!!fieldErrors?.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
             />
             {
-              fieldErrors.name &&
-                <Typography color="red">{fieldErrors.name}</Typography>
+              fieldErrors?.name &&
+                <Typography color="red">{fieldErrors?.name._errors}</Typography>
             }
           </div>
           <div>
@@ -61,15 +63,15 @@ export function TenantForm(props: TenantFormProps) {
               onChange={(e) => setTenantData(prevTenant => ({...prevTenant, email: e.target.value}))}
               size="lg"
               placeholder="john@smith.com"
-              error={!!fieldErrors.email}
-              className={`${!!fieldErrors.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.email}
+              className={`${!!fieldErrors?.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
             />
             {
-              fieldErrors.email &&
-                <Typography color="red">{fieldErrors.email}</Typography>
+              fieldErrors?.email &&
+                <Typography color="red">{fieldErrors?.email._errors}</Typography>
             }
           </div>
           <div>
@@ -83,8 +85,8 @@ export function TenantForm(props: TenantFormProps) {
               setPhoneNumber={(p) => setTenantData(prevTenant => ({...prevTenant, phone: p}))}
               type="tel"
               placeholder="Mobile Number"
-              error={!!fieldErrors.phone}
-              className={`${!!fieldErrors.phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.phone}
+              className={`${!!fieldErrors?.phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
@@ -93,8 +95,8 @@ export function TenantForm(props: TenantFormProps) {
               }}
             />
             {
-              fieldErrors.phone &&
-                <Typography color="red">{fieldErrors.phone}</Typography>
+              fieldErrors?.phone &&
+                <Typography color="red">{fieldErrors?.phone._errors}</Typography>
             }
           </div>
           {

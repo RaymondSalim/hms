@@ -12,6 +12,7 @@ import {
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
 import {Session} from 'next-auth';
+import {FaKey} from "react-icons/fa6";
 
 export interface SidebarProps {
     session: Session | null
@@ -27,11 +28,21 @@ export default function Sidebar({session}: SidebarProps) {
             children: [
                 {name: 'Property Locations', path: '/data-center/locations'},
                 { name: 'Email Settings', path: '/data-center/email-settings' },
-                { name: 'Rooms', path: '/data-center/rooms' },
                 { name: 'Penalties', path: '/data-center/penalties' },
                 { name: 'Rules', path: '/data-center/rules' },
                 { name: 'Fees', path: '/data-center/fees' },
                 { name: 'Expenses', path: '/data-center/expenses' },
+            ]
+        },
+        {
+            name: 'Rooms',
+            path: '/rooms',
+            icon: <FaKey/>,
+            children: [
+                {name: 'All Rooms', path: '/rooms/all-rooms'},
+                {name: 'Room Types', path: '/rooms/types'},
+                {name: 'Room Status', path: '/rooms/status'},
+                {name: 'Durations', path: '/rooms/durations'},
             ]
         },
         { name: 'Registrations', path: '/registration', icon: <FaUserPlus /> },

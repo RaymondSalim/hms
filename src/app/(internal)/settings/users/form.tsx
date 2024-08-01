@@ -2,11 +2,12 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {SiteUser} from "@prisma/client";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Input, Option, Select, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getAllRoles} from "@/app/_db/user";
 import {AiOutlineLoading} from "react-icons/ai";
+import {ZodFormattedError} from "zod";
 
 interface UserFormProps extends TableFormProps<SiteUser> {
 }
@@ -18,10 +19,11 @@ export function UserForm(props: UserFormProps) {
     queryKey: ['user.roles'],
     queryFn: () => getAllRoles()
   });
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<SiteUser> | undefined>(props.mutationResponse?.errors);
 
-  const fieldErrors = {
-    ...props.mutationResponse?.errors?.fieldErrors
-  };
+  useEffect(() => {
+    setFieldErrors(props.mutationResponse?.errors);
+  }, [props.mutationResponse?.errors]);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -41,15 +43,15 @@ export function UserForm(props: UserFormProps) {
               onChange={(e) => setUserData(prevUser => ({...prevUser, name: e.target.value}))}
               size="lg"
               placeholder="John Smith"
-              error={!!fieldErrors.name}
-              className={`${!!fieldErrors.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.name}
+              className={`${!!fieldErrors?.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
             />
             {
-              fieldErrors.name &&
-                <Typography color="red">{fieldErrors.name}</Typography>
+              fieldErrors?.name &&
+                <Typography color="red">{fieldErrors?.name._errors}</Typography>
             }
           </div>
           <div>
@@ -66,8 +68,8 @@ export function UserForm(props: UserFormProps) {
               onChange={(e) => setUserData(prevUser => ({...prevUser, email: e.target.value}))}
               size="lg"
               placeholder="john@smith.com"
-              error={!!fieldErrors.email}
-              className={`${!!fieldErrors.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.email}
+              className={`${!!fieldErrors?.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
@@ -90,8 +92,8 @@ export function UserForm(props: UserFormProps) {
                       value={userData.role_id?.toString()}
                       name="role"
                       onChange={(value) => setUserData({...userData, role_id: Number(value) || undefined})}
-                      error={!!fieldErrors.role_id}
-                      className={`${!!fieldErrors.role_id ? "!border-t-red-500" : "!border-t-blue-gray-200 aria-expanded:!border-t-gray-900"}`}
+                      error={!!fieldErrors?.role_id}
+                      className={`${!!fieldErrors?.role_id ? "!border-t-red-500" : "!border-t-blue-gray-200 aria-expanded:!border-t-gray-900"}`}
                       labelProps={{
                         className: "before:content-none after:content-none",
                       }}
@@ -118,8 +120,8 @@ export function UserForm(props: UserFormProps) {
                       onChange={(e) => setUserData(prevUser => ({...prevUser, password: e.target.value}))}
                       size="lg"
                       placeholder="********"
-                      error={!!fieldErrors.password}
-                      className={`${!!fieldErrors.password ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                      error={!!fieldErrors?.password}
+                      className={`${!!fieldErrors?.password ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                       labelProps={{
                         className: "before:content-none after:content-none",
                       }}

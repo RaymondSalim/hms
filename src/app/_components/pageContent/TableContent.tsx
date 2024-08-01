@@ -9,10 +9,10 @@ import {
   getSortedRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import {cloneElement, ReactElement, useEffect, useMemo, useState} from "react";
+import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/data-center/locations/components/searchBarAndCreate.module.css";
-import {Button, Dialog, Input} from "@material-tailwind/react";
+import {Button, Dialog, Input, Typography} from "@material-tailwind/react";
 import {FaPlus} from "react-icons/fa6";
 import {DefaultError, MutationOptions, useMutation, UseMutationResult} from "@tanstack/react-query";
 import {GenericActionsType} from "@/app/_lib/actions";
@@ -24,49 +24,68 @@ export interface TableFormProps<T> {
   mutationResponse?: GenericActionsType<T>
 }
 
+interface CustomMutationOptions<
+  OriginalT, TData = unknown, TError = DefaultError, TVariables = void, TContext = unknown
+> extends MutationOptions<TData, TError, TVariables> {
+  customOnSuccess?: (
+    data: TData, variables: TVariables, context: TContext,
+    setMutationResponse: Dispatch<SetStateAction<TData | undefined>>,
+    setContentsState: Dispatch<SetStateAction<OriginalT[]>>,
+    setDialogOpen: Dispatch<SetStateAction<boolean>>
+  ) => Promise<unknown> | unknown;
+}
+
 export interface TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> {
   name: string,
   initialContents: T[],
   initialSearchValue?: string
-  upsert: MutationOptions<_TReturn, DefaultError, Partial<T>>,
-  delete: MutationOptions<_TReturn, DefaultError, string | number>,
+  upsert: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
+  delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
   columns: ColumnDef<T, any>[],
 
   searchPlaceholder?: string,
   form: ReactElement<TableFormProps<T>>
   shouldShowRowAction?: (props: CellContext<T, unknown>) => boolean
+
+  customDialog?: ReactElement
 }
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
   const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
   const [searchValue, setSearchValue] = useState(props.initialSearchValue);
   const [activeContent, setActiveContent] = useState<T | undefined>(undefined);
-  const [mutationResponse, setMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
+  const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
+  const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
 
   const upsertContentMutation = useMutation({
     ...props.upsert,
     onSuccess: (data, variables, context) => {
-      props.upsert.onSuccess?.(data, variables, context);
-      setMutationResponse(data);
-      let shoudCloseDialog = false;
+      if (props.upsert.customOnSuccess) {
+        props.upsert.customOnSuccess(data, variables, context, setUpsertMutationResponse, setContentsState, setDialogOpen);
+      } else {
+        setUpsertMutationResponse(data);
+        let shouldCloseDialog = false;
 
-      if (data.success) {
-        setContentsState(prevState => {
-          let newArr = [...prevState];
-          let index = newArr.findIndex(l => l.id == data.success?.id);
-          if (index == -1) {
-            return newArr.concat(data.success!);
-          } else {
-            newArr[index] = data.success!;
-          }
-          return newArr;
-        });
-        shoudCloseDialog = true;
-      }
+        if (data.success) {
+          let target = data.success;
 
-      if (shoudCloseDialog) {
-        setDialogOpen(false);
-        // TODO! Alert
+          setContentsState(prevState => {
+            let newArr = [...prevState];
+            let index = newArr.findIndex(l => l.id == target?.id);
+            if (index == -1) {
+              return newArr.concat(target!);
+            } else {
+              newArr[index] = target!;
+            }
+            return newArr;
+          });
+          shouldCloseDialog = true;
+        }
+
+        if (shouldCloseDialog) {
+          setDialogOpen(false);
+          // TODO! Alert
+        }
       }
     }
   });
@@ -74,12 +93,20 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
   const deleteContentMutation = useMutation({
     ...props.delete,
     onSuccess: (data, variables, context) => {
-      props.delete.onSuccess?.(data, variables, context);
+      if (props.delete.customOnSuccess) {
+        props.delete.customOnSuccess(data, variables, context, setDeleteMutationResponse, setContentsState, setDeleteDialogOpen);
+      }
+      setDeleteMutationResponse(data);
+      let shouldCloseDialog = false;
+
       if (data.success) {
         setContentsState(p => p.filter(a => a.id != data.success!.id));
+        shouldCloseDialog = true;
       }
 
-      setDeleteDialogOpen(false);
+      if (shouldCloseDialog) {
+        setDeleteDialogOpen(false);
+      }
       // TODO! Alert
     }
   });
@@ -131,9 +158,16 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
+    if (!deleteDialogOpen) {
+      setActiveContent(undefined);
+      setDeleteMutationResponse(undefined);
+    }
+  }, [deleteDialogOpen]);
+
+  useEffect(() => {
     if (!dialogOpen) {
       setActiveContent(undefined);
-      setMutationResponse(undefined);
+      setUpsertMutationResponse(undefined);
     }
   }, [dialogOpen]);
 
@@ -169,9 +203,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       >
         {
           cloneElement(props.form, {
-            contentData: activeContent,
+            contentData: structuredClone(activeContent),
             mutation: upsertContentMutation,
-            mutationResponse: mutationResponse,
+            mutationResponse: upsertMutationResponse,
             setDialogOpen: setDialogOpen
           })
         }
@@ -179,25 +213,33 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       <Dialog
         open={deleteDialogOpen}
         size={"md"}
-        handler={() => setDeleteDialogOpen(prev => {
-          if (prev) setActiveContent(undefined);
-          return !prev;
-        })}
+        handler={() => setDeleteDialogOpen(prev => !prev)}
         className={"p-8"}
       >
         <h2 className={"text-xl font-semibold text-black mb-4"}>Delete {props.name}</h2>
         <span>Are you sure you want to delete this item? This action cannot be undone.</span>
+        {
+          deleteMutationResponse?.failure &&
+            <Typography className="whitespace-pre-wrap" color="red">{deleteMutationResponse.failure}</Typography>
+        }
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => setDeleteDialogOpen(false)} variant={"outlined"} className="mt-6">
             Cancel
           </Button>
-          <Button onClick={() => activeContent && deleteContentMutation.mutate(activeContent.id)} color={"red"}
-                  className="mt-6"
-                  loading={deleteContentMutation.isPending}>
+          <Button
+            onClick={() => activeContent && deleteContentMutation.mutate(activeContent.id)}
+            color={"red"}
+            className="mt-6"
+            loading={deleteContentMutation.isPending}
+            disabled={!!deleteMutationResponse?.failure}
+          >
             Delete
           </Button>
         </div>
       </Dialog>
+      {
+        props.customDialog
+      }
     </>
 
   );

@@ -5,7 +5,8 @@ const {PrismaClient} = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function mock() {
+    console.log("Executing mock.js");
     const rawSql = await fs.readFile(path.join(__dirname, 'mock.sql'), {
         encoding: 'utf-8',
     });
@@ -46,12 +47,15 @@ function splitStringByNotQuotedSemicolon(input) {
     return result;
 }
 
-main()
-    .then(async () => {
-        await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-        console.error(e);
-        await prisma.$disconnect();
-        process.exit(1);
-    });
+//
+// mock()
+//     .then(async () => {
+//         await prisma.$disconnect();
+//     })
+//     .catch(async (e) => {
+//         console.error(e);
+//         await prisma.$disconnect();
+//         process.exit(1);
+//     });
+
+module.exports = mock();

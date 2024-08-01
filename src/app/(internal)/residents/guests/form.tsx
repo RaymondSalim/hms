@@ -10,16 +10,18 @@ import {useQuery} from "@tanstack/react-query";
 import {getTenantsWithRoomNumber} from "@/app/_db/tenant";
 import AsyncSelect from "react-select/async";
 import {HeaderContext} from "@/app/_context/HeaderContext";
+import {ZodFormattedError} from "zod";
 
 interface GuestFormProps extends TableFormProps<GuestWithTenant> {
 }
 
 export function GuestForm(props: GuestFormProps) {
   const [guestData, setGuestData] = useState<Partial<Guest>>(props.contentData ?? {});
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<GuestWithTenant> | undefined>(props.mutationResponse?.errors);
 
-  const fieldErrors = {
-    ...props.mutationResponse?.errors?.fieldErrors
-  };
+  useEffect(() => {
+    setFieldErrors(props.mutationResponse?.errors);
+  }, [props.mutationResponse?.errors]);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -39,15 +41,15 @@ export function GuestForm(props: GuestFormProps) {
               onChange={(e) => setGuestData(prevGuest => ({...prevGuest, name: e.target.value}))}
               size="lg"
               placeholder="John Smith"
-              error={!!fieldErrors.name}
-              className={`${!!fieldErrors.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.name}
+              className={`${!!fieldErrors?.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
             />
             {
-              fieldErrors.name &&
-                <Typography color="red">{fieldErrors.name}</Typography>
+              fieldErrors?.name &&
+                <Typography color="red">{fieldErrors?.name._errors}</Typography>
             }
           </div>
           <div>
@@ -65,8 +67,8 @@ export function GuestForm(props: GuestFormProps) {
               onChange={(e) => setGuestData(prevGuest => ({...prevGuest, email: e.target.value}))}
               size="lg"
               placeholder="john@smith.com"
-              error={!!fieldErrors.email}
-              className={`${!!fieldErrors.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.email}
+              className={`${!!fieldErrors?.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}
@@ -83,8 +85,8 @@ export function GuestForm(props: GuestFormProps) {
               setPhoneNumber={(p) => setGuestData(prevGuest => ({...prevGuest, phone: p}))}
               type="tel"
               placeholder="Mobile Number"
-              error={!!fieldErrors.phone}
-              className={`${!!fieldErrors.phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.phone}
+              className={`${!!fieldErrors?.phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}

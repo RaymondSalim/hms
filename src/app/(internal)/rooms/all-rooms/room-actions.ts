@@ -1,15 +1,13 @@
 "use server";
 
-import {Guest} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
+import {roomWithType} from "@/app/_lib/zod/rooms/zod";
+import {createRoom, deleteRoom, RoomsWithTypeAndLocation, updateRoomByID} from "@/app/_db/room";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {number, object} from "zod";
-import {guestSchemaWithOptionalID} from "@/app/_lib/zod/guests/zod";
-import {createGuest, deleteGuest, GuestWithTenant, updateGuestByID} from "@/app/_db/guest";
 
-// Action to update guests
-export async function upsertGuestAction(guestData: Partial<Guest>): Promise<GenericActionsType<GuestWithTenant>> {
-  const {success, data, error} = guestSchemaWithOptionalID.safeParse(guestData);
+export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocation>): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
+  const {success, data, error} = roomWithType.safeParse(roomData);
 
   if (!success) {
     return {
@@ -21,29 +19,35 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
     let res;
     // Update
     if (data?.id) {
-      res = await updateGuestByID(data.id, data);
+      // @ts-ignore
+      res = await updateRoomByID(data.id, data);
     } else {
-      res = await createGuest(data);
+      // @ts-ignore
+      res = await createRoom(data);
     }
+    res = res[res.length - 1];
 
     return {
+      // @ts-ignore
       success: res
     };
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
-      console.error("[register]", error.code, error.message);
+      console.error("[upsertRoomAction][PrismaKnownError]", error.code, error.message);
       if (error.code == "P2002") {
-        return {failure: "Email address is taken"};
+        return {failure: "Room Number is taken"};
       }
     } else if (error instanceof PrismaClientUnknownRequestError) {
-      console.error("[register]", error.message);
+      console.error("[upsertRoomAction][PrismaUnknownError]", error.message);
+    } else {
+      console.error("[upsertRoomAction]", error);
     }
 
     return {failure: "Request unsuccessful"};
   }
 }
 
-export async function deleteGuestAction(id: string): Promise<GenericActionsType<GuestWithTenant>> {
+export async function deleteRoomAction(id: string): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
   const parsedData = object({id: number().positive()}).safeParse({
     id: id,
   });
@@ -55,7 +59,7 @@ export async function deleteGuestAction(id: string): Promise<GenericActionsType<
   }
 
   try {
-    let res = await deleteGuest(parsedData.data.id);
+    let res = await deleteRoom(parsedData.data.id);
     return {
       success: res,
     };

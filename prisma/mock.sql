@@ -6,25 +6,25 @@ VALUES (1, 'Standard Room'),
        (5, 'Penthouse');
 
 INSERT INTO durations (id, duration, day_count, month_count)
-VALUES (1, '1 month', 0, 1),
-       (2, '3 months', 0, 3),
-       (3, '6 months', 0, 6),
-       (4, '12 months', 0, 12);
-
-INSERT INTO roomtypedurations (id, room_type_id, duration_id, suggested_price)
-VALUES (1, 1, 1, 100.00),
-       (2, 1, 2, 280.00),
-       (3, 2, 1, 120.00);
-
-INSERT INTO roomstatuses (id, status)
-VALUES (1, 'Booked'),
-       (2, 'Available'),
-       (3, 'Under Construction');
+VALUES (1, '1 month', NULL, 1),
+       (2, '3 months', NULL, 3),
+       (3, '6 months', NULL, 6),
+       (4, '12 months', NULL, 12);
 
 INSERT INTO locations (id, name, address)
 VALUES (1, 'Location 1', '134 Adams Avenue'),
        (2, 'Location 2', '25506 Adam Passage'),
        (3, 'Location 3', '73877 Wisozk Lake');
+
+INSERT INTO roomtypedurations (id, room_type_id, duration_id, location_id, suggested_price)
+VALUES (1, 1, 1, 1, 100.00),
+       (2, 1, 2, 1, 280.00),
+       (3, 2, 1, 2, 120.00);
+
+INSERT INTO roomstatuses (id, status)
+VALUES (1, 'Booked'),
+       (2, 'Available'),
+       (3, 'Under Construction');
 
 INSERT INTO rooms (id, room_number, room_type_id, status_id, location_id)
 VALUES (1, 'Room 1', 3, 2, 3),

@@ -4,11 +4,12 @@ import styles from "./styles/bills.module.css";
 import React, {useContext, useMemo, useState} from "react";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
-import {getBills, getDurations} from "@/app/_db/dashboard";
+import {getBills} from "@/app/_db/dashboard";
 import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Button} from "@material-tailwind/react";
 import {AiOutlineLoading} from "react-icons/ai";
 import TanTable from "@/app/_components/tanTable/tanTable";
+import {getSortedDurations} from "@/app/_db/duration";
 
 export default function Bills() {
   const dashboardContext = useContext(HeaderContext);
@@ -16,7 +17,7 @@ export default function Bills() {
 
   const {data: durationData, isSuccess: durationIsSuccess} = useQuery({
     queryKey: ['dashboard.durations'],
-    queryFn: () => getDurations()
+    queryFn: () => getSortedDurations()
   });
 
   const {data: bills, isLoading: billsIsLoading, isSuccess: billsIsSuccess} = useQuery({
