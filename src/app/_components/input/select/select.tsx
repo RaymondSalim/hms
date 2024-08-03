@@ -4,6 +4,7 @@ import Select from "react-select";
 export type SelectOption<T> = {
   value: T,
   label: string,
+  isDisabled?: boolean
   [key: string]: any
 }
 
@@ -74,6 +75,7 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
       isSearchable={true}
       options={options}
       isDisabled={isDisabled}
+      isOptionDisabled={(o) => o.isDisabled ?? false}
       // cacheOptions
       // defaultOptions={options}
       // loadOptions={loadOptions}
