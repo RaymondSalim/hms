@@ -158,10 +158,11 @@ export async function getBookingById(id: number) {
   });
 }
 
-export async function getAllBookings(location_id?: number, limit?: number, offset?: number) {
+export async function getAllBookings(location_id?: number, room_id?: number, limit?: number, offset?: number) {
   return prisma.booking.findMany({
     where: {
       rooms: {
+        id: room_id,
         location_id: location_id,
       }
     },
