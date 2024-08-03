@@ -4,11 +4,11 @@ import {createColumnHelper} from "@tanstack/react-table";
 import React, {useContext, useState} from "react";
 import {addToDate, formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {RoomForm} from "@/app/(internal)/rooms/all-rooms/form";
 import {deleteRoomAction} from "@/app/(internal)/rooms/all-rooms/room-actions";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
-import {BookingsIncludeAll} from "@/app/(internal)/bookings/booking-action";
+import {BookingsIncludeAll, createBookingAction} from "@/app/(internal)/bookings/booking-action";
+import {BookingForm} from "@/app/(internal)/bookings/form";
 
 
 export interface BookingsContentProps {
@@ -95,12 +95,12 @@ export default function BookingsContent({bookings}: BookingsContentProps) {
         columns={columns}
         form={
           // @ts-ignore
-          <RoomForm/> // TODO!
+          <BookingForm/>
         }
         searchPlaceholder={"TODO!"} // TODO!
         upsert={{
-          // TODO!
-          // mutationFn: upsertRoomAction,
+          // @ts-ignore
+          mutationFn: createBookingAction,
         }}
 
         delete={{

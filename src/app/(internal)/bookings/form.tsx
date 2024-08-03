@@ -2,148 +2,31 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useState} from "react";
-import {Button, Input, Typography} from "@material-tailwind/react";
+import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
-import {
-  getRoomStatuses,
-  getRoomTypeDurationsByRoomTypeIDAndLocationID,
-  getRoomTypes,
-  RoomsWithTypeAndLocation,
-  RoomTypeDurationWithDuration
-} from "@/app/_db/room";
+import {getRooms} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
-import {Prisma} from "@prisma/client";
-import {AiOutlineLoading} from "react-icons/ai";
+import {Booking, Prisma} from "@prisma/client";
 import {ZodFormattedError} from "zod";
+import {getBookingStatuses} from "@/app/_db/bookings";
+import {getTenants} from "@/app/_db/tenant";
+import {DayPicker} from "react-day-picker";
+import {formatToDateTime} from "@/app/_lib/util";
+import "react-day-picker/style.css";
 
-interface RoomFormProps extends TableFormProps<RoomsWithTypeAndLocation> {
+interface BookingFormProps extends TableFormProps<Booking> {
 }
 
-export function RoomForm(props: RoomFormProps) {
-  const [roomData, setRoomData] = useState<Partial<RoomsWithTypeAndLocation>>(props.contentData ?? {});
-  const [durationReady, setDurationReady] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<RoomsWithTypeAndLocation> | undefined>(props.mutationResponse?.errors);
+export function BookingForm(props: BookingFormProps) {
+  const [bookingData, setBookingData] = useState<Partial<Booking>>(props.contentData ?? {});
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<Booking> | undefined>(props.mutationResponse?.errors);
+  const [locationID, setLocationID] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     setFieldErrors(props.mutationResponse?.errors);
   }, [props.mutationResponse?.errors]);
-
-  useEffect(() => {
-    // @ts-ignore
-    if (roomData.roomtypes == undefined) {
-      // @ts-ignore
-      setRoomData(p => ({
-        ...p,
-        roomtypes: {
-          roomtypedurations: [],
-        }
-      }));
-    }
-  }, []);
-
-  const {data: durationsData, isSuccess: durationsDataSuccess, isLoading} = useQuery({
-    queryKey: ['rooms.durations'],
-    queryFn: () => getSortedDurations(),
-  });
-  useEffect(() => {
-    setDurationReady(false);
-    if (durationsDataSuccess) {
-      let originalRoomTypeDurations: RoomTypeDurationWithDuration[] = structuredClone(roomData).roomtypes?.roomtypedurations ?? [];
-      setRoomData(prevRoom => {
-        durationsData?.forEach((d, index) => {
-          if (!prevRoom.roomtypes || !prevRoom.roomtypes.roomtypedurations) {
-            // @ts-ignore
-            prevRoom.roomtypes = {
-              roomtypedurations: []
-            };
-          }
-          const target = originalRoomTypeDurations?.find(rtd => rtd && rtd.durations?.id == d.id);
-          if (!target) {
-            // @ts-ignore
-            prevRoom.roomtypes!.roomtypedurations[index] = {
-              room_type_id: prevRoom.roomtypes!.id,
-              location_id: prevRoom.location_id!,
-              durations: d,
-            };
-          } else {
-            prevRoom.roomtypes!.roomtypedurations[index] = target;
-          }
-        });
-        return {...prevRoom};
-      });
-    }
-    setDurationReady(true);
-
-  }, [durationsData, durationsDataSuccess, roomData.roomtypes?.id]);
-
-  // Room Type Data
-  const {data: roomTypeData, isSuccess: roomTypeDataSuccess} = useQuery({
-    queryKey: ['rooms.type'],
-    queryFn: () => getRoomTypes(),
-  });
-  const [roomTypeDataMapped, setRoomTypeDataMapped] = useState<SelectOption<number>[]>([]);
-  useEffect(() => {
-    if (roomTypeDataSuccess) {
-      setRoomTypeDataMapped(roomTypeData.map(e => ({
-        value: e.id,
-        label: e.type
-      })));
-    }
-  }, [roomTypeData, roomTypeDataSuccess]);
-
-  // Room Type Duration Data
-  let {
-    data: roomTypeDurationData,
-    isSuccess: roomTypeDurationDataSuccess,
-    isLoading: roomTypeDurationDataLoading
-  } = useQuery({
-    queryKey: ['rooms.typeduration', roomData.roomtypes?.id, roomData.location_id],
-    queryFn: () => getRoomTypeDurationsByRoomTypeIDAndLocationID(roomData.roomtypes?.id, roomData.location_id),
-    enabled: Boolean(roomData.roomtypes?.id && roomData.location_id)
-  });
-  useEffect(() => {
-    if (durationReady && roomTypeDurationDataSuccess) {
-      setRoomData(prevRoom => {
-        if (prevRoom.location_id && (roomTypeDurationData?.length ?? 0 > 0)) {
-          if (prevRoom.roomtypes) {
-            prevRoom.roomtypes.roomtypedurations.forEach((rtd, index) => {
-              prevRoom.roomtypes!.roomtypedurations[index] = roomTypeDurationData?.find(rtdf => rtdf.durations.id == rtd.durations.id) ?? rtd;
-            });
-          }
-        } else {
-          durationsData?.forEach((d, index) => {
-            // @ts-ignore
-            prevRoom.roomtypes!.roomtypedurations[index] = {
-              room_type_id: prevRoom.roomtypes!.id,
-              location_id: prevRoom.location_id!,
-              durations: d,
-              // @ts-ignore
-              suggested_price: undefined,
-            };
-          });
-        }
-
-        return structuredClone(prevRoom);
-      });
-    }
-  }, [durationReady, roomTypeDurationData, roomTypeDurationDataSuccess]);
-
-  // Status Data
-  const {data: statusData, isSuccess: statusDataSuccess} = useQuery({
-    queryKey: ['rooms.status'],
-    queryFn: () => getRoomStatuses(),
-  });
-  const [statusDataMapped, setStatusDataMapped] = useState<SelectOption<number>[]>([]);
-  useEffect(() => {
-    if (statusDataSuccess) {
-      setStatusDataMapped(statusData.map(e => ({
-        value: e.id,
-        label: e.status,
-      })));
-    }
-  }, [statusData, statusDataSuccess]);
 
   // Location Data
   const {data: locationData, isSuccess: locationDataSuccess} = useQuery({
@@ -155,93 +38,118 @@ export function RoomForm(props: RoomFormProps) {
     if (locationDataSuccess) {
       setLocationDataMapped(locationData.map(e => ({
         value: e.id,
-        label: `${e.name} | ${e.address}`,
+        label: `${e.name}`,
       })));
     }
   }, [locationData, locationDataSuccess]);
 
-  // Remove RTD
+  const {data: roomData, isSuccess: roomDataSuccess} = useQuery({
+    queryKey: ['rooms', locationID],
+    queryFn: () => getRooms(undefined, locationID),
+
+    enabled: locationID != undefined,
+  });
+  const [roomDataMapped, setRoomDataMapped] = useState<SelectOption<number>[]>([]);
   useEffect(() => {
-    if (roomData.location_id == undefined && roomData.roomtypes?.id == undefined) {
-      // @ts-ignore
-      setRoomData(prevRoom => ({
-        ...prevRoom,
-        roomtypes: {
-          ...prevRoom.roomtypes,
-          roomtypedurations: []
-        }
-      }));
+    if (roomDataSuccess) {
+      setRoomDataMapped(roomData.map(r => ({
+        value: r.id,
+        label: `${r.room_number} | ${r.roomtypes?.type}`,
+      })));
     }
-  }, [roomData.location_id, roomData.roomtypes?.id]);
+  }, [roomData, roomDataSuccess]);
+
+  const {data: durationsData, isSuccess: durationsDataSuccess, isLoading} = useQuery({
+    queryKey: ['rooms.durations'],
+    queryFn: () => getSortedDurations(),
+  });
+  const [durationDataMapped, setDurationDataMapped] = useState<SelectOption<number>[]>([]);
+  useEffect(() => {
+    if (durationsDataSuccess) {
+      setDurationDataMapped(durationsData.map(d => ({
+        value: d.id,
+        label: `${d.duration}`
+      })));
+    }
+  }, [durationsData, durationsDataSuccess]);
+
+  // Status Data
+  const {data: statusData, isSuccess: statusDataSuccess} = useQuery({
+    queryKey: ['bookings.status'],
+    queryFn: () => getBookingStatuses(),
+  });
+  const [statusDataMapped, setStatusDataMapped] = useState<SelectOption<number>[]>([]);
+  useEffect(() => {
+    if (statusDataSuccess) {
+      setStatusDataMapped(statusData.map(e => ({
+        value: e.id,
+        label: e.status,
+      })));
+    }
+  }, [statusData, statusDataSuccess]);
+
+  // Tenant Data
+  const {data: tenantData, isSuccess: tenantDataSuccess} = useQuery({
+    queryKey: ['tenants'],
+    queryFn: () => getTenants(),
+  });
+  const [tenantDataMapped, setTenantDataMapped] = useState<SelectOption<string>[]>([]);
+  useEffect(() => {
+    if (tenantDataSuccess) {
+      setTenantDataMapped(tenantData.map(e => ({
+        value: e.id,
+        label: `${e.name} | ${e.phone}`,
+      })));
+    }
+  }, [tenantData, tenantDataSuccess]);
+
+  const [popoverOpen, setIsPopoverOpen] = useState(false);
+
+  // Suggested Pricing
+  useEffect(() => {
+    if (bookingData.room_id && bookingData.duration_id) {
+      const targetRt = roomData?.find(r =>
+        r.id == bookingData.room_id
+      )?.roomtypes;
+
+      const targetRtd = targetRt?.roomtypedurations?.find(rtd => rtd.duration_id == bookingData.duration_id);
+
+      if (targetRtd) {
+        if (typeof targetRtd.suggested_price == "string") {
+          targetRtd.suggested_price = new Prisma.Decimal(targetRtd.suggested_price);
+        }
+        console.log("target: ", targetRtd);
+        setBookingData(p => ({
+          ...p,
+          fee: targetRtd.suggested_price ?? undefined
+        }));
+      }
+    }
+  }, [roomData, bookingData.room_id, bookingData.duration_id]);
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Room</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Booking</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <div>
-            <label htmlFor="room_number">
+            <label htmlFor="tenant_id">
               <Typography variant="h6" color="blue-gray">
-                Room Number
+                Tenant
               </Typography>
             </label>
-            <Input
-              variant="outlined"
-              name="room_number"
-              value={roomData.room_number}
-              onChange={(e) => setRoomData(prevRoom => ({...prevRoom, room_number: e.target.value}))}
-              size="lg"
-              placeholder="Room 205"
-              error={!!fieldErrors?.room_number}
-              className={`${!!fieldErrors?.room_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
+            <SelectComponent<string>
+              setValue={(v) => setBookingData(prev => ({...prev, tenant_id: v}))}
+              options={tenantDataMapped}
+              selectedOption={
+                tenantDataMapped.find(r => r.value == bookingData.tenant_id)
+              }
+              placeholder={"Pick Tenant"}
+              isError={!!fieldErrors?.tenant_id}
             />
             {
-              fieldErrors?.room_number &&
-                <Typography color="red">{fieldErrors?.room_number._errors}</Typography>
-            }
-          </div>
-          <div>
-            <label htmlFor="room_type">
-              <Typography variant="h6" color="blue-gray">
-                Room Type
-              </Typography>
-            </label>
-            <SelectComponent<number>
-              // @ts-ignore
-              setValue={(v) => setRoomData(prevState => ({
-                ...prevState,
-                roomtypes: v && {id: v, roomtypedurations: []}
-              }))}
-              options={roomTypeDataMapped}
-              selectedOption={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
-              placeholder={"Enter room type"}
-              isError={!!fieldErrors?.roomtypes?.id}
-            />
-            {
-              fieldErrors?.roomtypes &&
-                <Typography color="red">{fieldErrors?.roomtypes?.id?._errors}</Typography>
-            }
-          </div>
-          <div>
-            <label htmlFor="status">
-              <Typography variant="h6" color="blue-gray">
-                Status
-              </Typography>
-            </label>
-            <SelectComponent<number>
-              // @ts-ignore
-              setValue={(v) => setRoomData(prevState => ({...prevState, roomstatuses: {id: v}}))}
-              options={statusDataMapped}
-              selectedOption={statusDataMapped.find(r => r.value == roomData.roomstatuses?.id)}
-              placeholder={"Enter status"}
-              isError={!!fieldErrors?.roomstatuses}
-            />
-            {
-              fieldErrors?.roomstatuses &&
-                <Typography color="red">{fieldErrors?.roomstatuses._errors}</Typography>
+              fieldErrors?.tenant_id &&
+                <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>
             }
           </div>
           <div>
@@ -251,89 +159,147 @@ export function RoomForm(props: RoomFormProps) {
               </Typography>
             </label>
             <SelectComponent<number>
-              setValue={(v) => setRoomData(prevState => {
-                return structuredClone({...prevState, location_id: v});
-              })}
+              setValue={(v) => setLocationID(v)}
               options={locationDataMapped}
               selectedOption={
-                locationDataMapped.find(r => r.value == roomData.location_id)
+                locationDataMapped.find(r => r.value == locationID)
               }
               placeholder={"Enter location"}
-              isError={!!fieldErrors?.location_id}
+              isError={false}
+            />
+          </div>
+          <div>
+            <label htmlFor="room_id">
+              <Typography variant="h6" color="blue-gray">
+                Room
+              </Typography>
+            </label>
+            <SelectComponent<number>
+              setValue={(v) => setBookingData(p => ({
+                ...p,
+                room_id: v
+              }))}
+              options={roomDataMapped}
+              selectedOption={
+                roomDataMapped.find(r => r.value == bookingData.room_id)
+              }
+              placeholder={"Pick room"}
+              isError={!!fieldErrors?.room_id}
+              isDisabled={locationID == undefined}
             />
             {
-              fieldErrors?.location_id &&
-                <Typography color="red">{fieldErrors?.location_id._errors}</Typography>
+              fieldErrors?.room_id &&
+                <Typography color="red">{fieldErrors?.room_id._errors}</Typography>
             }
           </div>
-          {
-            roomTypeDurationDataLoading &&
-              <div className={"flex items-center justify-center"}>
-                  <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
-              </div>
-          }
-          {
-            roomData.roomtypes?.roomtypedurations && roomTypeDurationDataSuccess &&
-              <div>
-                  <Typography variant="h5" color="blue-gray">
-                      Pricing
-                  </Typography>
-                {
-                  roomData.roomtypes?.roomtypedurations?.map((d, index) => {
-                    return (
-                      <div key={d.id}>
-                        <label htmlFor={d.durations.duration}>
-                          <Typography variant="h6" color="blue-gray">
-                            {d.durations.duration}
-                          </Typography>
-                        </label>
-                        <Input
-                          disabled={roomData.roomtypes == undefined || roomData.location_id == undefined}
-                          variant="outlined"
-                          min="0"
-                          type="number"
-                          name={d.durations.duration}
-                          value={Number(roomData.roomtypes?.roomtypedurations[index]?.suggested_price) ?? ""}
-                          onChange={(e) => {
-                            if (isNaN(Number(e.currentTarget.value))) {
-                              return;
-                            }
-
-                            setRoomData(prevRoom => {
-                              if (e.target.value.length == 0) {
-                                // @ts-ignore
-                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = undefined;
-                                return {...prevRoom};
-                              }
-
-                              if (prevRoom.roomtypes?.roomtypedurations[index]) {
-                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = new Prisma.Decimal(e.target.value);
-                              } else {
-                                // @ts-ignore
-                                prevRoom.roomtypes.roomtypedurations[index] = {
-                                  room_type_id: prevRoom.roomtypes!.id,
-                                  location_id: prevRoom.location_id!,
-                                  durations: d.durations,
-                                  suggested_price: new Prisma.Decimal(e.target.value)
-                                };
-                              }
-
-                              return {...prevRoom};
-                            });
-                          }}
-                          size="lg"
-                          placeholder="5000000"
-                          className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
-                          labelProps={{
-                            className: "before:content-none after:content-none",
-                          }}
-                        />
-                      </div>
-                    );
-                  })
-                }
-              </div>
-          }
+          <div>
+            <label htmlFor="duration_id">
+              <Typography variant="h6" color="blue-gray">
+                Duration
+              </Typography>
+            </label>
+            <SelectComponent<number>
+              setValue={(v) => setBookingData(p => ({
+                ...p,
+                duration_id: v
+              }))}
+              options={durationDataMapped}
+              selectedOption={
+                durationDataMapped.find(r => r.value == bookingData.duration_id)
+              }
+              placeholder={"Pick duration"}
+              isError={!!fieldErrors?.duration_id}
+            />
+            {
+              fieldErrors?.duration_id &&
+                <Typography color="red">{fieldErrors?.duration_id._errors}</Typography>
+            }
+          </div>
+          <div>
+            <label htmlFor="fee">
+              <Typography variant="h6" color="blue-gray">
+                Fee
+              </Typography>
+            </label>
+            <Input
+              variant="outlined"
+              name="fee"
+              disabled={bookingData.room_id == undefined || bookingData.duration_id == undefined}
+              value={Number(bookingData.fee) || ""}
+              onChange={(e) => setBookingData(prevRoom => ({...prevRoom, fee: new Prisma.Decimal(e.target.value)}))}
+              size="lg"
+              placeholder="500000"
+              error={!!fieldErrors?.fee}
+              className={`${!!fieldErrors?.fee ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              labelProps={{
+                className: "before:content-none after:content-none",
+              }}
+            />
+            {
+              fieldErrors?.fee &&
+                <Typography color="red">{fieldErrors?.fee._errors}</Typography>
+            }
+          </div>
+          <div>
+            <label htmlFor="check_in">
+              <Typography variant="h6" color="blue-gray">
+                Check in Date
+              </Typography>
+            </label>
+            <Popover
+              open={popoverOpen}
+              handler={() => setIsPopoverOpen(p => !p)}
+              placement="bottom-start"
+            >
+              <PopoverHandler>
+                <Input
+                  variant="outlined"
+                  size="lg"
+                  onChange={() => null}
+                  value={bookingData.check_in ? formatToDateTime(bookingData.check_in, false) : ""}
+                  error={!!fieldErrors?.check_in}
+                  className={`${!!fieldErrors?.check_in ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                  labelProps={{
+                    className: "before:content-none after:content-none",
+                  }}
+                />
+              </PopoverHandler>
+              <PopoverContent className={"z-[99999]"}>
+                <DayPicker
+                  mode="single"
+                  selected={bookingData.check_in}
+                  onSelect={(d) => {
+                    setIsPopoverOpen(false);
+                    setBookingData(p => ({...p, check_in: d}));
+                  }}
+                  showOutsideDays
+                  className="border-0"
+                />
+              </PopoverContent>
+            </Popover>
+            {
+              fieldErrors?.status_id &&
+                <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
+            }
+          </div>
+          <div>
+            <label htmlFor="status_id">
+              <Typography variant="h6" color="blue-gray">
+                Status
+              </Typography>
+            </label>
+            <SelectComponent<number>
+              setValue={(v) => setBookingData(prevState => ({...prevState, status_id: v}))}
+              options={statusDataMapped}
+              selectedOption={statusDataMapped.find(r => r.value == bookingData.status_id)}
+              placeholder={"Pick status"}
+              isError={!!fieldErrors?.status_id}
+            />
+            {
+              fieldErrors?.status_id &&
+                <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
+            }
+          </div>
           {
             props.mutationResponse?.failure &&
               <Typography variant="h6" color="blue-gray" className="-mb-4">
@@ -346,7 +312,7 @@ export function RoomForm(props: RoomFormProps) {
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
             Cancel
           </Button>
-          <Button onClick={() => props.mutation.mutate(roomData)} color={"blue"} className="mt-6"
+          <Button onClick={() => props.mutation.mutate(bookingData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
             {props.contentData ? "Update" : "Create"}
           </Button>
