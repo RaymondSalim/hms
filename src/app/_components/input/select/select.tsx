@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import AsyncSelect from "react-select/async";
+import Select from "react-select";
 
 export type SelectOption<T> = {
   value: T,
@@ -17,12 +17,14 @@ export interface SelectProps<T> {
 
   placeholder: string
   isError: boolean
+  isDisabled?: boolean
 }
 
 export function SelectComponent<T = string>(props: SelectProps<T>) {
   const [value, setValue] = useState<SelectOption<T> | undefined>(undefined);
   const [options, setOptions] = useState<SelectOption<T>[]>(props.options);
   const [isError, setIsError] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(props.isDisabled ?? false);
 
   const loadOptions = (
     inputValue: string,
@@ -58,16 +60,23 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
     setIsError(props.isError);
   }, [props.isError]);
 
+  useEffect(() => {
+    setIsDisabled(props.isDisabled ?? false);
+  }, [props.isDisabled]);
+
   return (
-    <AsyncSelect
+    <Select
       onChange={(n: SelectOption<T> | null) => {
         setValue(n ?? undefined);
         props.setValue(n?.value ?? undefined);
       }}
       isClearable={true}
-      cacheOptions
-      defaultOptions={options}
-      loadOptions={loadOptions}
+      isSearchable={true}
+      options={options}
+      isDisabled={isDisabled}
+      // cacheOptions
+      // defaultOptions={options}
+      // loadOptions={loadOptions}
       value={value}
       placeholder={props.placeholder}
       classNames={{
