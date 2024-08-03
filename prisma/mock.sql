@@ -4,27 +4,38 @@ VALUES (1, 'Standard Room'),
        (3, 'Suite'),
        (4, 'Presidential'),
        (5, 'Penthouse');
+SELECT setval(pg_get_serial_sequence('"roomtypes"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "roomtypes"; -- Required to increment sequence as we are inserting values with the ID set
+
 
 INSERT INTO durations (id, duration, day_count, month_count)
 VALUES (1, '1 month', NULL, 1),
        (2, '3 months', NULL, 3),
        (3, '6 months', NULL, 6),
        (4, '12 months', NULL, 12);
+SELECT setval(pg_get_serial_sequence('"durations"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "durations"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO locations (id, name, address)
 VALUES (1, 'Location 1', '134 Adams Avenue'),
        (2, 'Location 2', '25506 Adam Passage'),
        (3, 'Location 3', '73877 Wisozk Lake');
+SELECT setval(pg_get_serial_sequence('"locations"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "locations"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO roomtypedurations (id, room_type_id, duration_id, location_id, suggested_price)
 VALUES (1, 1, 1, 1, 100.00),
        (2, 1, 2, 1, 280.00),
        (3, 2, 1, 2, 120.00);
+SELECT setval(pg_get_serial_sequence('"roomtypedurations"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "roomtypedurations"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO roomstatuses (id, status)
 VALUES (1, 'Booked'),
        (2, 'Available'),
        (3, 'Under Construction');
+SELECT setval(pg_get_serial_sequence('"roomstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "roomstatuses"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO rooms (id, room_number, room_type_id, status_id, location_id)
 VALUES (1, 'Room 1', 3, 2, 3),
@@ -47,11 +58,15 @@ VALUES (1, 'Room 1', 3, 2, 3),
        (18, 'Room 18', 3, 1, 3),
        (19, 'Room 19', 3, 1, 2),
        (20, 'Room 20', 1, 3, 3);
+SELECT setval(pg_get_serial_sequence('"rooms"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "rooms"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO bookingstatuses (id, status)
 VALUES (1, 'Pending'),
        (2, 'Confirmed'),
        (3, 'Cancelled');
+SELECT setval(pg_get_serial_sequence('"bookingstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "bookingstatuses"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO tenants (id, name, email, phone)
 VALUES ('ckabcde12345678901', 'Keith Strosin', 'Margarete.Walker27@yahoo.com', '350.479.1769'),
@@ -136,16 +151,22 @@ VALUES (1, 'ckabcde12345678936', 20, '2024-02-15', 1, 3, 460),
        (28, 'ckabcde12345678910', 18, '2024-01-03', 4, 3, 287),
        (29, 'ckabcde12345678925', 1, '2024-01-10', 1, 1, 70),
        (30, 'ckabcde12345678904', 6, '2024-01-02', 2, 2, 88);
+SELECT setval(pg_get_serial_sequence('"bookings"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "bookings"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO paymentstatuses (id, status)
 VALUES (1, 'Pending'),
        (2, 'Completed'),
        (3, 'Failed');
+SELECT setval(pg_get_serial_sequence('"paymentstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "paymentstatuses"; -- Required to increment sequence as we are inserting values with the ID set
 
 
 INSERT INTO roles (id, name, description)
 VALUES (1, 'Admin', 'Administrator role'),
        (2, 'Guest', 'Guest role');
+SELECT setval(pg_get_serial_sequence('"roles"', 'id'), coalesce(max(id) + 1, 1), false)
+FROM "roles"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO "categories" (category)
 VALUES ('Maintenance'),
