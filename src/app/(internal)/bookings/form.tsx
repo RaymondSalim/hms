@@ -118,7 +118,6 @@ export function BookingForm(props: BookingFormProps) {
         if (typeof targetRtd.suggested_price == "string") {
           targetRtd.suggested_price = new Prisma.Decimal(targetRtd.suggested_price);
         }
-        console.log("target: ", targetRtd);
         setBookingData(p => ({
           ...p,
           fee: targetRtd.suggested_price ?? undefined
