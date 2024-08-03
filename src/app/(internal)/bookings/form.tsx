@@ -13,8 +13,11 @@ import {ZodFormattedError} from "zod";
 import {getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
-import {formatToDateTime} from "@/app/_lib/util";
+import {formatToDateTime, generateDatesByDuration} from "@/app/_lib/util";
 import "react-day-picker/style.css";
+import {getAllBookings} from "@/app/(internal)/bookings/booking-action";
+import {DateSet} from "@/app/_lib/customSet";
+import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 
 interface BookingFormProps extends TableFormProps<Booking> {
 }
@@ -23,6 +26,8 @@ export function BookingForm(props: BookingFormProps) {
   const [bookingData, setBookingData] = useState<Partial<Booking>>(props.contentData ?? {});
   const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<Booking> | undefined>(props.mutationResponse?.errors);
   const [locationID, setLocationID] = useState<number | undefined>(undefined);
+  const today = new Date();
+
 
   useEffect(() => {
     setFieldErrors(props.mutationResponse?.errors);
@@ -126,192 +131,287 @@ export function BookingForm(props: BookingFormProps) {
     }
   }, [roomData, bookingData.room_id, bookingData.duration_id]);
 
+  // Check for existing bookings
+  const {
+    data: existingBookings,
+    isLoading: isExistingBookingLoading,
+    isSuccess: isExistingBookingSuccess
+  } = useQuery({
+    queryKey: ['bookings', bookingData.room_id],
+    queryFn: () => getAllBookings(undefined, bookingData.room_id ?? undefined),
+    enabled: bookingData.room_id != undefined,
+  });
+  const [disabledDatesSet, setDisabledDatesSet] = useState<DateSet>(new DateSet());
+  useEffect(() => {
+    if (isExistingBookingSuccess) {
+      const datesSet = new DateSet();
+      existingBookings?.forEach(b => {
+        if (b.durations) {
+          generateDatesByDuration(
+            b.check_in,
+            b.durations,
+            (d) => {
+              datesSet.add(d);
+            }
+          );
+        }
+      });
+      setDisabledDatesSet(datesSet);
+    }
+  }, [existingBookings, isExistingBookingSuccess]);
+
+  // Disable duration options when check in date is selected
+  useEffect(() => {
+    if (bookingData.check_in) {
+      const newDurationData = structuredClone(durationDataMapped);
+      let hasChange = false;
+      durationsData?.forEach((val, index) => {
+        debugger;
+        let dates = generateDatesByDuration(bookingData.check_in!, val);
+        let inSet = disabledDatesSet.has(dates[dates.length - 1]);
+        hasChange = hasChange || newDurationData[index].isDisabled != inSet;
+        newDurationData[index].isDisabled = inSet;
+      });
+
+      if (hasChange) {
+        setDurationDataMapped([...newDurationData]);
+      }
+    }
+  }, [bookingData.check_in, disabledDatesSet, durationDataMapped, durationsData]);
+
   return (
     <div className={"w-full px-8 py-4"}>
       <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Booking</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
-          <div>
-            <label htmlFor="tenant_id">
-              <Typography variant="h6" color="blue-gray">
-                Tenant
-              </Typography>
-            </label>
-            <SelectComponent<string>
-              setValue={(v) => setBookingData(prev => ({...prev, tenant_id: v}))}
-              options={tenantDataMapped}
-              selectedOption={
-                tenantDataMapped.find(r => r.value == bookingData.tenant_id)
-              }
-              placeholder={"Pick Tenant"}
-              isError={!!fieldErrors?.tenant_id}
-            />
-            {
-              fieldErrors?.tenant_id &&
-                <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>
-            }
-          </div>
-          <div>
-            <label htmlFor="location">
-              <Typography variant="h6" color="blue-gray">
-                Location
-              </Typography>
-            </label>
-            <SelectComponent<number>
-              setValue={(v) => setLocationID(v)}
-              options={locationDataMapped}
-              selectedOption={
-                locationDataMapped.find(r => r.value == locationID)
-              }
-              placeholder={"Enter location"}
-              isError={false}
-            />
-          </div>
-          <div>
-            <label htmlFor="room_id">
-              <Typography variant="h6" color="blue-gray">
-                Room
-              </Typography>
-            </label>
-            <SelectComponent<number>
-              setValue={(v) => setBookingData(p => ({
-                ...p,
-                room_id: v
-              }))}
-              options={roomDataMapped}
-              selectedOption={
-                roomDataMapped.find(r => r.value == bookingData.room_id)
-              }
-              placeholder={"Pick room"}
-              isError={!!fieldErrors?.room_id}
-              isDisabled={locationID == undefined}
-            />
-            {
-              fieldErrors?.room_id &&
-                <Typography color="red">{fieldErrors?.room_id._errors}</Typography>
-            }
-          </div>
-          <div>
-            <label htmlFor="duration_id">
-              <Typography variant="h6" color="blue-gray">
-                Duration
-              </Typography>
-            </label>
-            <SelectComponent<number>
-              setValue={(v) => setBookingData(p => ({
-                ...p,
-                duration_id: v
-              }))}
-              options={durationDataMapped}
-              selectedOption={
-                durationDataMapped.find(r => r.value == bookingData.duration_id)
-              }
-              placeholder={"Pick duration"}
-              isError={!!fieldErrors?.duration_id}
-            />
-            {
-              fieldErrors?.duration_id &&
-                <Typography color="red">{fieldErrors?.duration_id._errors}</Typography>
-            }
-          </div>
-          <div>
-            <label htmlFor="fee">
-              <Typography variant="h6" color="blue-gray">
-                Fee
-              </Typography>
-            </label>
-            <Input
-              variant="outlined"
-              name="fee"
-              disabled={bookingData.room_id == undefined || bookingData.duration_id == undefined}
-              value={Number(bookingData.fee) || ""}
-              onChange={(e) => setBookingData(prevRoom => ({...prevRoom, fee: new Prisma.Decimal(e.target.value)}))}
-              size="lg"
-              placeholder="500000"
-              error={!!fieldErrors?.fee}
-              className={`${!!fieldErrors?.fee ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
-            />
-            {
-              fieldErrors?.fee &&
-                <Typography color="red">{fieldErrors?.fee._errors}</Typography>
-            }
-          </div>
-          <div>
-            <label htmlFor="check_in">
-              <Typography variant="h6" color="blue-gray">
-                Check in Date
-              </Typography>
-            </label>
-            <Popover
-              open={popoverOpen}
-              handler={() => setIsPopoverOpen(p => !p)}
-              placement="bottom-start"
-            >
-              <PopoverHandler>
-                <Input
-                  variant="outlined"
-                  size="lg"
-                  onChange={() => null}
-                  value={bookingData.check_in ? formatToDateTime(bookingData.check_in, false) : ""}
-                  error={!!fieldErrors?.check_in}
-                  className={`${!!fieldErrors?.check_in ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                  labelProps={{
-                    className: "before:content-none after:content-none",
-                  }}
+          <MotionConfig
+            transition={{duration: 0.5}}
+          >
+            <AnimatePresence>
+              <div>
+                <label htmlFor="tenant_id">
+                  <Typography variant="h6" color="blue-gray">
+                    Tenant
+                  </Typography>
+                </label>
+                <SelectComponent<string>
+                  setValue={(v) => setBookingData(prev => ({...prev, tenant_id: v}))}
+                  options={tenantDataMapped}
+                  selectedOption={
+                    tenantDataMapped.find(r => r.value == bookingData.tenant_id)
+                  }
+                  placeholder={"Pick Tenant"}
+                  isError={!!fieldErrors?.tenant_id}
                 />
-              </PopoverHandler>
-              <PopoverContent className={"z-[99999]"}>
-                <DayPicker
-                  mode="single"
-                  selected={bookingData.check_in}
-                  onSelect={(d) => {
-                    setIsPopoverOpen(false);
-                    setBookingData(p => ({...p, check_in: d}));
-                  }}
-                  showOutsideDays
-                  className="border-0"
+                {
+                  fieldErrors?.tenant_id &&
+                    <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>
+                }
+              </div>
+              <div>
+                <label htmlFor="location">
+                  <Typography variant="h6" color="blue-gray">
+                    Location
+                  </Typography>
+                </label>
+                <SelectComponent<number>
+                  setValue={(v) => setLocationID(v)}
+                  options={locationDataMapped}
+                  selectedOption={
+                    locationDataMapped.find(r => r.value == locationID)
+                  }
+                  placeholder={"Enter location"}
+                  isError={false}
                 />
-              </PopoverContent>
-            </Popover>
-            {
-              fieldErrors?.status_id &&
-                <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
-            }
-          </div>
-          <div>
-            <label htmlFor="status_id">
-              <Typography variant="h6" color="blue-gray">
-                Status
-              </Typography>
-            </label>
-            <SelectComponent<number>
-              setValue={(v) => setBookingData(prevState => ({...prevState, status_id: v}))}
-              options={statusDataMapped}
-              selectedOption={statusDataMapped.find(r => r.value == bookingData.status_id)}
-              placeholder={"Pick status"}
-              isError={!!fieldErrors?.status_id}
-            />
-            {
-              fieldErrors?.status_id &&
-                <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
-            }
-          </div>
-          {
-            props.mutationResponse?.failure &&
-              <Typography variant="h6" color="blue-gray" className="-mb-4">
-                {props.mutationResponse.failure}
-              </Typography>
-          }
+              </div>
+              <div>
+                <label htmlFor="room_id">
+                  <Typography variant="h6" color="blue-gray">
+                    Room
+                  </Typography>
+                </label>
+                <SelectComponent<number>
+                  setValue={(v) => setBookingData(p => ({
+                    ...p,
+                    room_id: v
+                  }))}
+                  options={roomDataMapped}
+                  selectedOption={
+                    roomDataMapped.find(r => r.value == bookingData.room_id)
+                  }
+                  placeholder={"Pick room"}
+                  isError={!!fieldErrors?.room_id}
+                  isDisabled={locationID == undefined}
+                />
+                {
+                  fieldErrors?.room_id &&
+                    <Typography color="red">{fieldErrors?.room_id._errors}</Typography>
+                }
+              </div>
+              {
+                isExistingBookingSuccess &&
+                  <motion.div
+                      key={"check_in"}
+                      initial={{opacity: 0, height: 0}}
+                      animate={{opacity: 1, height: "auto"}}
+                      exit={{opacity: 0, height: 0}}
+                  >
+                      <label htmlFor="check_in">
+                          <Typography variant="h6" color="blue-gray">
+                              Check in Date
+                          </Typography>
+                      </label>
+                      <Popover
+                          open={popoverOpen}
+                          handler={() => setIsPopoverOpen(p => !p)}
+                          placement="bottom-end"
+                      >
+                          <PopoverHandler>
+                              <Input
+                                  variant="outlined"
+                                  size="lg"
+                                  onChange={() => null}
+                                  value={bookingData.check_in ? formatToDateTime(bookingData.check_in, false) : ""}
+                                  error={!!fieldErrors?.check_in}
+                                  className={`relative ${!!fieldErrors?.check_in ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                  labelProps={{
+                                    className: "before:content-none after:content-none",
+                                  }}
+                              />
+                          </PopoverHandler>
+                          <PopoverContent className={"z-[99999]"}>
+                              <DayPicker
+                                  captionLayout="dropdown"
+                                  mode="single"
+                                  fixedWeeks={true}
+                                  selected={bookingData.check_in}
+                                  onSelect={(d) => {
+                                    setIsPopoverOpen(false);
+                                    setBookingData(p => ({...p, check_in: d}));
+                                  }}
+                                  disabled={disabledDatesSet.values()}
+                                  showOutsideDays
+                                  classNames={{
+                                    disabled: "rdp-disabled cursor-not-allowed",
+                                  }}
+                                  startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
+                                  endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
+                              />
+                          </PopoverContent>
+                      </Popover>
+                    {
+                      fieldErrors?.check_in &&
+                        <Typography color="red">{fieldErrors?.check_in._errors}</Typography>
+                    }
+                  </motion.div>
+              }
+              {
+                bookingData.check_in &&
+                  <motion.div
+                      key={"duration_id"}
+                      initial={{opacity: 0, height: 0}}
+                      animate={{opacity: 1, height: "auto"}}
+                      exit={{opacity: 0, height: 0}}
+                  >
+                      <label htmlFor="duration_id">
+                          <Typography variant="h6" color="blue-gray">
+                              Duration
+                          </Typography>
+                      </label>
+                      <SelectComponent<number>
+                          setValue={(v) => setBookingData(p => ({
+                            ...p,
+                            duration_id: v
+                          }))}
+                          options={durationDataMapped}
+                          selectedOption={
+                            durationDataMapped.find(r => r.value == bookingData.duration_id)
+                          }
+                          placeholder={"Pick duration"}
+                          isError={!!fieldErrors?.duration_id}
+                      />
+                    {
+                      fieldErrors?.duration_id &&
+                        <Typography color="red">{fieldErrors?.duration_id._errors}</Typography>
+                    }
+                  </motion.div>
+              }
+              {
+                bookingData.duration_id &&
+                  <motion.div
+                      initial={{opacity: 0, height: 0}}
+                      animate={{opacity: 1, height: "auto"}}
+                      exit={{opacity: 0, height: 0}}
+                  >
+                      <label htmlFor="fee">
+                          <Typography variant="h6" color="blue-gray">
+                              Fee
+                          </Typography>
+                      </label>
+                      <Input
+                          variant="outlined"
+                          name="fee"
+                          disabled={bookingData.room_id == undefined || bookingData.duration_id == undefined}
+                          value={Number(bookingData.fee) || ""}
+                          onChange={(e) => setBookingData(prevRoom => ({
+                            ...prevRoom,
+                            fee: new Prisma.Decimal(e.target.value)
+                          }))}
+                          size="lg"
+                          placeholder="500000"
+                          error={!!fieldErrors?.fee}
+                          className={`${!!fieldErrors?.fee ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                          labelProps={{
+                            className: "before:content-none after:content-none",
+                          }}
+                      />
+                    {
+                      fieldErrors?.fee &&
+                        <Typography color="red">{fieldErrors?.fee._errors}</Typography>
+                    }
+                  </motion.div>
+              }
+              {
+                bookingData.duration_id &&
+                  <motion.div
+                      initial={{opacity: 0, height: 0}}
+                      animate={{opacity: 1, height: "auto"}}
+                      exit={{opacity: 0, height: 0}}
+                  >
+                      <label htmlFor="status_id">
+                          <Typography variant="h6" color="blue-gray">
+                              Status
+                          </Typography>
+                      </label>
+                      <SelectComponent<number>
+                          setValue={(v) => setBookingData(prevState => ({...prevState, status_id: v}))}
+                          options={statusDataMapped}
+                          selectedOption={statusDataMapped.find(r => r.value == bookingData.status_id)}
+                          placeholder={"Pick status"}
+                          isError={!!fieldErrors?.status_id}
+                      />
+                    {
+                      fieldErrors?.status_id &&
+                        <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
+                    }
+                  </motion.div>
+              }
+              {
+                props.mutationResponse?.failure &&
+                  <Typography variant="h6" color="blue-gray" className="-mb-4">
+                    {props.mutationResponse.failure}
+                  </Typography>
+              }
+            </AnimatePresence>
+          </MotionConfig>
         </div>
 
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
             Cancel
           </Button>
-          <Button onClick={() => props.mutation.mutate(bookingData)} color={"blue"} className="mt-6"
+          <Button disabled={bookingData.status_id == undefined} onClick={() => props.mutation.mutate(bookingData)}
+                  color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
             {props.contentData ? "Update" : "Create"}
           </Button>
