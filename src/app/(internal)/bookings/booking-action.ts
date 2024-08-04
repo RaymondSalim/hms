@@ -40,10 +40,10 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
     };
   }
 
-  const {fee, check_in, duration_id, ...otherBookingData} = data;
+  const {fee, start_date, duration_id, ...otherBookingData} = data;
 
   const bills: Partial<Bill>[] = [];
-  const checkInDate = new Date(check_in);
+  const startDate = new Date(start_date);
   const duration = await prisma.duration.findUnique({
     where: {id: duration_id},
   });
@@ -56,12 +56,12 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
 
   // Verify that booking does not overlap
   const today = new Date();
-  const lastDate = getLastDateOfBooking(check_in, duration);
+  const lastDate = getLastDateOfBooking(start_date, duration);
   const bookings = await prisma.booking.findMany({
     where: {
       AND: [
         {
-          check_in: {
+          start_date: {
             gte: new Date(today.getFullYear() - 2, today.getMonth(), today.getDate()),
           }
         },
@@ -77,27 +77,27 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   });
 
   type BookingDates = {
-    check_in: Date,
-    check_out: Date
+    start_date: Date,
+    end_date: Date
   };
 
   function isBookingPossible(firstBooking: BookingDates, secondBooking: BookingDates) {
-    return secondBooking.check_in >= firstBooking.check_out || secondBooking.check_out <= firstBooking.check_in;
+    return secondBooking.start_date >= firstBooking.end_date || secondBooking.end_date <= firstBooking.start_date;
   }
 
   // TODO! Improvement: Divide into n-chunks then parallel
   for (let i = 0; i < bookings.length; i++) {
     let currBooking = bookings[i];
     if (currBooking.durations) {
-      const currLastDate = getLastDateOfBooking(currBooking.check_in, currBooking.durations);
+      const currLastDate = getLastDateOfBooking(currBooking.start_date, currBooking.durations);
       if (!isBookingPossible(
         {
-          check_in: check_in,
-          check_out: lastDate,
+          start_date: start_date,
+          end_date: lastDate,
         },
         {
-          check_in: currBooking.check_in,
-          check_out: currLastDate
+          start_date: currBooking.start_date,
+          end_date: currLastDate
         }
       )) {
         return {
@@ -112,25 +112,25 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
 
   if (month_count) {
     const totalMonths = month_count;
-    const totalDaysInMonth = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + 1, 0).getDate();
+    const totalDaysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
 
-    // Calculate prorated amount if check_in is not the first of the month
-    if (checkInDate.getDate() !== 1) {
-      const remainingDays = totalDaysInMonth - checkInDate.getDate() + 1;
+    // Calculate prorated amount if start_date is not the first of the month
+    if (startDate.getDate() !== 1) {
+      const remainingDays = totalDaysInMonth - startDate.getDate() + 1;
       const dailyRate = fee / totalDaysInMonth;
       const proratedAmount = dailyRate * remainingDays;
 
       // Add prorated bill for the current month
       bills.push({
         amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
-        description: `Prorated bill for ${checkInDate.toLocaleString('default', {month: 'long'})} ${checkInDate.getDate()}-${totalDaysInMonth}`,
-        due_date: new Date(checkInDate.getFullYear(), checkInDate.getMonth(), totalDaysInMonth),
+        description: `Prorated bill for ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
+        due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
       });
 
       // Add full monthly bills for subsequent months, except the last one
       for (let i = 1; i < totalMonths; i++) {
-        const billStartDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i, 1);
-        const billEndDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i + 1, 0);
+        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
         bills.push({
           amount: new Prisma.Decimal(fee),
           description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
@@ -139,7 +139,7 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
       }
 
       // Add full monthly bill for the last month
-      const lastMonthStartDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + totalMonths, 1);
+      const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + totalMonths, 1);
       const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0);
       bills.push({
         amount: new Prisma.Decimal(fee),
@@ -150,8 +150,8 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
     } else {
       // Add full monthly bills for totalMonths
       for (let i = 0; i < totalMonths; i++) {
-        const billStartDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i, 1);
-        const billEndDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i + 1, 0);
+        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
         bills.push({
           amount: new Prisma.Decimal(fee),
           description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
@@ -168,7 +168,7 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   //
   //   // Generate daily bills
   //   for (let i = 0; i < totalDays; i++) {
-  //     const billDate = new Date(checkInDate);
+  //     const billDate = new Date(startDate);
   //     billDate.setDate(billDate.getDate() + i);
   //
   //     bills.push({
@@ -187,7 +187,7 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
         data: {
           ...otherBookingData,
           fee,
-          check_in,
+          start_date,
           duration_id,
         },
         include: includeAll,
@@ -280,8 +280,8 @@ export async function getBookingsByRoomId(room_id: number) {
   });
 }
 
-function getLastDateOfBooking(check_in: Date, duration: Duration) {
-  let startDate = structuredClone(check_in);
+function getLastDateOfBooking(start_date: Date, duration: Duration) {
+  let startDate = structuredClone(start_date);
 
   if (duration.month_count) {
     if (startDate.getDate() == 1) {

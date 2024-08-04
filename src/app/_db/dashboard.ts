@@ -13,7 +13,7 @@ export async function getOverviewData(locationID?: number) {
       rooms: {
         location_id: locationID
       },
-      check_in: {
+      start_date: {
         gte: firstDateOfWeek,
         lt: lastDateOfWeek,
       }
@@ -83,11 +83,11 @@ export async function getUpcomingEvents(locationID?: number) {
       for (const ci of checkIns) {
         let newCI = ci as ExtendedReturnType;
         newCI.type = "CHECKIN";
-        let hasKey = resp.has(newCI.check_in.valueOf());
+        let hasKey = resp.has(newCI.start_date.valueOf());
         if (hasKey) {
-          resp.get(newCI.check_in.valueOf())?.push(newCI);
+          resp.get(newCI.start_date.valueOf())?.push(newCI);
         } else {
-          resp.set(newCI.check_in.valueOf(), [newCI]);
+          resp.set(newCI.start_date.valueOf(), [newCI]);
         }
       }
 
@@ -325,7 +325,7 @@ async function getCheckInWithExtras(now: Date, sevenDaysAhead: Date, locationID?
       rooms: {
         location_id: locationID
       },
-      check_in: {
+      start_date: {
         gte: now,
         lt: sevenDaysAhead,
       }

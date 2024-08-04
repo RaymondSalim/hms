@@ -37,7 +37,7 @@ export function BookingForm(props: BookingFormProps) {
   const isButtonDisabled = useMemo(() => {
     return !bookingData.tenant_id ||
       !bookingData.room_id ||
-      !bookingData.check_in ||
+      !bookingData.start_date ||
       !bookingData.duration_id ||
       !bookingData.fee ||
       !bookingData.status_id;
@@ -168,7 +168,7 @@ export function BookingForm(props: BookingFormProps) {
       existingBookings?.forEach(b => {
         if (b.durations) {
           generateDatesByDuration(
-            b.check_in,
+            b.start_date,
             b.durations,
             (d) => {
               datesSet.add(d);
@@ -182,12 +182,12 @@ export function BookingForm(props: BookingFormProps) {
 
   // Disable duration options when check in date is selected
   useEffect(() => {
-    if (bookingData.check_in) {
+    if (bookingData.start_date) {
       const newDurationData = structuredClone(durationDataMapped);
       let hasChange = false;
       durationsData?.forEach((val, index) => {
         if (newDurationData[index]) {
-          let dates = generateDatesByDuration(bookingData.check_in!, val);
+          let dates = generateDatesByDuration(bookingData.start_date!, val);
           let inSet = disabledDatesSet.has(dates[dates.length - 1]);
           hasChange = hasChange || newDurationData[index].isDisabled != inSet;
           newDurationData[index].isDisabled = inSet;
@@ -198,7 +198,7 @@ export function BookingForm(props: BookingFormProps) {
         setDurationDataMapped([...newDurationData]);
       }
     }
-  }, [bookingData.check_in, disabledDatesSet, durationDataMapped, durationsData]);
+  }, [bookingData.start_date, disabledDatesSet, durationDataMapped, durationsData]);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -272,12 +272,12 @@ export function BookingForm(props: BookingFormProps) {
               {
                 isExistingBookingSuccess &&
                   <motion.div
-                      key={"check_in"}
+                      key={"start_date"}
                       initial={{opacity: 0, height: 0}}
                       animate={{opacity: 1, height: "auto"}}
                       exit={{opacity: 0, height: 0}}
                   >
-                      <label htmlFor="check_in">
+                      <label htmlFor="start_date">
                           <Typography variant="h6" color="blue-gray">
                               Check in Date
                           </Typography>
@@ -292,9 +292,9 @@ export function BookingForm(props: BookingFormProps) {
                                   variant="outlined"
                                   size="lg"
                                   onChange={() => null}
-                                  value={bookingData.check_in ? formatToDateTime(bookingData.check_in, false) : ""}
-                                  error={!!fieldErrors?.check_in}
-                                  className={`relative ${!!fieldErrors?.check_in ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                  value={bookingData.start_date ? formatToDateTime(bookingData.start_date, false) : ""}
+                                  error={!!fieldErrors?.start_date}
+                                  className={`relative ${!!fieldErrors?.start_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                   labelProps={{
                                     className: "before:content-none after:content-none",
                                   }}
@@ -305,10 +305,10 @@ export function BookingForm(props: BookingFormProps) {
                                   captionLayout="dropdown"
                                   mode="single"
                                   fixedWeeks={true}
-                                  selected={bookingData.check_in}
+                                  selected={bookingData.start_date}
                                   onSelect={(d) => {
                                     setIsPopoverOpen(false);
-                                    setBookingData(p => ({...p, check_in: d}));
+                                    setBookingData(p => ({...p, start_date: d}));
                                   }}
                                   disabled={disabledDatesSet.values()}
                                   showOutsideDays
@@ -321,13 +321,13 @@ export function BookingForm(props: BookingFormProps) {
                           </PopoverContent>
                       </Popover>
                     {
-                      fieldErrors?.check_in &&
-                        <Typography color="red">{fieldErrors?.check_in._errors}</Typography>
+                      fieldErrors?.start_date &&
+                        <Typography color="red">{fieldErrors?.start_date._errors}</Typography>
                     }
                   </motion.div>
               }
               {
-                bookingData.check_in &&
+                bookingData.start_date &&
                   <motion.div
                       key={"duration_id"}
                       initial={{opacity: 0, height: 0}}

@@ -54,10 +54,10 @@ export default function BookingsContent({bookings}: BookingsContentProps) {
     columnHelper.accessor(row => row.rooms?.room_number, {
       header: "Room Number"
     }),
-    columnHelper.accessor(row => formatToDateTime(row.check_in, false), {
+    columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
       header: "Start Date"
     }),
-    columnHelper.accessor(row => formatToDateTime(addToDate(row.check_in, row.durations?.day_count ?? 0, row.durations?.month_count ?? 0), false), {
+    columnHelper.accessor(row => formatToDateTime(addToDate(row.start_date, row.durations?.day_count ?? 0, row.durations?.month_count ?? 0), false), {
       header: "End Date",
     }),
     columnHelper.accessor(row => row.fee, {
