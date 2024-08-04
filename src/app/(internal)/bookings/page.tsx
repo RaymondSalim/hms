@@ -36,6 +36,7 @@ export default function BookingPage() {
       }
       {
         isSuccess &&
+        // @ts-ignore
           <BookingsContent bookings={bookings}/>
       }
     </>
