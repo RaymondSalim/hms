@@ -398,7 +398,7 @@ export function BookingForm(props: BookingFormProps) {
               }
               {
                 props.mutationResponse?.failure &&
-                  <Typography variant="h6" color="blue-gray" className="-mb-4">
+                  <Typography variant="h6" color="red" className="-mb-4">
                     {props.mutationResponse.failure}
                   </Typography>
               }
