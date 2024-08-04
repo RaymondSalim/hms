@@ -28,6 +28,7 @@ model Booking {
   tenant_id   String?
   room_id     Int?
   start_date DateTime @db.Date
+  end_date   DateTime @db.Date
   duration_id Int?
   status_id   Int?
   fee         Decimal  @db.Decimal(10, 2)
