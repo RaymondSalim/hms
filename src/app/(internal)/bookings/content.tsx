@@ -1,13 +1,12 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext, useState} from "react";
+import React, {useContext} from "react";
 import {addToDate, formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {deleteRoomAction} from "@/app/(internal)/rooms/all-rooms/room-actions";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
-import {BookingsIncludeAll, createBookingAction} from "@/app/(internal)/bookings/booking-action";
+import {BookingsIncludeAll, createBookingAction, deleteBookingAction} from "@/app/(internal)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/bookings/form";
 
 
@@ -21,8 +20,6 @@ const colorMapping: Map<string, string> = new Map([
 
 export default function BookingsContent({bookings}: BookingsContentProps) {
   const headerContext = useContext(HeaderContext);
-  const [activeData, setActiveData] = useState<BookingsIncludeAll | undefined>(undefined);
-  const [showDialog, setShowDialog] = useState(false);
 
   const columnHelper = createColumnHelper<BookingsIncludeAll>();
   const columns = [
@@ -104,9 +101,8 @@ export default function BookingsContent({bookings}: BookingsContentProps) {
         }}
 
         delete={{
-          // TODO!
           // @ts-ignore
-          mutationFn: deleteRoomAction,
+          mutationFn: deleteBookingAction,
         }}
       />
     </div>

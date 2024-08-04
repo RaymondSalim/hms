@@ -4,6 +4,7 @@ import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {Bill, Booking, Duration, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
+import {number, object} from "zod";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -58,9 +59,17 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   const lastDate = getLastDateOfBooking(check_in, duration);
   const bookings = await prisma.booking.findMany({
     where: {
-      check_in: {
-        gte: new Date(today.getFullYear() - 2, today.getMonth(), today.getDate()),
-      }
+      AND: [
+        {
+          check_in: {
+            gte: new Date(today.getFullYear() - 2, today.getMonth(), today.getDate()),
+          }
+        },
+        {
+          room_id: otherBookingData.room_id
+        }
+      ],
+
     },
     include: {
       durations: true
@@ -225,10 +234,34 @@ export async function updateBooking(id: number, data: OmitIDTypeAndTimestamp<Boo
   });
 }
 
-export async function deleteBooking(id: number) {
-  return prisma.booking.delete({
-    where: {id},
+export async function deleteBookingAction(id: number) {
+  const parsedData = object({id: number().positive()}).safeParse({
+    id: id,
   });
+
+  if (!parsedData.success) {
+    return {
+      errors: parsedData.error.format()
+    };
+  }
+
+  try {
+    let res = await prisma.booking.delete({
+      where: {
+        id: parsedData.data.id,
+      }
+    });
+
+    return {
+      success: res,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      failure: "Error deleting booking",
+    };
+  }
+
 }
 
 export async function getBookingsByTenantId(tenant_id: string) {
