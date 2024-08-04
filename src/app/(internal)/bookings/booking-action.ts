@@ -180,31 +180,33 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   // }
 
   // Use a transaction to ensure atomicity
-  return prisma.$transaction(async (prismaTrx) => {
-    // Create the booking
-    const newBooking = await prismaTrx.booking.create({
-      data: {
-        ...otherBookingData,
-        fee,
-        check_in,
-        duration_id,
-      },
-      include: includeAll,
-    });
-
-    // Create associated bills
-    for (const billData of bills) {
-      await prismaTrx.bill.create({
-        // @ts-ignore
+  return {
+    success: await prisma.$transaction(async (prismaTrx) => {
+      // Create the booking
+      const newBooking = await prismaTrx.booking.create({
         data: {
-          ...billData,
-          booking_id: newBooking.id,
+          ...otherBookingData,
+          fee,
+          check_in,
+          duration_id,
         },
+        include: includeAll,
       });
-    }
 
-    return newBooking;
-  });
+      // Create associated bills
+      for (const billData of bills) {
+        await prismaTrx.bill.create({
+          // @ts-ignore
+          data: {
+            ...billData,
+            booking_id: newBooking.id,
+          },
+        });
+      }
+
+      return newBooking;
+    })
+  };
 }
 
 export async function getBookingById(id: number) {
