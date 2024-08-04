@@ -1,7 +1,7 @@
 "use client";
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getRooms} from "@/app/_db/room";
@@ -15,19 +15,39 @@ import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
 import {formatToDateTime, generateDatesByDuration} from "@/app/_lib/util";
 import "react-day-picker/style.css";
-import {getAllBookings} from "@/app/(internal)/bookings/booking-action";
+import {BookingsIncludeAll, getAllBookings} from "@/app/(internal)/bookings/booking-action";
 import {DateSet} from "@/app/_lib/customSet";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 
-interface BookingFormProps extends TableFormProps<Booking> {
+interface BookingFormProps extends TableFormProps<BookingsIncludeAll> {
 }
 
 export function BookingForm(props: BookingFormProps) {
-  const [bookingData, setBookingData] = useState<Partial<Booking>>(props.contentData ?? {});
+  const [bookingData, setBookingData] = useState<Partial<BookingsIncludeAll>>(props.contentData ?? {});
   const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<Booking> | undefined>(props.mutationResponse?.errors);
-  const [locationID, setLocationID] = useState<number | undefined>(undefined);
+  const [locationID, setLocationID] = useState<number | undefined>(props.contentData?.rooms?.location_id ?? undefined);
   const today = new Date();
 
+  const [initialBookingData, setInitialBookingData] = useState<Partial<BookingsIncludeAll>>(props.contentData ?? {});
+  // Function to compare initial and current booking data
+  const hasChanges = (initialData: Partial<BookingsIncludeAll>, currentData: Partial<BookingsIncludeAll>) => {
+    return JSON.stringify(initialData) !== JSON.stringify(currentData);
+  };
+
+  const isButtonDisabled = useMemo(() => {
+    return !bookingData.tenant_id ||
+      !bookingData.room_id ||
+      !bookingData.check_in ||
+      !bookingData.duration_id ||
+      !bookingData.fee ||
+      !bookingData.status_id;
+
+  }, [bookingData]);
+
+  // Use effect to set initialBookingData when the component mounts
+  useEffect(() => {
+    setInitialBookingData(props.contentData ?? {});
+  }, [props.contentData]);
 
   useEffect(() => {
     setFieldErrors(props.mutationResponse?.errors);
@@ -166,11 +186,12 @@ export function BookingForm(props: BookingFormProps) {
       const newDurationData = structuredClone(durationDataMapped);
       let hasChange = false;
       durationsData?.forEach((val, index) => {
-        debugger;
-        let dates = generateDatesByDuration(bookingData.check_in!, val);
-        let inSet = disabledDatesSet.has(dates[dates.length - 1]);
-        hasChange = hasChange || newDurationData[index].isDisabled != inSet;
-        newDurationData[index].isDisabled = inSet;
+        if (newDurationData[index]) {
+          let dates = generateDatesByDuration(bookingData.check_in!, val);
+          let inSet = disabledDatesSet.has(dates[dates.length - 1]);
+          hasChange = hasChange || newDurationData[index].isDisabled != inSet;
+          newDurationData[index].isDisabled = inSet;
+        }
       });
 
       if (hasChange) {
@@ -355,7 +376,7 @@ export function BookingForm(props: BookingFormProps) {
                           value={Number(bookingData.fee) || ""}
                           onChange={(e) => setBookingData(prevRoom => ({
                             ...prevRoom,
-                            fee: new Prisma.Decimal(e.target.value)
+                            fee: e.target.value.length > 0 ? new Prisma.Decimal(e.target.value) : undefined
                           }))}
                           size="lg"
                           placeholder="500000"
@@ -410,7 +431,8 @@ export function BookingForm(props: BookingFormProps) {
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
             Cancel
           </Button>
-          <Button disabled={bookingData.status_id == undefined} onClick={() => props.mutation.mutate(bookingData)}
+          <Button disabled={isButtonDisabled || !hasChanges(initialBookingData, bookingData)}
+                  onClick={() => props.mutation.mutate(bookingData)}
                   color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
             {props.contentData ? "Update" : "Create"}
