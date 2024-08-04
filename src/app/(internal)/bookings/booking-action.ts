@@ -88,27 +88,44 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   // TODO! Improvement: Divide into n-chunks then parallel
   for (let i = 0; i < bookings.length; i++) {
     let currBooking = bookings[i];
-    if (currBooking.durations) {
-      const currLastDate = getLastDateOfBooking(currBooking.start_date, currBooking.durations);
-      if (!isBookingPossible(
+    if (!isBookingPossible(
         {
           start_date: start_date,
           end_date: lastDate,
         },
         {
           start_date: currBooking.start_date,
-          end_date: currLastDate
+          end_date: currBooking.end_date
         }
       )) {
         return {
           failure: `Booking overlaps with booking ID: ${currBooking.id}`
         };
       }
-    }
+
+
+    // if (currBooking.durations) {
+    //   const currLastDate = getLastDateOfBooking(currBooking.start_date, currBooking.durations);
+    //   if (!isBookingPossible(
+    //     {
+    //       start_date: start_date,
+    //       end_date: lastDate,
+    //     },
+    //     {
+    //       start_date: currBooking.start_date,
+    //       end_date: currLastDate
+    //     }
+    //   )) {
+    //     return {
+    //       failure: `Booking overlaps with booking ID: ${currBooking.id}`
+    //     };
+    //   }
+    // }
   }
 
 
   const {day_count, month_count} = duration;
+  let end_date = new Date();
 
   if (month_count) {
     const totalMonths = month_count;
@@ -146,6 +163,7 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
         description: `Monthly bill for ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
         due_date: lastMonthEndDate,
       });
+      end_date = lastMonthEndDate;
 
     } else {
       // Add full monthly bills for totalMonths
@@ -157,6 +175,8 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
           description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
+
+        end_date = billEndDate;
       }
     }
   }
@@ -188,6 +208,7 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
           ...otherBookingData,
           fee,
           start_date,
+          end_date,
           duration_id,
         },
         include: includeAll,
