@@ -1,7 +1,7 @@
 "use server";
 
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Bill, Booking, Prisma} from "@prisma/client";
+import {Bill, Booking, Duration, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import BookingInclude = Prisma.BookingInclude;
@@ -52,6 +52,52 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
       failure: "Invalid Duration ID"
     };
   }
+
+  // Verify that booking does not overlap
+  const today = new Date();
+  const lastDate = getLastDateOfBooking(check_in, duration);
+  const bookings = await prisma.booking.findMany({
+    where: {
+      check_in: {
+        gte: new Date(today.getFullYear() - 2, today.getMonth(), today.getDate()),
+      }
+    },
+    include: {
+      durations: true
+    }
+  });
+
+  type BookingDates = {
+    check_in: Date,
+    check_out: Date
+  };
+
+  function isBookingPossible(firstBooking: BookingDates, secondBooking: BookingDates) {
+    return secondBooking.check_in >= firstBooking.check_out || secondBooking.check_out <= firstBooking.check_in;
+  }
+
+  // TODO! Improvement: Divide into n-chunks then parallel
+  for (let i = 0; i < bookings.length; i++) {
+    let currBooking = bookings[i];
+    if (currBooking.durations) {
+      const currLastDate = getLastDateOfBooking(currBooking.check_in, currBooking.durations);
+      if (!isBookingPossible(
+        {
+          check_in: check_in,
+          check_out: lastDate,
+        },
+        {
+          check_in: currBooking.check_in,
+          check_out: currLastDate
+        }
+      )) {
+        return {
+          failure: `Booking overlaps with booking ID: ${currBooking.id}`
+        };
+      }
+    }
+  }
+
 
   const {day_count, month_count} = duration;
 
@@ -198,3 +244,17 @@ export async function getBookingsByRoomId(room_id: number) {
     },
   });
 }
+
+function getLastDateOfBooking(check_in: Date, duration: Duration) {
+  let startDate = structuredClone(check_in);
+
+  if (duration.month_count) {
+    if (startDate.getDate() == 1) {
+      return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 0);
+    }
+    return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count + 1, 0);
+  }
+
+  return startDate;
+}
+
