@@ -13,7 +13,7 @@ import {ZodFormattedError} from "zod";
 import {getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
-import {formatToDateTime, generateDatesByDuration} from "@/app/_lib/util";
+import {formatToDateTime, generateDatesByDuration, generateDatesFromBooking} from "@/app/_lib/util";
 import "react-day-picker/style.css";
 import {BookingsIncludeAll, getAllBookings} from "@/app/(internal)/bookings/booking-action";
 import {DateSet} from "@/app/_lib/customSet";
@@ -166,15 +166,21 @@ export function BookingForm(props: BookingFormProps) {
     if (isExistingBookingSuccess) {
       const datesSet = new DateSet();
       existingBookings?.forEach(b => {
-        if (b.durations) {
-          generateDatesByDuration(
-            b.start_date,
-            b.durations,
-            (d) => {
-              datesSet.add(d);
-            }
-          );
-        }
+        // if (b.durations) {
+        // generateDatesByDuration(
+        //   b.start_date,
+        //   b.durations,
+        //   (d) => {
+        //     datesSet.add(d);
+        //   }
+        // );
+        // }
+        generateDatesFromBooking(
+          b,
+          (d) => {
+            datesSet.add(d);
+          }
+        );
       });
       setDisabledDatesSet(datesSet);
     }

@@ -1,4 +1,4 @@
-import {Duration} from "@prisma/client";
+import {Booking, Duration} from "@prisma/client";
 
 export const delay = (time: number) => new Promise((resolve, reject) => setTimeout(resolve, time));
 
@@ -39,3 +39,15 @@ export function generateDatesByDuration(checkInDate: Date, duration: Duration, c
   return dates;
 }
 
+// TODO! Check if correct
+export function generateDatesFromBooking(bookings: Booking, callback?: (d: Date) => void): Date[] {
+  const dates: Date[] = [];
+
+  for (let d = structuredClone(bookings.start_date); d <= bookings.end_date; d.setDate(d.getDate() + 1)) {
+    const currDate = new Date(d);
+    dates.push(currDate);
+    callback?.(currDate);
+  }
+
+  return dates;
+}
