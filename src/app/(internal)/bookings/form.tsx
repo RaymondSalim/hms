@@ -13,7 +13,7 @@ import {ZodFormattedError} from "zod";
 import {getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
-import {formatToDateTime, generateDatesByDuration, generateDatesFromBooking} from "@/app/_lib/util";
+import {formatToDateTime, generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
 import "react-day-picker/style.css";
 import {BookingsIncludeAll, getAllBookings} from "@/app/(internal)/bookings/booking-action";
 import {DateSet} from "@/app/_lib/customSet";
@@ -166,16 +166,8 @@ export function BookingForm(props: BookingFormProps) {
     if (isExistingBookingSuccess) {
       const datesSet = new DateSet();
       existingBookings?.forEach(b => {
-        // if (b.durations) {
-        // generateDatesByDuration(
-        //   b.start_date,
-        //   b.durations,
-        //   (d) => {
-        //     datesSet.add(d);
-        //   }
-        // );
-        // }
         generateDatesFromBooking(
+          // @ts-ignore
           b,
           (d) => {
             datesSet.add(d);
@@ -193,7 +185,8 @@ export function BookingForm(props: BookingFormProps) {
       let hasChange = false;
       durationsData?.forEach((val, index) => {
         if (newDurationData[index]) {
-          let dates = generateDatesByDuration(bookingData.start_date!, val);
+          let lastDate = getLastDateOfBooking(bookingData.start_date!, val);
+          let dates = generateDatesBetween(bookingData.start_date!, lastDate);
           let inSet = disabledDatesSet.has(dates[dates.length - 1]);
           hasChange = hasChange || newDurationData[index].isDisabled != inSet;
           newDurationData[index].isDisabled = inSet;

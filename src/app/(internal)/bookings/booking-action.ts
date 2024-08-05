@@ -1,10 +1,11 @@
 "use server";
 
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Bill, Booking, Duration, Prisma} from "@prisma/client";
+import {Bill, Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
+import {getLastDateOfBooking} from "@/app/_lib/util";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -299,18 +300,5 @@ export async function getBookingsByRoomId(room_id: number) {
       room_id: room_id
     },
   });
-}
-
-function getLastDateOfBooking(start_date: Date, duration: Duration) {
-  let startDate = structuredClone(start_date);
-
-  if (duration.month_count) {
-    if (startDate.getDate() == 1) {
-      return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 0);
-    }
-    return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count + 1, 0);
-  }
-
-  return startDate;
 }
 
