@@ -6,7 +6,7 @@ import {addToDate, formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
-import {BookingsIncludeAll, createBookingAction, deleteBookingAction} from "@/app/(internal)/bookings/booking-action";
+import {BookingsIncludeAll, deleteBookingAction, upsertBookingAction} from "@/app/(internal)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/bookings/form";
 
 
@@ -97,7 +97,7 @@ export default function BookingsContent({bookings}: BookingsContentProps) {
         searchPlaceholder={"TODO!"} // TODO!
         upsert={{
           // @ts-ignore
-          mutationFn: createBookingAction,
+          mutationFn: upsertBookingAction,
         }}
 
         delete={{

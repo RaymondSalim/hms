@@ -1,11 +1,13 @@
 "use server";
 
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Bill, Booking, Prisma} from "@prisma/client";
+import {Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
+import {createBooking, updateBookingByID} from "@/app/_db/bookings";
+import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -32,7 +34,7 @@ export type BookingsIncludeAll = Prisma.BookingGetPayload<{
   },
 }>
 
-export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Booking>) {
+export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Booking>) {
   const {success, data, error} = bookingSchema.safeParse(reqData);
 
   if (!success) {
@@ -43,7 +45,6 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
 
   const {fee, start_date, duration_id, ...otherBookingData} = data;
 
-  const bills: Partial<Bill>[] = [];
   const startDate = new Date(start_date);
   const duration = await prisma.duration.findUnique({
     where: {id: duration_id},
@@ -58,6 +59,8 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   // Verify that booking does not overlap
   const today = new Date();
   const lastDate = getLastDateOfBooking(start_date, duration);
+  data.end_date = lastDate;
+
   const bookings = await prisma.booking.findMany({
     where: {
       AND: [
@@ -105,110 +108,34 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
     }
   }
 
-  const {day_count, month_count} = duration;
-  let end_date = new Date();
+  try {
+    let res;
 
-  if (month_count) {
-    const totalMonths = month_count;
-    const totalDaysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
-
-    // Calculate prorated amount if start_date is not the first of the month
-    if (startDate.getDate() !== 1) {
-      const remainingDays = totalDaysInMonth - startDate.getDate() + 1;
-      const dailyRate = fee / totalDaysInMonth;
-      const proratedAmount = dailyRate * remainingDays;
-
-      // Add prorated bill for the current month
-      bills.push({
-        amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
-        description: `Prorated bill for ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
-        due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
-      });
-
-      // Add full monthly bills for subsequent months, except the last one
-      for (let i = 1; i < totalMonths; i++) {
-        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
-        bills.push({
-          amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
-          due_date: billEndDate,
-        });
-      }
-
-      // Add full monthly bill for the last month
-      const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + totalMonths, 1);
-      const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0);
-      bills.push({
-        amount: new Prisma.Decimal(fee),
-        description: `Monthly bill for ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
-        due_date: lastMonthEndDate,
-      });
-      end_date = lastMonthEndDate;
-
+    if (data?.id) {
+      // @ts-expect-error TS2345
+      res = await updateBookingByID(data.id, data, duration);
     } else {
-      // Add full monthly bills for totalMonths
-      for (let i = 0; i < totalMonths; i++) {
-        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
-        bills.push({
-          amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
-          due_date: billEndDate,
-        });
-
-        end_date = billEndDate;
-      }
+      // @ts-expect-error TS2345
+      res = await createBooking(data, duration);
     }
-  }
-
-  // TODO! Correct implementation
-  // if (day_count) {
-  //   const totalDays = day_count;
-  //   const dailyRate = fee / 30; // Assuming 30 days in a month for daily rate calculation
-  //
-  //   // Generate daily bills
-  //   for (let i = 0; i < totalDays; i++) {
-  //     const billDate = new Date(startDate);
-  //     billDate.setDate(billDate.getDate() + i);
-  //
-  //     bills.push({
-  //       amount: new Prisma.Decimal(dailyRate.toFixed(2)),
-  //       description: `Daily bill for ${billDate.toLocaleDateString()}`,
-  //       due_date: billDate,
-  //     });
-  //   }
-  // }
-
-  // Use a transaction to ensure atomicity
-  return {
-    success: await prisma.$transaction(async (prismaTrx) => {
-      // Create the booking
-      const newBooking = await prismaTrx.booking.create({
-        data: {
-          ...otherBookingData,
-          fee,
-          start_date,
-          end_date,
-          duration_id,
-        },
-        include: includeAll,
-      });
-
-      // Create associated bills
-      for (const billData of bills) {
-        await prismaTrx.bill.create({
-          // @ts-ignore
-          data: {
-            ...billData,
-            booking_id: newBooking.id,
-          },
-        });
+    return {
+      // @ts-ignore
+      success: res
+    };
+  } catch (error) {
+    if (error instanceof PrismaClientKnownRequestError) {
+      console.error("[upsertBookingAction][PrismaKnownError]", error.code, error.message);
+      if (error.code == "P2002") {
+        return {failure: "Booking is taken"};
       }
+    } else if (error instanceof PrismaClientUnknownRequestError) {
+      console.error("[upsertBookingAction][PrismaUnknownError]", error.message);
+    } else {
+      console.error("[upsertBookingAction]", error);
+    }
 
-      return newBooking;
-    })
-  };
+    return {failure: "Request unsuccessful"};
+  }
 }
 
 export async function getBookingById(id: number) {
