@@ -90,40 +90,20 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   for (let i = 0; i < bookings.length; i++) {
     let currBooking = bookings[i];
     if (!isBookingPossible(
-        {
-          start_date: start_date,
-          end_date: lastDate,
-        },
-        {
-          start_date: currBooking.start_date,
-          end_date: currBooking.end_date
-        }
-      )) {
-        return {
-          failure: `Booking overlaps with booking ID: ${currBooking.id}`
-        };
+      {
+        start_date: start_date,
+        end_date: lastDate,
+      },
+      {
+        start_date: currBooking.start_date,
+        end_date: currBooking.end_date
       }
-
-
-    // if (currBooking.durations) {
-    //   const currLastDate = getLastDateOfBooking(currBooking.start_date, currBooking.durations);
-    //   if (!isBookingPossible(
-    //     {
-    //       start_date: start_date,
-    //       end_date: lastDate,
-    //     },
-    //     {
-    //       start_date: currBooking.start_date,
-    //       end_date: currLastDate
-    //     }
-    //   )) {
-    //     return {
-    //       failure: `Booking overlaps with booking ID: ${currBooking.id}`
-    //     };
-    //   }
-    // }
+    )) {
+      return {
+        failure: `Booking overlaps with booking ID: ${currBooking.id}`
+      };
+    }
   }
-
 
   const {day_count, month_count} = duration;
   let end_date = new Date();
