@@ -178,7 +178,7 @@ export function BookingForm(props: BookingFormProps) {
     }
   }, [existingBookings, isExistingBookingSuccess]);
 
-  // Disable duration options when check in date is selected
+  // Disable duration options when start date is selected
   useEffect(() => {
     if (bookingData.start_date) {
       const newDurationData = structuredClone(durationDataMapped);
@@ -278,7 +278,7 @@ export function BookingForm(props: BookingFormProps) {
                   >
                       <label htmlFor="start_date">
                           <Typography variant="h6" color="blue-gray">
-                              Check in Date
+                              Start Date
                           </Typography>
                       </label>
                       <Popover
