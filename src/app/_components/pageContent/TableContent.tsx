@@ -46,6 +46,14 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
   searchPlaceholder?: string,
   form: ReactElement<TableFormProps<T>>
   shouldShowRowAction?: (props: CellContext<T, unknown>) => boolean
+  additionalActions?: {
+    position?: "before" | "after";
+    actions: {
+      button: ReactElement,
+      mutation?: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
+      mutationParam?: Object
+    }[]
+  }
 
   customDialog?: ReactElement
 }
@@ -111,6 +119,24 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     }
   });
 
+  function generateHooks(opt: CustomMutationOptions<any, any, any, any, any>) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useMutation(opt);
+  }
+
+  const [mutationQueries, setMutationQueries] = useState<(UseMutationResult | undefined)[]>([]);
+  useEffect(() => {
+    let queries: (UseMutationResult | undefined)[] = [];
+    props.additionalActions?.actions.forEach(a => {
+      queries.push(
+        a.mutation ?
+          generateHooks(a.mutation) :
+          undefined
+      );
+    });
+    setMutationQueries(queries);
+  }, [props.additionalActions?.actions]);
+
   const columnHelper = createColumnHelper<T>();
 
   const columns = useMemo(() => [
@@ -120,16 +146,38 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       header: "Actions",
       cell: cellProps => {
         if (props.shouldShowRowAction?.(cellProps) ?? true) {
-          return <RowAction
-            edit={() => {
-              setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
-              setDialogOpen(true);
-            }}
-            delete={() => {
-              setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
-              setDeleteDialogOpen(true);
-            }}
-          />;
+          const buttons = props.additionalActions?.actions.map((a, index) => {
+            cloneElement(a.button, {
+              onClick: () => {
+                const params = {
+                  id: cellProps.row.original.id,
+                  ...a.mutationParam
+                };
+                mutationQueries[index]?.mutate(...Object.values(params));
+              }
+            });
+          });
+
+          return (
+            <>
+              {
+                props.additionalActions?.position == "before" && buttons
+              }
+              <RowAction
+                edit={() => {
+                  setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
+                  setDialogOpen(true);
+                }}
+                delete={() => {
+                  setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
+                  setDeleteDialogOpen(true);
+                }}
+              />;
+              {
+                (props.additionalActions?.position == "after" || true) && buttons
+              }
+            </>
+          );
         }
       }
     })
