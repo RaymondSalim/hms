@@ -13,7 +13,7 @@ export async function getOverviewData(locationID?: number) {
       rooms: {
         location_id: locationID
       },
-      check_in: {
+      start_date: {
         gte: firstDateOfWeek,
         lt: lastDateOfWeek,
       }
@@ -28,7 +28,7 @@ export async function getOverviewData(locationID?: number) {
                LEFT JOIN rooms r ON b.room_id = r.id
       WHERE ${locationClause}
         AND (
-          b.check_in + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
+          b.start_date + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
           ) BETWEEN ${firstDateOfWeek} AND ${lastDateOfWeek}
   `;
   // const bookingsCount: Promise<number> = bookingsCountRaw.then(e => new Promise(resolve => setTimeout(() => resolve(e[0].count), 10000)));
@@ -83,11 +83,11 @@ export async function getUpcomingEvents(locationID?: number) {
       for (const ci of checkIns) {
         let newCI = ci as ExtendedReturnType;
         newCI.type = "CHECKIN";
-        let hasKey = resp.has(newCI.check_in.valueOf());
+        let hasKey = resp.has(newCI.start_date.valueOf());
         if (hasKey) {
-          resp.get(newCI.check_in.valueOf())?.push(newCI);
+          resp.get(newCI.start_date.valueOf())?.push(newCI);
         } else {
-          resp.set(newCI.check_in.valueOf(), [newCI]);
+          resp.set(newCI.start_date.valueOf(), [newCI]);
         }
       }
 
@@ -325,7 +325,7 @@ async function getCheckInWithExtras(now: Date, sevenDaysAhead: Date, locationID?
       rooms: {
         location_id: locationID
       },
-      check_in: {
+      start_date: {
         gte: now,
         lt: sevenDaysAhead,
       }
@@ -353,7 +353,7 @@ async function getCheckOutWithExtras(now: Date, sevenDaysAhead: Date, locationID
              t.id                                                                                          AS tenant_id,
              t.name                                                                                        AS tenant_name,
              d.duration,
-             b.check_in + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' *
+             b.start_date + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' *
                                                            COALESCE(d.month_count, 0)                      AS checkout_date
       FROM "bookings" b
                LEFT JOIN durations d ON b.duration_id = d.id
@@ -362,7 +362,7 @@ async function getCheckOutWithExtras(now: Date, sevenDaysAhead: Date, locationID
                LEFT JOIN roomtypes rt ON r.room_type_id = rt.id
       WHERE ${locationClause}
         AND (
-          b.check_in + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
+          b.start_date + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
           ) BETWEEN ${now} AND ${sevenDaysAhead}
   `;
 

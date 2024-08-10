@@ -1,10 +1,15 @@
 "use server";
 
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Bill, Booking, Duration, Prisma} from "@prisma/client";
+import {Booking, CheckInOutLog, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
+import {getLastDateOfBooking} from "@/app/_lib/util";
+import {createBooking, updateBookingByID} from "@/app/_db/bookings";
+import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
+import {GenericActionsType} from "@/app/_lib/actions";
+import {CheckInOutType} from "@/app/(internal)/bookings/enum";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -15,7 +20,8 @@ const includeAll: BookingInclude = {
   },
   durations: true,
   bookingstatuses: true,
-  tenants: true
+  tenants: true,
+  checkInOutLogs: true
 };
 
 export type BookingsIncludeAll = Prisma.BookingGetPayload<{
@@ -27,11 +33,12 @@ export type BookingsIncludeAll = Prisma.BookingGetPayload<{
     },
     durations: true,
     bookingstatuses: true,
-    tenants: true
+    tenants: true,
+    checkInOutLogs: true
   },
 }>
 
-export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Booking>) {
+export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Booking>) {
   const {success, data, error} = bookingSchema.safeParse(reqData);
 
   if (!success) {
@@ -40,10 +47,9 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
     };
   }
 
-  const {fee, check_in, duration_id, ...otherBookingData} = data;
+  const {fee, start_date, duration_id, ...otherBookingData} = data;
 
-  const bills: Partial<Bill>[] = [];
-  const checkInDate = new Date(check_in);
+  const startDate = new Date(start_date);
   const duration = await prisma.duration.findUnique({
     where: {id: duration_id},
   });
@@ -56,12 +62,14 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
 
   // Verify that booking does not overlap
   const today = new Date();
-  const lastDate = getLastDateOfBooking(check_in, duration);
+  const lastDate = getLastDateOfBooking(start_date, duration);
+  data.end_date = lastDate;
+
   const bookings = await prisma.booking.findMany({
     where: {
       AND: [
         {
-          check_in: {
+          start_date: {
             gte: new Date(today.getFullYear() - 2, today.getMonth(), today.getDate()),
           }
         },
@@ -77,136 +85,61 @@ export async function createBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   });
 
   type BookingDates = {
-    check_in: Date,
-    check_out: Date
+    start_date: Date,
+    end_date: Date
   };
 
   function isBookingPossible(firstBooking: BookingDates, secondBooking: BookingDates) {
-    return secondBooking.check_in >= firstBooking.check_out || secondBooking.check_out <= firstBooking.check_in;
+    return secondBooking.start_date >= firstBooking.end_date || secondBooking.end_date <= firstBooking.start_date;
   }
 
   // TODO! Improvement: Divide into n-chunks then parallel
   for (let i = 0; i < bookings.length; i++) {
     let currBooking = bookings[i];
-    if (currBooking.durations) {
-      const currLastDate = getLastDateOfBooking(currBooking.check_in, currBooking.durations);
-      if (!isBookingPossible(
-        {
-          check_in: check_in,
-          check_out: lastDate,
-        },
-        {
-          check_in: currBooking.check_in,
-          check_out: currLastDate
-        }
-      )) {
-        return {
-          failure: `Booking overlaps with booking ID: ${currBooking.id}`
-        };
+    if (!isBookingPossible(
+      {
+        start_date: start_date,
+        end_date: lastDate,
+      },
+      {
+        start_date: currBooking.start_date,
+        end_date: currBooking.end_date
       }
+    )) {
+      return {
+        failure: `Booking overlaps with booking ID: ${currBooking.id}`
+      };
     }
   }
 
+  try {
+    let res;
 
-  const {day_count, month_count} = duration;
-
-  if (month_count) {
-    const totalMonths = month_count;
-    const totalDaysInMonth = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + 1, 0).getDate();
-
-    // Calculate prorated amount if check_in is not the first of the month
-    if (checkInDate.getDate() !== 1) {
-      const remainingDays = totalDaysInMonth - checkInDate.getDate() + 1;
-      const dailyRate = fee / totalDaysInMonth;
-      const proratedAmount = dailyRate * remainingDays;
-
-      // Add prorated bill for the current month
-      bills.push({
-        amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
-        description: `Prorated bill for ${checkInDate.toLocaleString('default', {month: 'long'})} ${checkInDate.getDate()}-${totalDaysInMonth}`,
-        due_date: new Date(checkInDate.getFullYear(), checkInDate.getMonth(), totalDaysInMonth),
-      });
-
-      // Add full monthly bills for subsequent months, except the last one
-      for (let i = 1; i < totalMonths; i++) {
-        const billStartDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i, 1);
-        const billEndDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i + 1, 0);
-        bills.push({
-          amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
-          due_date: billEndDate,
-        });
-      }
-
-      // Add full monthly bill for the last month
-      const lastMonthStartDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + totalMonths, 1);
-      const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0);
-      bills.push({
-        amount: new Prisma.Decimal(fee),
-        description: `Monthly bill for ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
-        due_date: lastMonthEndDate,
-      });
-
+    if (data?.id) {
+      // @ts-expect-error TS2345
+      res = await updateBookingByID(data.id, data, duration);
     } else {
-      // Add full monthly bills for totalMonths
-      for (let i = 0; i < totalMonths; i++) {
-        const billStartDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i, 1);
-        const billEndDate = new Date(checkInDate.getFullYear(), checkInDate.getMonth() + i + 1, 0);
-        bills.push({
-          amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
-          due_date: billEndDate,
-        });
-      }
+      // @ts-expect-error TS2345
+      res = await createBooking(data, duration);
     }
-  }
-
-  // TODO! Correct implementation
-  // if (day_count) {
-  //   const totalDays = day_count;
-  //   const dailyRate = fee / 30; // Assuming 30 days in a month for daily rate calculation
-  //
-  //   // Generate daily bills
-  //   for (let i = 0; i < totalDays; i++) {
-  //     const billDate = new Date(checkInDate);
-  //     billDate.setDate(billDate.getDate() + i);
-  //
-  //     bills.push({
-  //       amount: new Prisma.Decimal(dailyRate.toFixed(2)),
-  //       description: `Daily bill for ${billDate.toLocaleDateString()}`,
-  //       due_date: billDate,
-  //     });
-  //   }
-  // }
-
-  // Use a transaction to ensure atomicity
-  return {
-    success: await prisma.$transaction(async (prismaTrx) => {
-      // Create the booking
-      const newBooking = await prismaTrx.booking.create({
-        data: {
-          ...otherBookingData,
-          fee,
-          check_in,
-          duration_id,
-        },
-        include: includeAll,
-      });
-
-      // Create associated bills
-      for (const billData of bills) {
-        await prismaTrx.bill.create({
-          // @ts-ignore
-          data: {
-            ...billData,
-            booking_id: newBooking.id,
-          },
-        });
+    return {
+      // @ts-ignore
+      success: res
+    };
+  } catch (error) {
+    if (error instanceof PrismaClientKnownRequestError) {
+      console.error("[upsertBookingAction][PrismaKnownError]", error.code, error.message);
+      if (error.code == "P2002") {
+        return {failure: "Booking is taken"};
       }
+    } else if (error instanceof PrismaClientUnknownRequestError) {
+      console.error("[upsertBookingAction][PrismaUnknownError]", error.message);
+    } else {
+      console.error("[upsertBookingAction]", error);
+    }
 
-      return newBooking;
-    })
-  };
+    return {failure: "Request unsuccessful"};
+  }
 }
 
 export async function getBookingById(id: number) {
@@ -280,16 +213,30 @@ export async function getBookingsByRoomId(room_id: number) {
   });
 }
 
-function getLastDateOfBooking(check_in: Date, duration: Duration) {
-  let startDate = structuredClone(check_in);
-
-  if (duration.month_count) {
-    if (startDate.getDate() == 1) {
-      return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 0);
+export async function checkInOutAction(data: {
+  booking_id: number,
+  action: CheckInOutType
+}): Promise<GenericActionsType<CheckInOutLog>> {
+  const booking = await prisma.booking.findFirst({
+    where: {
+      id: data.booking_id
     }
-    return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count + 1, 0);
+  });
+
+  if (!booking) {
+    return {
+      failure: "Booking not found"
+    };
   }
 
-  return startDate;
+  return {
+    success: await prisma.checkInOutLog.create({
+      data: {
+        tenant_id: booking.tenant_id!,
+        booking_id: data.booking_id,
+        event_date: new Date(),
+        event_type: data.action
+      },
+    })
+  };
 }
-

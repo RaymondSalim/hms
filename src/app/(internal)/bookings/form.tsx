@@ -13,7 +13,7 @@ import {ZodFormattedError} from "zod";
 import {getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
-import {formatToDateTime, generateDatesByDuration} from "@/app/_lib/util";
+import {formatToDateTime, generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
 import "react-day-picker/style.css";
 import {BookingsIncludeAll, getAllBookings} from "@/app/(internal)/bookings/booking-action";
 import {DateSet} from "@/app/_lib/customSet";
@@ -37,7 +37,7 @@ export function BookingForm(props: BookingFormProps) {
   const isButtonDisabled = useMemo(() => {
     return !bookingData.tenant_id ||
       !bookingData.room_id ||
-      !bookingData.check_in ||
+      !bookingData.start_date ||
       !bookingData.duration_id ||
       !bookingData.fee ||
       !bookingData.status_id;
@@ -166,28 +166,27 @@ export function BookingForm(props: BookingFormProps) {
     if (isExistingBookingSuccess) {
       const datesSet = new DateSet();
       existingBookings?.forEach(b => {
-        if (b.durations) {
-          generateDatesByDuration(
-            b.check_in,
-            b.durations,
-            (d) => {
-              datesSet.add(d);
-            }
-          );
-        }
+        generateDatesFromBooking(
+          // @ts-ignore
+          b,
+          (d) => {
+            datesSet.add(d);
+          }
+        );
       });
       setDisabledDatesSet(datesSet);
     }
   }, [existingBookings, isExistingBookingSuccess]);
 
-  // Disable duration options when check in date is selected
+  // Disable duration options when start date is selected
   useEffect(() => {
-    if (bookingData.check_in) {
+    if (bookingData.start_date) {
       const newDurationData = structuredClone(durationDataMapped);
       let hasChange = false;
       durationsData?.forEach((val, index) => {
         if (newDurationData[index]) {
-          let dates = generateDatesByDuration(bookingData.check_in!, val);
+          let lastDate = getLastDateOfBooking(bookingData.start_date!, val);
+          let dates = generateDatesBetween(bookingData.start_date!, lastDate);
           let inSet = disabledDatesSet.has(dates[dates.length - 1]);
           hasChange = hasChange || newDurationData[index].isDisabled != inSet;
           newDurationData[index].isDisabled = inSet;
@@ -198,7 +197,7 @@ export function BookingForm(props: BookingFormProps) {
         setDurationDataMapped([...newDurationData]);
       }
     }
-  }, [bookingData.check_in, disabledDatesSet, durationDataMapped, durationsData]);
+  }, [bookingData.start_date, disabledDatesSet, durationDataMapped, durationsData]);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -272,14 +271,14 @@ export function BookingForm(props: BookingFormProps) {
               {
                 isExistingBookingSuccess &&
                   <motion.div
-                      key={"check_in"}
+                      key={"start_date"}
                       initial={{opacity: 0, height: 0}}
                       animate={{opacity: 1, height: "auto"}}
                       exit={{opacity: 0, height: 0}}
                   >
-                      <label htmlFor="check_in">
+                      <label htmlFor="start_date">
                           <Typography variant="h6" color="blue-gray">
-                              Check in Date
+                              Start Date
                           </Typography>
                       </label>
                       <Popover
@@ -292,9 +291,9 @@ export function BookingForm(props: BookingFormProps) {
                                   variant="outlined"
                                   size="lg"
                                   onChange={() => null}
-                                  value={bookingData.check_in ? formatToDateTime(bookingData.check_in, false) : ""}
-                                  error={!!fieldErrors?.check_in}
-                                  className={`relative ${!!fieldErrors?.check_in ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                  value={bookingData.start_date ? formatToDateTime(bookingData.start_date, false) : ""}
+                                  error={!!fieldErrors?.start_date}
+                                  className={`relative ${!!fieldErrors?.start_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                   labelProps={{
                                     className: "before:content-none after:content-none",
                                   }}
@@ -305,10 +304,10 @@ export function BookingForm(props: BookingFormProps) {
                                   captionLayout="dropdown"
                                   mode="single"
                                   fixedWeeks={true}
-                                  selected={bookingData.check_in}
+                                  selected={bookingData.start_date}
                                   onSelect={(d) => {
                                     setIsPopoverOpen(false);
-                                    setBookingData(p => ({...p, check_in: d}));
+                                    setBookingData(p => ({...p, start_date: d}));
                                   }}
                                   disabled={disabledDatesSet.values()}
                                   showOutsideDays
@@ -321,13 +320,13 @@ export function BookingForm(props: BookingFormProps) {
                           </PopoverContent>
                       </Popover>
                     {
-                      fieldErrors?.check_in &&
-                        <Typography color="red">{fieldErrors?.check_in._errors}</Typography>
+                      fieldErrors?.start_date &&
+                        <Typography color="red">{fieldErrors?.start_date._errors}</Typography>
                     }
                   </motion.div>
               }
               {
-                bookingData.check_in &&
+                bookingData.start_date &&
                   <motion.div
                       key={"duration_id"}
                       initial={{opacity: 0, height: 0}}

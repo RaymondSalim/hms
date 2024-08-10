@@ -46,6 +46,13 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
   searchPlaceholder?: string,
   form: ReactElement<TableFormProps<T>>
   shouldShowRowAction?: (props: CellContext<T, unknown>) => boolean
+  additionalActions?: {
+    position?: "before" | "after";
+    actions: {
+      generateButton: (rowData: T) => ReactElement,
+      mutationParam?: Object
+    }[]
+  }
 
   customDialog?: ReactElement
 }
@@ -120,22 +127,46 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       header: "Actions",
       cell: cellProps => {
         if (props.shouldShowRowAction?.(cellProps) ?? true) {
-          return <RowAction
-            edit={() => {
-              setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
-              setDialogOpen(true);
-            }}
-            delete={() => {
-              setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
-              setDeleteDialogOpen(true);
-            }}
-          />;
+          const buttons = (
+            <div className={"grid gap-x-2 grid-cols-2"}>
+              {
+                props.additionalActions?.actions.map((a, index) => {
+                  return a.generateButton(cellProps.row.original);
+                })
+              }
+            </div>
+          );
+
+          return (
+            <div className={"flex gap-x-2"}>
+              {
+                props.additionalActions?.position == "before" && buttons
+              }
+              <RowAction
+                edit={() => {
+                  setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
+                  setDialogOpen(true);
+                }}
+                delete={() => {
+                  setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
+                  setDeleteDialogOpen(true);
+                }}
+              />
+              {
+                (props.additionalActions?.position == "after" || props.additionalActions == undefined) && buttons
+              }
+            </div>
+          );
         }
       }
     })
   ], [contentsState]);
 
   const tanTable = useReactTable({
+    defaultColumn: {
+      minSize: 0,
+      size: 0,
+    },
     columns: columns,
     data: contentsState ?? [],
     getCoreRowModel: getCoreRowModel(),
@@ -241,6 +272,5 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         props.customDialog
       }
     </>
-
   );
 }
