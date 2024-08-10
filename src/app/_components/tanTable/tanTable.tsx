@@ -20,7 +20,9 @@ export default function TanTable({tanTable}: TanTableProps) {
             <th
               key={header.id}
               colSpan={header.colSpan}
-              style={{width: `${header.getSize()}px`}}
+              style={{
+                width: header.getSize() !== 0 ? header.getSize() : undefined,
+              }}
               className={`${styles.th} ${header.column.getCanSort() ? "cursor-pointer" : ""}`}
               onClick={header.column.getToggleSortingHandler()}
             >
@@ -51,7 +53,16 @@ export default function TanTable({tanTable}: TanTableProps) {
       {tanTable.getRowModel().rows.map((row, index) => {
         return (<tr key={row.id} className={styles.tr}>
             {row.getVisibleCells().map(cell => (
-              <td key={cell.id} className={styles.td}>
+              <td
+                key={cell.id}
+                className={styles.td}
+                style={{
+                  width:
+                    cell.column.getSize() !== 0
+                      ? cell.column.getSize()
+                      : undefined,
+                }}
+              >
                 <div>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </div>
