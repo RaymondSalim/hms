@@ -1,13 +1,15 @@
 "use server";
 
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Booking, Prisma} from "@prisma/client";
+import {Booking, CheckInOutLog, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
 import {createBooking, updateBookingByID} from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
+import {GenericActionsType} from "@/app/_lib/actions";
+import {CheckInOutType} from "@/app/(internal)/bookings/enum";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -18,7 +20,8 @@ const includeAll: BookingInclude = {
   },
   durations: true,
   bookingstatuses: true,
-  tenants: true
+  tenants: true,
+  checkInOutLogs: true
 };
 
 export type BookingsIncludeAll = Prisma.BookingGetPayload<{
@@ -30,7 +33,8 @@ export type BookingsIncludeAll = Prisma.BookingGetPayload<{
     },
     durations: true,
     bookingstatuses: true,
-    tenants: true
+    tenants: true,
+    checkInOutLogs: true
   },
 }>
 
@@ -209,3 +213,30 @@ export async function getBookingsByRoomId(room_id: number) {
   });
 }
 
+export async function checkInOutAction(data: {
+  booking_id: number,
+  action: CheckInOutType
+}): Promise<GenericActionsType<CheckInOutLog>> {
+  const booking = await prisma.booking.findFirst({
+    where: {
+      id: data.booking_id
+    }
+  });
+
+  if (!booking) {
+    return {
+      failure: "Booking not found"
+    };
+  }
+
+  return {
+    success: await prisma.checkInOutLog.create({
+      data: {
+        tenant_id: booking.tenant_id!,
+        booking_id: data.booking_id,
+        event_date: new Date(),
+        event_type: data.action
+      },
+    })
+  };
+}

@@ -1,13 +1,22 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext} from "react";
+import React, {useContext, useState} from "react";
 import {addToDate, formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
-import {BookingsIncludeAll, deleteBookingAction, upsertBookingAction} from "@/app/(internal)/bookings/booking-action";
+import {
+  BookingsIncludeAll,
+  checkInOutAction,
+  deleteBookingAction,
+  upsertBookingAction
+} from "@/app/(internal)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/bookings/form";
+import {Button} from "@material-tailwind/react";
+import {TbDoorEnter, TbDoorExit} from "react-icons/tb";
+import {useMutation} from "@tanstack/react-query";
+import {CheckInOutType} from "@/app/(internal)/bookings/enum";
 
 
 export interface BookingsContentProps {
@@ -20,6 +29,7 @@ const colorMapping: Map<string, string> = new Map([
 
 export default function BookingsContent({bookings}: BookingsContentProps) {
   const headerContext = useContext(HeaderContext);
+  const [bookingsState, setBookingsState] = useState<BookingsIncludeAll[]>(bookings);
 
   const columnHelper = createColumnHelper<BookingsIncludeAll>();
   const columns = [
@@ -84,11 +94,26 @@ export default function BookingsContent({bookings}: BookingsContentProps) {
     );
   }
 
+  const checkIncCheckOutMutation = useMutation({
+    mutationFn: checkInOutAction,
+    onSuccess: (data) => {
+      if (data.success) { // TODO! Alert
+        setBookingsState(prev => {
+          let bookingIndex = prev.findIndex(b => b.id == data.success!.booking_id);
+          if (bookingIndex >= 0) {
+            prev[bookingIndex].checkInOutLogs.push(data.success!);
+          }
+          return [...prev];
+        });
+      }
+    }
+  });
+
   return (
     <div className={"p-8"}>
       <TableContent<BookingsIncludeAll>
         name={"Bookings"}
-        initialContents={bookings}
+        initialContents={bookingsState}
         columns={columns}
         form={
           // @ts-ignore
@@ -103,6 +128,54 @@ export default function BookingsContent({bookings}: BookingsContentProps) {
         delete={{
           // @ts-ignore
           mutationFn: deleteBookingAction,
+        }}
+        additionalActions={{
+          position: "before",
+          actions: [
+            {
+              generateButton: (rowData) => (
+                <Button
+                  key={`${rowData.id}_in`}
+                  size={"sm"}
+                  color="blue"
+                  className="flex items-center gap-2 w-fit"
+                  onClick={() => checkIncCheckOutMutation.mutate({
+                    booking_id: rowData.id,
+                    action: CheckInOutType.CHECK_IN
+                  })}
+                  disabled={!!rowData.checkInOutLogs.find(l => l.event_type == CheckInOutType.CHECK_IN)}
+                >
+                  <TbDoorEnter className={"text-white h-5 w-5"}/>
+                  <span className={"text-white whitespace-nowrap"}>Check In</span>
+                </Button>
+              ),
+            },
+            {
+              generateButton: (rowData) => {
+                const checkInExists = rowData.checkInOutLogs.some(l => l.event_type == CheckInOutType.CHECK_IN);
+                const checkOutExists = rowData.checkInOutLogs.some(l => l.event_type == CheckInOutType.CHECK_OUT);
+
+                let disabled = !checkInExists || (checkInExists && checkOutExists);
+
+                return (
+                  <Button
+                    key={`${rowData.id}_out`}
+                    size={"sm"}
+                    color="red"
+                    className="flex items-center gap-2 w-fit"
+                    onClick={() => checkIncCheckOutMutation.mutate({
+                      booking_id: rowData.id,
+                      action: CheckInOutType.CHECK_OUT
+                    })}
+                    disabled={disabled}
+                  >
+                    <TbDoorExit className={"text-white h-5 w-5"}/>
+                    <span className={"text-white whitespace-nowrap"}>Check Out</span>
+                  </Button>
+                );
+              },
+            }
+          ]
         }}
       />
     </div>
