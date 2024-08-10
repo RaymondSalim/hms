@@ -1,7 +1,6 @@
 import {Duration} from "@prisma/client";
 import {generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
 import {describe, expect, test} from "@jest/globals";
-import {debug} from "console";
 import {BookingsIncludeAll} from "@/app/(internal)/bookings/booking-action";
 
 type RecursivePartial<T> = {
@@ -52,7 +51,6 @@ describe("test util functions", () => {
           const expectedDate = new Date(2024, i + 1, 0);
           expect(date)
             .toEqual(expectedDate);
-          debug(`Duration: ${i}, Check in Date: ${checkInDate.toLocaleDateString()}, Checkout Date: ${expectedDate.toLocaleDateString()}`);
         });
       }
 
