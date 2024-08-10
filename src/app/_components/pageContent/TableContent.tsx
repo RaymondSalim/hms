@@ -49,8 +49,7 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
   additionalActions?: {
     position?: "before" | "after";
     actions: {
-      button: ReactElement,
-      mutation?: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
+      generateButton: (rowData: T) => ReactElement,
       mutationParam?: Object
     }[]
   }
@@ -119,24 +118,6 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     }
   });
 
-  function generateHooks(opt: CustomMutationOptions<any, any, any, any, any>) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useMutation(opt);
-  }
-
-  const [mutationQueries, setMutationQueries] = useState<(UseMutationResult | undefined)[]>([]);
-  useEffect(() => {
-    let queries: (UseMutationResult | undefined)[] = [];
-    props.additionalActions?.actions.forEach(a => {
-      queries.push(
-        a.mutation ?
-          generateHooks(a.mutation) :
-          undefined
-      );
-    });
-    setMutationQueries(queries);
-  }, [props.additionalActions?.actions]);
-
   const columnHelper = createColumnHelper<T>();
 
   const columns = useMemo(() => [
@@ -146,20 +127,18 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       header: "Actions",
       cell: cellProps => {
         if (props.shouldShowRowAction?.(cellProps) ?? true) {
-          const buttons = props.additionalActions?.actions.map((a, index) => {
-            cloneElement(a.button, {
-              onClick: () => {
-                const params = {
-                  id: cellProps.row.original.id,
-                  ...a.mutationParam
-                };
-                mutationQueries[index]?.mutate(...Object.values(params));
+          const buttons = (
+            <div className={"grid gap-x-2 grid-cols-2"}>
+              {
+                props.additionalActions?.actions.map((a, index) => {
+                  return a.generateButton(cellProps.row.original);
+                })
               }
-            });
-          });
+            </div>
+          );
 
           return (
-            <>
+            <div className={"flex gap-x-2"}>
               {
                 props.additionalActions?.position == "before" && buttons
               }
@@ -172,11 +151,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                   setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
                   setDeleteDialogOpen(true);
                 }}
-              />;
+              />
               {
-                (props.additionalActions?.position == "after" || true) && buttons
+                (props.additionalActions?.position == "after" || props.additionalActions == undefined) && buttons
               }
-            </>
+            </div>
           );
         }
       }
@@ -184,6 +163,10 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
   ], [contentsState]);
 
   const tanTable = useReactTable({
+    defaultColumn: {
+      minSize: 0,
+      size: 0,
+    },
     columns: columns,
     data: contentsState ?? [],
     getCoreRowModel: getCoreRowModel(),
@@ -289,6 +272,5 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         props.customDialog
       }
     </>
-
   );
 }
