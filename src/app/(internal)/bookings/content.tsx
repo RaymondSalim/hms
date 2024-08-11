@@ -129,27 +129,31 @@ export default function BookingsContent({bookings}: BookingsContentProps) {
           position: "before",
           actions: [
             {
-              generateButton: (rowData) => (
-                <Button
-                  key={`${rowData.id}_in`}
-                  size={"sm"}
-                  color="blue"
-                  className="flex items-center gap-2 w-fit"
-                  onClick={() => checkIncCheckOutMutation.mutate({
-                    booking_id: rowData.id,
-                    action: CheckInOutType.CHECK_IN
-                  })}
-                  disabled={!!rowData.checkInOutLogs.find(l => l.event_type == CheckInOutType.CHECK_IN)}
-                >
-                  <TbDoorEnter className={"text-white h-5 w-5"}/>
-                  <span className={"text-white whitespace-nowrap"}>Check In</span>
-                </Button>
-              ),
+              generateButton: (rowData) => {
+                const checkInExists = rowData.checkInOutLogs?.find(l => l.event_type == CheckInOutType.CHECK_IN);
+
+                return (
+                  <Button
+                    key={`${rowData.id}_in`}
+                    size={"sm"}
+                    color="blue"
+                    className="flex items-center gap-2 w-fit"
+                    onClick={() => checkIncCheckOutMutation.mutate({
+                      booking_id: rowData.id,
+                      action: CheckInOutType.CHECK_IN
+                    })}
+                    disabled={!!checkInExists}
+                  >
+                    <TbDoorEnter className={"text-white h-5 w-5"}/>
+                    <span className={"text-white whitespace-nowrap"}>Check In</span>
+                  </Button>
+                );
+              },
             },
             {
               generateButton: (rowData) => {
-                const checkInExists = rowData.checkInOutLogs.some(l => l.event_type == CheckInOutType.CHECK_IN);
-                const checkOutExists = rowData.checkInOutLogs.some(l => l.event_type == CheckInOutType.CHECK_OUT);
+                const checkInExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_IN);
+                const checkOutExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_OUT);
 
                 let disabled = !checkInExists || (checkInExists && checkOutExists);
 
