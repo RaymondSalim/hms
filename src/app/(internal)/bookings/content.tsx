@@ -6,17 +6,13 @@ import {addToDate, formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
-import {
-  BookingsIncludeAll,
-  checkInOutAction,
-  deleteBookingAction,
-  upsertBookingAction
-} from "@/app/(internal)/bookings/booking-action";
+import {checkInOutAction, deleteBookingAction, upsertBookingAction} from "@/app/(internal)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/bookings/form";
 import {Button} from "@material-tailwind/react";
 import {TbDoorEnter, TbDoorExit} from "react-icons/tb";
 import {useMutation} from "@tanstack/react-query";
 import {CheckInOutType} from "@/app/(internal)/bookings/enum";
+import {BookingsIncludeAll} from "@/app/_db/bookings";
 
 
 export interface BookingsContentProps {

@@ -3,6 +3,36 @@
 import prisma from "@/app/_lib/primsa";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {Bill, Booking, Duration, Prisma} from "@prisma/client";
+import BookingInclude = Prisma.BookingInclude;
+
+const includeAll: BookingInclude = {
+  rooms: {
+    include: {
+      locations: true,
+    }
+  },
+  durations: true,
+  bookingstatuses: true,
+  tenants: true,
+  checkInOutLogs: true
+};
+
+export type BookingsIncludeAll = Prisma.BookingGetPayload<{
+  include: {
+    rooms: {
+      include: {
+        locations: true,
+      }
+    },
+    durations: true,
+    bookingstatuses: true,
+    tenants: true,
+    checkInOutLogs: true
+  },
+}> & {
+  custom_id: string
+}
+
 
 export async function getBookingStatuses() {
   return prisma.bookingStatus.findMany({
@@ -86,17 +116,12 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
           fee,
           end_date,
         },
-        include: {
-          rooms: {
-            include: {
-              locations: true,
-            }
-          },
-          durations: true,
-          bookingstatuses: true,
-          tenants: true
-        },
-      });
+        include: includeAll,
+      })
+        .then(nb => ({
+          ...nb,
+          custom_id: `#-${nb.id}`
+        }));
 
       // Create associated bills
       for (const billData of bills) {
@@ -114,6 +139,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
   };
 }
 
+// TODO! Check if update booking actually updates bookings, or just bills
 export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp<Booking>, duration: Duration) {
   const {fee, ...otherBookingData} = data;
   const startDate = new Date(data.start_date);
@@ -206,4 +232,18 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
       }
     })
   };
+}
+
+export async function getAllBookings(location_id?: number, room_id?: number, limit?: number, offset?: number) {
+  return prisma.booking.findMany({
+    where: {
+      rooms: {
+        id: room_id,
+        location_id: location_id,
+      }
+    },
+    skip: offset,
+    take: limit,
+    include: includeAll
+  });
 }
