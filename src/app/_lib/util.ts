@@ -1,5 +1,5 @@
 import {Duration} from "@prisma/client";
-import {BookingsIncludeAll} from "@/app/(internal)/bookings/booking-action";
+import {BookingsIncludeAll} from "@/app/_db/bookings";
 
 export const delay = (time: number) => new Promise((resolve, reject) => setTimeout(resolve, time));
 
@@ -13,11 +13,13 @@ export function formatToDateTime(d: Date, showTime = true): string {
 export type IntersectionToUnion<T> = (T extends any ? (arg: T) => void : never) extends (arg: infer U) => void ? U : never;
 
 export function addToDate(date: Date, dayCount: number, monthCount: number) {
-  if (date) {
-    date.setDate(date.getDate() + dayCount);
-    date.setMonth(date.getMonth() + monthCount);
+  if (!date) {
+    return date;
   }
-  return date;
+  const newDate = new Date(date);
+  newDate.setDate(date.getDate() + dayCount);
+  newDate.setMonth(date.getMonth() + monthCount);
+  return newDate;
 }
 
 export function getLastDateOfBooking(start_date: Date, duration: Duration) {
