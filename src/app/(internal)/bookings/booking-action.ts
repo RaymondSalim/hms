@@ -119,7 +119,7 @@ export async function getAllBookingsAction(...args: Parameters<typeof getAllBook
   return getAllBookings(...args);
 }
 
-export async function deletePaymentAction(id: number) {
+export async function deleteBookingAction(id: number) {
   const parsedData = object({id: number().positive()}).safeParse({
     id: id,
   });
