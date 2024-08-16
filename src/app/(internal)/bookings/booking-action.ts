@@ -1,12 +1,12 @@
 "use server";
 
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Booking, CheckInOutLog, Prisma} from "@prisma/client";
+import {Booking, CheckInOutLog} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
-import {createBooking, getAllBookings, updateBookingByID} from "@/app/_db/bookings";
+import {createBooking, getAllBookings, getBookingByID, updateBookingByID} from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/bookings/enum";
@@ -119,7 +119,7 @@ export async function getAllBookingsAction(...args: Parameters<typeof getAllBook
   return getAllBookings(...args);
 }
 
-export async function deleteBookingAction(id: number) {
+export async function deletePaymentAction(id: number) {
   const parsedData = object({id: number().positive()}).safeParse({
     id: id,
   });
@@ -175,4 +175,8 @@ export async function checkInOutAction(data: {
       },
     })
   };
+}
+
+export async function getBookingByIDAction(id: number) {
+  return getBookingByID(id);
 }
