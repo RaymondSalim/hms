@@ -247,3 +247,11 @@ export async function getAllBookings(location_id?: number, room_id?: number, lim
     include: includeAll
   });
 }
+
+export async function getBookingByID(id: number) {
+  return prisma.booking.findFirst({
+    where: {
+      id
+    }
+  });
+}
