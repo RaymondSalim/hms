@@ -8,21 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Bill {
-  id          Int      @id @default(autoincrement())
-  booking_id  Int
-  amount      Decimal  @db.Decimal(10, 2)
-  description String   @db.VarChar(255)
-  due_date    DateTime @db.Date
-  paid_amount Decimal? @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-
-  bookings Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("bills")
-}
-
 model Booking {
   id          Int      @id @default(autoincrement())
   tenant_id   String?
@@ -35,14 +20,14 @@ model Booking {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  durations Duration? @relation(fields: [duration_id], references: [id], onUpdate: NoAction, onDelete: Restrict)
+  durations       Duration?      @relation(fields: [duration_id], references: [id], onUpdate: NoAction, onDelete: Restrict)
   rooms           Room?          @relation(fields: [room_id], references: [id], onUpdate: NoAction)
   bookingstatuses BookingStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
   tenants         Tenant?        @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
   payments        Payment[]
   penalties       Penalty[]
-  bills Bill[]
-  checkInOutLogs CheckInOutLog[]
+  bills           Bill[]
+  checkInOutLogs  CheckInOutLog[]
 
   @@map("bookings")
 }
@@ -139,6 +124,21 @@ model Log {
   @@map("logs")
 }
 
+model Bill {
+  id          Int      @id @default(autoincrement())
+  booking_id  Int
+  amount      Decimal  @db.Decimal(10, 2)
+  description String   @db.VarChar(255)
+  due_date    DateTime @db.Date
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  bookings    Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  PaymentBill PaymentBill[]
+
+  @@map("bills")
+}
+
 model Payment {
   id            Int      @id @default(autoincrement())
   booking_id    Int
@@ -151,8 +151,21 @@ model Payment {
 
   bookings        Booking        @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   paymentstatuses PaymentStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  paymentBills PaymentBill[]
 
   @@map("payments")
+}
+
+model PaymentBill {
+  payment_id Int
+  bill_id    Int
+  amount     Decimal @db.Decimal(10, 2)
+
+  payment Payment @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  bill    Bill    @relation(fields: [bill_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([payment_id, bill_id])
+  @@map("payment_bills")
 }
 
 model PaymentStatus {
