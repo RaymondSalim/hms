@@ -3,10 +3,23 @@ import {BookingsIncludeAll} from "@/app/_db/bookings";
 
 export const delay = (time: number) => new Promise((resolve, reject) => setTimeout(resolve, time));
 
-export function formatToDateTime(d: Date, showTime = true): string {
+export function formatToIDR(amount: number) {
+  if (isNaN(amount)) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat("id-ID", {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+}
+
+export function formatToDateTime(d: Date, showTime = true, showSeconds = true): string {
   return new Intl.DateTimeFormat('id', {
     dateStyle: "medium",
-    timeStyle: showTime ? "short" : undefined,
+    timeStyle: showTime ? (showSeconds ? "short" : "medium") : undefined,
   }).format(d);
 }
 
@@ -60,5 +73,19 @@ export function generateDatesFromBooking(bookings: BookingsIncludeAll, callback?
   return null;
 }
 
+export async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
+    reader.onloadend = () => {
+      const base64String = (reader.result as string).split(',')[1];
+      resolve(base64String);
+    };
 
+    reader.onerror = (error) => {
+      reject(error);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
