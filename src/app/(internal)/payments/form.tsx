@@ -7,9 +7,8 @@ import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
 import {ZodFormattedError} from "zod";
-import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
-import {formatToDateTime} from "@/app/_lib/util";
+import {fileToBase64, formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import "react-day-picker/style.css";
 import {getAllBookingsAction} from "@/app/(internal)/bookings/booking-action";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
@@ -17,11 +16,28 @@ import {PaymentIncludeAll} from "@/app/_db/payment";
 import {AiOutlineLoading} from "react-icons/ai";
 import {getPaymentStatusAction} from "@/app/(internal)/payments/payment-action";
 import {NonUndefined} from "@/app/_lib/types";
+import {
+  BillIncludePaymentAndSum,
+  getUnpaidBillsDueByBookingIDAction,
+  simulateBillPaymentAction
+} from "@/app/(internal)/payments/bill-action";
+import {Prisma} from "@prisma/client";
 
 interface PaymentForm extends TableFormProps<PaymentIncludeAll> {
 }
 
-type DataType = Partial<NonUndefined<PaymentForm['contentData']>>;
+type DataType = Partial<NonUndefined<PaymentForm['contentData']>> & {
+  payment_proof_file?: {
+    fileName: string,
+    fileType: string,
+    b64File: string
+  }
+};
+
+type BillAndPayment = BillIncludePaymentAndSum & {
+  paymentAmount: Prisma.Decimal
+  outstandingAmount: Prisma.Decimal
+};
 
 export function PaymentForm(props: PaymentForm) {
   const [data, setData] = useState<DataType>(props.contentData ?? {});
@@ -42,6 +58,7 @@ export function PaymentForm(props: PaymentForm) {
     queryKey: ['header.location'],
     queryFn: () => getLocations(),
   });
+
   const [locationDataMapped, setLocationDataMapped] = useState<SelectOption<number>[]>([]);
   useEffect(() => {
     if (locationDataSuccess) {
@@ -69,12 +86,6 @@ export function PaymentForm(props: PaymentForm) {
     }
   }, [bookingData, isBookingDataSuccess]);
 
-  const {data: tenantData, isSuccess: tenantDataSuccess, isLoading: tenantDataIsLoading} = useQuery({
-    queryKey: ['tenants'],
-    queryFn: () => getTenants(),
-    enabled: Boolean(data?.booking_id)
-  });
-
   // Status Data
   const {data: statusData, isSuccess: statusDataSuccess} = useQuery({
     queryKey: ['payment.status'],
@@ -90,6 +101,62 @@ export function PaymentForm(props: PaymentForm) {
     }
   }, [statusData, statusDataSuccess]);
 
+  // Unpaid Bills Data
+  let {data: unpaidBillsData, isSuccess: unpaidBillsDataSuccess, isLoading: unpaidBillsDataIsLoading} = useQuery({
+    queryKey: ['bills.unpaid', 'booking_id', data.booking_id],
+    enabled: Boolean(data.booking_id && isBookingDataSuccess),
+    queryFn: () => getUnpaidBillsDueByBookingIDAction(data.booking_id!)
+  });
+  useEffect(() => {
+    if (unpaidBillsDataSuccess) {
+      let sum: Partial<BillIncludePaymentAndSum> = {
+        amount: new Prisma.Decimal(0),
+        sumPaidAmount: new Prisma.Decimal(0)
+      };
+
+      unpaidBillsData?.bills.forEach(ub => {
+        sum.amount = sum.amount?.add(ub.amount) ?? new Prisma.Decimal(ub.amount);
+        sum.sumPaidAmount = sum.sumPaidAmount?.add(ub.sumPaidAmount) ?? new Prisma.Decimal(ub.sumPaidAmount);
+      });
+
+      setTotalData(s => ({
+        ...s,
+        amount: sum.amount,
+        sumPaidAmount: sum.sumPaidAmount,
+      }));
+    }
+  }, [unpaidBillsDataSuccess, unpaidBillsData]);
+
+  // Simulation Data
+  const {data: simulationData, isSuccess: simulationDataSuccess, isLoading: simulationDataIsLoading} = useQuery({
+    queryKey: ['payment.simulation', 'balance', data.amount, 'booking_id', data.booking_id],
+    enabled: Boolean(data.amount && data.booking_id && data.payment_date && unpaidBillsDataSuccess),
+    queryFn: () => simulateBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills)
+  });
+
+  const [totalData, setTotalData] = useState<Partial<BillAndPayment>>({});
+
+  const [image, setImage] = useState<File | undefined>(undefined);
+  useEffect(() => {
+    if (image) {
+      fileToBase64(image)
+        .then((b64String) => {
+          setData(d => ({
+            ...d,
+            payment_proof_file: {
+              fileName: image.name,
+              fileType: image.type,
+              b64File: b64String
+            }
+          }));
+        });
+    } else {
+      setData(d => ({
+        ...d,
+        payment_proof_file: undefined
+      }));
+    }
+  }, [image]);
 
   // Use effect to set initialBookingData when the component mounts
   useEffect(() => {
@@ -100,15 +167,28 @@ export function PaymentForm(props: PaymentForm) {
     setFieldErrors(props.mutationResponse?.errors);
   }, [props.mutationResponse?.errors]);
 
-  const isButtonDisabled = useMemo(() => {
-    return !data?.booking_id ||
-      !data?.payment_date ||
-      !data?.status_id ||
-      !data?.amount ||
-      !data?.payment_date ||
-      !data?.payment_proof;
+  useEffect(() => {
+    if (data.amount) {
+      setTotalData(s => ({
+        ...s,
+        paymentAmount: data.amount,
+        outstandingAmount: s.amount?.minus(s.sumPaidAmount ?? 0).minus(data.amount!)
+      }));
+    }
+  }, [data.amount]);
+
+  const isFormComplete = useMemo(() => {
+    return !!data?.booking_id &&
+      !!data?.payment_date &&
+      !!data?.status_id &&
+      !!data?.amount &&
+      !!data?.payment_date &&
+      (!!data?.payment_proof || data.payment_proof_file);
   }, [data]);
 
+  let amountError =
+    !!fieldErrors?.amount ||
+    data.amount?.greaterThan(unpaidBillsData?.total ?? Infinity);
 
   return (
     <div className={"w-full px-8 py-4"}>
@@ -116,6 +196,7 @@ export function PaymentForm(props: PaymentForm) {
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <MotionConfig
+            key={"payment_form"}
             transition={{duration: 0.5}}
           >
             <AnimatePresence>
@@ -157,6 +238,7 @@ export function PaymentForm(props: PaymentForm) {
               {
                 locationID && data?.status_id &&
                   <motion.div
+                      key={"booking_id"}
                       initial={{opacity: 0, height: 0}}
                       animate={{opacity: 1, height: "auto"}}
                       exit={{opacity: 0, height: 0}}
@@ -183,6 +265,7 @@ export function PaymentForm(props: PaymentForm) {
               {
                 data?.booking_id &&
                   <motion.div
+                      key={"tenant_id"}
                       initial={{opacity: 0, height: 0}}
                       animate={{opacity: 1, height: "auto"}}
                       exit={{opacity: 0, height: 0}}
@@ -193,17 +276,16 @@ export function PaymentForm(props: PaymentForm) {
                           </Typography>
                       </label>
                     {
-                      tenantDataIsLoading &&
-                        <div className={"flex items-center justify-center"}>
-                            <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
-                        </div>
-                    }
-                    {
-                      tenantDataSuccess &&
+                      data.booking_id &&
                         <Input
-                            value={
-                              tenantData?.find(r => r.id == data?.bookings?.tenant_id)?.name
-                            }
+                            value={(() => {
+                              let tenant = bookingData?.find(b => b.id == data.booking_id)?.tenants;
+                              if (tenant) {
+                                return `${tenant.name} | ${tenant.phone}`;
+                              }
+
+                              return "";
+                            })()}
                             disabled={true}
                             size="lg"
                             className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
@@ -215,9 +297,52 @@ export function PaymentForm(props: PaymentForm) {
                   </motion.div>
               }
               {
-                data?.booking_id &&
+                data?.booking_id && unpaidBillsDataSuccess &&
                   <motion.div
-                      key={"start_date"}
+                      key={"payment_amount"}
+                      initial={{opacity: 0, height: 0}}
+                      animate={{opacity: 1, height: "auto"}}
+                      exit={{opacity: 0, height: 0}}
+                  >
+                      <label htmlFor="payment_amount">
+                          <Typography variant="h6" color="blue-gray">
+                              Payment Amount
+                          </Typography>
+                      </label>
+
+                      <Input
+                          value={data.amount?.toNumber()}
+                          onChange={e => setData(p => {
+                            let validNumber = Number(e.target.value);
+                            // @ts-expect-error
+                            setFieldErrors(fe => ({
+                              ...fe,
+                              amount: isNaN(validNumber) || undefined
+                            }));
+
+                            if (validNumber) {
+                              return {...p, amount: new Prisma.Decimal(validNumber)};
+                            }
+
+                            return {...p, amount: undefined};
+                          })}
+                          size="lg"
+                          error={amountError}
+                          className={`${amountError ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                          labelProps={{
+                            className: "before:content-none after:content-none",
+                          }}
+                      />
+                    {
+                      data.amount?.greaterThan(unpaidBillsData?.total || Infinity) &&
+                        <Typography color="red">Payment Amount exceeds total due</Typography>
+                    }
+                  </motion.div>
+              }
+              {
+                data?.amount &&
+                  <motion.div
+                      key={"payment_date"}
                       initial={{opacity: 0, height: 0}}
                       animate={{opacity: 1, height: "auto"}}
                       exit={{opacity: 0, height: 0}}
@@ -237,7 +362,7 @@ export function PaymentForm(props: PaymentForm) {
                                   variant="outlined"
                                   size="lg"
                                   onChange={() => null}
-                                  value={data.payment_date ? formatToDateTime(data.payment_date, true) : ""}
+                                  value={data.payment_date ? formatToDateTime(data.payment_date, true, true) : ""}
                                   error={!!fieldErrors?.payment_date}
                                   className={`relative ${!!fieldErrors?.payment_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                   labelProps={{
@@ -271,8 +396,128 @@ export function PaymentForm(props: PaymentForm) {
                   </motion.div>
               }
               {
-                data?.payment_date &&
-                  <></> // TODO! File Upload
+                data.booking_id &&
+                  <motion.div
+                      key={"bills"}
+                      initial={{opacity: 0, height: 0}}
+                      animate={{opacity: 1, height: "auto"}}
+                      exit={{opacity: 0, height: 0}}
+                  >
+                      <Typography variant="h6" color="blue-gray">
+                          Bills
+                      </Typography>
+                    {
+                      (unpaidBillsDataIsLoading || simulationDataIsLoading) &&
+                        <span className={"mx-auto h-8 w-8"}><AiOutlineLoading className="animate-spin"/></span>
+                    }
+                    {
+                      unpaidBillsDataSuccess &&
+                        <div className={"flex flex-col"}>
+                          {unpaidBillsData?.bills.map((ub, index, arr) => {
+                            const newData = simulationData?.new.payments.find(p => p.bill_id == ub.id);
+                            const due = Number(ub.amount) - Number(ub.sumPaidAmount);
+                            return (
+                              <div key={ub.id}
+                                   className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 items-center">
+                                {/* Existing Information Column */}
+                                <div className="flex flex-col text-sm col-span-3">
+                                  <span
+                                    className="font-semibold text-gray-800">Bill #{ub.id} (Due {formatToDateTime(ub.due_date, false)})</span>
+                                  <p className="text-gray-700">Amount: <span
+                                    className="font-bold">{formatToIDR(Number(ub.amount))}</span></p>
+                                  <p className="text-gray-700">Paid: <span
+                                    className="font-bold">{formatToIDR(Number(ub.sumPaidAmount))}</span></p>
+                                  <p className="text-gray-700">Outstanding: <span
+                                    className="font-bold text-red-600">{formatToIDR(due)}</span></p>
+                                </div>
+
+                                {
+                                  simulationDataSuccess ?
+                                    <>
+                                      {/* Separator */}
+                                      <div className="flex justify-center items-center text-gray-400">
+                                        {/*{index === Math.floor(arr.length / 2) ? '>' : <>&nbsp;</>}*/}
+                                        <Typography variant={"h4"}>&gt;</Typography>
+                                      </div>
+
+                                      {/* New Information Column */}
+                                      <div className="flex flex-col text-sm self-end col-span-3">
+                                        <p className="text-gray-700">Current Payment: <span
+                                          className="font-bold">{formatToIDR(Number(newData?.amount) || 0)}</span></p>
+                                        <p className="text-gray-700">Final Outstanding: <span
+                                          className="font-bold text-red-600">{formatToIDR((due - (Number(newData?.amount) || 0)))}</span>
+                                        </p>
+                                      </div>
+                                    </> :
+                                    <>
+                                      <div></div>
+                                      <div></div>
+                                    </>
+                                }
+                              </div>
+                            );
+                          })}
+                          {/*Total Data Display*/}
+                            <div
+                                className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 items-center">
+                              {/* Existing Information Column */}
+                                <div className="flex flex-col text-sm col-span-3">
+                                    <span
+                                        className="font-semibold text-gray-800">Bill Total</span>
+                                    <p className="text-gray-700">Amount: <span
+                                        className="font-bold">{formatToIDR(Number(totalData.amount))}</span></p>
+                                    <p className="text-gray-700">Paid: <span
+                                        className="font-bold">{formatToIDR(Number(totalData.sumPaidAmount))}</span></p>
+                                    <p className="text-gray-700">Outstanding: <span
+                                        className="font-bold text-red-600">{formatToIDR(Number(totalData.amount) - Number(totalData.sumPaidAmount))}</span>
+                                    </p>
+                                </div>
+
+                              {/* Separator */}
+                                <div className="flex justify-center items-center text-gray-400">
+                                    <Typography variant={"h4"}>&gt;</Typography>
+                                </div>
+
+                              {/* New Information Column */}
+                                <div className="flex flex-col text-sm self-end col-span-3">
+                                    <p className="text-gray-700">Current Payment: <span
+                                        className="font-bold">{formatToIDR(Number(totalData.paymentAmount))}</span></p>
+                                    <p className="text-gray-700">Final Outstanding: <span
+                                        className="font-bold text-red-600">{formatToIDR(Number(totalData.outstandingAmount))}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                  </motion.div>
+              }
+              {
+                data.payment_proof ?
+                  <></> :
+                  <motion.div
+                    key={"payment_proof_upload"}
+                    initial={{opacity: 0, height: 0}}
+                    animate={{opacity: 1, height: "auto"}}
+                    exit={{opacity: 0, height: 0}}
+                  >
+                    <label htmlFor="payment_date">
+                      <Typography variant="h6" color="blue-gray">
+                        Payment Proof Upload
+                      </Typography>
+                    </label>
+                    <input type="file" accept="image/png, image/jpg, image/jpeg, image/webp"
+                           onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file?.size && file?.size > 2048000) {
+                               alert("TODO! file is too big"); // TODO!
+                               e.target.value = "";
+                             } else {
+                               setImage(file);
+                             }
+                           }}
+                           className="w-full font-semibold text-sm bg-white border file:cursor-pointer cursor-pointer file:border-0 file:py-3 file:px-4 file:mr-4 file:bg-gray-100 file:hover:bg-gray-200 file:text-gray-500 rounded"/>
+                    <p className="text-xs mt-2">PNG, JPG, JPEG, WEBP are Allowed. Max file size is 2MB</p>
+                  </motion.div>
               }
               {
                 props.mutationResponse?.failure &&
@@ -288,7 +533,7 @@ export function PaymentForm(props: PaymentForm) {
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
             Cancel
           </Button>
-          <Button disabled={isButtonDisabled || !hasChanges(initialData, data)}
+          <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
                   onClick={() => props.mutation.mutate(data)}
                   color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>

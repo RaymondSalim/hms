@@ -6,9 +6,9 @@ import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
-import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/bookings/booking-action";
 import {PaymentForm} from "@/app/(internal)/payments/form";
 import {PaymentIncludeAll} from "@/app/_db/payment";
+import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/payments/payment-action";
 
 
 export interface PaymentsContentProps {
@@ -60,7 +60,7 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
     columnHelper.accessor(row => row.amount, {
       header: "Paid Amount"
     }),
-    columnHelper.accessor(row => formatToDateTime(row.payment_date, true), {
+    columnHelper.accessor(row => formatToDateTime(row.payment_date, true, true), {
       header: "Payment Date"
     }),
     columnHelper.display({
@@ -94,12 +94,13 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
         }
         searchPlaceholder={"TODO!"} // TODO!
         upsert={{
-          // TODO!
+          // @ts-expect-error
           mutationFn: upsertPaymentAction,
         }}
 
         delete={{
           // TODO!
+          // @ts-expect-error
           mutationFn: deletePaymentAction,
         }}
       />

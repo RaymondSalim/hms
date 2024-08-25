@@ -2,14 +2,15 @@
 
 import {createPayment, deletePayment, getPaymentStatus, updatePaymentByID} from "@/app/_db/payment";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Booking} from "@prisma/client";
+import {Payment, Prisma} from "@prisma/client";
 import {number, object} from "zod";
 import {paymentSchema} from "@/app/_lib/zod/payment/zod";
 import {getBookingByIDAction} from "@/app/(internal)/bookings/booking-action";
 import prisma from "@/app/_lib/primsa";
-import {updateBillsPaidAmountByBalance} from "@/app/(internal)/payments/bill-action";
+import {createPaymentBillsAction, getUnpaidBillsDueByBookingIDAction} from "@/app/(internal)/payments/bill-action";
+import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
-export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Booking>) {
+export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment>) {
   const {success, data, error} = paymentSchema.safeParse(reqData);
 
   if (!success) {
@@ -18,7 +19,9 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Bookin
     };
   }
 
-  const booking = getBookingByIDAction(data?.booking_id);
+  const booking = await getBookingByIDAction(data?.booking_id, {
+    bills: true
+  });
 
   if (!booking) {
     return {
@@ -26,31 +29,79 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Bookin
     };
   }
 
-  prisma.$transaction(async (tx) => {
-    // Bills
-    const updatedData = await updateBillsPaidAmountByBalance(data.amount, data.booking_id, tx);
+  const file = data?.payment_proof_file;
+  let s3Key: string | null = null;
 
-    if (updatedData.balance != 0) {
+  try {
+    if (file) {
+      const buffer = Buffer.from(file.b64File, 'base64');
+
+      // Upload file to s3 first
+      if (buffer) {
+        const key = `booking-payments/${data?.booking_id}/${new Date().toISOString()}/${file.fileName}`;
+        const client = new S3Client({region: process.env.AWS_REGION});
+        const command = new PutObjectCommand({
+          Body: buffer,
+          Bucket: process.env.S3_BUCKET,
+          Key: key
+        });
+        const s3Resp = await client.send(command);
+        s3Key = key;
+      }
+    }
+  } catch (error) {
+    console.warn("error uploading to s3 with err: ", error);
+    return {
+      failure: "Internal Server Error"
+    };
+  }
+
+  let trxRes = await prisma.$transaction(async (tx) => {
+    let finalBalance = 0;
+    let res;
+
+    try {
+      let dbData: OmitIDTypeAndTimestamp<Payment> = {
+        amount: new Prisma.Decimal(data?.amount),
+        booking_id: booking.id,
+        payment_date: data?.payment_date,
+        payment_proof: s3Key,
+        status_id: data?.status_id
+      };
+
+      if (data?.id) {
+        res = await updatePaymentByID(data.id, dbData);
+      } else {
+        res = await createPayment(dbData, tx);
+        const unpaidBills = await getUnpaidBillsDueByBookingIDAction(booking.id);
+        const updatedData = await createPaymentBillsAction(data.amount, unpaidBills.bills, res.id, tx);
+
+        finalBalance = updatedData.balance;
+
+      }
+
+    } catch (error) {
+      console.warn("error creating/updating payment with error: ", error)
+      return {
+        failure: "Internal Server Error"
+      };
+    }
+
+    if (finalBalance != 0) {
       throw new Error("Balance is not zero");
     }
 
-    // TODO! Deal with bills when updating payments
-    try {
-      let res;
-
-      if (data?.id) {
-        // @ts-expect-error number and Prisma.Decimal types
-        res = await updatePaymentByID(data.id, data);
-      } else {
-        res = await createPayment(data);
-      }
-    } catch (error) {
-
-    }
+    return res;
+  }, {
+    timeout: 60000, // TODO! Remove
   });
+
+  return {
+    success: trxRes
+  };
 }
 
-export async function deleteBookingAction(id: number) {
+export async function deletePaymentAction(id: number) {
   const parsedData = object({id: number().positive()}).safeParse({
     id: id,
   });

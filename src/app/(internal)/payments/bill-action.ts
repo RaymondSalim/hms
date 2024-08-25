@@ -1,79 +1,120 @@
-import prisma from "@/app/_lib/primsa";
-import {Prisma} from "@prisma/client";
+"use server";
 
-export async function getUnpaidBillsDueByBookingIDAction(booking_id: number) {
-  return prisma.bill.findMany({
-    where: {
-      booking_id: booking_id,
-      paid_amount: {
-        lt: prisma.bill.fields.amount
-      },
-      due_date: {
-        lte: new Date()
-      }
-    },
+import prisma from "@/app/_lib/primsa";
+import {PaymentBill, Prisma} from "@prisma/client";
+import {BillIncludePayment, getBillsWithPaymentsByBookingID} from "@/app/_db/bills";
+import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
+
+export type BillIncludePaymentAndSum = BillIncludePayment & {
+  sumPaidAmount: Prisma.Decimal
+};
+
+export async function getUnpaidBillsDueByBookingIDAction(booking_id: number): Promise<{
+  total: number,
+  bills: BillIncludePaymentAndSum[]
+}> {
+  const bills = await getBillsWithPaymentsByBookingID(booking_id, {
     orderBy: {
       due_date: "asc"
     }
   });
+
+  let totalDue = new Prisma.Decimal(0);
+
+  // Only get unpaid bills and also add a new field "sumPaidAmount"
+  const unpaidBills: BillIncludePaymentAndSum[] = bills
+    .map(b => {
+      totalDue = totalDue.add(b.amount);
+      const paidAmount = b.paymentBills.reduce((acc, b) => {
+        return acc.add(b.amount);
+      }, new Prisma.Decimal(0));
+
+      return {
+        ...b,
+        sumPaidAmount: paidAmount
+      };
+    })
+    .filter(b => b.sumPaidAmount != b.amount);
+
+  return {
+    total: totalDue.toNumber(),
+    bills: unpaidBills
+  };
 }
 
-export async function simulateBillPaymentAction(balance: number, booking_id: number) {
-  const bills = await getUnpaidBillsDueByBookingIDAction(booking_id);
+export async function simulateBillPaymentAction(balance: number, filteredBills: BillIncludePaymentAndSum[], payment_id?: number) {
+  const originalBalance = balance;
 
-  const resp = [];
   // Ensure bookings is sorted by ascending order
-  bills.sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
+  filteredBills.sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
 
-  for (let i = 0; i < bills.length; i++) {
-    let currBills = bills[i];
-    let outstanding = currBills.amount;
-    if (currBills.paid_amount) {
-      outstanding = currBills.amount.minus(currBills.paid_amount);
+  const paymentBills: OmitIDTypeAndTimestamp<PaymentBill>[] = [];
+
+  for (let i = 0; i < filteredBills.length; i++) {
+    let currBills = filteredBills[i];
+    let outstanding = new Prisma.Decimal(currBills.amount);
+
+    if (currBills.sumPaidAmount) {
+      outstanding = outstanding.minus(new Prisma.Decimal(currBills.sumPaidAmount));
     }
 
-    // Update booking paid_amount
+    if (outstanding.lte(0)) {
+      continue;
+    }
+
+    let currPaymentBill: OmitIDTypeAndTimestamp<PaymentBill> = {
+      bill_id: currBills.id,
+      payment_id: payment_id ?? 0,
+      amount: new Prisma.Decimal(0)
+    };
+
     if (balance < outstanding.toNumber()) {
-      if (bills[i].paid_amount) {
-        bills[i].paid_amount = bills[i].paid_amount!.add(balance);
-      } else {
-        bills[i].paid_amount = new Prisma.Decimal(balance);
-      }
+      // if (!currBills.sumPaidAmount?.isZero()) {
+      //   currPaymentBill.amount = currBills.sumPaidAmount.minus(balance).abs();
+      // } else {
+      //   currPaymentBill.amount = new Prisma.Decimal(balance);
+      // }
+      currPaymentBill.amount = new Prisma.Decimal(balance);
       balance = 0;
-      resp.push(bills[i]);
+      paymentBills.push(currPaymentBill);
       break;
     } else {
-      if (bills[i].paid_amount) {
-        bills[i].paid_amount = bills[i].paid_amount!.add(outstanding);
-      } else {
-        bills[i].paid_amount = new Prisma.Decimal(outstanding);
-      }
+      currPaymentBill.amount = outstanding;
+      // if (!currBills.sumPaidAmount?.isZero()) {
+      //   currPaymentBill.amount = currBills.sumPaidAmount.minus(outstanding).abs();
+      // } else {
+      //   currPaymentBill.amount = new Prisma.Decimal(outstanding);
+      // }
 
       balance = balance - outstanding.toNumber();
-      resp.push(bills[i]);
+      paymentBills.push(currPaymentBill);
+    }
+
+    if (balance == 0) {
+      break;
     }
   }
 
   return {
-    balance,
-    bills: resp
+    old: {
+      balance: originalBalance,
+      bills: filteredBills
+    },
+    new: {
+      balance: balance,
+      payments: paymentBills
+    }
   };
 }
 
-export async function updateBillsPaidAmountByBalance(balance: number, booking_id: number, trx?: Prisma.TransactionClient) {
+export async function createPaymentBillsAction(balance: number, bills: BillIncludePaymentAndSum[], payment_id: number, trx?: Prisma.TransactionClient) {
   const db = trx ?? prisma;
 
-  const {balance: newBalance, bills} = await simulateBillPaymentAction(balance, booking_id);
+  const simulation = await simulateBillPaymentAction(balance, bills, payment_id);
+  const {balance: newBalance, payments: paymentBills} = simulation.new;
 
-  let updatedBills = bills.map(b => {
-    return db.bill.update({
-      where: {
-        id: b.id
-      },
-      data: {
-        paid_amount: b.paid_amount
-      }
-    });
+  let updatedBills = await db.paymentBill.createMany({
+    data: paymentBills
   });
 
   return {
