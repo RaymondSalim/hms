@@ -248,10 +248,14 @@ export async function getAllBookings(location_id?: number, room_id?: number, lim
   });
 }
 
-export async function getBookingByID(id: number) {
-  return prisma.booking.findFirst({
+export async function getBookingByID<T extends Prisma.BookingInclude>(id: number, include?: T) {
+  return prisma.booking.findFirst<{
+    where: { id: number }
+    include: T | undefined,
+  }>({
+    include: include,
     where: {
       id
-    }
+    },
   });
 }
