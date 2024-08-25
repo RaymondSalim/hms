@@ -1,7 +1,7 @@
 "use server";
 
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Booking, CheckInOutLog} from "@prisma/client";
+import {Booking, CheckInOutLog, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
@@ -177,6 +177,6 @@ export async function checkInOutAction(data: {
   };
 }
 
-export async function getBookingByIDAction(id: number) {
-  return getBookingByID(id);
+export async function getBookingByIDAction<T extends Prisma.BookingInclude>(id: number, include?: T) {
+  return getBookingByID(id, include);
 }
