@@ -78,11 +78,13 @@ export async function updatePaymentByID(id: number, data: OmitIDTypeAndTimestamp
     );
 }
 
-export async function createPayment(data: OmitIDTypeAndTimestamp<Payment>) {
-  return prisma.payment.create({
+export async function createPayment(data: OmitIDTypeAndTimestamp<Payment>, trx?: Prisma.TransactionClient) {
+  const db = trx ?? prisma;
+
+  return db.payment.create({
     data: {
       ...data,
       id: undefined
     }
-  })
+  });
 }
