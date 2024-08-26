@@ -81,7 +81,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
       }
 
     } catch (error) {
-      console.warn("error creating/updating payment with error: ", error)
+      console.warn("error creating/updating payment with error: ", error);
       return {
         failure: "Internal Server Error"
       };
