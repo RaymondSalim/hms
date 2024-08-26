@@ -36,6 +36,7 @@ export default function PaymentPage() {
       }
       {
         isSuccess &&
+        // @ts-ignore
           <PaymentsContent payments={payments}/>
       }
     </>
