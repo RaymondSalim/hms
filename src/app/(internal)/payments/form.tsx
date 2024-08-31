@@ -182,8 +182,7 @@ export function PaymentForm(props: PaymentForm) {
       !!data?.payment_date &&
       !!data?.status_id &&
       !!data?.amount &&
-      !!data?.payment_date &&
-      (!!data?.payment_proof || data.payment_proof_file);
+      !!data?.payment_date;
   }, [data]);
 
   let amountError =
@@ -494,30 +493,31 @@ export function PaymentForm(props: PaymentForm) {
               {
                 data.payment_proof ?
                   <></> :
-                  <motion.div
-                    key={"payment_proof_upload"}
-                    initial={{opacity: 0, height: 0}}
-                    animate={{opacity: 1, height: "auto"}}
-                    exit={{opacity: 0, height: 0}}
-                  >
-                    <label htmlFor="payment_date">
-                      <Typography variant="h6" color="blue-gray">
-                        Payment Proof Upload
-                      </Typography>
-                    </label>
-                    <input type="file" accept="image/png, image/jpg, image/jpeg, image/webp"
-                           onChange={(e) => {
-                             const file = e.target.files?.[0];
-                             if (file?.size && file?.size > 2048000) {
-                               alert("TODO! file is too big"); // TODO!
-                               e.target.value = "";
-                             } else {
-                               setImage(file);
-                             }
-                           }}
-                           className="w-full font-semibold text-sm bg-white border file:cursor-pointer cursor-pointer file:border-0 file:py-3 file:px-4 file:mr-4 file:bg-gray-100 file:hover:bg-gray-200 file:text-gray-500 rounded"/>
-                    <p className="text-xs mt-2">PNG, JPG, JPEG, WEBP are Allowed. Max file size is 2MB</p>
-                  </motion.div>
+                  data.payment_date &&
+                    <motion.div
+                        key={"payment_proof_upload"}
+                        initial={{opacity: 0, height: 0}}
+                        animate={{opacity: 1, height: "auto"}}
+                        exit={{opacity: 0, height: 0}}
+                    >
+                        <label htmlFor="payment_date">
+                            <Typography variant="h6" color="blue-gray">
+                                Payment Proof Upload (Optional)
+                            </Typography>
+                        </label>
+                        <input type="file" accept="image/png, image/jpg, image/jpeg, image/webp"
+                               onChange={(e) => {
+                                 const file = e.target.files?.[0];
+                                 if (file?.size && file?.size > 2048000) {
+                                   alert("TODO! file is too big"); // TODO!
+                                   e.target.value = "";
+                                 } else {
+                                   setImage(file);
+                                 }
+                               }}
+                               className="w-full font-semibold text-sm bg-white border file:cursor-pointer cursor-pointer file:border-0 file:py-3 file:px-4 file:mr-4 file:bg-gray-100 file:hover:bg-gray-200 file:text-gray-500 rounded"/>
+                        <p className="text-xs mt-2">PNG, JPG, JPEG, WEBP are Allowed. Max file size is 2MB</p>
+                    </motion.div>
               }
               {
                 props.mutationResponse?.failure &&
