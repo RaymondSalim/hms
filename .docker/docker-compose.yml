@@ -1,0 +1,23 @@
+version: '4'
+services:
+  hms:
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile
+    container_name: hms-dev
+    ports:
+      - '3000:3000'
+    volumes:
+      - ../:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - ~/apps/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=hms
+      - POSTGRES_PASSWORD=hms
+      - POSTGRES_DB=hms
