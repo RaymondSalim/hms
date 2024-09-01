@@ -6,37 +6,10 @@ import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
-import {createBooking, updateBookingByID} from "@/app/_db/bookings";
+import {createBooking, getAllBookings, getBookingByID, updateBookingByID} from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/bookings/enum";
-import BookingInclude = Prisma.BookingInclude;
-
-const includeAll: BookingInclude = {
-  rooms: {
-    include: {
-      locations: true,
-    }
-  },
-  durations: true,
-  bookingstatuses: true,
-  tenants: true,
-  checkInOutLogs: true
-};
-
-export type BookingsIncludeAll = Prisma.BookingGetPayload<{
-  include: {
-    rooms: {
-      include: {
-        locations: true,
-      }
-    },
-    durations: true,
-    bookingstatuses: true,
-    tenants: true,
-    checkInOutLogs: true
-  },
-}>
 
 export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Booking>) {
   const {success, data, error} = bookingSchema.safeParse(reqData);
@@ -142,31 +115,8 @@ export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
   }
 }
 
-export async function getBookingById(id: number) {
-  return prisma.booking.findUnique({
-    where: {id},
-  });
-}
-
-export async function getAllBookings(location_id?: number, room_id?: number, limit?: number, offset?: number) {
-  return prisma.booking.findMany({
-    where: {
-      rooms: {
-        id: room_id,
-        location_id: location_id,
-      }
-    },
-    skip: offset,
-    take: limit,
-    include: includeAll
-  });
-}
-
-export async function updateBooking(id: number, data: OmitIDTypeAndTimestamp<Booking>) {
-  return prisma.booking.update({
-    where: {id},
-    data: data,
-  });
+export async function getAllBookingsAction(...args: Parameters<typeof getAllBookings>) {
+  return getAllBookings(...args);
 }
 
 export async function deleteBookingAction(id: number) {
@@ -199,20 +149,6 @@ export async function deleteBookingAction(id: number) {
 
 }
 
-export async function getBookingsByTenantId(tenant_id: string) {
-  return prisma.booking.findMany({
-    where: {tenant_id},
-  });
-}
-
-export async function getBookingsByRoomId(room_id: number) {
-  return prisma.booking.findMany({
-    where: {
-      room_id: room_id
-    },
-  });
-}
-
 export async function checkInOutAction(data: {
   booking_id: number,
   action: CheckInOutType
@@ -239,4 +175,8 @@ export async function checkInOutAction(data: {
       },
     })
   };
+}
+
+export async function getBookingByIDAction<T extends Prisma.BookingInclude>(id: number, include?: T) {
+  return getBookingByID(id, include);
 }

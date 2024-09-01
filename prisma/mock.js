@@ -18,14 +18,19 @@ async function mock() {
         .replace(/\s+/g, ' '); // excess white space
     const sqlStatements = splitStringByNotQuotedSemicolon(sqlReducedToStatements);
 
-    for (const sql of sqlStatements) {
-        try {
-            await prisma.$executeRawUnsafe(sql);
-        } catch (err) {
-            if (err.code === "P2010") continue;
-            throw err;
+    await prisma.$transaction(async (db) => {
+        for (const sql of sqlStatements) {
+            try {
+                await db.$executeRawUnsafe(sql);
+            } catch (err) {
+                console.error(err);
+                if (["P2010", "P2010"].includes(err.code)) continue;
+                throw err;
+            }
         }
-    }
+    })
+
+    console.log("mock.js completed")
 }
 
 function splitStringByNotQuotedSemicolon(input) {
@@ -47,15 +52,4 @@ function splitStringByNotQuotedSemicolon(input) {
     return result;
 }
 
-//
-// mock()
-//     .then(async () => {
-//         await prisma.$disconnect();
-//     })
-//     .catch(async (e) => {
-//         console.error(e);
-//         await prisma.$disconnect();
-//         process.exit(1);
-//     });
-
-module.exports = mock();
+module.exports = mock;

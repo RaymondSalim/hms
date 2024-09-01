@@ -3,7 +3,8 @@ VALUES (1, 'Standard Room'),
        (2, 'Deluxe Room'),
        (3, 'Suite'),
        (4, 'Presidential'),
-       (5, 'Penthouse');
+       (5, 'Penthouse')
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"roomtypes"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "roomtypes"; -- Required to increment sequence as we are inserting values with the ID set
 
@@ -12,28 +13,32 @@ INSERT INTO durations (id, duration, day_count, month_count)
 VALUES (1, '1 month', NULL, 1),
        (2, '3 months', NULL, 3),
        (3, '6 months', NULL, 6),
-       (4, '12 months', NULL, 12);
+       (4, '12 months', NULL, 12)
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"durations"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "durations"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO locations (id, name, address)
 VALUES (1, 'Location 1', '134 Adams Avenue'),
        (2, 'Location 2', '25506 Adam Passage'),
-       (3, 'Location 3', '73877 Wisozk Lake');
+       (3, 'Location 3', '73877 Wisozk Lake')
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"locations"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "locations"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO roomtypedurations (id, room_type_id, duration_id, location_id, suggested_price)
 VALUES (1, 1, 1, 1, 100.00),
        (2, 1, 2, 1, 280.00),
-       (3, 2, 1, 2, 120.00);
+       (3, 2, 1, 2, 120.00)
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"roomtypedurations"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "roomtypedurations"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO roomstatuses (id, status)
 VALUES (1, 'Booked'),
        (2, 'Available'),
-       (3, 'Under Construction');
+       (3, 'Under Construction')
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"roomstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "roomstatuses"; -- Required to increment sequence as we are inserting values with the ID set
 
@@ -57,14 +62,16 @@ VALUES (1, 'Room 1', 3, 2, 3),
        (17, 'Room 17', 1, 1, 3),
        (18, 'Room 18', 3, 1, 3),
        (19, 'Room 19', 3, 1, 2),
-       (20, 'Room 20', 1, 3, 3);
+       (20, 'Room 20', 1, 3, 3)
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"rooms"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "rooms"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO bookingstatuses (id, status)
 VALUES (1, 'Pending'),
        (2, 'Confirmed'),
-       (3, 'Cancelled');
+       (3, 'Cancelled')
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"bookingstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "bookingstatuses"; -- Required to increment sequence as we are inserting values with the ID set
 
@@ -118,7 +125,8 @@ VALUES ('ckabcde12345678901', 'Keith Strosin', 'Margarete.Walker27@yahoo.com', '
        ('ckabcde12345678947', 'Ray McDermott-Auer', 'Shanny31@yahoo.com', '1-385-203-8245'),
        ('ckabcde12345678948', 'Randy Veum Jr.', 'Sylvester_Murphy58@yahoo.com', '1-281-893-3320'),
        ('ckabcde12345678949', 'Dr. Dallas Bauch', 'Mike28@gmail.com', '631-221-1593'),
-       ('ckabcde12345678950', 'Danny Hodkiewicz DVM', 'Meredith67@yahoo.com', '(667) 570-5886');
+       ('ckabcde12345678950', 'Danny Hodkiewicz DVM', 'Meredith67@yahoo.com', '(667) 570-5886')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO bookings (id, tenant_id, room_id, start_date, end_date, duration_id, status_id, fee)
 VALUES (1, 'ckabcde12345678936', 20, '2024-02-15', '2024-03-31', 1, 3, 460.00),
@@ -150,27 +158,51 @@ VALUES (1, 'ckabcde12345678936', 20, '2024-02-15', '2024-03-31', 1, 3, 460.00),
        (27, 'ckabcde12345678904', 11, '2024-01-05', '2024-04-30', 2, 2, 69.00),
        (28, 'ckabcde12345678910', 18, '2024-01-03', '2025-02-28', 4, 3, 287.00),
        (29, 'ckabcde12345678925', 1, '2024-01-10', '2024-02-29', 1, 1, 70.00),
-       (30, 'ckabcde12345678904', 6, '2024-01-02', '2024-04-30', 2, 2, 88.00);
+       (30, 'ckabcde12345678904', 6, '2024-01-02', '2024-04-30', 2, 2, 88.00),
+       (31, 'ckabcde12345678935', 13, '2024-01-11', '2024-02-29', 1, 2, 320.00),
+       (32, 'ckabcde12345678928', 9, '2024-02-05', '2024-05-05', 2, 1, 230.00),
+       (33, 'ckabcde12345678932', 3, '2024-01-03', '2024-02-28', 1, 3, 145.00),
+       (34, 'ckabcde12345678914', 16, '2024-01-20', '2024-04-20', 2, 2, 180.00),
+       (35, 'ckabcde12345678907', 8, '2024-01-09', '2024-02-28', 1, 1, 250.00),
+       (36, 'ckabcde12345678918', 5, '2024-02-01', '2024-04-30', 2, 2, 220.00),
+       (37, 'ckabcde12345678938', 7, '2024-01-05', '2024-02-29', 1, 2, 205.00),
+       (38, 'ckabcde12345678916', 10, '2024-01-04', '2024-02-29', 1, 1, 300.00),
+       (39, 'ckabcde12345678913', 19, '2024-01-11', '2024-05-11', 2, 2, 460.00),
+       (40, 'ckabcde12345678921', 12, '2024-02-10', '2024-05-10', 2, 1, 180.00),
+       (41, 'ckabcde12345678903', 15, '2024-01-20', '2024-04-30', 2, 3, 190.00),
+       (42, 'ckabcde12345678919', 14, '2024-02-01', '2024-03-31', 1, 2, 275.00),
+       (43, 'ckabcde12345678915', 11, '2024-01-02', '2024-04-30', 2, 1, 160.00),
+       (44, 'ckabcde12345678906', 4, '2024-01-25', '2024-02-29', 1, 2, 195.00),
+       (45, 'ckabcde12345678937', 2, '2024-01-16', '2024-02-28', 1, 3, 225.00),
+       (46, 'ckabcde12345678929', 17, '2024-01-04', '2024-03-31', 1, 1, 310.00),
+       (47, 'ckabcde12345678911', 6, '2024-02-10', '2024-03-31', 1, 2, 260.00),
+       (48, 'ckabcde12345678927', 18, '2024-01-08', '2024-04-08', 2, 3, 340.00),
+       (49, 'ckabcde12345678939', 1, '2024-01-07', '2025-01-07', 4, 1, 500.00),
+       (50, 'ckabcde12345678923', 16, '2024-01-10', '2024-02-29', 1, 2, 220.00)
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"bookings"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "bookings"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO paymentstatuses (id, status)
 VALUES (1, 'Pending'),
        (2, 'Completed'),
-       (3, 'Failed');
+       (3, 'Failed')
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"paymentstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "paymentstatuses"; -- Required to increment sequence as we are inserting values with the ID set
 
 
 INSERT INTO roles (id, name, description)
 VALUES (1, 'Admin', 'Administrator role'),
-       (2, 'Guest', 'Guest role');
+       (2, 'Guest', 'Guest role')
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"roles"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "roles"; -- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO "categories" (category)
 VALUES ('Maintenance'),
-       ('Utilities');
+       ('Utilities')
+ON CONFLICT DO NOTHING;
 
 
 INSERT INTO expenses (amount, description, date, category_id, location_id)
@@ -220,7 +252,8 @@ VALUES (100.50, 'Routine maintenance', '2024-01-15', 1, 1),
        (260.90, 'Electricity bill', '2024-02-27', 2, 2),
        (190.00, 'Water supply maintenance', '2024-02-28', 1, 1),
        (110.30, 'New equipment', '2024-03-01', 2, 2),
-       (240.25, 'Office supplies', '2024-03-02', 1, 1);
+       (240.25, 'Office supplies', '2024-03-02', 1, 1)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO payments (booking_id, amount, payment_date, payment_proof, status_id)
 VALUES (1, 500.00, '2024-01-15', 'proof1.jpg', 1),
@@ -272,4 +305,5 @@ VALUES (1, 500.00, '2024-01-15', 'proof1.jpg', 1),
        (47, 5100.00, '2024-03-02', 'proof47.jpg', 1),
        (48, 5200.00, '2024-03-03', 'proof48.jpg', 3),
        (49, 5300.00, '2024-03-04', 'proof49.jpg', 1),
-       (50, 5400.00, '2024-03-05', 'proof50.jpg', 2);
+       (50, 5400.00, '2024-03-05', 'proof50.jpg', 2)
+ON CONFLICT DO NOTHING;
