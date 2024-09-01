@@ -1,10 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
-const {mock} = require("./mock");
+const mock= require("./mock");
 
 const prisma = new PrismaClient();
-async function main() {
+function main() {
   console.log("Executing seed.js");
-  prisma.role.upsert({
+  return prisma.role.upsert({
     where: {
       id: 1
     },
@@ -20,13 +20,18 @@ async function main() {
   });
 }
 
-main()
-    .then(mock)
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      console.error(e);
-      await prisma.$disconnect();
-      process.exit(1);
-    });
+(async () => {
+  let hasErr = false;
+  try {
+    await main();
+    console.log("seed.js completed");
+    await mock()
+  } catch (error) {
+    console.log("error occured")
+    console.error(error);
+    process.exitCode = 1
+  } finally {
+    await prisma.$disconnect();
+    console.log("Seeding completed")
+  }
+})()
