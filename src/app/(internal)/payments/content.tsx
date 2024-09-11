@@ -67,7 +67,9 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       header: "Payment Proof",
       cell: props =>
         props.row.original.payment_proof ?
-          <Link className={"text-blue-400"} type="proof" href={props.row.original.payment_proof}>View Proof</Link> :
+          <Link className={"text-blue-400"} type="proof" href={{
+            pathname: `/s3/${props.row.original.payment_proof}`,
+          }}>View Proof</Link> :
           <></>
     })
 
