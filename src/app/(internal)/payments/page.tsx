@@ -25,7 +25,7 @@ export default function PaymentPage() {
     isSuccess
   } = useQuery({
     queryKey: ['payments', 'location_id', headerContext.locationID],
-    queryFn: () => getAllPayments(headerContext.locationID)
+    queryFn: () => getAllPayments(undefined, headerContext.locationID)
   });
 
   return (
