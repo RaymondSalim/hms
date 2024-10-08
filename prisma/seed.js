@@ -1,10 +1,35 @@
 const { PrismaClient } = require('@prisma/client');
 const {mock} = require("./mock");
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+    {
+      emit: 'stdout',
+      level: 'error',
+    },
+    {
+      emit: 'stdout',
+      level: 'info',
+    },
+    {
+      emit: 'stdout',
+      level: 'warn',
+    },
+  ],
+})
+prisma.$on('query', (e) => {
+  console.log('Query: ' + e.query)
+  console.log('Params: ' + e.params)
+  console.log('Duration: ' + e.duration + 'ms')
+})
+
 async function main() {
   console.log("Executing seed.js");
-  prisma.role.upsert({
+  await prisma.role.upsert({
     where: {
       id: 1
     },
@@ -23,10 +48,12 @@ async function main() {
 main()
     .then(mock)
     .then(async () => {
+      console.log("success, disconnecting client")
       await prisma.$disconnect();
     })
     .catch(async (e) => {
       console.error(e);
+      console.log("error, disconnecting client")
       await prisma.$disconnect();
       process.exit(1);
     });
