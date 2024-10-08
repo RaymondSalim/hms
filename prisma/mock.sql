@@ -4,38 +4,37 @@ VALUES (1, 'Standard Room'),
        (3, 'Suite'),
        (4, 'Presidential'),
        (5, 'Penthouse');
-SELECT setval(pg_get_serial_sequence('"roomtypes"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "roomtypes"; -- Required to increment sequence as we are inserting values with the ID set
-
+SELECT setval(pg_get_serial_sequence('"roomtypes"', 'id'), coalesce(max(id) + 1, 1), false) FROM "roomtypes";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO durations (id, duration, day_count, month_count)
 VALUES (1, '1 month', NULL, 1),
        (2, '3 months', NULL, 3),
        (3, '6 months', NULL, 6),
        (4, '12 months', NULL, 12);
-SELECT setval(pg_get_serial_sequence('"durations"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "durations"; -- Required to increment sequence as we are inserting values with the ID set
+SELECT setval(pg_get_serial_sequence('"durations"', 'id'), coalesce(max(id) + 1, 1), false) FROM "durations";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO locations (id, name, address)
 VALUES (1, 'Location 1', '134 Adams Avenue'),
        (2, 'Location 2', '25506 Adam Passage'),
        (3, 'Location 3', '73877 Wisozk Lake');
-SELECT setval(pg_get_serial_sequence('"locations"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "locations"; -- Required to increment sequence as we are inserting values with the ID set
+SELECT setval(pg_get_serial_sequence('"locations"', 'id'), coalesce(max(id) + 1, 1), false) FROM "locations";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO roomtypedurations (id, room_type_id, duration_id, location_id, suggested_price)
 VALUES (1, 1, 1, 1, 100.00),
        (2, 1, 2, 1, 280.00),
        (3, 2, 1, 2, 120.00);
-SELECT setval(pg_get_serial_sequence('"roomtypedurations"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "roomtypedurations"; -- Required to increment sequence as we are inserting values with the ID set
+SELECT setval(pg_get_serial_sequence('"roomtypedurations"', 'id'), coalesce(max(id) + 1, 1), false) FROM "roomtypedurations";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO roomstatuses (id, status)
 VALUES (1, 'Booked'),
        (2, 'Available'),
        (3, 'Under Construction');
-SELECT setval(pg_get_serial_sequence('"roomstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "roomstatuses"; -- Required to increment sequence as we are inserting values with the ID set
+SELECT setval(pg_get_serial_sequence('"roomstatuses"', 'id'), coalesce(max(id) + 1, 1), false) FROM "roomstatuses";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO rooms (id, room_number, room_type_id, status_id, location_id)
 VALUES (1, 'Room 1', 3, 2, 3),
@@ -58,15 +57,15 @@ VALUES (1, 'Room 1', 3, 2, 3),
        (18, 'Room 18', 3, 1, 3),
        (19, 'Room 19', 3, 1, 2),
        (20, 'Room 20', 1, 3, 3);
-SELECT setval(pg_get_serial_sequence('"rooms"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "rooms"; -- Required to increment sequence as we are inserting values with the ID set
+SELECT setval(pg_get_serial_sequence('"rooms"', 'id'), coalesce(max(id) + 1, 1), false) FROM "rooms";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO bookingstatuses (id, status)
 VALUES (1, 'Pending'),
        (2, 'Confirmed'),
        (3, 'Cancelled');
-SELECT setval(pg_get_serial_sequence('"bookingstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "bookingstatuses"; -- Required to increment sequence as we are inserting values with the ID set
+SELECT setval(pg_get_serial_sequence('"bookingstatuses"', 'id'), coalesce(max(id) + 1, 1), false) FROM "bookingstatuses";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO tenants (id, name, email, phone)
 VALUES ('ckabcde12345678901', 'Keith Strosin', 'Margarete.Walker27@yahoo.com', '350.479.1769'),
@@ -121,52 +120,74 @@ VALUES ('ckabcde12345678901', 'Keith Strosin', 'Margarete.Walker27@yahoo.com', '
        ('ckabcde12345678950', 'Danny Hodkiewicz DVM', 'Meredith67@yahoo.com', '(667) 570-5886');
 
 INSERT INTO bookings (id, tenant_id, room_id, start_date, end_date, duration_id, status_id, fee)
-VALUES (1, 'ckabcde12345678936', 20, '2024-02-15', '2024-03-31', 1, 3, 460.00),
-       (2, 'ckabcde12345678948', 6, '2024-01-30', '2024-04-30', 2, 2, 368.00),
-       (3, 'ckabcde12345678950', 4, '2024-01-18', '2024-02-29', 1, 3, 398.00),
-       (4, 'ckabcde12345678930', 17, '2024-01-25', '2024-04-30', 2, 2, 84.00),
-       (5, 'ckabcde12345678941', 1, '2024-01-07', '2025-02-28', 4, 2, 114.00),
-       (6, 'ckabcde12345678936', 18, '2024-01-04', '2024-02-29', 1, 1, 440.00),
-       (7, 'ckabcde12345678940', 20, '2024-01-02', '2024-04-30', 2, 2, 202.00),
-       (8, 'ckabcde12345678925', 12, '2024-01-19', '2024-02-29', 1, 3, 171.00),
-       (9, 'ckabcde12345678934', 14, '2024-01-19', '2025-02-28', 4, 1, 209.00),
-       (10, 'ckabcde12345678901', 10, '2024-01-04', '2024-02-29', 1, 3, 323.00),
-       (11, 'ckabcde12345678946', 1, '2024-01-04', '2024-02-29', 1, 1, 68.00),
-       (12, 'ckabcde12345678945', 20, '2024-01-10', '2024-04-30', 2, 3, 192.00),
-       (13, 'ckabcde12345678905', 15, '2024-02-04', '2024-03-31', 1, 2, 203.00),
-       (14, 'ckabcde12345678931', 14, '2024-01-05', '2024-02-29', 1, 2, 148.00),
-       (15, 'ckabcde12345678901', 7, '2024-01-05', '2024-02-29', 1, 2, 248.00),
-       (16, 'ckabcde12345678924', 18, '2024-01-08', '2024-02-29', 1, 1, 93.00),
-       (17, 'ckabcde12345678922', 2, '2024-01-16', '2024-02-29', 1, 1, 69.00),
-       (18, 'ckabcde12345678930', 7, '2024-01-02', '2024-02-29', 1, 3, 126.00),
-       (19, 'ckabcde12345678909', 6, '2024-01-05', '2025-02-28', 4, 1, 99.00),
-       (20, 'ckabcde12345678920', 8, '2024-02-04', '2024-03-31', 1, 2, 202.00),
-       (21, 'ckabcde12345678910', 11, '2024-01-04', '2024-04-30', 2, 1, 110.00),
-       (22, 'ckabcde12345678901', 6, '2024-01-15', '2024-02-29', 1, 3, 177.00),
-       (23, 'ckabcde12345678912', 10, '2024-01-25', '2024-02-29', 1, 3, 149.00),
-       (24, 'ckabcde12345678933', 5, '2024-01-17', '2024-02-29', 1, 3, 168.00),
-       (25, 'ckabcde12345678901', 9, '2024-01-15', '2025-02-28', 4, 1, 400.00),
-       (26, 'ckabcde12345678926', 14, '2024-02-04', '2025-03-31', 4, 1, 410.00),
-       (27, 'ckabcde12345678904', 11, '2024-01-05', '2024-04-30', 2, 2, 69.00),
-       (28, 'ckabcde12345678910', 18, '2024-01-03', '2025-02-28', 4, 3, 287.00),
-       (29, 'ckabcde12345678925', 1, '2024-01-10', '2024-02-29', 1, 1, 70.00),
-       (30, 'ckabcde12345678904', 6, '2024-01-02', '2024-04-30', 2, 2, 88.00);
-SELECT setval(pg_get_serial_sequence('"bookings"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "bookings"; -- Required to increment sequence as we are inserting values with the ID set
+VALUES
+    (1, 'ckabcde12345678936', 20, '2024-02-15', '2024-03-31', 1, 3, 460.00),
+    (2, 'ckabcde12345678948', 6, '2024-01-30', '2024-04-30', 2, 2, 368.00),
+    (3, 'ckabcde12345678950', 4, '2024-01-18', '2024-02-29', 1, 3, 398.00),
+    (4, 'ckabcde12345678930', 17, '2024-01-25', '2024-04-30', 2, 2, 84.00),
+    (5, 'ckabcde12345678941', 1, '2024-01-07', '2025-02-28', 4, 2, 114.00),
+    (6, 'ckabcde12345678936', 18, '2024-01-04', '2024-02-29', 1, 1, 440.00),
+    (7, 'ckabcde12345678940', 20, '2024-01-02', '2024-04-30', 2, 2, 202.00),
+    (8, 'ckabcde12345678925', 12, '2024-01-19', '2024-02-29', 1, 3, 171.00),
+    (9, 'ckabcde12345678934', 14, '2024-01-19', '2025-02-28', 4, 1, 209.00),
+    (10, 'ckabcde12345678901', 10, '2024-01-04', '2024-02-29', 1, 3, 323.00),
+    (11, 'ckabcde12345678946', 1, '2024-01-04', '2024-02-29', 1, 1, 68.00),
+    (12, 'ckabcde12345678945', 20, '2024-01-10', '2024-04-30', 2, 3, 192.00),
+    (13, 'ckabcde12345678905', 15, '2024-02-04', '2024-03-31', 1, 2, 203.00),
+    (14, 'ckabcde12345678931', 14, '2024-01-05', '2024-02-29', 1, 2, 148.00),
+    (15, 'ckabcde12345678901', 7, '2024-01-05', '2024-02-29', 1, 2, 248.00),
+    (16, 'ckabcde12345678924', 18, '2024-01-08', '2024-02-29', 1, 1, 93.00),
+    (17, 'ckabcde12345678922', 2, '2024-01-16', '2024-02-29', 1, 1, 69.00),
+    (18, 'ckabcde12345678930', 7, '2024-01-02', '2024-02-29', 1, 3, 126.00),
+    (19, 'ckabcde12345678909', 6, '2024-01-05', '2025-02-28', 4, 1, 99.00),
+    (20, 'ckabcde12345678920', 8, '2024-02-04', '2024-03-31', 1, 2, 202.00),
+    (21, 'ckabcde12345678910', 11, '2024-01-04', '2024-04-30', 2, 1, 110.00),
+    (22, 'ckabcde12345678901', 6, '2024-01-15', '2024-02-29', 1, 3, 177.00),
+    (23, 'ckabcde12345678912', 10, '2024-01-25', '2024-02-29', 1, 3, 149.00),
+    (24, 'ckabcde12345678933', 5, '2024-01-17', '2024-02-29', 1, 3, 168.00),
+    (25, 'ckabcde12345678901', 9, '2024-01-15', '2025-02-28', 4, 1, 400.00),
+    (26, 'ckabcde12345678926', 14, '2024-02-04', '2025-03-31', 4, 1, 410.00),
+    (27, 'ckabcde12345678904', 11, '2024-01-05', '2024-04-30', 2, 2, 69.00),
+    (28, 'ckabcde12345678910', 18, '2024-01-03', '2025-02-28', 4, 3, 287.00),
+    (29, 'ckabcde12345678925', 1, '2024-01-10', '2024-02-29', 1, 1, 70.00),
+    (30, 'ckabcde12345678903', 12, '2024-01-15', '2024-04-30', 2, 2, 230.00),
+    (31, 'ckabcde12345678919', 4, '2024-01-11', '2024-03-15', 1, 2, 150.00),
+    (32, 'ckabcde12345678915', 3, '2024-02-01', '2024-03-01', 1, 1, 300.00),
+    (33, 'ckabcde12345678911', 5, '2024-02-05', '2024-02-20', 1, 3, 200.00),
+    (34, 'ckabcde12345678902', 7, '2024-01-15', '2024-02-20', 1, 2, 120.00),
+    (35, 'ckabcde12345678916', 8, '2024-01-22', '2024-03-30', 2, 2, 175.00),
+    (36, 'ckabcde12345678921', 2, '2024-01-29', '2024-04-29', 3, 1, 290.00),
+    (37, 'ckabcde12345678937', 15, '2024-02-20', '2024-03-31', 1, 3, 125.00),
+    (38, 'ckabcde12345678914', 20, '2024-01-31', '2024-03-15', 1, 2, 215.00),
+    (39, 'ckabcde12345678912', 6, '2024-01-17', '2024-02-28', 1, 2, 180.00),
+    (40, 'ckabcde12345678932', 10, '2024-02-08', '2024-04-05', 2, 1, 240.00),
+    (41, 'ckabcde12345678940', 1, '2024-02-12', '2024-03-12', 1, 2, 130.00),
+    (42, 'ckabcde12345678941', 4, '2024-01-15', '2024-04-15', 4, 3, 300.00),
+    (43, 'ckabcde12345678917', 3, '2024-01-22', '2024-02-22', 1, 1, 65.00),
+    (44, 'ckabcde12345678929', 5, '2024-02-09', '2024-03-01', 1, 2, 190.00),
+    (45, 'ckabcde12345678923', 2, '2024-01-13', '2024-04-01', 2, 1, 175.00),
+    (46, 'ckabcde12345678901', 7, '2024-02-05', '2024-03-05', 2, 3, 140.00),
+    (47, 'ckabcde12345678920', 11, '2024-02-18', '2024-03-10', 1, 1, 120.00),
+    (48, 'ckabcde12345678935', 18, '2024-01-25', '2024-04-30', 2, 2, 200.00),
+    (49, 'ckabcde12345678939', 14, '2024-01-30', '2024-03-15', 1, 1, 110.00),
+    (50, 'ckabcde12345678912', 9, '2024-02-20', '2024-03-20', 1, 2, 130.00);
+SELECT setval(pg_get_serial_sequence('"bookings"', 'id'), coalesce(max(id) + 1, 1), false) FROM "bookings";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO paymentstatuses (id, status)
 VALUES (1, 'Pending'),
        (2, 'Completed'),
        (3, 'Failed');
-SELECT setval(pg_get_serial_sequence('"paymentstatuses"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "paymentstatuses"; -- Required to increment sequence as we are inserting values with the ID set
+SELECT setval(pg_get_serial_sequence('"paymentstatuses"', 'id'), coalesce(max(id) + 1, 1), false) FROM "paymentstatuses";
+-- Required to increment sequence as we are inserting values with the ID set
 
 
 INSERT INTO roles (id, name, description)
 VALUES (1, 'Admin', 'Administrator role'),
-       (2, 'Guest', 'Guest role');
-SELECT setval(pg_get_serial_sequence('"roles"', 'id'), coalesce(max(id) + 1, 1), false)
-FROM "roles"; -- Required to increment sequence as we are inserting values with the ID set
+       (2, 'Guest', 'Guest role')
+ON CONFLICT DO NOTHING;
+SELECT setval(pg_get_serial_sequence('"roles"', 'id'), coalesce(max(id) + 1, 1), false) FROM "roles";
+-- Required to increment sequence as we are inserting values with the ID set
 
 INSERT INTO "categories" (category)
 VALUES ('Maintenance'),
@@ -273,3 +294,5 @@ VALUES (1, 500.00, '2024-01-15', 'proof1.jpg', 1),
        (48, 5200.00, '2024-03-03', 'proof48.jpg', 3),
        (49, 5300.00, '2024-03-04', 'proof49.jpg', 1),
        (50, 5400.00, '2024-03-05', 'proof50.jpg', 2);
+SELECT setval(pg_get_serial_sequence('"payments"', 'id'), coalesce(max(id) + 1, 1), false) FROM "payments";
+-- Required to increment sequence as we are inserting values with the ID set
