@@ -40,14 +40,22 @@ type BillAndPayment = BillIncludePaymentAndSum & {
 };
 
 export function PaymentForm(props: PaymentForm) {
-  const [data, setData] = useState<DataType>(props.contentData ?? {});
+  let parsedData: typeof props.contentData
+  if (props.contentData) {
+    parsedData = {
+      ...props.contentData,
+      amount: new Prisma.Decimal(props.contentData.amount),
+    }
+  }
+
+  const [data, setData] = useState<DataType>(parsedData ?? {});
   const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
-  const [locationID, setLocationID] = useState<number | undefined>(props.contentData?.bookings.rooms?.location_id ?? undefined);
+  const [locationID, setLocationID] = useState<number | undefined>(parsedData?.bookings.rooms?.location_id ?? undefined);
   const [popoverOpen, setIsPopoverOpen] = useState(false);
 
   const today = new Date();
 
-  const [initialData, setInitialData] = useState<Partial<DataType>>(props.contentData ?? {});
+  const [initialData, setInitialData] = useState<Partial<DataType>>(parsedData ?? {});
   // Function to compare initial and current booking data
   const hasChanges = (initialData: Partial<DataType>, currentData: Partial<DataType>) => {
     return JSON.stringify(initialData) !== JSON.stringify(currentData);
@@ -160,8 +168,8 @@ export function PaymentForm(props: PaymentForm) {
 
   // Use effect to set initialBookingData when the component mounts
   useEffect(() => {
-    setInitialData(props.contentData ?? {});
-  }, [props.contentData]);
+    setInitialData(parsedData ?? {});
+  }, [parsedData]);
 
   useEffect(() => {
     setFieldErrors(props.mutationResponse?.errors);
@@ -191,7 +199,7 @@ export function PaymentForm(props: PaymentForm) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Payment</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{parsedData ? "Edit" : "Create"} Payment</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <MotionConfig
@@ -537,7 +545,7 @@ export function PaymentForm(props: PaymentForm) {
                   onClick={() => props.mutation.mutate(data)}
                   color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {parsedData ? "Update" : "Create"}
           </Button>
         </div>
       </form>
