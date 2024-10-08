@@ -29,7 +29,7 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       header: "ID",
       size: 20
     }),
-    columnHelper.accessor(row => row.bookings.custom_id, {
+    columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
       header: "Booking ID",
       size: 20
     }),
