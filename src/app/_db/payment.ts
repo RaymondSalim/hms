@@ -40,7 +40,10 @@ export async function getAllPayments(id?: number, locationID?: number, limit?: n
   })
     .then(nb => nb.map(b => ({
         ...b,
-        custom_id: `#-${b.bookings.id}`
+        bookings: {
+          ...b.bookings,
+          custom_id: `#-${b.bookings.id}`
+        }
       }))
     );
 }
