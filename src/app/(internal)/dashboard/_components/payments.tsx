@@ -3,7 +3,7 @@
 import React, {useContext, useMemo, useState} from "react";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
-import {getPaymentData, getPaymentStatuses} from "@/app/_db/dashboard";
+import {getPaymentData} from "@/app/_db/dashboard";
 
 import styles from "./styles/payments.module.css";
 import {Button, Chip} from "@material-tailwind/react";
@@ -11,6 +11,7 @@ import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/reac
 import {colors} from "@material-tailwind/react/types/generic";
 import {AiOutlineLoading} from "react-icons/ai";
 import TanTable from "@/app/_components/tanTable/tanTable";
+import {getPaymentStatusAction} from "@/app/(internal)/payments/payment-action";
 
 const fallbackData: never[] = [];
 
@@ -19,12 +20,12 @@ export default function Payments() {
   const [status, setStatus] = useState<number | undefined>(undefined);
 
   const {data: paymentStatuses, isSuccess: statusIsSuccess} = useQuery({
-    queryKey: ['dashboard.paymentStatus'],
-    queryFn: () => getPaymentStatuses()
+    queryKey: ['payment.status'],
+    queryFn: () => getPaymentStatusAction()
   });
 
   const {data: payments, isLoading: paymentsIsLoading, isSuccess: paymentsIsSuccess} = useQuery({
-    queryKey: ['dashboard.payments', dashboardContext.locationID, status],
+    queryKey: ['payment', dashboardContext.locationID, status],
     queryFn: () => getPaymentData(status, dashboardContext.locationID)
   });
 

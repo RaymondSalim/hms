@@ -231,6 +231,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
           if (prev) setActiveContent(undefined);
           return !prev;
         })}
+        className={"max-h-[85vh] overflow-y-auto"}
       >
         {
           cloneElement(props.form, {

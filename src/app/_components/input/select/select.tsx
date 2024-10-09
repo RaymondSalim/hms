@@ -67,6 +67,7 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
 
   return (
     <Select
+      menuPosition={"fixed"}
       onChange={(n: SelectOption<T> | null) => {
         setValue(n ?? undefined);
         props.setValue(n?.value ?? undefined);

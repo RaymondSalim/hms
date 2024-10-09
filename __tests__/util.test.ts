@@ -1,7 +1,7 @@
 import {Duration} from "@prisma/client";
 import {generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
 import {describe, expect, test} from "@jest/globals";
-import {BookingsIncludeAll} from "@/app/(internal)/bookings/booking-action";
+import {BookingsIncludeAll} from "@/app/_db/bookings";
 
 type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
