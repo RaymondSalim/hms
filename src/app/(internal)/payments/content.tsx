@@ -2,13 +2,14 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React, {useContext, useState} from "react";
-import {formatToDateTime} from "@/app/_lib/util";
+import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {PaymentForm} from "@/app/(internal)/payments/form";
 import {PaymentIncludeAll} from "@/app/_db/payment";
 import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/payments/payment-action";
+import {Prisma} from "@prisma/client";
 
 
 export interface PaymentsContentProps {
@@ -57,7 +58,7 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       header: "Status",
       cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
     }),
-    columnHelper.accessor(row => row.amount, {
+    columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
       header: "Paid Amount"
     }),
     columnHelper.accessor(row => formatToDateTime(row.payment_date, true, true), {
