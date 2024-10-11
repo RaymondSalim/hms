@@ -34,7 +34,7 @@ export async function getUnpaidBillsDueByBookingIDAction(booking_id: number): Pr
         sumPaidAmount: paidAmount
       };
     })
-    .filter(b => b.sumPaidAmount != b.amount);
+    .filter(b => !b.sumPaidAmount.equals(b.amount));
 
   return {
     total: totalDue.toNumber(),
