@@ -40,12 +40,12 @@ type BillAndPayment = BillIncludePaymentAndSum & {
 };
 
 export function PaymentForm(props: PaymentForm) {
-  let parsedData: typeof props.contentData
+  let parsedData: typeof props.contentData;
   if (props.contentData) {
     parsedData = {
       ...props.contentData,
       amount: new Prisma.Decimal(props.contentData.amount),
-    }
+    };
   }
 
   const [data, setData] = useState<DataType>(parsedData ?? {});

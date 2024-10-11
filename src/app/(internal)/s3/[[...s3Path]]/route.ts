@@ -5,9 +5,9 @@ import {getObject} from "@/app/_lib/s3";
 export async function GET(request: Request, { params }: { params: { s3Path: string[] } }) {
     const fullPath = params.s3Path.join('/');
 
-    let imgObj = await getObject(process.env.S3_BUCKET!, fullPath)
+    let imgObj = await getObject(process.env.S3_BUCKET!, fullPath);
     if (imgObj.success) {
-        let imgBuffer = Buffer.concat(imgObj.data)
+        let imgBuffer = Buffer.concat(imgObj.data);
 
         return new NextResponse(imgBuffer, {
             status: 200,
@@ -25,7 +25,7 @@ export async function GET(request: Request, { params }: { params: { s3Path: stri
             headers: {
                 'Content-Type': 'text/plain'
             }
-        })
+        });
     } else {
         console.log("error getting object from s3", imgObj.error);
     }
@@ -35,5 +35,5 @@ export async function GET(request: Request, { params }: { params: { s3Path: stri
         headers: {
             'Content-Type': 'text/plain'
         }
-    })
+    });
 }

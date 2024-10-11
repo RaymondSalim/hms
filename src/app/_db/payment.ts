@@ -30,7 +30,7 @@ const mapCustomID = (nb: Prisma.PaymentGetPayload<typeof paymentIncludeAll>[]) =
         ...b.bookings,
         custom_id: `#-${b.bookings.id}`
     }
-}))
+}));
 
 
 export async function getAllPayments(id?: number, locationID?: number, limit?: number, offset?: number) {
