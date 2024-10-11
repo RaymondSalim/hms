@@ -1,6 +1,6 @@
 import {describe, expect, test} from "@jest/globals";
 import {prismaMock} from "./singleton_prisma";
-import {getUnpaidBillsDueByBookingIDAction, simulateBillPaymentAction} from "@/app/(internal)/payments/bill-action";
+import {getUnpaidBillsDueByBookingIDAction, simulateBillPaymentAction} from "@/app/(internal)/bills/bill-action";
 import {Prisma} from "@prisma/client";
 import {BillIncludePayment} from "@/app/_db/bills";
 

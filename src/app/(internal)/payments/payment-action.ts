@@ -7,7 +7,7 @@ import {number, object} from "zod";
 import {paymentSchema} from "@/app/_lib/zod/payment/zod";
 import {getBookingByIDAction} from "@/app/(internal)/bookings/booking-action";
 import prisma from "@/app/_lib/primsa";
-import {createPaymentBillsAction, getUnpaidBillsDueByBookingIDAction} from "@/app/(internal)/payments/bill-action";
+import {createPaymentBillsAction, getUnpaidBillsDueByBookingIDAction} from "@/app/(internal)/bills/bill-action";
 import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
 export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment>) {

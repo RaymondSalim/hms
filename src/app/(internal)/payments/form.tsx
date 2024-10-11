@@ -20,7 +20,7 @@ import {
   BillIncludePaymentAndSum,
   getUnpaidBillsDueByBookingIDAction,
   simulateBillPaymentAction
-} from "@/app/(internal)/payments/bill-action";
+} from "@/app/(internal)/bills/bill-action";
 import {Prisma} from "@prisma/client";
 
 interface PaymentForm extends TableFormProps<PaymentIncludeAll> {
