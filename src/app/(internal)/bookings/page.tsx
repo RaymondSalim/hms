@@ -4,7 +4,7 @@ import {HeaderContext} from "@/app/_context/HeaderContext";
 import React, {useContext, useEffect} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
-import {getAllBookings} from "@/app/(internal)/bookings/booking-action";
+import {getAllBookingsAction} from "@/app/(internal)/bookings/booking-action";
 import {AiOutlineLoading} from "react-icons/ai";
 import BookingsContent from "@/app/(internal)/bookings/content";
 
@@ -24,8 +24,8 @@ export default function BookingPage() {
     isLoading,
     isSuccess
   } = useQuery({
-    queryKey: ['bookings', headerContext.locationID],
-    queryFn: () => getAllBookings(headerContext.locationID)
+    queryKey: ['bookings', 'location_id', headerContext.locationID],
+    queryFn: () => getAllBookingsAction(headerContext.locationID)
   });
 
   return (

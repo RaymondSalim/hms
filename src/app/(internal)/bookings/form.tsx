@@ -10,12 +10,12 @@ import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
 import {Booking, Prisma} from "@prisma/client";
 import {ZodFormattedError} from "zod";
-import {getBookingStatuses} from "@/app/_db/bookings";
+import {BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
 import {formatToDateTime, generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
 import "react-day-picker/style.css";
-import {BookingsIncludeAll, getAllBookings} from "@/app/(internal)/bookings/booking-action";
+import {getAllBookingsAction} from "@/app/(internal)/bookings/booking-action";
 import {DateSet} from "@/app/_lib/customSet";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 
@@ -157,8 +157,8 @@ export function BookingForm(props: BookingFormProps) {
     isLoading: isExistingBookingLoading,
     isSuccess: isExistingBookingSuccess
   } = useQuery({
-    queryKey: ['bookings', bookingData.room_id],
-    queryFn: () => getAllBookings(undefined, bookingData.room_id ?? undefined),
+    queryKey: ['bookings', 'room_id', bookingData.room_id],
+    queryFn: () => getAllBookingsAction(undefined, bookingData.room_id ?? undefined),
     enabled: bookingData.room_id != undefined,
   });
   const [disabledDatesSet, setDisabledDatesSet] = useState<DateSet>(new DateSet());

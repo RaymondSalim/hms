@@ -1,23 +1,38 @@
 import {Duration} from "@prisma/client";
-import {BookingsIncludeAll} from "@/app/(internal)/bookings/booking-action";
+import {BookingsIncludeAll} from "@/app/_db/bookings";
 
 export const delay = (time: number) => new Promise((resolve, reject) => setTimeout(resolve, time));
 
-export function formatToDateTime(d: Date, showTime = true): string {
+export function formatToIDR(amount: number) {
+  if (isNaN(amount)) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat("id-ID", {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+}
+
+export function formatToDateTime(d: Date, showTime = true, showSeconds = true): string {
   return new Intl.DateTimeFormat('id', {
     dateStyle: "medium",
-    timeStyle: showTime ? "short" : undefined,
+    timeStyle: showTime ? (showSeconds ? "short" : "medium") : undefined,
   }).format(d);
 }
 
 export type IntersectionToUnion<T> = (T extends any ? (arg: T) => void : never) extends (arg: infer U) => void ? U : never;
 
 export function addToDate(date: Date, dayCount: number, monthCount: number) {
-  if (date) {
-    date.setDate(date.getDate() + dayCount);
-    date.setMonth(date.getMonth() + monthCount);
+  if (!date) {
+    return date;
   }
-  return date;
+  const newDate = new Date(date);
+  newDate.setDate(date.getDate() + dayCount);
+  newDate.setMonth(date.getMonth() + monthCount);
+  return newDate;
 }
 
 export function getLastDateOfBooking(start_date: Date, duration: Duration) {
@@ -58,5 +73,19 @@ export function generateDatesFromBooking(bookings: BookingsIncludeAll, callback?
   return null;
 }
 
+export async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
+    reader.onloadend = () => {
+      const base64String = (reader.result as string).split(',')[1];
+      resolve(base64String);
+    };
 
+    reader.onerror = (error) => {
+      reject(error);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}

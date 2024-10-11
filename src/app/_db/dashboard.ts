@@ -239,10 +239,6 @@ export async function getIncomeAndExpense(period: Period, locationID?: number) {
     });
 }
 
-export async function getPaymentStatuses() {
-  return prisma.paymentStatus.findMany();
-}
-
 export async function getPaymentData(status?: number, locationID?: number) {
   return prisma.payment.findMany({
     select: {
