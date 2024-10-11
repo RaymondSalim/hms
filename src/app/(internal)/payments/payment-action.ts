@@ -71,6 +71,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
 
       if (data?.id) {
         res = await updatePaymentByID(data.id, dbData);
+        // TODO! Fix updating payment does not recalculate the whole payment structure
       } else {
         res = await createPayment(dbData, tx);
         const unpaidBills = await getUnpaidBillsDueByBookingIDAction(booking.id);
