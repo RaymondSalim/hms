@@ -12,18 +12,18 @@ model Booking {
   id          Int      @id @default(autoincrement())
   tenant_id   String?
   room_id     Int?
-  start_date DateTime @db.Date
-  end_date   DateTime @db.Date
+  start_date  DateTime @db.Date
+  end_date    DateTime @db.Date
   duration_id Int?
   status_id   Int?
   fee         Decimal  @db.Decimal(10, 2)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  durations       Duration?      @relation(fields: [duration_id], references: [id], onUpdate: NoAction, onDelete: Restrict)
-  rooms           Room?          @relation(fields: [room_id], references: [id], onUpdate: NoAction)
-  bookingstatuses BookingStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
-  tenants         Tenant?        @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
+  durations       Duration?       @relation(fields: [duration_id], references: [id], onUpdate: NoAction, onDelete: Restrict)
+  rooms           Room?           @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  bookingstatuses BookingStatus?  @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  tenants         Tenant?         @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
   payments        Payment[]
   penalties       Penalty[]
   bills           Bill[]
@@ -72,7 +72,7 @@ model Category {
 model Duration {
   id          Int      @id @default(autoincrement())
   duration    String   @db.VarChar(255)
-  day_count Int?
+  day_count   Int?
   month_count Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
@@ -95,7 +95,7 @@ model Expense {
   updatedAt DateTime @default(now()) @updatedAt
 
   categories Category? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  locations Location? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+  locations  Location? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
   @@map("expenses")
 }
@@ -115,11 +115,11 @@ model Guest {
 }
 
 model Log {
-  id        Int       @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   site_user_id String
-  action    String    @db.VarChar(255)
-  timestamp DateTime? @default(now()) @db.Timestamp(6)
-  siteusers SiteUser  @relation(fields: [site_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  action       String    @db.VarChar(255)
+  timestamp    DateTime? @default(now()) @db.Timestamp(6)
+  siteusers    SiteUser  @relation(fields: [site_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("logs")
 }
@@ -133,7 +133,7 @@ model Bill {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  bookings    Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  bookings     Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   paymentBills PaymentBill[]
 
   @@map("bills")
@@ -151,12 +151,13 @@ model Payment {
 
   bookings        Booking        @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   paymentstatuses PaymentStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
-  paymentBills PaymentBill[]
+  paymentBills    PaymentBill[]
 
   @@map("payments")
 }
 
 model PaymentBill {
+  id         Int     @id @default(autoincrement())
   payment_id Int
   bill_id    Int
   amount     Decimal @db.Decimal(10, 2)
@@ -164,7 +165,6 @@ model PaymentBill {
   payment Payment @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   bill    Bill    @relation(fields: [bill_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  @@id([payment_id, bill_id])
   @@map("payment_bills")
 }
 
@@ -222,14 +222,14 @@ model Role {
   updatedAt   DateTime @default(now()) @updatedAt
 
   rolepermissions RolePermission[]
-  siteusers SiteUser[]
+  siteusers       SiteUser[]
 
   @@map("roles")
 }
 
 model Room {
   id           Int      @id @default(autoincrement())
-  room_number String @db.VarChar(255)
+  room_number  String   @db.VarChar(255)
   room_type_id Int?
   status_id    Int?
   location_id  Int?
@@ -237,7 +237,7 @@ model Room {
   updatedAt    DateTime @default(now()) @updatedAt
 
   bookings     Booking[]
-  roomtypes RoomType? @relation(fields: [room_type_id], references: [id], onUpdate: NoAction, onDelete: Restrict)
+  roomtypes    RoomType?   @relation(fields: [room_type_id], references: [id], onUpdate: NoAction, onDelete: Restrict)
   roomstatuses RoomStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
   locations    Location?   @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
@@ -306,7 +306,7 @@ model Setting {
 
 model SiteUser {
   id            String    @id @default(cuid())
-  name String
+  name          String
   email         String    @unique
   emailVerified DateTime?
   password      String
@@ -400,8 +400,8 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  bookings Booking[]
-  guests   Guest[]
+  bookings       Booking[]
+  guests         Guest[]
   checkInOutLogs CheckInOutLog[]
 
   @@map("tenants")

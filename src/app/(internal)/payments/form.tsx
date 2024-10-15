@@ -19,8 +19,8 @@ import {NonUndefined} from "@/app/_lib/types";
 import {
   BillIncludePaymentAndSum,
   getUnpaidBillsDueByBookingIDAction,
-  simulateBillPaymentAction
-} from "@/app/(internal)/payments/bill-action";
+  simulateUnpaidBillPaymentAction
+} from "@/app/(internal)/bills/bill-action";
 import {Prisma} from "@prisma/client";
 
 interface PaymentForm extends TableFormProps<PaymentIncludeAll> {
@@ -139,7 +139,7 @@ export function PaymentForm(props: PaymentForm) {
   const {data: simulationData, isSuccess: simulationDataSuccess, isLoading: simulationDataIsLoading} = useQuery({
     queryKey: ['payment.simulation', 'balance', data.amount, 'booking_id', data.booking_id],
     enabled: Boolean(data.amount && data.booking_id && data.payment_date && unpaidBillsDataSuccess),
-    queryFn: () => simulateBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills)
+    queryFn: () => simulateUnpaidBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills)
   });
 
   const [totalData, setTotalData] = useState<Partial<BillAndPayment>>({});

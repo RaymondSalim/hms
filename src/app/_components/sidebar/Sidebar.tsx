@@ -12,7 +12,7 @@ import {
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
 import {Session} from 'next-auth';
-import {FaKey, FaMoneyBill1} from "react-icons/fa6";
+import {FaKey, FaMoneyBill1, FaReceipt} from "react-icons/fa6";
 
 export interface SidebarProps {
     session: Session | null
@@ -48,6 +48,7 @@ export default function Sidebar({session}: SidebarProps) {
         { name: 'Registrations', path: '/registration', icon: <FaUserPlus /> },
         { name: 'Bookings', path: '/bookings', icon: <FaBed /> },
         { name: 'Payments', path: '/payments', icon: <FaMoneyBill /> },
+        { name: 'Bills', path: '/bills', icon: <FaReceipt /> },
         {
             name: 'Financials',
             path: '/financials',
