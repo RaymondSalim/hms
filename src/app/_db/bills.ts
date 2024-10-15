@@ -1,7 +1,7 @@
 import {Bill, Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
-import BillFindManyArgs = Prisma.BillFindManyArgs;
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
+import BillFindManyArgs = Prisma.BillFindManyArgs;
 
 const includePayments: Prisma.BillInclude = {
   paymentBills: {
@@ -106,8 +106,17 @@ export async function updateBillByID(id: number, bill: OmitIDTypeAndTimestamp<Bi
     data: {
       ...bill,
       id: undefined,
+    },
+    include: {
+      bookings: true
     }
-  });
+  }).then(b => ({
+    ...b,
+    bookings: {
+      ...b.bookings,
+      custom_id: `#-${b.bookings.id}`
+    }
+  }));
 }
 
 export async function createBill(bill: OmitIDTypeAndTimestamp<Bill>) {
