@@ -406,3 +406,17 @@ model Tenant {
 
   @@map("tenants")
 }
+
+model EmailLogs {
+  id      Int     @id @default(autoincrement())
+  status  String  @db.VarChar(255)
+  to      String  @db.VarChar(255)
+  from    String  @db.VarChar(255)
+  subject String? @db.VarChar(255)
+  payload String  @db.VarChar(4096)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("emaillogs")
+}
