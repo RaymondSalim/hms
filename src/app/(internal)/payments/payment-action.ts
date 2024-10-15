@@ -7,7 +7,11 @@ import {number, object} from "zod";
 import {paymentSchema} from "@/app/_lib/zod/payment/zod";
 import {getBookingByIDAction} from "@/app/(internal)/bookings/booking-action";
 import prisma from "@/app/_lib/primsa";
-import {createPaymentBillsAction, getUnpaidBillsDueByBookingIDAction} from "@/app/(internal)/bills/bill-action";
+import {
+  createPaymentBillsAction,
+  getUnpaidBillsDueByBookingIDAction,
+  syncBillsWithPaymentDate
+} from "@/app/(internal)/bills/bill-action";
 import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
 export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment>) {
@@ -78,8 +82,9 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
         const updatedData = await createPaymentBillsAction(data.amount, unpaidBills.bills, res.id, tx);
 
         finalBalance = updatedData.balance;
-
       }
+
+      await syncBillsWithPaymentDate(booking.id, tx, [res]);
 
     } catch (error) {
       console.warn("error creating/updating payment with error: ", error);
