@@ -405,6 +405,6 @@ VALUES
     (49, 49, 49, 5300000.00),
     (50, 50, 50, 5400000.00);
 -- Required to increment sequence as we are inserting values with the ID set
-SELECT setval(pg_get_serial_sequence('"payment_bills"', 'payment_id'), coalesce(max(payment_id) + 1, 1), false) FROM "payment_bills";
+SELECT setval(pg_get_serial_sequence('"payment_bills"', 'id'), coalesce(max(payment_id) + 1, 1), false) FROM "payment_bills";
 
 
