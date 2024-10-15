@@ -78,6 +78,7 @@ export default function BillsContent({bills}: BillsContentProps) {
                 searchPlaceholder={"TODO!"} // TODO!
                 // TODO! Data should refresh on CRUD
                 upsert={{
+                    // @ts-expect-error
                     mutationFn: upsertBillAction,
                 }}
 
