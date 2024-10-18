@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import {Address, Options} from "nodemailer/lib/mailer";
 import prisma from "@/app/_lib/primsa";
 import {PartialBy} from "@/app/_db/db";
+import * as util from "node:util";
 
 enum EmailStatus {
     SUCCESS = "SUCCESS",
@@ -42,7 +43,7 @@ class NodemailerSingleton {
     public async sendMail(mailOptions: PartialBy<Options, "from">) {
         mailOptions.from = mailOptions.from ?? NodemailerSingleton.DEFAULT_FROM;
         try {
-            const response = await this.client.sendMail({});
+            const response = await this.client.sendMail(mailOptions);
             await prisma.emailLogs.create({
                 data: {
                     status: EmailStatus.SUCCESS,
@@ -112,3 +113,30 @@ function toToStringArray(to: Options['to']) {
 const nodemailerClient = NodemailerSingleton.getInstance();
 
 export default nodemailerClient;
+
+export enum EMAIL_TEMPLATES {
+    RESET_PASSWORD = "RESET_PASSWORD",
+}
+
+// TODO! Remove hardcode
+const TEMPLATES_MAPPING: {
+    [key in EMAIL_TEMPLATES]: string
+} = {
+    RESET_PASSWORD: `
+    Kami telah menerima permintaan untuk mengatur ulang kata sandi Anda.
+    Silahkan masuk menggunakan informasi berikut:
+            Email:\t\t\t\t%s
+            Password:\t\t\t%s
+        
+    Terima Kasih,
+    MICASA Suites
+    `
+};
+
+export async function withTemplate(template: EMAIL_TEMPLATES, ...args: string[]): Promise<string> {
+    if (TEMPLATES_MAPPING[template]) {
+        return util.format(TEMPLATES_MAPPING[template], ...args);
+    }
+
+    throw new Error("template not found");
+}
