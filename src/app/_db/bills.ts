@@ -1,7 +1,7 @@
 import {Bill, Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import BillFindManyArgs = Prisma.BillFindManyArgs;
+
 
 const includePayments: Prisma.BillInclude = {
   paymentBills: {
@@ -56,18 +56,21 @@ export type BillIncludeBookingAndPayments = Prisma.BillGetPayload<typeof billInc
   }
 }
 
-export async function getBillsWithPaymentsByBookingID(booking_id: number, args?: BillFindManyArgs) {
+export async function getBillsWithPayments(booking_id?: Prisma.IntFilter<"Bill"> | number, args?: Prisma.BillFindManyArgs) {
   return prisma.bill.findMany({
     ...args,
     where: {
       ...args?.where,
-      booking_id,
+      booking_id: booking_id,
     },
-    include: includePayments,
+    include: {
+      ...args?.include,
+      ...includePayments
+    },
   });
 }
 
-export async function getAllBillsWithBooking(id?: number, args?: BillFindManyArgs) {
+export async function getAllBillsWithBooking(id?: Prisma.IntFilter<"Bill"> | number, args?: Prisma.BillFindManyArgs) {
   return prisma.bill.findMany({
     ...args,
     where: {
