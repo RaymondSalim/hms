@@ -9,13 +9,13 @@ import {resetSchema} from "@/app/_lib/zod/auth/zod";
 import {AnimatePresence, motion} from "framer-motion";
 import {typeToFlattenedError} from "zod";
 import Link from "next/link";
-import {resetPassword} from "@/app/(external)/(auth)/reset_request/reset-action";
+import {resetPasswordAction} from "@/app/(external)/(auth)/reset_request/reset-action";
 import {useRouter} from "next/navigation";
 
 const initialState: ResetUserType = {};
 
 export default function ResetForm() {
-  const [state, formAction ] = useFormState(resetPassword, initialState);
+  const [state, formAction ] = useFormState(resetPasswordAction, initialState);
   const [error, setError] = useState<typeToFlattenedError<typeof resetSchema.shape> | undefined>(undefined);
   const router = useRouter();
 
@@ -49,7 +49,7 @@ export default function ResetForm() {
               transition={{duration: 0.5}}
               className={styles.successText}
             >
-              <span>If an account exists with the provided email, you&apos;ll receive an email with a password reset link shortly. Please check your inbox and follow the instructions.</span>
+              <span>{state.success}</span>
               <div className={styles.buttonContainer}>
                 <button onClick={handleBack} type="button" className={styles.button}>Back</button>
               </div>
