@@ -310,6 +310,7 @@ model SiteUser {
   email         String    @unique
   emailVerified DateTime?
   password      String
+  shouldReset   Boolean   @default(false)
   image         String?
   role_id       Int?
   createdAt     DateTime  @default(now())
