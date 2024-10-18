@@ -3,6 +3,7 @@ import {SESServiceException} from "@aws-sdk/client-ses";
 import nodemailer from 'nodemailer';
 import {Address, Options} from "nodemailer/lib/mailer";
 import prisma from "@/app/_lib/primsa";
+import {PartialBy} from "@/app/_db/db";
 
 enum EmailStatus {
     SUCCESS = "SUCCESS",
@@ -14,6 +15,11 @@ class NodemailerSingleton {
     private static instance: NodemailerSingleton;
     private client: nodemailer.Transporter;
 
+    private static DEFAULT_FROM: Address = {
+        name: "MICASA Suites",
+        address: "noreply@micasasuites.com"
+    };
+
     private constructor() {
         const ses = new aws.SES({
             region: "ap-southeast-1",
@@ -21,6 +27,7 @@ class NodemailerSingleton {
 
         this.client = nodemailer.createTransport({
             SES: { ses, aws },
+            sendingRate: 14,
         });
     }
 
@@ -32,9 +39,10 @@ class NodemailerSingleton {
         return NodemailerSingleton.instance;
     }
 
-    public async sendMail(mailOptions: Options) {
+    public async sendMail(mailOptions: PartialBy<Options, "from">) {
+        mailOptions.from = mailOptions.from ?? NodemailerSingleton.DEFAULT_FROM;
         try {
-            const response = await this.client.sendMail(mailOptions);
+            const response = await this.client.sendMail({});
             await prisma.emailLogs.create({
                 data: {
                     status: EmailStatus.SUCCESS,
