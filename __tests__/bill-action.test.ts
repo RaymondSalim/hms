@@ -2,7 +2,7 @@ import {describe, expect, test} from "@jest/globals";
 import {prismaMock} from "./singleton_prisma";
 import {
   generatePaymentBillMappingFromPaymentsAndBills,
-  getUnpaidBillsDueByBookingIDAction,
+  getUnpaidBillsDueAction,
   simulateUnpaidBillPaymentAction
 } from "@/app/(internal)/bills/bill-action";
 import {Bill, Payment, Prisma} from "@prisma/client";
@@ -34,7 +34,7 @@ describe('BillAction', () => {
       // @ts-expect-error
       prismaMock.bill.findMany.mockResolvedValue(bills);
 
-      const unpaidBills = await getUnpaidBillsDueByBookingIDAction(1);
+      const unpaidBills = await getUnpaidBillsDueAction(1);
       let resp = await simulateUnpaidBillPaymentAction(2000000, unpaidBills.bills);
 
       expect(resp.new.balance)
@@ -69,7 +69,7 @@ describe('BillAction', () => {
       // @ts-expect-error
       prismaMock.bill.findMany.mockResolvedValue(bills);
 
-      const unpaidBills = await getUnpaidBillsDueByBookingIDAction(1);
+      const unpaidBills = await getUnpaidBillsDueAction(1);
       let resp = await simulateUnpaidBillPaymentAction(1250000, unpaidBills.bills);
 
       expect(resp.new.balance)
@@ -129,7 +129,7 @@ describe('BillAction', () => {
       // @ts-expect-error
       prismaMock.bill.findMany.mockResolvedValue(bills);
 
-      const unpaidBills = await getUnpaidBillsDueByBookingIDAction(1);
+      const unpaidBills = await getUnpaidBillsDueAction(1);
       let resp = await simulateUnpaidBillPaymentAction(1500000, unpaidBills.bills);
 
       expect(resp.new.balance)
@@ -189,7 +189,7 @@ describe('BillAction', () => {
       // @ts-expect-error
       prismaMock.bill.findMany.mockResolvedValue(bills);
 
-      const unpaidBills = await getUnpaidBillsDueByBookingIDAction(1);
+      const unpaidBills = await getUnpaidBillsDueAction(1);
       let resp = await simulateUnpaidBillPaymentAction(1500000, unpaidBills.bills);
 
       expect(resp.new.balance)
@@ -222,7 +222,7 @@ describe('BillAction', () => {
       // @ts-expect-error
       prismaMock.bill.findMany.mockResolvedValue(bills);
 
-      const unpaidBills = await getUnpaidBillsDueByBookingIDAction(1);
+      const unpaidBills = await getUnpaidBillsDueAction(1);
       let resp = await simulateUnpaidBillPaymentAction(250000, unpaidBills.bills);
 
       expect(resp.new.balance)

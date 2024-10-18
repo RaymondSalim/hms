@@ -6,7 +6,7 @@ import {
   BillIncludePayment,
   createBill,
   getAllBillsWithBooking,
-  getBillsWithPaymentsByBookingID,
+  getBillsWithPayments,
   updateBillByID
 } from "@/app/_db/bills";
 import {OmitIDTypeAndTimestamp, OmitTimestamp, PartialBy} from "@/app/_db/db";
@@ -18,11 +18,12 @@ export type BillIncludePaymentAndSum = BillIncludePayment & {
   sumPaidAmount: Prisma.Decimal
 };
 
-export async function getUnpaidBillsDueByBookingIDAction(booking_id: number): Promise<{
-  total: number,
+export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma.BillFindManyArgs): Promise<{
+  total?: number,
   bills: BillIncludePaymentAndSum[]
 }> {
-  const bills = await getBillsWithPaymentsByBookingID(booking_id, {
+  const bills = await getBillsWithPayments(booking_id, {
+    ...args,
     orderBy: {
       due_date: "asc"
     }
@@ -308,4 +309,33 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
         ...generatedPaymentBills
     ]
   });
+}
+
+export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, limit?: number, offset?: number) {
+  let where = {
+    due_date: {
+      gte: targetDate,
+      lte: new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + 7),
+    }
+  };
+
+  let bills = await getUnpaidBillsDueAction(undefined, {
+    where: where,
+    include: {
+      bookings: {
+        include: {
+          tenants: true
+        }
+      }
+    },
+    skip: offset,
+    take: limit
+  });
+
+  return {
+    bills: bills,
+    total: await prisma.bill.count({
+      where: where
+    })
+  };
 }
