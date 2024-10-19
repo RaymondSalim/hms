@@ -9,7 +9,7 @@ import {resetSchema} from "@/app/_lib/zod/auth/zod";
 import {AnimatePresence, motion} from "framer-motion";
 import {typeToFlattenedError} from "zod";
 import Link from "next/link";
-import {resetPasswordAction} from "@/app/(external)/(auth)/reset_request/reset-action";
+import {resetPasswordAction} from "@/app/(external)/(auth)/reset-request/reset-action";
 import {useRouter} from "next/navigation";
 
 const initialState: ResetUserType = {};
