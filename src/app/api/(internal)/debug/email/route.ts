@@ -25,9 +25,8 @@ export async function POST(request: Request) {
     // TODO! Replace values
     try {
         resp = await nodemailerClient.sendMail({
-            from: "raymond.salim9+sestest@gmail.com",
             subject: data?.subject,
-            to: "raymond.salim9+sestest@gmail.com" ?? data?.to,
+            to: data?.to,
             text: data?.body
         });
     } catch (e) {
