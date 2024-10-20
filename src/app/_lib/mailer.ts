@@ -22,16 +22,26 @@ class NodemailerSingleton {
     };
 
     private constructor() {
-        const ses = new aws.SES({
-            region: "ap-southeast-1",
-        });
+        if (process.env.NODE_ENV == "production") {
+            const ses = new aws.SES({
+                region: "ap-southeast-1",
+            });
 
-        this.client = nodemailer.createTransport({
-            SES: { ses, aws },
-            sendingRate: 14,
-        });
+            this.client = nodemailer.createTransport({
+                SES: {ses, aws},
+                sendingRate: 14,
+            });
+        } else {
+            this.client = nodemailer.createTransport({
+                host: 'smtp.ethereal.email',
+                port: 587,
+                auth: {
+                    user: 'maude.maggio@ethereal.email',
+                    pass: 'h8nCP1DUQm24jvekgt'
+                }
+            });
+        }
     }
-
 
     public static getInstance(): NodemailerSingleton {
         if (!NodemailerSingleton.instance) {
@@ -116,6 +126,8 @@ export default nodemailerClient;
 
 export enum EMAIL_TEMPLATES {
     RESET_PASSWORD = "RESET_PASSWORD",
+    BILL_REMINDER = "BILL_REMINDER",
+    _NO_REPLY_DISCLAIMER = "_NO_REPLY_DISCLAIMER",
 }
 
 // TODO! Remove hardcode
@@ -130,12 +142,29 @@ const TEMPLATES_MAPPING: {
         
     Terima Kasih,
     MICASA Suites
+    `,
+    BILL_REMINDER: `
+    Yth. %s,
+
+    Kami ingin mengingatkan bahwa tagihan %s sebesar %s jatuh tempo pada %s. Mohon segera lakukan pembayaran sebelum tanggal tersebut.
+
+    Jika pembayaran sudah dilakukan, harap abaikan email ini.
+
+    Terima kasih,
+    MICASA Suites
+    `,
+    _NO_REPLY_DISCLAIMER: `
+    
+    Email ini tidak dipantau. 
+    Jika Anda memiliki pertanyaan atau kebutuhan, silakan hubungi nomor telepon MICASA Suites.
     `
 };
 
 export async function withTemplate(template: EMAIL_TEMPLATES, ...args: string[]): Promise<string> {
     if (TEMPLATES_MAPPING[template]) {
-        return util.format(TEMPLATES_MAPPING[template], ...args);
+        let emailText = util.format(TEMPLATES_MAPPING[template], ...args);
+        emailText = emailText.concat(TEMPLATES_MAPPING[EMAIL_TEMPLATES._NO_REPLY_DISCLAIMER]);
+        return emailText;
     }
 
     throw new Error("template not found");
