@@ -58,6 +58,8 @@ export async function resetPasswordAction(prevState: ResetPasswordType, formData
                 subject: "MICASA Suites - Pengaturan Ulang Kata Sandi",
                 text: emailTemplate
             });
+        }, {
+            timeout: 60000
         });
 
     } catch (error: any) {
@@ -74,5 +76,5 @@ export async function resetPasswordAction(prevState: ResetPasswordType, formData
         }
     }
 
-    return {success: "success"};
+    return {success: "Jika terdapat akun yang terdaftar dengan alamat email ini, tautan untuk mengatur ulang kata sandi telah dikirim. Silakan periksa email Anda dan ikuti instruksi yang diberikan."};
 }
