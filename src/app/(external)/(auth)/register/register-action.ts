@@ -42,6 +42,7 @@ export async function registerUser(prevState: ResetUserType, formData: FormData)
             email: data!.email,
             password: hashedPassword,
             name: data!.name,
+            shouldReset: false,
             role_id: 1, // TODO! Dynamic
         });
     } catch (error: any) {
