@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./resetpage.module.css";
-import ResetForm from "@/app/(external)/(auth)/reset_request/reset-form";
+import ResetForm from "@/app/(external)/(auth)/reset-request/reset-form";
 
 export default async function ResetRequestPage() {
   return (

@@ -9,7 +9,7 @@ import {getBookingByIDAction} from "@/app/(internal)/bookings/booking-action";
 import prisma from "@/app/_lib/primsa";
 import {
   createPaymentBillsAction,
-  getUnpaidBillsDueByBookingIDAction,
+  getUnpaidBillsDueAction,
   syncBillsWithPaymentDate
 } from "@/app/(internal)/bills/bill-action";
 import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
@@ -78,7 +78,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
         // TODO! Fix updating payment does not recalculate the whole payment structure
       } else {
         res = await createPayment(dbData, tx);
-        const unpaidBills = await getUnpaidBillsDueByBookingIDAction(booking.id);
+        const unpaidBills = await getUnpaidBillsDueAction(booking.id);
         const updatedData = await createPaymentBillsAction(data.amount, unpaidBills.bills, res.id, tx);
 
         finalBalance = updatedData.balance;

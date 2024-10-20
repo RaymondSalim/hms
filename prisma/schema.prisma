@@ -310,6 +310,7 @@ model SiteUser {
   email         String    @unique
   emailVerified DateTime?
   password      String
+  shouldReset   Boolean   @default(false)
   image         String?
   role_id       Int?
   createdAt     DateTime  @default(now())
@@ -405,4 +406,18 @@ model Tenant {
   checkInOutLogs CheckInOutLog[]
 
   @@map("tenants")
+}
+
+model EmailLogs {
+  id      Int     @id @default(autoincrement())
+  status  String  @db.VarChar(255)
+  to      String  @db.VarChar(255)
+  from    String  @db.VarChar(255)
+  subject String? @db.VarChar(255)
+  payload String  @db.VarChar(4096)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("emaillogs")
 }

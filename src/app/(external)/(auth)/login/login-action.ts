@@ -7,6 +7,7 @@ import {isRedirectError} from "next/dist/client/components/redirect";
 
 export type LoginUserType = {
     success?: string,
+    shouldReset?: boolean,
     failure?: string
 }
 
@@ -27,7 +28,21 @@ export async function loginUser(prevState: LoginUserType, formData: FormData): P
             redirect: false,
             ...Object.fromEntries(formData)
         });
-        return { success: "Login successful" };
+
+        // TODO! User reset password
+        // let user = await prisma.siteUser.findFirst({
+        //     where: {
+        //         email: validatedFields.data.email
+        //     },
+        //     select: {
+        //         shouldReset: true
+        //     }
+        // });
+        // if (user?.shouldReset) {
+        //
+        // }
+
+        return { success: "Login successful", shouldReset: true, };
     } catch (error: any) {
         if (error.cause && error.cause.err instanceof CredentialsSignin) {
             return { failure: "Invalid username or password" };

@@ -18,7 +18,7 @@ import {getPaymentStatusAction} from "@/app/(internal)/payments/payment-action";
 import {NonUndefined} from "@/app/_lib/types";
 import {
   BillIncludePaymentAndSum,
-  getUnpaidBillsDueByBookingIDAction,
+  getUnpaidBillsDueAction,
   simulateUnpaidBillPaymentAction
 } from "@/app/(internal)/bills/bill-action";
 import {Prisma} from "@prisma/client";
@@ -113,7 +113,7 @@ export function PaymentForm(props: PaymentForm) {
   let {data: unpaidBillsData, isSuccess: unpaidBillsDataSuccess, isLoading: unpaidBillsDataIsLoading} = useQuery({
     queryKey: ['bills.unpaid', 'booking_id', data.booking_id],
     enabled: Boolean(data.booking_id && isBookingDataSuccess),
-    queryFn: () => getUnpaidBillsDueByBookingIDAction(data.booking_id!)
+    queryFn: () => getUnpaidBillsDueAction(data.booking_id!)
   });
   useEffect(() => {
     if (unpaidBillsDataSuccess) {

@@ -128,7 +128,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
       cell: cellProps => {
         if (props.shouldShowRowAction?.(cellProps) ?? true) {
           const buttons = (
-            <div className={"grid gap-x-2 grid-cols-2"}>
+            <div className={"flex gap-x-2"}>
               {
                 props.additionalActions?.actions.map((a, index) => {
                   return a.generateButton(cellProps.row.original);

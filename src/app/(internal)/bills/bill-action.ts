@@ -6,23 +6,26 @@ import {
   BillIncludePayment,
   createBill,
   getAllBillsWithBooking,
-  getBillsWithPaymentsByBookingID,
+  getBillsWithPayments,
   updateBillByID
 } from "@/app/_db/bills";
 import {OmitIDTypeAndTimestamp, OmitTimestamp, PartialBy} from "@/app/_db/db";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {billSchemaWithOptionalID} from "@/app/_lib/zod/bill/zod";
 import {number, object} from "zod";
+import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
+import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 
 export type BillIncludePaymentAndSum = BillIncludePayment & {
   sumPaidAmount: Prisma.Decimal
 };
 
-export async function getUnpaidBillsDueByBookingIDAction(booking_id: number): Promise<{
-  total: number,
+export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma.BillFindManyArgs): Promise<{
+  total?: number,
   bills: BillIncludePaymentAndSum[]
 }> {
-  const bills = await getBillsWithPaymentsByBookingID(booking_id, {
+  const bills = await getBillsWithPayments(booking_id, {
+    ...args,
     orderBy: {
       due_date: "asc"
     }
@@ -308,4 +311,82 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
         ...generatedPaymentBills
     ]
   });
+}
+
+export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, limit?: number, offset?: number) {
+  let where = {
+    due_date: {
+      gte: targetDate,
+      lte: new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + 7),
+    }
+  };
+
+  let bills = await getUnpaidBillsDueAction(undefined, {
+    where: where,
+    include: {
+      bookings: {
+        include: {
+          tenants: true
+        }
+      }
+    },
+    skip: offset,
+    take: limit
+  });
+
+  return {
+    bills: bills,
+    total: await prisma.bill.count({
+      where: where
+    })
+  };
+}
+
+export async function sendBillEmailAction(billID: number) {
+  let billData = await prisma.bill.findFirst({
+    where: {
+      id: billID
+    },
+    include: {
+      bookings: {
+        include: {
+          tenants: true
+        }
+      }
+    }
+  });
+
+  if (!billData) {
+    return {
+      failure: "Bill Not Found"
+    };
+  }
+
+  const tenant = billData.bookings.tenants!;
+
+  try {
+    const template = await withTemplate(
+        EMAIL_TEMPLATES.BILL_REMINDER,
+        tenant.name,
+        billData.id.toString(),
+        formatToIDR(billData.amount.toNumber()),
+        formatToDateTime(billData.due_date),
+    );
+
+    await nodemailerClient.sendMail({
+      to: tenant.email!,
+      subject: "Peringatan Pembayaran Tagihan",
+      text: template
+    });
+  } catch (error) {
+    console.error(error);
+    return {
+      failure: "Error"
+    };
+  }
+
+  return {
+    success: "Email Sent Successfully."
+  };
+
 }
