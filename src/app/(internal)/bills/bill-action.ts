@@ -13,6 +13,8 @@ import {OmitIDTypeAndTimestamp, OmitTimestamp, PartialBy} from "@/app/_db/db";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {billSchemaWithOptionalID} from "@/app/_lib/zod/bill/zod";
 import {number, object} from "zod";
+import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
+import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 
 export type BillIncludePaymentAndSum = BillIncludePayment & {
   sumPaidAmount: Prisma.Decimal
@@ -338,4 +340,53 @@ export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, li
       where: where
     })
   };
+}
+
+export async function sendBillEmailAction(billID: number) {
+  let billData = await prisma.bill.findFirst({
+    where: {
+      id: billID
+    },
+    include: {
+      bookings: {
+        include: {
+          tenants: true
+        }
+      }
+    }
+  });
+
+  if (!billData) {
+    return {
+      failure: "Bill Not Found"
+    };
+  }
+
+  const tenant = billData.bookings.tenants!;
+
+  try {
+    const template = await withTemplate(
+        EMAIL_TEMPLATES.BILL_REMINDER,
+        tenant.name,
+        billData.id.toString(),
+        formatToIDR(billData.amount.toNumber()),
+        formatToDateTime(billData.due_date),
+    );
+
+    await nodemailerClient.sendMail({
+      to: tenant.email!,
+      subject: "Peringatan Pembayaran Tagihan",
+      text: template
+    });
+  } catch (error) {
+    console.error(error);
+    return {
+      failure: "Error"
+    };
+  }
+
+  return {
+    success: "Email Sent Successfully."
+  };
+
 }
