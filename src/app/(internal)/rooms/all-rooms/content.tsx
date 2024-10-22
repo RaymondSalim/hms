@@ -6,7 +6,7 @@ import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {RoomsWithTypeAndLocation} from "@/app/_db/room";
 import {RoomForm} from "@/app/(internal)/rooms/all-rooms/form";
-import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/rooms/all-rooms/room-actions";
+import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/rooms/room-actions";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
