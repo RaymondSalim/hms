@@ -234,9 +234,10 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
   };
 }
 
-export async function getAllBookings(location_id?: number, room_id?: number, limit?: number, offset?: number) {
+export async function getAllBookings(location_id?: number, room_id?: number, where?: Prisma.BookingWhereInput, limit?: number, offset?: number) {
   return prisma.booking.findMany({
     where: {
+      ...where,
       rooms: {
         id: room_id,
         location_id: location_id,
