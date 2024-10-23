@@ -26,7 +26,6 @@ import {CiCalendarDate, CiSearch} from "react-icons/ci";
 import {RiErrorWarningLine} from "react-icons/ri";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {FaChevronDown} from "react-icons/fa6";
-import {useRouter} from "next/navigation";
 import Link from "next/link";
 
 export interface RoomAvailabilityProps {
@@ -65,9 +64,9 @@ export function calculateRoomAvailability(
     });
 }
 
+// TODO! Change into input single date, and duration
 export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
     const today = new Date();
-    const router = useRouter();
 
     const [dates, setDates] = props.dateState;
     const [roomTypes, setRoomTypes] = useState<RoomTypeWithRoomCountAndAvailability[]>(props.roomTypes);
@@ -104,7 +103,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                 >
                     <MenuHandler>
                         <Button
-                            className={"ml-auto border-[#b0bec5] flex items-center gap-3"}
+                            className={"mr-auto border-[#b0bec5] flex items-center gap-3"}
                             variant={"outlined"}
                         >
                             Tipe Kamar
@@ -284,13 +283,16 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                                     </CardBody>
                                     <CardFooter className="pt-3 mt-auto">
                                         <Link
-                                            href={{
-                                                pathname: "/bookings",
-                                                query: {
-                                                    location_id: props.locationID,
-                                                    room_type_id: rt.id
-                                                }
-                                            }}
+                                            href={
+                                                dates != undefined ?
+                                                    {
+                                                        pathname: "/bookings",
+                                                        query: {
+                                                            location_id: props.locationID,
+                                                            room_type_id: rt.id
+                                                        }
+                                                    } : {}
+                                            }
                                         >
                                             <Button
                                                 disabled={rt.roomLeft === 0}
