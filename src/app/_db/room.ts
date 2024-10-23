@@ -247,8 +247,12 @@ export async function getRoomTypes(locationID?: number): Promise<RoomTypeWithRoo
         include: {
             _count: {
                 select: {
-                    rooms: true
-                }
+                    rooms: {
+                        where: {
+                            location_id: locationID
+                        }
+                    }
+                },
             }
         }
     });
