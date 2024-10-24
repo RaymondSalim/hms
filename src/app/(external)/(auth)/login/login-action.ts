@@ -19,7 +19,7 @@ export async function loginUser(prevState: LoginUserType, formData: FormData): P
 
     if (!validatedFields.success) {
         return {
-            failure: "Invalid username or password"
+            failure: "Nama pengguna atau kata sandi tidak valid"
         };
     }
 
@@ -42,15 +42,15 @@ export async function loginUser(prevState: LoginUserType, formData: FormData): P
         //
         // }
 
-        return { success: "Login successful", shouldReset: true, };
+        return { success: "Login berhasil", shouldReset: true, };
     } catch (error: any) {
         if (error.cause && error.cause.err instanceof CredentialsSignin) {
-            return { failure: "Invalid username or password" };
+            return { failure: "Nama pengguna atau kata sandi tidak valid" };
         }
         if (isRedirectError(error)) {
             throw error;
         }
     }
 
-    return { success: "Login successful" };
+    return { success: "Login berhasil" };
 }

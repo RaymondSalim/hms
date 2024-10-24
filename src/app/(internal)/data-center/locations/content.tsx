@@ -21,6 +21,7 @@ export interface LocationsContentProps {
   locations: Location[]
 }
 
+// TODO! This file seems to not use tantable component properly (dialogs)
 export function LocationsContent({locations}: LocationsContentProps) {
   const [locationsState, setLocationsState] = useState<Location[]>(locations);
   const [searchValue, setSearchValue] = useState("");
@@ -68,15 +69,15 @@ export function LocationsContent({locations}: LocationsContentProps) {
     }),
     columnHelper.accessor(row => row.name, {
       id: "name",
-      header: "Name",
+      header: "Nama",
     }),
     columnHelper.accessor(row => row.address, {
       id: "address",
-      header: "Address",
+      header: "Alamat",
     }),
     columnHelper.display({
       id: "actions",
-      header: "Actions",
+      header: "Aksi",
       cell: props => <RowAction
         edit={() => {
           setActiveLocation(locationsState.find(l => l.id == props.row.original.id));
@@ -118,13 +119,13 @@ export function LocationsContent({locations}: LocationsContentProps) {
         <Input
           value={searchValue}
           onChange={e => setSearchValue(e.target.value)}
-          label={"Search"}
-          placeholder={"Search by address or name"}
+          label={"Cari"}
+          placeholder={"Cari dengan nama atau alamat email"}
           className={styles.input}
         />
         <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
           <FaPlus/>
-          <span>Create</span>
+          <span>Buat</span>
         </Button>
       </div>
       <TanTable tanTable={tanTable}/>
@@ -147,16 +148,16 @@ export function LocationsContent({locations}: LocationsContentProps) {
         })}
         className={"p-8"}
       >
-        <h2 className={"text-xl font-semibold text-black mb-4"}>Delete Location</h2>
-        <span>Are you sure you want to delete this item? This action cannot be undone.</span>
+        <h2 className={"text-xl font-semibold text-black mb-4"}>Hapus Lokasi</h2>
+        <span>Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.</span>
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => setDeleteDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => activeLocation && deleteLocationMutation.mutate(activeLocation.id)} color={"red"}
                   className="mt-6"
                   loading={deleteLocationMutation.isPending}>
-            Delete
+            Hapus
           </Button>
         </div>
       </Dialog>

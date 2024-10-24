@@ -22,59 +22,59 @@ export default function Sidebar({session}: SidebarProps) {
     const menuItems = [
         { name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt /> },
         {
-            name: 'Data Center',
+            name: 'Pusat Data',
             path: '/data-center',
             icon: <FaDatabase />,
             children: [
-                {name: 'Property Locations', path: '/data-center/locations'},
-                { name: 'Email Settings', path: '/data-center/email-settings' },
-                { name: 'Penalties', path: '/data-center/penalties' },
-                { name: 'Rules', path: '/data-center/rules' },
-                { name: 'Fees', path: '/data-center/fees' },
-                { name: 'Expenses', path: '/data-center/expenses' },
+                { name: 'Lokasi Properti', path: '/data-center/locations'},
+                { name: 'Pengaturan Email', path: '/data-center/email-settings' },
+                { name: 'Denda', path: '/data-center/penalties' },
+                { name: 'Peraturan', path: '/data-center/rules' },
+                { name: 'Biaya', path: '/data-center/fees' },
+                { name: 'Pengeluaran', path: '/data-center/expenses' },
             ]
         },
         {
-            name: 'Rooms',
+            name: 'Kamar',
             path: '/rooms',
             icon: <FaKey/>,
             children: [
-                {name: 'All Rooms', path: '/rooms/all-rooms'},
-                {name: 'Availability', path: '/rooms/availability'},
-                {name: 'Room Types', path: '/rooms/types'},
-                {name: 'Room Status', path: '/rooms/status'},
-                {name: 'Durations', path: '/rooms/durations'},
+                {name: 'Semua Kamar', path: '/rooms/all-rooms'},
+                {name: 'Ketersediaan Kamar', path: '/rooms/availability'},
+                {name: 'Tipe Kamar', path: '/rooms/types'},
+                {name: 'Status Kamar', path: '/rooms/status'},
+                {name: 'Durasi', path: '/rooms/durations'},
             ]
         },
-        { name: 'Registrations', path: '/registration', icon: <FaUserPlus /> },
-        { name: 'Bookings', path: '/bookings', icon: <FaBed /> },
-        { name: 'Payments', path: '/payments', icon: <FaMoneyBill /> },
-        { name: 'Bills', path: '/bills', icon: <FaReceipt /> },
+        { name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus /> },
+        { name: 'Pemesanan', path: '/bookings', icon: <FaBed /> },
+        { name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill /> },
+        { name: 'Tagihan', path: '/bills', icon: <FaReceipt /> },
         {
-            name: 'Financials',
+            name: 'Keuangan',
             path: '/financials',
             icon: <FaMoneyBill1/>,
             children: [
-                {name: 'Incomes', path: '/incomes', icon: <FaFileInvoiceDollar/>},
-                {name: 'Expenses', path: '/expenses', icon: <FaFileInvoiceDollar/>},
-                {name: 'Reports', path: '/reports', icon: <FaChartBar/>},
+                {name: 'Pemasukan', path: '/incomes', icon: <FaFileInvoiceDollar/>},
+                {name: 'Pengeluaran', path: '/expenses', icon: <FaFileInvoiceDollar/>},
+                {name: 'Laporan', path: '/reports', icon: <FaChartBar/>},
             ]
         },
         {
-            name: 'Residents',
+            name: 'Penghuni',
             path: '/residents',
             icon: <FaUserFriends/>,
             children: [
-                {name: "Tenants", path: '/residents/tenants'},
-                {name: "Guests", path: '/residents/guests'},
+                {name: "Penyewa", path: '/residents/tenants'},
+                {name: "Tamu", path: '/residents/guests'},
             ]
         },
         {
-            name: 'Settings',
+            name: 'Pengaturan',
             path: '/settings',
             icon: <FaCog/>,
             children: [
-                {name: 'Site Users', path: '/settings/users'},
+                {name: 'Pengguna Situs', path: '/settings/users'},
             ]
         },
     ];

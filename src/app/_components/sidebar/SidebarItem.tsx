@@ -112,19 +112,19 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
                 </div>
                 <ul className={styles.dropdownList}>
                     <li>
-                        <Link href="/whats-new">What&apos;s new?</Link>
+                        <Link href="/whats-new">Apa yang baru?</Link>
                     </li>
                     <li>
-                        <Link href="/profile">Your profile</Link>
+                        <Link href="/profile">Profil anda</Link>
                     </li>
                     <li>
-                        <Link href="/help-center">Help center</Link>
+                        <Link href="/help-center">Pusat Bantuan</Link>
                     </li>
                     <li>
-                        <Link href="/resources-guides">Resources & guides</Link>
+                        <Link href="/resources-guides">Sumber Daya & Panduan</Link>
                     </li>
                     <li>
-                        <Link href="/sign-out">Sign out</Link>
+                        <Link href="/sign-out">Keluar</Link>
                     </li>
                 </ul>
             </motion.div>

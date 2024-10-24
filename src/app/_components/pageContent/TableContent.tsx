@@ -133,7 +133,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     ...props.columns,
     columnHelper.display({
       id: "actions",
-      header: "Actions",
+      header: "Aksi",
       cell: cellProps => {
         if (props.shouldShowRowAction?.(cellProps) ?? true) {
           const buttons = (
@@ -239,7 +239,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         />
         <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
           <FaPlus/>
-          <span>Create</span>
+          <span>Buat</span>
         </Button>
       </div>
       <div className={"w-full overflow-auto"}>
@@ -270,15 +270,15 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         handler={() => setDeleteDialogOpen(prev => !prev)}
         className={"p-8"}
       >
-        <h2 className={"text-xl font-semibold text-black mb-4"}>Delete {props.name}</h2>
-        <span>Are you sure you want to delete this item? This action cannot be undone.</span>
+        <h2 className={"text-xl font-semibold text-black mb-4"}>Hapus {props.name}</h2>
+        <span>Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.</span>
         {
           deleteMutationResponse?.failure &&
             <Typography className="whitespace-pre-wrap" color="red">{deleteMutationResponse.failure}</Typography>
         }
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => setDeleteDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button
             onClick={() => activeContent && deleteContentMutation.mutate(activeContent.id)}
@@ -287,7 +287,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             loading={deleteContentMutation.isPending}
             disabled={!!deleteMutationResponse?.failure}
           >
-            Delete
+            Hapus
           </Button>
         </div>
       </Dialog>

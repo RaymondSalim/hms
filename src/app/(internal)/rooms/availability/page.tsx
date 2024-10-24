@@ -14,11 +14,11 @@ export default function RoomsPage() {
     const headerContext = useContext(HeaderContext);
 
     useEffect(() => {
-        headerContext.setTitle("Room Availability");
+        headerContext.setTitle("Ketersediaan Kamar");
         headerContext.setShowLocationPicker(true);
         headerContext.setPaths([
-            <Link key={"rooms"} href={"/rooms"}>Rooms</Link>,
-            <Link key={"all"} href={"/availability"}>Room Availability</Link>,
+            <Link key={"rooms"} href={"/rooms"}>Kamar</Link>,
+            <Link key={"all"} href={"/availability"}>Ketersediaan Kamar</Link>,
         ]);
     }, []);
 

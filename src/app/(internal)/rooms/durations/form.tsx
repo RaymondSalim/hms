@@ -19,7 +19,7 @@ export function DurationForm(props: RoomFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Duration</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Perubahan" : "Pembuatan"} Durasi</h1>
       <div className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           {
@@ -46,7 +46,7 @@ export function DurationForm(props: RoomFormProps) {
           <div>
             <label htmlFor="duration">
               <Typography variant="h6" color="blue-gray">
-                Duration name
+                Nama Durasi
               </Typography>
             </label>
             <Input
@@ -55,7 +55,7 @@ export function DurationForm(props: RoomFormProps) {
               value={durationData.duration}
               onChange={(e) => setDurationData(prevDuration => ({...prevDuration, duration: e.target.value}))}
               size="lg"
-              placeholder="1 Year"
+              placeholder="1 Tahun"
               error={!!fieldErrors?.duration}
               className={`${!!fieldErrors?.duration ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
@@ -66,7 +66,7 @@ export function DurationForm(props: RoomFormProps) {
           <div>
             <label htmlFor="day_count">
               <Typography variant="h6" color="blue-gray">
-                Day Count
+                Jumlah Hari
               </Typography>
             </label>
             <Input
@@ -89,7 +89,7 @@ export function DurationForm(props: RoomFormProps) {
           <div>
             <label htmlFor="month_count">
               <Typography variant="h6" color="blue-gray">
-                Month Count
+                Jumlah Bulan
               </Typography>
             </label>
             <Input
@@ -122,11 +122,11 @@ export function DurationForm(props: RoomFormProps) {
 
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => props.mutation.mutate(durationData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {props.contentData ? "Ubah" : "Buat"}
           </Button>
         </div>
       </div>

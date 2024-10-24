@@ -33,7 +33,7 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
     if (error instanceof PrismaClientKnownRequestError) {
       console.error("[register]", error.code, error.message);
       if (error.code == "P2002") {
-        return {failure: "Email address is taken"};
+        return {failure: "Alamat Email sudah terdaftar"};
       }
     } else if (error instanceof PrismaClientUnknownRequestError) {
       console.error("[register]", error.message);

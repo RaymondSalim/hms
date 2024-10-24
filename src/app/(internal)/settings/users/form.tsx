@@ -27,13 +27,13 @@ export function UserForm(props: UserFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} User</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Perubahan" : "Pembuatan"} User</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <div>
             <label htmlFor="name">
               <Typography variant="h6" color="blue-gray">
-                Name
+                Nama
               </Typography>
             </label>
             <Input
@@ -57,7 +57,7 @@ export function UserForm(props: UserFormProps) {
           <div>
             <label htmlFor="email">
               <Typography variant="h6" color="blue-gray">
-                Email
+                Alamat Email
               </Typography>
             </label>
             <Input
@@ -85,7 +85,7 @@ export function UserForm(props: UserFormProps) {
               <div>
                   <label htmlFor="role">
                       <Typography variant="h6" color="blue-gray">
-                          Role
+                          Peran
                       </Typography>
                   </label>
                   <Select
@@ -109,7 +109,7 @@ export function UserForm(props: UserFormProps) {
               <div>
                   <label htmlFor="password">
                       <Typography variant="h6" color="blue-gray">
-                          Password
+                          Kata Sandi
                       </Typography>
                   </label>
                   <Input
@@ -137,11 +137,11 @@ export function UserForm(props: UserFormProps) {
         </div>
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => props.mutation.mutate(userData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {props.contentData ? "Ubah" : "Buat"}
           </Button>
         </div>
 

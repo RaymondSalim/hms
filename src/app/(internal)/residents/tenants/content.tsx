@@ -23,13 +23,13 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
       size: 20
     }),
     columnHelper.accessor(row => row.name, {
-      header: "Name"
+      header: "Nama"
     }),
     columnHelper.accessor(row => row.email, {
-      header: "Email Address"
+      header: "Alamat Email"
     }),
     columnHelper.accessor(row => row.bookings.length, {
-      header: "Bookings",
+      header: "Pemesanan",
       cell: props => {
         return (
           <Link href={{
@@ -37,12 +37,12 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
             query: {
               tenant_id: props.cell.row.original.id,
             }
-          }}>{props.cell.getValue()} bookings</Link>
+          }}>{props.cell.getValue()} pemesanan</Link>
         );
       }
     }),
     columnHelper.accessor(row => row.createdAt, {
-      header: "Created At",
+      header: "Dibuat Pada",
       cell: props => formatToDateTime(props.cell.getValue())
     }),
   ];
@@ -52,7 +52,7 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
   return (
     <div className={"p-8"}>
       <TableContent<TenantWithRooms>
-        name={"Tenants"}
+        name={"Penyewa"}
         initialContents={tenants}
         initialSearchValue={query.get("tenant_id") ?? undefined}
         columns={columns}
@@ -60,7 +60,7 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
           // @ts-ignore
           <TenantForm/>
         }
-        searchPlaceholder={"Search by name or email address"}
+        searchPlaceholder={"Cari berdasarkan nama atau alamat email"}
         upsert={{
           mutationFn: upsertTenantAction,
         }}

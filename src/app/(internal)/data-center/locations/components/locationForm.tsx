@@ -3,12 +3,11 @@ import {useState} from "react";
 import {Button, Input, Textarea, Typography} from "@material-tailwind/react";
 import {UseMutationResult} from "@tanstack/react-query";
 import {LocationActionsType} from "@/app/(internal)/data-center/locations/location-action";
-import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 
 export interface LocationFormProps {
   location?: Location
   setDialogOpen: (open: boolean) => void
-  mutation: UseMutationResult<LocationActionsType<OmitIDTypeAndTimestamp<Location>>, Error, Partial<Location>, unknown>
+  mutation: UseMutationResult<LocationActionsType, Error, Partial<Location>, unknown>
 }
 
 export function LocationForm({location, setDialogOpen, mutation}: LocationFormProps) {
@@ -16,11 +15,11 @@ export function LocationForm({location, setDialogOpen, mutation}: LocationFormPr
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{location ? "Edit" : "Create"} Location</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{location ? "Perubahan" : "Pembuatan"} Lokasi</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <Typography variant="h6" color="blue-gray" className="-mb-4">
-            Name
+            Nama
           </Typography>
           <Input
             value={locationData.name}
@@ -33,7 +32,7 @@ export function LocationForm({location, setDialogOpen, mutation}: LocationFormPr
             }}
           />
           <Typography variant="h6" color="blue-gray" className="-mb-4">
-            Address
+            Alamat
           </Typography>
           <Textarea
             value={locationData.address}
@@ -48,11 +47,11 @@ export function LocationForm({location, setDialogOpen, mutation}: LocationFormPr
         </div>
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => mutation.mutate(locationData)} color={"blue"} className="mt-6"
                   loading={mutation.isPending}>
-            {location ? "Update" : "Create"}
+            {location ? "Ubah" : "Buat"}
           </Button>
         </div>
 

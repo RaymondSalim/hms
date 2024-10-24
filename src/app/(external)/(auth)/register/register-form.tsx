@@ -11,7 +11,6 @@ import {registerSchema} from "@/app/_lib/zod/auth/zod";
 import {AnimatePresence, motion} from "framer-motion";
 import {typeToFlattenedError} from "zod";
 import Link from "next/link";
-import {useSession} from "next-auth/react";
 
 const initialState: ResetUserType = {};
 
@@ -40,21 +39,21 @@ export default function RegisterForm() {
     {
       name: "name",
       type: "text",
-      label: "Name",
+      label: "Nama",
       placeholder: "Jamie",
       error: error?.fieldErrors.name
     },
     {
       name: "email",
       type: "email",
-      label: "Email Address",
+      label: "Alamat Email",
       placeholder: "jamie@email.com",
       error: error?.fieldErrors.email
     },
     {
       name: "password",
       type: "password",
-      label: "Password",
+      label: "Kata Sandi",
       placeholder: "********",
       error: error?.fieldErrors.password
     }
@@ -84,10 +83,10 @@ export default function RegisterForm() {
           className={`${styles.extraText} ${state.failure && styles.error} ${state.success && styles.success}`}>{state.failure ?? state.success}</span>
         </div>
         <div className={styles.buttonContainer}>
-          <AuthFormButton text={"Sign Up →"}/>
+          <AuthFormButton text={"Daftar →"}/>
         </div>
         <div className={styles.registerGroup}>
-          <span className={styles.registerCta}>Have an account? <Link href={"/login"}>Sign In</Link></span>
+          <span className={styles.registerCta}>Sudah memiliki akun? <Link href={"/login"}>Masuk</Link></span>
         </div>
       </form>
     </AnimatePresence>

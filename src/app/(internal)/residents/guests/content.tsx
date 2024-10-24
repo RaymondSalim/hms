@@ -22,13 +22,13 @@ export default function GuestsContent({guests}: GuestsContentProps) {
       size: 20
     }),
     columnHelper.accessor(row => row.name, {
-      header: "Name"
+      header: "Nama"
     }),
     columnHelper.accessor(row => row.email, {
-      header: "Email Address"
+      header: "Alamat Email"
     }),
     columnHelper.accessor(row => row.tenants.name, {
-      header: "Guest of",
+      header: "Tamu Dari",
       cell: props => {
         return (
           <Link href={{
@@ -41,7 +41,7 @@ export default function GuestsContent({guests}: GuestsContentProps) {
       }
     }),
     columnHelper.accessor(row => row.createdAt, {
-      header: "Created At",
+      header: "Dibuat Pada",
       cell: props => formatToDateTime(props.cell.getValue())
     }),
   ];
@@ -49,14 +49,14 @@ export default function GuestsContent({guests}: GuestsContentProps) {
   return (
     <div className={"p-8"}>
       <TableContent<GuestWithTenant>
-        name={"Guests"}
+        name={"Tamu"}
         initialContents={guests}
         columns={columns}
         form={
           // @ts-ignore
           <GuestForm/>
         }
-        searchPlaceholder={"Search by name or email address"}
+        searchPlaceholder={"Cari berdasarkan nama atau alamat"}
         upsert={{
           mutationFn: upsertGuestAction,
         }}

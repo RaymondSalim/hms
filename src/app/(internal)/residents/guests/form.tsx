@@ -25,13 +25,13 @@ export function GuestForm(props: GuestFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Guest</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Perubahan" : "Pembuatan"} Tamu</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <div>
             <label htmlFor="name">
               <Typography variant="h6" color="blue-gray">
-                Name
+                Nama
               </Typography>
             </label>
             <Input
@@ -55,7 +55,7 @@ export function GuestForm(props: GuestFormProps) {
           <div>
             <label htmlFor="email">
               <Typography variant="h6" color="blue-gray">
-                Email
+                Alamat Email
               </Typography>
             </label>
             <Input
@@ -77,7 +77,7 @@ export function GuestForm(props: GuestFormProps) {
           <div>
             <label htmlFor="phone">
               <Typography variant="h6" color="blue-gray">
-                Phone
+                Nomor Telepon
               </Typography>
             </label>
             <PhoneInput
@@ -98,7 +98,7 @@ export function GuestForm(props: GuestFormProps) {
           <div>
             <label htmlFor="tenant">
               <Typography variant="h6" color="blue-gray">
-                Tenant
+                Tamu Dari
               </Typography>
             </label>
             <TenantSelect tenantId={guestData.tenant_id}
@@ -113,11 +113,11 @@ export function GuestForm(props: GuestFormProps) {
         </div>
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => props.mutation.mutate(guestData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {props.contentData ? "Ubah" : "Buat"}
           </Button>
         </div>
 
@@ -197,7 +197,7 @@ export function TenantSelect(props: TenantSelectProps) {
       cacheOptions
       loadOptions={loadOptions}
       value={initialValue}
-      placeholder={"Enter Tenant Name or Room Name"}
+      placeholder={"Masukan Nama Tenant"}
     />
   );
 }
