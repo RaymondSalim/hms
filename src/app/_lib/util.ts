@@ -73,20 +73,12 @@ export function generateDatesFromBooking(bookings: BookingsIncludeAll, callback?
   return null;
 }
 
-export async function fileToBase64(file: File): Promise<string> {
+export async function fileToBase64(file: File): Promise<string | undefined> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
-    reader.onloadend = () => {
-      const base64String = (reader.result as string).split(',')[1];
-      resolve(base64String);
-    };
-
-    reader.onerror = (error) => {
-      reject(error);
-    };
-
     reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result?.toString());
+    reader.onerror = error => reject(error);
   });
 }
 

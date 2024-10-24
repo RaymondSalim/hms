@@ -1,5 +1,5 @@
 import nodemailerClient from "@/app/_lib/mailer";
-import {getUpcomingUnpaidBillsWithUsersByDate} from "@/app/(internal)/bills/bill-action";
+import {getUpcomingUnpaidBillsWithUsersByDate} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 
 export const maxDuration = 60; // This function can run for a maximum of 5 seconds
 
