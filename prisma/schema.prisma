@@ -297,8 +297,8 @@ model Rule {
 
 model Setting {
   id            Int      @id @default(autoincrement())
-  setting_key   String   @db.VarChar(255)
-  setting_value String   @db.VarChar(255)
+  setting_key   String   @unique @db.VarChar(255)
+  setting_value String   @db.Text
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 

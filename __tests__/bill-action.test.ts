@@ -4,7 +4,7 @@ import {
   generatePaymentBillMappingFromPaymentsAndBills,
   getUnpaidBillsDueAction,
   simulateUnpaidBillPaymentAction
-} from "@/app/(internal)/bills/bill-action";
+} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {Bill, Payment, Prisma} from "@prisma/client";
 import {BillIncludePayment} from "@/app/_db/bills";
 import {OmitTimestamp} from "@/app/_db/db";

@@ -9,7 +9,13 @@ export const paymentSchema = object({
   payment_proof_file: object({
     fileName: string(),
     fileType: string(),
-    b64File: string().base64()
+    b64File: string().refine((b64Str) => {
+      // Decode the base64 string to get the binary data
+      const matches = b64Str.match(/^data:(.*);base64,(.*)$/);
+      if (!matches || matches.length < 3) return false; // Not a valid base64 format
+
+      return true;
+    })
   }).optional(),
   status_id: number({required_error: "Status ID is required"}).min(1, "Status ID should be greater than zero"),
 });
