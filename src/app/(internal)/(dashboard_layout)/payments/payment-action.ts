@@ -38,7 +38,8 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
 
   try {
     if (file) {
-      const buffer = Buffer.from(file.b64File, 'base64');
+      const b64Str = file.b64File.split(',')[1];
+      const buffer = Buffer.from(b64Str, 'base64');
 
       // Upload file to s3 first
       if (buffer) {
@@ -120,6 +121,8 @@ export async function deletePaymentAction(id: number) {
 
   try {
     let res = await deletePayment(parsedData.data.id);
+
+    // TODO! Delete from S3
 
     return {
       success: res,
