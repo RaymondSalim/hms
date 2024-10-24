@@ -9,7 +9,7 @@ import {ZodError} from "zod";
 import bcrypt from "bcrypt";
 
 class InvalidCredentialsError extends CredentialsSignin {
-  code!: "Invalid username or password";
+  code!: "Nama pengguna atau kata sandi tidak valid";
 }
 
 const providers: Provider[] = [
@@ -17,10 +17,10 @@ const providers: Provider[] = [
     id: 'credentials',
     credentials: {
       email: {
-        label: "Email", type: "text"
+        label: "Alamat Email", type: "text"
       },
       password: {
-        label: "Password", type: "password"
+        label: "Kata Sandi", type: "password"
       },
     },
     authorize: async (credentials) => {

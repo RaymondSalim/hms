@@ -8,11 +8,11 @@ export default function Layout({children}: PropsWithChildren) {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
-    headerContext.setTitle("Locations");
+    headerContext.setTitle("Lokasi Properti");
     headerContext.setShowLocationPicker(false);
     headerContext.setPaths([
-      <Link key={"data-center"} href={"/data-center"}>Data Center</Link>,
-      <Link key={"location"} href={"/locations"}>Locations</Link>
+      <Link key={"data-center"} href={"/data-center"}>Pusat Data</Link>,
+      <Link key={"location"} href={"/locations"}>Lokasi Properti</Link>
     ]);
   }, []);
 

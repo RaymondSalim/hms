@@ -2,11 +2,11 @@ import {Prisma} from "@prisma/client";
 import {any, array, number, object, preprocess, record, string, z, ZodIssueCode} from "zod";
 
 export const roomSchema = object({
-  room_number: string({required_error: "Room Number is required"}),
+  room_number: string({required_error: "Nomor kamar diperlukan"}),
   roomstatuses: object({
-    id: number({required_error: "Status ID is required"})
-  }, {required_error: "Status ID is required"}),
-  location_id: number({required_error: "Location ID is required"}),
+    id: number({required_error: "ID Status diperlukan"})
+  }, {required_error: "ID Status diperlukan"}),
+  location_id: number({required_error: "ID lokasi diperlukan"}),
 });
 
 export const roomSchemaWithOptionalID = roomSchema.extend({
@@ -15,13 +15,13 @@ export const roomSchemaWithOptionalID = roomSchema.extend({
 
 export const roomWithType = roomSchemaWithOptionalID.extend({
   roomtypes: object({
-    id: number({required_error: "Room Type ID is required"}),
+    id: number({required_error: "ID Tipe Kamar diperlukan"}),
     roomtypedurations: array(
       object({
-        id: number().min(1, "ID should be positive").optional(),
-        room_type_id: number({required_error: "Room Type ID is required"}),
-        duration_id: number().min(1, "Duration ID should be greater than zero").optional(),
-        location_id: number().min(1, "Location ID should be greater than zero"),
+        id: number().min(1, "ID harus positif").optional(),
+        room_type_id: number({required_error: "ID Tipe Kamar diperlukan"}),
+        duration_id: number().min(1, "ID durasi harus lebih besar daripada 0").optional(),
+        location_id: number().min(1, "ID lokasi harus lebih besar daripada 0"),
         durations: record(string(), any()).optional(),
         suggested_price: preprocess(
           (val) => {
@@ -35,8 +35,8 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
 
             return val;
           },
-          number({required_error: "Suggested Price is required"})
-            .min(1, "Suggested Price should be greater than 0").optional()
+          number({required_error: "Harga Yang Disarankan diperlukan"})
+            .min(1, "Harga Yang Disarankan harus lebih besar daripada 0").optional()
         ),
       })
     )
@@ -48,7 +48,7 @@ export const roomWithType = roomSchemaWithOptionalID.extend({
         if (rtd.duration_id == undefined && !rtd.durations) {
           ctx.addIssue({
             code: ZodIssueCode.custom,
-            message: "Either Duration ID or duration object should be set",
+            message: "Antara ID durasi atau object durasi diperlukan",
             fatal: true,
           });
 

@@ -6,7 +6,7 @@ export const tenantSchema = object({
   }).min(1, "Name is required"),
   email: string({
     required_error: "Email Is Required"
-  }).email("Invalid email address").nullable(),
+  }).email("Alamat email tidak valid").nullable(),
   phone: string({
     required_error: "Phone Is Required"
   }).nullable(),

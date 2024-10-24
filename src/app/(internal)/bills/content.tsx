@@ -39,11 +39,11 @@ export default function BillsContent({bills}: BillsContentProps) {
 
     let generatePaymentsDialogContent = useCallback((activeData: typeof bills[0]) => (
         <>
-            <Typography variant="h5" color="black" className="mb-4">Payment Details</Typography>
+            <Typography variant="h5" color="black" className="mb-4">Rincian Pembayaran</Typography>
             <table className="w-full overflow-y-auto min-w-max table-auto text-left">
                 <thead>
                 <tr>
-                    {["ID", "Date", "Total Payment Amount", "Allocated Amount", ""].map((el) => (
+                    {["ID", "Tanggal", "Jumlah Pembayaran", "Pembayaran yang Dialokasikan", ""].map((el) => (
                         <th
                             key={el}
                             className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
@@ -130,7 +130,7 @@ export default function BillsContent({bills}: BillsContentProps) {
                             }) :
                         <tr>
                             <td colSpan={100}>
-                                <Typography>No Payment has been made</Typography>
+                                <Typography>Tidak ada pembayaran yang telah dilakukan</Typography>
                             </td>
                         </tr>
                 }
@@ -146,17 +146,17 @@ export default function BillsContent({bills}: BillsContentProps) {
     ), []);
     let generateEmailConfirmationDialogContent = useCallback((activeData: typeof bills[0]) => (
         <>
-            <Typography variant="h5" color="black" className="mb-4">Send Bill Reminder</Typography>
-            <Typography variant="paragraph" color="black">Are you sure you want to send this email?</Typography>
+            <Typography variant="h5" color="black" className="mb-4">Kirim Pengingat Tagihan</Typography>
+            <Typography variant="paragraph" color="black">Apakah anda mau mengirimkan email ini?</Typography>
             <div className={"flex gap-x-4 justify-end"}>
                 <Button onClick={() => setShowDialog(false)} variant={"outlined"} className="mt-6">
-                    Close
+                    Tutup
                 </Button>
                 <Button onClick={() => {
                     if (activeData)
                         sendBillEmailMutation.mutate(activeData.id);
                 }} color={"blue"} className="mt-6" loading={sendBillEmailMutation.isPending} >
-                    Send
+                    Kirim
                 </Button>
             </div>
         </>
@@ -168,14 +168,14 @@ export default function BillsContent({bills}: BillsContentProps) {
             header: "ID",
         }),
         columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
-            header: "Booking ID",
+            header: "ID Pemesanan",
         }),
         columnHelper.accessor(row => row.description, {
-            header: "Description",
+            header: "Deskripsi",
             minSize: 275
         }),
         columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
-            header: "Amount",
+            header: "Jumlah",
         }),
         columnHelper.accessor(row => {
             if (row.paymentBills) {
@@ -183,22 +183,22 @@ export default function BillsContent({bills}: BillsContentProps) {
             }
             return formatToIDR(0);
         }, {
-            header: "Paid Amount",
+            header: "Jumlah Terbayar",
         }),
         columnHelper.display({
-            header: "Payments",
+            header: "Pembayaran",
             cell: props =>
                 <Link className={"text-blue-400"} type="button" href="" onClick={() => {
                     setDialogContent(generatePaymentsDialogContent(props.row.original));
                     setShowDialog(true);
-                }}>View Payments</Link>
+                }}>Lihat Pembayaran</Link>
         }),
     ];
 
     if (!headerContext.locationID) {
         // @ts-ignore
         columns.splice(1, 0, columnHelper.accessor(row => row.bookings?.rooms?.locations.name ?? "", {
-                header: "Location",
+                header: "Lokasi",
                 size: 20
             })
         );
@@ -207,7 +207,7 @@ export default function BillsContent({bills}: BillsContentProps) {
     return (
         <div className={"p-8"}>
             <TableContent<typeof bills[0]>
-                name={"Bookings"}
+                name={"Pemesanan"}
                 initialContents={dataState}
                 columns={columns}
                 form={

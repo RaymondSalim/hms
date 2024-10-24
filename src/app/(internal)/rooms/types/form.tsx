@@ -19,7 +19,7 @@ export function RoomTypesForm(props: RoomFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Room Type</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Perubahan" : "Pembuatan"} Tipe Kamar</h1>
       <div className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           {
@@ -46,7 +46,7 @@ export function RoomTypesForm(props: RoomFormProps) {
           <div>
             <label htmlFor="room_type">
               <Typography variant="h6" color="blue-gray">
-                Room Type
+                Tipe Kamar
               </Typography>
             </label>
             <Input
@@ -73,11 +73,11 @@ export function RoomTypesForm(props: RoomFormProps) {
 
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => props.mutation.mutate(roomTypeData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {props.contentData ? "Ubah" : "Buat"}
           </Button>
         </div>
       </div>

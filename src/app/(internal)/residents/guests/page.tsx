@@ -12,11 +12,11 @@ export default function GuestsPage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
-    headerContext.setTitle("Guests");
+    headerContext.setTitle("Tamu");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"residents"} href={"/residents"}>Residents</Link>,
-      <Link key={"guests"} href={"/guests"}>Guests</Link>
+      <Link key={"residents"} href={"/residents"}>Penyewa</Link>,
+      <Link key={"guests"} href={"/guests"}>Tamu</Link>
     ]);
   }, []);
 

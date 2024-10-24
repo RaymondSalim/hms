@@ -41,22 +41,22 @@ export default function Bills() {
     }),
     columnHelper.accessor("tenant_name", {
       id: "tenantName",
-      header: "Tenant",
+      header: "Penyewa",
     }),
     columnHelper.accessor("room_number", {
       id: "roomNumber",
-      header: "Room Number",
+      header: "Nomor Kamar",
     }),
     columnHelper.accessor("fee", {
       id: "fee",
-      header: "Total Fee",
+      header: "Total Biaya",
     }),
     columnHelper.accessor("total_paid", {
       id: "totalPaid",
-      header: "Amount Paid",
+      header: "Jumlah Dibayar",
     }),
     columnHelper.display({
-      header: "Amount Due",
+      header: "Jumlah Terutang",
       cell: props => {
         return parseInt(props.row.original.fee) - parseInt(props.row.original.total_paid);
       }

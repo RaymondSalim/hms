@@ -37,24 +37,24 @@ export default function LoginForm() {
   return (
     <form action={formAction}>
       <div className={styles.inputGroup}>
-        <label htmlFor="email" className={styles.label}>Email address</label>
+        <label htmlFor="email" className={styles.label}>Alamat Email</label>
         <input type="email" name="email" className={styles.input} placeholder="jamie@example.com" required />
       </div>
       <div className={styles.inputGroup}>
-        <label htmlFor="password" className={styles.label}>Password</label>
+        <label htmlFor="password" className={styles.label}>Kata Sandi</label>
         <div className={styles.passwordContainer}>
           <input type="password" name="password" className={styles.input} placeholder="********" required />
-          <Link href="/reset-request" className={styles.forgotLink}>Forgot?</Link>
+          <Link href="/reset-request" className={styles.forgotLink}>Lupa?</Link>
         </div>
       </div>
       <div className={styles.inputGroup}>
         <span className={`${styles.extraText} ${state.failure && styles.error} ${state.success && styles.success}`}>{state.failure ?? state.success}</span>
       </div>
       <div className={styles.buttonContainer}>
-        <AuthFormButton text={"Sign in →"} />
+        <AuthFormButton text={"Masuk →"} />
       </div>
       <div className={styles.registerGroup}>
-        <span className={styles.registerCta}>Don&apos;t have an account? <Link href={"/register"}>Sign Up</Link></span>
+        <span className={styles.registerCta}>Tidak memiliki akun? Daftar <Link href={"/register"}>di sini</Link></span>
       </div>
     </form>
   );

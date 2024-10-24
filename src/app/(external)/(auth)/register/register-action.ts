@@ -31,7 +31,7 @@ export async function registerUser(prevState: ResetUserType, formData: FormData)
     const existing = await findUserByEmail(data.email);
     if (existing) {
         return {
-            failure: "Email address is taken"
+            failure: "Alamat email sudah terdaftar"
         };
     }
 
@@ -49,7 +49,7 @@ export async function registerUser(prevState: ResetUserType, formData: FormData)
         if (error instanceof PrismaClientKnownRequestError) {
             console.error("[register]", error.code, error.message);
             if (error.code == "P2002") {
-                return { failure: "Email address is taken" };
+                return { failure: "Alamat email sudah terdaftar" };
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             console.error("[register]", error.message);

@@ -61,7 +61,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
       // Add prorated bill for the current month
       bills.push({
         amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
-        description: `Prorated bill for ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
+        description: `Tagihan prorata untuk ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
         due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
       });
 
@@ -71,7 +71,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
         const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
         bills.push({
           amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
+          description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
       }

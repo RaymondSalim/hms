@@ -37,25 +37,25 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
       size: 20
     }),
     columnHelper.accessor(row => row.room_number, {
-      header: "Room Number"
+      header: "Nomor Kamar"
     }),
     columnHelper.accessor(row => row.roomtypes?.type, {
-      header: "Room Type"
+      header: "Tipe Kamar"
     }),
     columnHelper.accessor(row => row.roomstatuses?.status, {
       header: "Status",
     }),
     columnHelper.display({
-      header: "Pricing",
+      header: "Harga",
       cell: props =>
         <Link className={"text-blue-400"} type="button" href="" onClick={() => {
           setActiveData(props.row.original);
           setShowDialog(true);
-        }}>Pricing Details</Link>
+        }}>Rincian Harga</Link>
     }),
 
     columnHelper.accessor(row => row.createdAt, {
-      header: "Created At",
+      header: "Dibuat Pada",
       cell: props => formatToDateTime(props.cell.getValue())
     }),
   ];
@@ -63,7 +63,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
   if (!headerContext.locationID) {
     // @ts-ignore
     columns.splice(1, 0, columnHelper.accessor(row => row.locations?.name, {
-        header: "Location",
+        header: "Lokasi",
         size: 20
       })
     );
@@ -72,14 +72,14 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
   return (
     <div className={"p-8"}>
       <TableContent<RoomsWithTypeAndLocation>
-        name={"Rooms"}
+        name={"Kamar"}
         initialContents={rooms}
         columns={columns}
         form={
           // @ts-ignore
           <RoomForm/>
         }
-        searchPlaceholder={"Search by name or email address"}
+        searchPlaceholder={"Cari berdasarkan nama atau alamat email"}
         upsert={{
           mutationFn: upsertRoomAction,
           customOnSuccess: (data, variables, context, setMutationResponse, setContentsState, setDialogOpen) => {
@@ -132,7 +132,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
             handler={() => setShowDialog(prev => !prev)}
             className={"p-8"}
           >
-            <Typography variant="h5" color="black" className="mb-4">Pricing Details</Typography>
+            <Typography variant="h5" color="black" className="mb-4">Rincian Harga</Typography>
             {
               activeData?.roomtypes?.roomtypedurations && isSuccess &&
                 <table className="w-full min-w-max table-auto text-left">

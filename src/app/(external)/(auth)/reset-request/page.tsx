@@ -5,7 +5,7 @@ import ResetForm from "@/app/(external)/(auth)/reset-request/reset-form";
 export default async function ResetRequestPage() {
   return (
     <>
-      <h2 className={styles.title}>Recover your account</h2>
+      <h2 className={styles.title}>Pulihkan akun anda</h2>
       <ResetForm/>
     </>
   );

@@ -214,7 +214,7 @@ export function BookingForm(props: BookingFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Edit" : "Create"} Booking</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Perubahan" : "Pembuatan"} Booking</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <MotionConfig
@@ -224,7 +224,7 @@ export function BookingForm(props: BookingFormProps) {
               <div>
                 <label htmlFor="tenant_id">
                   <Typography variant="h6" color="blue-gray">
-                    Tenant
+                    Penyewa
                   </Typography>
                 </label>
                 <SelectComponent<string>
@@ -244,7 +244,7 @@ export function BookingForm(props: BookingFormProps) {
               <div>
                 <label htmlFor="location">
                   <Typography variant="h6" color="blue-gray">
-                    Location
+                    Lokasi
                   </Typography>
                 </label>
                 <SelectComponent<number>
@@ -253,7 +253,7 @@ export function BookingForm(props: BookingFormProps) {
                   selectedOption={
                     locationDataMapped.find(r => r.value == locationID)
                   }
-                  placeholder={"Enter location"}
+                  placeholder={"Masukan Lokasi"}
                   isError={false}
                 />
               </div>
@@ -262,7 +262,7 @@ export function BookingForm(props: BookingFormProps) {
                   <div>
                     <label htmlFor="room_type_id">
                       <Typography variant="h6" color="blue-gray">
-                        Room Type
+                        Tipe Kamar
                       </Typography>
                     </label>
                     <Input
@@ -276,7 +276,7 @@ export function BookingForm(props: BookingFormProps) {
               <div>
                 <label htmlFor="room_id">
                   <Typography variant="h6" color="blue-gray">
-                    Room
+                    Kamar
                   </Typography>
                 </label>
                 <SelectComponent<number>
@@ -288,7 +288,7 @@ export function BookingForm(props: BookingFormProps) {
                     selectedOption={
                       roomDataMapped.find(r => r.value == bookingData.room_id)
                     }
-                    placeholder={"Pick room"}
+                    placeholder={"Pilih Kamar"}
                     isError={!!fieldErrors?.room_id}
                     isDisabled={locationID == undefined}
                 />
@@ -307,7 +307,7 @@ export function BookingForm(props: BookingFormProps) {
                   >
                       <label htmlFor="start_date">
                           <Typography variant="h6" color="blue-gray">
-                              Start Date
+                              Tanggal Mulai
                           </Typography>
                       </label>
                       <Popover
@@ -364,7 +364,7 @@ export function BookingForm(props: BookingFormProps) {
                   >
                       <label htmlFor="duration_id">
                           <Typography variant="h6" color="blue-gray">
-                              Duration
+                              Durasi
                           </Typography>
                       </label>
                       <SelectComponent<number>
@@ -394,7 +394,7 @@ export function BookingForm(props: BookingFormProps) {
                   >
                       <label htmlFor="fee">
                           <Typography variant="h6" color="blue-gray">
-                              Fee
+                              Harga
                           </Typography>
                       </label>
                       <Input
@@ -436,7 +436,7 @@ export function BookingForm(props: BookingFormProps) {
                           setValue={(v) => setBookingData(prevState => ({...prevState, status_id: v}))}
                           options={statusDataMapped}
                           selectedOption={statusDataMapped.find(r => r.value == bookingData.status_id)}
-                          placeholder={"Pick status"}
+                          placeholder={"Pilih Status"}
                           isError={!!fieldErrors?.status_id}
                       />
                     {
@@ -457,13 +457,13 @@ export function BookingForm(props: BookingFormProps) {
 
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button disabled={isButtonDisabled || !hasChanges(initialBookingData, bookingData)}
                   onClick={() => props.mutation.mutate(bookingData)}
                   color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData && !props.fromQuery ? "Update" : "Create"}
+            {props.contentData && !props.fromQuery ? "Ubah" : "Buat"}
           </Button>
         </div>
       </form>

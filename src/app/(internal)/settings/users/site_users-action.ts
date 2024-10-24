@@ -58,7 +58,7 @@ export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise
     if (error instanceof PrismaClientKnownRequestError) {
       console.error("[register]", error.code, error.message);
       if (error.code == "P2002") {
-        return {failure: "Email address is taken"};
+        return {failure: "Alamat email telah terdaftar"};
       }
     } else if (error instanceof PrismaClientUnknownRequestError) {
       console.error("[register]", error.message);

@@ -21,17 +21,17 @@ export default function UsersContent({users}: UsersContentProps) {
       size: 20
     }),
     columnHelper.accessor(row => row.name, {
-      header: "Name"
+      header: "Nama"
     }),
     columnHelper.accessor(row => row.email, {
-      header: "Email Address"
+      header: "Alamat Email"
     }),
     // @ts-ignore
     columnHelper.accessor(row => row.roles.name, {
-      header: "Role"
+      header: "Peran"
     }),
     columnHelper.accessor(row => row.createdAt, {
-      header: "Created At",
+      header: "Dibuat Pada",
       cell: props => formatToDateTime(props.cell.getValue())
     }),
   ];
@@ -41,14 +41,14 @@ export default function UsersContent({users}: UsersContentProps) {
   return (
     <div className={"p-8"}>
       <TableContent<Omit<SiteUser, "password">>
-        name={"User"}
+        name={"Pengguna Situs"}
         initialContents={users}
         columns={columns}
         form={
           // @ts-ignore
           <UserForm/>
         }
-        searchPlaceholder={"Search by name or email address"}
+        searchPlaceholder={"Cari berdasarkan nama atau alamat email"}
         upsert={{
           mutationFn: upsertSiteUserAction,
         }}

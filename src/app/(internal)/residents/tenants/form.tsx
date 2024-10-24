@@ -21,13 +21,13 @@ export function TenantForm(props: TenantFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Tenant</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Perubahan" : "Pembuatan"} Penyewa</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <div>
             <label htmlFor="name">
               <Typography variant="h6" color="blue-gray">
-                Name
+                Nama
               </Typography>
             </label>
             <Input
@@ -51,7 +51,7 @@ export function TenantForm(props: TenantFormProps) {
           <div>
             <label htmlFor="email">
               <Typography variant="h6" color="blue-gray">
-                Email
+                Alamat Email
               </Typography>
             </label>
             <Input
@@ -77,7 +77,7 @@ export function TenantForm(props: TenantFormProps) {
           <div>
             <label htmlFor="phone">
               <Typography variant="h6" color="blue-gray">
-                Phone
+                Nomor Telepon
               </Typography>
             </label>
             <PhoneInput
@@ -108,11 +108,11 @@ export function TenantForm(props: TenantFormProps) {
         </div>
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => props.mutation.mutate(tenantData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {props.contentData ? "Ubah" : "Buat"}
           </Button>
         </div>
 

@@ -36,7 +36,7 @@ export default function Payments() {
       header: "ID",
     }),
     columnHelper.accessor("bookings.tenants.name", {
-      header: "Tenant",
+      header: "Penyewa",
     }),
     columnHelper.accessor("paymentstatuses.status", {
       header: "Status",
@@ -65,13 +65,13 @@ export default function Payments() {
       }
     }),
     columnHelper.accessor("bookings.rooms.room_number", {
-      header: "Room Number",
+      header: "Nomor Kamar",
     }),
     columnHelper.accessor("bookings.durations.duration", {
-      header: "Duration",
+      header: "Durasi",
     }),
     columnHelper.accessor("amount", {
-      header: "Amount",
+      header: "Jumlah",
     }),
   ], []);
 

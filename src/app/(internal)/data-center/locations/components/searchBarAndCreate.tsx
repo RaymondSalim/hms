@@ -10,7 +10,7 @@ export default function SearchBarAndCreate() {
       <Input label={"Search"} placeholder={"Search by address or name"}/>
       <Button color={"blue"} className={styles.btn}>
         <FaPlus/>
-        <span>Create</span>
+        <span>Buat</span>
       </Button>
     </div>
   );

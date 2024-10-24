@@ -199,7 +199,7 @@ export function PaymentForm(props: PaymentForm) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{parsedData ? "Edit" : "Create"} Payment</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{parsedData ? "Perubahan" : "Pembuatan"} Pembayaran</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <MotionConfig
@@ -210,7 +210,7 @@ export function PaymentForm(props: PaymentForm) {
               <div>
                 <label htmlFor="location">
                   <Typography variant="h6" color="blue-gray">
-                    Location
+                    Lokasi
                   </Typography>
                 </label>
                 <SelectComponent<number>
@@ -219,7 +219,7 @@ export function PaymentForm(props: PaymentForm) {
                   selectedOption={
                     locationDataMapped.find(r => r.value == locationID)
                   }
-                  placeholder={"Enter location"}
+                  placeholder={"Masukan Lokasi"}
                   isError={false}
                 />
               </div>
@@ -233,7 +233,7 @@ export function PaymentForm(props: PaymentForm) {
                   setValue={(v) => setData(prevState => ({...prevState, status_id: v}))}
                   options={statusDataMapped}
                   selectedOption={statusDataMapped.find(r => r.value == data?.status_id)}
-                  placeholder={"Pick status"}
+                  placeholder={"Pilih Status"}
                   isError={!!fieldErrors?.status_id}
                 />
                 {
@@ -252,14 +252,14 @@ export function PaymentForm(props: PaymentForm) {
                   >
                       <label htmlFor="booking_id">
                           <Typography variant="h6" color="blue-gray">
-                              Booking
+                              Pemesanan
                           </Typography>
                       </label>
                       <SelectComponent<number>
                           setValue={(v) => setData(prevState => ({...prevState, booking_id: v}))}
                           options={bookingDataMapped}
                           selectedOption={bookingDataMapped.find(r => r.value == data?.bookings?.id)}
-                          placeholder={"Pick Booking"}
+                          placeholder={"Pilih Pemesanan"}
                           isError={!!fieldErrors?.booking_id}
                       />
                     {
@@ -279,7 +279,7 @@ export function PaymentForm(props: PaymentForm) {
                   >
                       <label htmlFor="tenant_id">
                           <Typography variant="h6" color="blue-gray">
-                              Tenant
+                              Penyewa
                           </Typography>
                       </label>
                     {
@@ -313,7 +313,7 @@ export function PaymentForm(props: PaymentForm) {
                   >
                       <label htmlFor="payment_amount">
                           <Typography variant="h6" color="blue-gray">
-                              Payment Amount
+                              Jumlah Pembayaran
                           </Typography>
                       </label>
 
@@ -356,7 +356,7 @@ export function PaymentForm(props: PaymentForm) {
                   >
                       <label htmlFor="payment_date">
                           <Typography variant="h6" color="blue-gray">
-                              Payment Date
+                              Tanggal Pembayaran
                           </Typography>
                       </label>
                       <Popover
@@ -411,7 +411,7 @@ export function PaymentForm(props: PaymentForm) {
                       exit={{opacity: 0, height: 0}}
                   >
                       <Typography variant="h6" color="blue-gray">
-                          Bills
+                          Tagihan
                       </Typography>
                     {
                       (unpaidBillsDataIsLoading || simulationDataIsLoading) &&
@@ -424,83 +424,85 @@ export function PaymentForm(props: PaymentForm) {
                             const newData = simulationData?.new.payments.find(p => p.bill_id == ub.id);
                             const due = Number(ub.amount) - Number(ub.sumPaidAmount);
                             return (
-                              <div key={ub.id}
-                                   className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 items-center">
-                                {/* Existing Information Column */}
-                                <div className="flex flex-col text-sm col-span-3">
-                                  <span
-                                    className="font-semibold text-gray-800">Bill #{ub.id} (Due {formatToDateTime(ub.due_date, false)})</span>
-                                  <p className="text-gray-700">Amount: <span
-                                    className="font-bold">{formatToIDR(Number(ub.amount))}</span></p>
-                                  <p className="text-gray-700">Paid: <span
-                                    className="font-bold">{formatToIDR(Number(ub.sumPaidAmount))}</span></p>
-                                  <p className="text-gray-700">Outstanding: <span
-                                    className="font-bold text-red-600">{formatToIDR(due)}</span></p>
+                                <div key={ub.id}
+                                     className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 grid-rows-2 items-center">
+                                <span
+                                    className="col-start-1 col-span-full row-start-1 row-span-1 text-gray-800 text-lg font-semibold">Tagihan #{ub.id} (Jatuh Tempo {formatToDateTime(ub.due_date, false)})</span>
+                                  {/* Existing Information Column */}
+                                  <div className="flex flex-col text-sm col-span-3 row-start-2">
+                                    <p className="text-gray-700">Jumlah: <span
+                                        className="font-bold">{formatToIDR(Number(ub.amount))}</span></p>
+                                    <p className="text-gray-700">Terbayar: <span
+                                        className="font-bold">{formatToIDR(Number(ub.sumPaidAmount))}</span></p>
+                                    <p className="text-gray-700">Belum Dibayar: <span
+                                        className="font-bold text-red-600">{formatToIDR(due)}</span></p>
+                                  </div>
+
+                                  {
+                                    simulationDataSuccess ?
+                                        <>
+                                          {/* Separator */}
+                                          <div className="flex justify-center items-center row-start-2 text-gray-400">
+                                            {/*{index === Math.floor(arr.length / 2) ? '>' : <>&nbsp;</>}*/}
+                                            <Typography variant={"h4"}>&gt;</Typography>
+                                          </div>
+
+                                          {/* New Information Column */}
+                                          <div className="flex flex-col text-sm self-end row-start-2 col-span-3">
+                                            <p className="text-gray-700">Pembayaran Sekarang: <span
+                                                className="font-bold">{formatToIDR(Number(newData?.amount) || 0)}</span>
+                                            </p>
+                                            <p className="text-gray-700">Jumlah Belum Dibayar: <span
+                                                className="font-bold text-red-600">{formatToIDR((due - (Number(newData?.amount) || 0)))}</span>
+                                            </p>
+                                          </div>
+                                        </> :
+                                        <>
+                                          <div></div>
+                                          <div></div>
+                                        </>
+                                  }
                                 </div>
-
-                                {
-                                  simulationDataSuccess ?
-                                    <>
-                                      {/* Separator */}
-                                      <div className="flex justify-center items-center text-gray-400">
-                                        {/*{index === Math.floor(arr.length / 2) ? '>' : <>&nbsp;</>}*/}
-                                        <Typography variant={"h4"}>&gt;</Typography>
-                                      </div>
-
-                                      {/* New Information Column */}
-                                      <div className="flex flex-col text-sm self-end col-span-3">
-                                        <p className="text-gray-700">Current Payment: <span
-                                          className="font-bold">{formatToIDR(Number(newData?.amount) || 0)}</span></p>
-                                        <p className="text-gray-700">Final Outstanding: <span
-                                          className="font-bold text-red-600">{formatToIDR((due - (Number(newData?.amount) || 0)))}</span>
-                                        </p>
-                                      </div>
-                                    </> :
-                                    <>
-                                      <div></div>
-                                      <div></div>
-                                    </>
-                                }
-                              </div>
                             );
                           })}
                           {/*Total Data Display*/}
-                            <div
-                                className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 items-center">
-                              {/* Existing Information Column */}
-                                <div className="flex flex-col text-sm col-span-3">
-                                    <span
-                                        className="font-semibold text-gray-800">Bill Total</span>
-                                    <p className="text-gray-700">Amount: <span
-                                        className="font-bold">{formatToIDR(Number(totalData.amount))}</span></p>
-                                    <p className="text-gray-700">Paid: <span
-                                        className="font-bold">{formatToIDR(Number(totalData.sumPaidAmount))}</span></p>
-                                    <p className="text-gray-700">Outstanding: <span
-                                        className="font-bold text-red-600">{formatToIDR(Number(totalData.amount) - Number(totalData.sumPaidAmount))}</span>
-                                    </p>
-                                </div>
+                          <div
+                              className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 grid-rows-2 items-center">
+                            {/* Existing Information Column */}
+                            <span
+                                className="col-start-1 col-span-full row-start-1 row-span-1 text-gray-800 text-lg font-semibold">Total Tagihan</span>
+                            <div className="flex flex-col text-sm col-span-3 row-start-2">
 
-                              {/* Separator */}
-                                <div className="flex justify-center items-center text-gray-400">
-                                    <Typography variant={"h4"}>&gt;</Typography>
-                                </div>
-
-                              {/* New Information Column */}
-                                <div className="flex flex-col text-sm self-end col-span-3">
-                                    <p className="text-gray-700">Current Payment: <span
-                                        className="font-bold">{formatToIDR(Number(totalData.paymentAmount))}</span></p>
-                                    <p className="text-gray-700">Final Outstanding: <span
-                                        className="font-bold text-red-600">{formatToIDR(Number(totalData.outstandingAmount))}</span>
-                                    </p>
-                                </div>
+                              <p className="text-gray-700">Jumlah: <span
+                                  className="font-bold">{formatToIDR(Number(totalData.amount))}</span></p>
+                              <p className="text-gray-700">Terbayar: <span
+                                  className="font-bold">{formatToIDR(Number(totalData.sumPaidAmount))}</span></p>
+                              <p className="text-gray-700">Belum Dibayar: <span
+                                  className="font-bold text-red-600">{formatToIDR(Number(totalData.amount) - Number(totalData.sumPaidAmount))}</span>
+                              </p>
                             </div>
+
+                            {/* Separator */}
+                            <div className="flex justify-center items-center text-gray-400 row-start-2">
+                              <Typography variant={"h4"}>&gt;</Typography>
+                            </div>
+
+                            {/* New Information Column */}
+                            <div className="flex flex-col text-sm self-end col-span-3 row-start-2">
+                              <p className="text-gray-700">Pembayaran Sekarang: <span
+                                  className="font-bold">{formatToIDR(Number(totalData.paymentAmount))}</span></p>
+                              <p className="text-gray-700">Jumlah Belum Dibayar: <span
+                                  className="font-bold text-red-600">{formatToIDR(Number(totalData.outstandingAmount))}</span>
+                              </p>
+                            </div>
+                          </div>
                         </div>
                     }
                   </motion.div>
               }
               {
                 data.payment_proof ?
-                  <></> :
+                    <></> :
                   data.payment_date &&
                     <motion.div
                         key={"payment_proof_upload"}
@@ -539,13 +541,13 @@ export function PaymentForm(props: PaymentForm) {
 
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
                   onClick={() => props.mutation.mutate(data)}
                   color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {parsedData ? "Update" : "Create"}
+            {parsedData ? "Ubah" : "Buat"}
           </Button>
         </div>
       </form>

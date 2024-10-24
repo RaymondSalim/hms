@@ -12,10 +12,10 @@ export default function PaymentPage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
-    headerContext.setTitle("All Payments");
+    headerContext.setTitle("Pembayaran");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"payments"} href={"/payments"}>Payments</Link>,
+      <Link key={"payments"} href={"/payments"}>Pembayaran</Link>,
     ]);
   }, []);
 

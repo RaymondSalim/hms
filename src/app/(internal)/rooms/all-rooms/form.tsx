@@ -176,13 +176,13 @@ export function RoomForm(props: RoomFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Room</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Perubahan" : "Pembuatan"} Kamar</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <div>
             <label htmlFor="room_number">
               <Typography variant="h6" color="blue-gray">
-                Room Number
+                Nomor Kamar
               </Typography>
             </label>
             <Input
@@ -206,7 +206,7 @@ export function RoomForm(props: RoomFormProps) {
           <div>
             <label htmlFor="room_type">
               <Typography variant="h6" color="blue-gray">
-                Room Type
+                Tipe Kamar
               </Typography>
             </label>
             <SelectComponent<number>
@@ -247,7 +247,7 @@ export function RoomForm(props: RoomFormProps) {
           <div>
             <label htmlFor="location">
               <Typography variant="h6" color="blue-gray">
-                Location
+                Lokasi
               </Typography>
             </label>
             <SelectComponent<number>
@@ -258,7 +258,7 @@ export function RoomForm(props: RoomFormProps) {
               selectedOption={
                 locationDataMapped.find(r => r.value == roomData.location_id)
               }
-              placeholder={"Enter location"}
+              placeholder={"Masukan Lokasi"}
               isError={!!fieldErrors?.location_id}
             />
             {
@@ -276,7 +276,7 @@ export function RoomForm(props: RoomFormProps) {
             roomData.roomtypes?.roomtypedurations && roomTypeDurationDataSuccess &&
               <div>
                   <Typography variant="h5" color="blue-gray">
-                      Pricing
+                      Harga
                   </Typography>
                 {
                   roomData.roomtypes?.roomtypedurations?.map((d, index) => {
@@ -344,11 +344,11 @@ export function RoomForm(props: RoomFormProps) {
 
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button onClick={() => props.mutation.mutate(roomData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {props.contentData ? "Ubah" : "Buat"}
           </Button>
         </div>
       </form>
