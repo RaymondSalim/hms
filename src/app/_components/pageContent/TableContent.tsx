@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-table";
 import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
-import styles from "@/app/(internal)/data-center/locations/components/searchBarAndCreate.module.css";
+import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
 import {Button, Dialog, Input, Typography} from "@material-tailwind/react";
 import {FaPlus} from "react-icons/fa6";
 import {DefaultError, MutationOptions, useMutation, UseMutationResult} from "@tanstack/react-query";
