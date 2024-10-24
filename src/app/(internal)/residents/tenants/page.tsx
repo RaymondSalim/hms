@@ -12,11 +12,11 @@ export default function TenantsPage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
-    headerContext.setTitle("Tenants");
+    headerContext.setTitle("Penyewa");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"residents"} href={"/residents"}>Residents</Link>,
-      <Link key={"tenants"} href={"/tenants"}>Tenants</Link>
+      <Link key={"residents"} href={"/residents"}>Penghuni</Link>,
+      <Link key={"tenants"} href={"/tenants"}>Penyewa</Link>
     ]);
   }, []);
 

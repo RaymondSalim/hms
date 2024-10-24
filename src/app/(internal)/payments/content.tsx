@@ -31,11 +31,11 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       size: 20
     }),
     columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
-      header: "Booking ID",
+      header: "ID Pemesanan",
       size: 20
     }),
     columnHelper.accessor(row => row.bookings.tenants, {
-      header: "Tenant",
+      header: "Penyewa",
       cell: props => {
         const data = props.getValue();
         return ( // TODO! Make link
@@ -59,18 +59,18 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
     }),
     columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
-      header: "Paid Amount"
+      header: "Jumlah Pembayaran"
     }),
     columnHelper.accessor(row => formatToDateTime(row.payment_date, true, true), {
-      header: "Payment Date"
+      header: "Tanggal Pembayaran"
     }),
     columnHelper.display({
-      header: "Payment Proof",
+      header: "Bukti Pembayaran",
       cell: props =>
         props.row.original.payment_proof ?
           <Link className={"text-blue-400"} type="proof" href={{
             pathname: `/s3/${props.row.original.payment_proof}`,
-          }}>View Proof</Link> :
+          }}>Lihat Bukti</Link> :
           <></>
     })
 
@@ -88,7 +88,7 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
   return (
     <div className={"p-8"}>
       <TableContent<typeof payments[0]>
-        name={"Bookings"}
+        name={"Pembayaran"}
         initialContents={dataState}
         columns={columns}
         form={

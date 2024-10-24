@@ -15,8 +15,8 @@ export default function RoomsPage() {
     headerContext.setTitle("Room Types");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"rooms"} href={"/rooms"}>Rooms</Link>,
-      <Link key={"all"} href={"/types"}>Types</Link>,
+      <Link key={"rooms"} href={"/rooms"}>Kamar</Link>,
+      <Link key={"all"} href={"/types"}>Tipe</Link>,
     ]);
   }, []);
 

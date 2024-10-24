@@ -21,10 +21,10 @@ export default function BookingPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    headerContext.setTitle("All Bookings");
+    headerContext.setTitle("Semua Pemesanan");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"bookings"} href={"/bookings"}>Bookings</Link>,
+      <Link key={"bookings"} href={"/bookings"}>Pemesanan</Link>,
     ]);
 
     let bpqp: BookingPageQueryParams = {};

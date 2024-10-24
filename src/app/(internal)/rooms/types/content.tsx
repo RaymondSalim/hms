@@ -21,10 +21,10 @@ export default function RoomTypesContent({types}: RoomTypesContentProps) {
       size: 20
     }),
     columnHelper.accessor(row => row.type, {
-      header: "Type"
+      header: "Tipe"
     }),
     columnHelper.accessor(row => row.createdAt, {
-      header: "Created At",
+      header: "Dibuat Pada",
       cell: props => formatToDateTime(props.cell.getValue())
     }),
   ];
@@ -32,7 +32,7 @@ export default function RoomTypesContent({types}: RoomTypesContentProps) {
   return (
     <div className={"p-8"}>
       <TableContent<RoomType>
-        name={"Types"}
+        name={"Tipe Kamar"}
         initialContents={types}
         columns={columns}
         form={

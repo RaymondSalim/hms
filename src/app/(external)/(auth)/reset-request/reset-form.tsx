@@ -32,7 +32,7 @@ export default function ResetForm() {
     {
       name: "email",
       type: "email",
-      label: "Email Address",
+      label: "Alamat Email",
       placeholder: "jamie@email.com",
       error: error?.fieldErrors.email
     },
@@ -51,7 +51,7 @@ export default function ResetForm() {
             >
               <span>{state.success}</span>
               <div className={styles.buttonContainer}>
-                <button onClick={handleBack} type="button" className={styles.button}>Back</button>
+                <button onClick={handleBack} type="button" className={styles.button}>Balik</button>
               </div>
             </motion.div>
           )
@@ -79,10 +79,10 @@ export default function ResetForm() {
           className={`${styles.extraText} ${state.failure && styles.error} ${state.success && styles.success}`}>{state.failure ?? state.success}</span>
               </div>
               <div className={styles.buttonContainer}>
-                <AuthFormButton text={"Submit"}/>
+                <AuthFormButton text={"Kirim"}/>
               </div>
               <div className={styles.registerGroup}>
-                <span className={styles.registerCta}>Have an account? <Link href={"/login"}>Sign In</Link></span>
+                <span className={styles.registerCta}>Sudah memiliki akun? <Link href={"/login"}>Masuk</Link></span>
               </div>
             </form>
           )

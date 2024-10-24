@@ -99,7 +99,7 @@ export function BillForm(props: BillForm) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{parsedData ? "Edit" : "Create"} Bill</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{parsedData ? "Perubahan" : "Pembuatan"} Tagihan</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <MotionConfig
@@ -110,7 +110,7 @@ export function BillForm(props: BillForm) {
               <div>
                 <label htmlFor="location">
                   <Typography variant="h6" color="blue-gray">
-                    Location
+                    Lokasi
                   </Typography>
                 </label>
                 <SelectComponent<number>
@@ -120,7 +120,7 @@ export function BillForm(props: BillForm) {
                   selectedOption={
                     locationDataMapped.find(r => r.value == locationID)
                   }
-                  placeholder={"Enter location"}
+                  placeholder={"Masukan Lokasi"}
                   isError={false}
                 />
               </div>
@@ -134,7 +134,7 @@ export function BillForm(props: BillForm) {
                   >
                       <label htmlFor="booking_id">
                           <Typography variant="h6" color="blue-gray">
-                              Booking
+                              Pemesanan
                           </Typography>
                       </label>
                       <SelectComponent<number>
@@ -142,7 +142,7 @@ export function BillForm(props: BillForm) {
                           setValue={(v) => setData(prevState => ({...prevState, booking_id: v}))}
                           options={bookingDataMapped}
                           selectedOption={bookingDataMapped.find(r => r.value == data?.bookings?.id)}
-                          placeholder={"Pick Booking"}
+                          placeholder={"Pilih Pemesanan"}
                           isError={!!fieldErrors?.booking_id}
                       />
                     {
@@ -162,7 +162,7 @@ export function BillForm(props: BillForm) {
                   >
                       <label htmlFor="bill_amount">
                           <Typography variant="h6" color="blue-gray">
-                              Bill Amount
+                              Jumlah Tagihan
                           </Typography>
                       </label>
 
@@ -201,7 +201,7 @@ export function BillForm(props: BillForm) {
                   >
                       <label htmlFor="due_date">
                           <Typography variant="h6" color="blue-gray">
-                              Due Date
+                              Tanggal Jatuh Tempo
                           </Typography>
                       </label>
                       <Popover
@@ -259,13 +259,13 @@ export function BillForm(props: BillForm) {
 
         <div className={"flex gap-x-4 justify-end"}>
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Cancel
+            Batal
           </Button>
           <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
                   onClick={() => props.mutation.mutate(data)}
                   color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {parsedData ? "Update" : "Create"}
+            {parsedData ? "Ubah" : "Buat"}
           </Button>
         </div>
       </form>

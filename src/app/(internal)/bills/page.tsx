@@ -12,10 +12,10 @@ export default function BillPage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
-    headerContext.setTitle("All Bills");
+    headerContext.setTitle("Semua Tagihan");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"payments"} href={"/bills"}>Payments</Link>,
+      <Link key={"payments"} href={"/bills"}>Pembayaran</Link>,
     ]);
   }, []);
 

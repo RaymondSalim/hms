@@ -1,0 +1,4 @@
+GET http://localhost:3000/api/tasks/email/invoice-reminder
+Accept: application/json
+#Authorization: Bearer +iWGmXZam0JcL9^xo4)!pv,gthV8K1*Gb#7=p43Gru7-T#vL}6
+###

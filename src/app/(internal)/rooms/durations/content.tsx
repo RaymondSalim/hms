@@ -21,20 +21,20 @@ export default function DurationsContent({contents}: ContentProps<Duration>) {
       size: 20
     }),
     columnHelper.accessor(row => row.duration, {
-      header: "Duration"
+      header: "Durasi"
     }),
     columnHelper.accessor(row => row.day_count, {
-      header: "Day Count",
+      header: "Jumlah Hari",
       cell: props => props.cell.getValue() ?? "-",
       enableGlobalFilter: false
     }),
     columnHelper.accessor(row => row.month_count, {
-      header: "Month Count",
+      header: "Jumlah Bulan",
       cell: props => props.cell.getValue() ?? "-",
       enableGlobalFilter: false
     }),
     columnHelper.accessor(row => row.createdAt, {
-      header: "Created At",
+      header: "Dibuat Pada",
       cell: props => formatToDateTime(props.cell.getValue()),
       enableGlobalFilter: false,
     }),
@@ -43,14 +43,14 @@ export default function DurationsContent({contents}: ContentProps<Duration>) {
   return (
     <div className={"p-8"}>
       <TableContent<typeof contents[0]>
-        name={"Durations"}
+        name={"Durasi"}
         initialContents={contents}
         columns={columns}
         form={
           // @ts-ignore
           <DurationForm/>
         }
-        searchPlaceholder={"Search by duration"}
+        searchPlaceholder={"Cari dari durasi"}
         upsert={{
           mutationFn: upsertDurationAction,
         }}

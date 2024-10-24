@@ -39,7 +39,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             size: 20
         }),
         columnHelper.accessor(row => row.tenants, {
-            header: "Tenant",
+            header: "Penyewa",
             cell: props => {
                 const data = props.getValue();
                 return ( // TODO! Make link
@@ -63,33 +63,33 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
         }),
         columnHelper.accessor(row => row.rooms?.room_number, {
-            header: "Room Number"
+            header: "Nomor Kamar"
         }),
         columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
-            header: "Start Date"
+            header: "Tanggal Mulai"
         }),
         columnHelper.accessor(row => formatToDateTime(addToDate(row.start_date, row.durations?.day_count ?? 0, row.durations?.month_count ?? 0), false), {
-            header: "End Date",
+            header: "Tanggal Selesai",
         }),
         columnHelper.accessor(row => row.fee, {
-            header: "Fee"
+            header: "Biaya"
         }),
         columnHelper.display({
-            header: "Bills",
+            header: "Tagihan",
             cell: props =>
                 <Link className={"text-blue-400"} type="button" href={{
                     pathname: "/bills",
                     query: {
                         booking_id: props.cell.row.original.id,
                     }
-                }}>View Bills</Link>
+                }}>Lihat Tagihan</Link>
         }),
     ];
 
     if (!headerContext.locationID) {
         // @ts-ignore
         columns.splice(1, 0, columnHelper.accessor(row => row.rooms.locations?.name, {
-                header: "Location",
+                header: "Lokasi",
                 size: 20
             })
         );
@@ -120,7 +120,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     return (
         <div className={"p-8"}>
             <TableContent<BookingsIncludeAll>
-                name={"Bookings"}
+                name={"Pemesanan"}
                 initialContents={bookingsState}
                 // @ts-expect-error room mapping error
                 queryParams={
