@@ -12,6 +12,7 @@ import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getSortedDurations} from "@/app/_db/duration";
 import Link from "next/link";
+import {toast} from "react-toastify";
 
 
 export interface RoomsContentProps {
@@ -116,7 +117,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
 
             if (shouldCloseDialog) {
               setDialogOpen(false);
-              // TODO! Alert
+              toast.success(`Aksi Berhasil!`);
             }
           }
         }}

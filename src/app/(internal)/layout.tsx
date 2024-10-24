@@ -6,25 +6,28 @@ import Header from "@/app/_components/header/header";
 import QueryClientProviderWrapper from "@/app/(internal)/_providers/queryClientProvider";
 import {auth} from "@/app/_lib/auth";
 import {redirect} from "next/navigation";
+import ToastProvider from "@/app/_components/toast";
 
 export default async function Layout({children}: { children?: React.ReactNode }) {
-  const session = await auth();
+    const session = await auth();
 
-  if (!session) redirect("/login");
+    if (!session) redirect("/login");
 
-  return (
-    <QueryClientProviderWrapper>
-      <HeaderProvider>
-        <>
-          <nav>
-            <Sidebar session={session}/>
-          </nav>
-          <main className={styles.content}>
-            <Header/>
-            {children}
-          </main>
-        </>
-      </HeaderProvider>
-    </QueryClientProviderWrapper>
-  );
+    return (
+        <ToastProvider>
+            <QueryClientProviderWrapper>
+                <HeaderProvider>
+                    <>
+                        <nav>
+                            <Sidebar session={session}/>
+                        </nav>
+                        <main className={styles.content}>
+                            <Header/>
+                            {children}
+                        </main>
+                    </>
+                </HeaderProvider>
+            </QueryClientProviderWrapper>
+        </ToastProvider>
+    );
 }
