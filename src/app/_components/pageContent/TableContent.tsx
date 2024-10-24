@@ -22,6 +22,7 @@ export interface TableFormProps<T> {
   setDialogOpen: (open: boolean) => void
   mutation: UseMutationResult<GenericActionsType<T>, DefaultError, Partial<T>>,
   mutationResponse?: GenericActionsType<T>
+  fromQuery: boolean
 }
 
 interface CustomMutationOptions<
@@ -38,9 +39,15 @@ interface CustomMutationOptions<
 export interface TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> {
   name: string,
   initialContents: T[],
-  initialSearchValue?: string
+  initialSearchValue?: string,
+  queryParams?: {
+    initialActiveContent: T,
+    clearQueryParams: () => void,
+  }
+
   upsert: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
   delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
+
   columns: ColumnDef<T, any>[],
 
   searchPlaceholder?: string,
@@ -60,9 +67,11 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
   const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
   const [searchValue, setSearchValue] = useState(props.initialSearchValue);
-  const [activeContent, setActiveContent] = useState<T | undefined>(undefined);
+  const [activeContent, setActiveContent] = useState<T | undefined>(props.queryParams?.initialActiveContent);
   const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
   const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
+  
+  const [fromQuery, setFromQuery] = useState(false);
 
   const upsertContentMutation = useMutation({
     ...props.upsert,
@@ -199,12 +208,24 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     if (!dialogOpen) {
       setActiveContent(undefined);
       setUpsertMutationResponse(undefined);
+      props.queryParams?.clearQueryParams();
+      setFromQuery(false);
     }
   }, [dialogOpen]);
 
   useEffect(() => {
     setContentsState(props.initialContents);
   }, [props.initialContents]);
+
+  useEffect(() => {
+    if (props.queryParams?.initialActiveContent) {
+      setActiveContent({
+        ...props.queryParams?.initialActiveContent,
+      });
+      setFromQuery(true);
+      setDialogOpen(true);
+    }
+  }, [props.queryParams]);
 
   return (
     <>
@@ -238,7 +259,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             contentData: structuredClone(activeContent),
             mutation: upsertContentMutation,
             mutationResponse: upsertMutationResponse,
-            setDialogOpen: setDialogOpen
+            setDialogOpen: setDialogOpen,
+            fromQuery: fromQuery,
           })
         }
       </Dialog>

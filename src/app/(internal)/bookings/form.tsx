@@ -4,7 +4,7 @@ import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
 import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
-import {getRooms} from "@/app/_db/room";
+import {getRooms, getRoomTypes} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
@@ -68,6 +68,7 @@ export function BookingForm(props: BookingFormProps) {
     }
   }, [locationData, locationDataSuccess]);
 
+  // Room Data
   const {data: roomData, isSuccess: roomDataSuccess} = useQuery({
     queryKey: ['rooms', locationID],
     queryFn: () => getRooms(undefined, locationID),
@@ -77,12 +78,24 @@ export function BookingForm(props: BookingFormProps) {
   const [roomDataMapped, setRoomDataMapped] = useState<SelectOption<number>[]>([]);
   useEffect(() => {
     if (roomDataSuccess) {
-      setRoomDataMapped(roomData.map(r => ({
+      let roomDataFiltered = roomData;
+      if (initialBookingData) {
+        roomDataFiltered = roomDataFiltered?.filter(rd => (rd.roomtypes?.id == initialBookingData.rooms?.room_type_id ?? true));
+      }
+      setRoomDataMapped(roomDataFiltered.map(r => ({
         value: r.id,
         label: `${r.room_number} | ${r.roomtypes?.type}`,
+        type_id: r.roomtypes?.id
       })));
     }
-  }, [roomData, roomDataSuccess]);
+  }, [roomData, roomDataSuccess, initialBookingData]);
+
+  // Room Type Data (only if fromQuery)
+  const {data: roomTypeData, isSuccess: roomTypeDataSuccess} = useQuery({
+    queryKey: ['rooms.type', 'location_id', locationID],
+    queryFn: () => getRoomTypes(locationID),
+    enabled: props.fromQuery
+  });
 
   const {data: durationsData, isSuccess: durationsDataSuccess, isLoading} = useQuery({
     queryKey: ['rooms.durations'],
@@ -201,7 +214,7 @@ export function BookingForm(props: BookingFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Edit" : "Create"} Booking</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Edit" : "Create"} Booking</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <MotionConfig
@@ -244,6 +257,22 @@ export function BookingForm(props: BookingFormProps) {
                   isError={false}
                 />
               </div>
+              {
+                  props.fromQuery &&
+                  <div>
+                    <label htmlFor="room_type_id">
+                      <Typography variant="h6" color="blue-gray">
+                        Room Type
+                      </Typography>
+                    </label>
+                    <Input
+                      disabled={true}
+                      value={(() => {
+                        return roomTypeData?.find(rt => rt.id == bookingData.rooms?.room_type_id)?.type;
+                      })()}
+                    />
+                  </div>
+              }
               <div>
                 <label htmlFor="room_id">
                   <Typography variant="h6" color="blue-gray">
@@ -251,20 +280,20 @@ export function BookingForm(props: BookingFormProps) {
                   </Typography>
                 </label>
                 <SelectComponent<number>
-                  setValue={(v) => setBookingData(p => ({
-                    ...p,
-                    room_id: v
-                  }))}
-                  options={roomDataMapped}
-                  selectedOption={
-                    roomDataMapped.find(r => r.value == bookingData.room_id)
-                  }
-                  placeholder={"Pick room"}
-                  isError={!!fieldErrors?.room_id}
-                  isDisabled={locationID == undefined}
+                    setValue={(v) => setBookingData(p => ({
+                      ...p,
+                      room_id: v
+                    }))}
+                    options={roomDataMapped}
+                    selectedOption={
+                      roomDataMapped.find(r => r.value == bookingData.room_id)
+                    }
+                    placeholder={"Pick room"}
+                    isError={!!fieldErrors?.room_id}
+                    isDisabled={locationID == undefined}
                 />
                 {
-                  fieldErrors?.room_id &&
+                    fieldErrors?.room_id &&
                     <Typography color="red">{fieldErrors?.room_id._errors}</Typography>
                 }
               </div>
@@ -434,7 +463,7 @@ export function BookingForm(props: BookingFormProps) {
                   onClick={() => props.mutation.mutate(bookingData)}
                   color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Update" : "Create"}
+            {props.contentData && !props.fromQuery ? "Update" : "Create"}
           </Button>
         </div>
       </form>
