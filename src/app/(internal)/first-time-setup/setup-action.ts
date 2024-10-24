@@ -11,7 +11,7 @@ export async function validateStepData(data: Partial<z.infer<typeof stepValidati
         if (!success) {
             return {
                 errors: error?.flatten()
-            }
+            };
         }
         return { success: true };
     } catch (error) {
@@ -28,7 +28,7 @@ export async function validateFinalData(data: z.infer<typeof finalValidationSetu
         if (!success) {
             return {
                 errors: error?.flatten()
-            }
+            };
         }
 
         await prisma.$transaction([
@@ -74,14 +74,14 @@ export async function validateFinalData(data: z.infer<typeof finalValidationSetu
                     address: parsedData.locationAddress
                 }
             })
-        ])
+        ]);
 
         return { success: true };
     } catch (error) {
         if (error instanceof z.ZodError) {
             return { success: false, errors: error.errors };
         }
-        console.log(error)
+        console.log(error);
         return { failure: true };
     }
 }

@@ -34,9 +34,9 @@ export default function BillsContent({bills}: BillsContentProps) {
         mutationFn: sendBillEmailAction,
         onSuccess: (resp) => {
             if (resp.success) {
-                toast.success("Email telah dikirim!")
+                toast.success("Email telah dikirim!");
             } else {
-                toast.error("Email gagal dikirim!")
+                toast.error("Email gagal dikirim!");
             }
             setShowDialog(false);
         }

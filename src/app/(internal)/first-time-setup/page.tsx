@@ -34,14 +34,14 @@ export default function Setup() {
     const stepMutation = useMutation({
         mutationFn: validateStepData,
         onError: (error: any) => {
-            toast.error("Terjadi Kesalahan Server")
+            toast.error("Terjadi Kesalahan Server");
         },
         onSuccess: (data) => {
             if (data?.success) {
                 handleNext();
                 return;
             }
-            toast.error("Mohon periksa kembali input anda.")
+            toast.error("Mohon periksa kembali input anda.");
         },
         onSettled: () => {
             setIsLoading(false);
@@ -52,7 +52,7 @@ export default function Setup() {
     const finalMutation = useMutation({
         mutationFn: validateFinalData,
         onError: (error: any) => {
-            toast.error("Terjadi Kesalahan Server")
+            toast.error("Terjadi Kesalahan Server");
         },
         onSuccess: (data) => {
             if (data?.success) {
@@ -60,10 +60,10 @@ export default function Setup() {
                     onClose: () => {
                         router.push("/dashboard");
                     }
-                })
+                });
                 return;
             }
-            toast.error("Mohon periksa kembali input anda.")
+            toast.error("Mohon periksa kembali input anda.");
         },
         onSettled: () => {
             setIsLoading(false);
@@ -73,13 +73,13 @@ export default function Setup() {
     const handleNext = () => {
         if (activeStep === 1) {
             if (formData.companyName.length == 0 && (formData.companyImage?.length ?? 0) == 0) {
-                return
+                return;
             }
         }
 
         if (activeStep === 2) {
             if (formData.locationName.length == 0 && formData.locationAddress.length == 0) {
-                return
+                return;
             }
         }
 
@@ -178,7 +178,7 @@ const Introduction = () => {
                 proses pengaturan awal.
             </Typography>
             <Typography color={"gray"}>
-                Jangan khawatir, proses ini cepat dan mudah. Cukup klik "Selanjutnya" untuk memulai.
+                Jangan khawatir, proses ini cepat dan mudah. Cukup klik &quot;Selanjutnya&quot; untuk memulai.
             </Typography>
         </div>
     );
@@ -222,7 +222,7 @@ const Step1 = ({formData, setFormData}: StepProps) => {
                     setFormData(fd => ({
                         ...fd,
                         companyName: e.target.value,
-                    }))
+                    }));
                 }}
             />
             <Input
