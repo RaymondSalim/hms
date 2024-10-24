@@ -26,6 +26,19 @@ export type RoomTypeDurationWithDuration = Prisma.RoomTypeDurationGetPayload<{
     }
 }>
 
+const roomTypeIncludeCountObj = {
+    include: {
+        _count: {
+            select: {
+                rooms: true
+            }
+        }
+    }
+};
+const roomTypeIncludeRoomCount = Prisma.validator<Prisma.RoomTypeDefaultArgs>()(roomTypeIncludeCountObj);
+
+export type RoomTypeWithRoomCount = Prisma.RoomTypeGetPayload<typeof roomTypeIncludeRoomCount>
+
 export async function getRooms(id?: number, locationID?: number, limit?: number, offset?: number) {
     return prisma.room.findMany({
         where: {
@@ -222,8 +235,27 @@ export async function getRoomsByLocationId(location_id: number) {
     });
 }
 
-export async function getRoomTypes() {
-    return prisma.roomType.findMany();
+export async function getRoomTypes(locationID?: number): Promise<RoomTypeWithRoomCount[]> {
+    return prisma.roomType.findMany({
+        where: {
+          rooms: {
+              some: {
+                  location_id: locationID
+              }
+          }
+        },
+        include: {
+            _count: {
+                select: {
+                    rooms: {
+                        where: {
+                            location_id: locationID
+                        }
+                    }
+                },
+            }
+        }
+    });
 }
 
 export async function getRoomTypeDurationsByRoomTypeIDAndLocationID(room_type_id?: number | null, location_id?: number | null) {
