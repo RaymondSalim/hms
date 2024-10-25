@@ -97,7 +97,7 @@ export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
     }
     return {
       // @ts-ignore
-      success: res
+      ...res
     };
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
