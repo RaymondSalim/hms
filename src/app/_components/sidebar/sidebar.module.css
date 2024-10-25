@@ -22,7 +22,7 @@
 }
 
 .sidebarHeader {
-    @apply mb-5;
+    @apply relative flex justify-center items-center mb-5 h-16;
 }
 
 .sidebarHeader h2 {

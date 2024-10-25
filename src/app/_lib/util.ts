@@ -82,6 +82,21 @@ export async function fileToBase64(file: File): Promise<string | undefined> {
   });
 }
 
+export function base64ToFile(base64String: string, fileName: string): File {
+  const arr = base64String.split(',');
+  const mimeType = arr[0].match(/:(.*?);/)?.[1]; // Extract MIME type
+  const byteString = atob(arr[1]); // Decode Base64 string
+  let n = byteString.length;
+  const uint8Array = new Uint8Array(n);
+
+  while (n--) {
+    uint8Array[n] = byteString.charCodeAt(n);
+  }
+
+  // Create a new File object using the decoded byte array
+  return new File([uint8Array], fileName, { type: mimeType || 'application/octet-stream' });
+}
+
 export function generateRandomPassword(length: number) {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
