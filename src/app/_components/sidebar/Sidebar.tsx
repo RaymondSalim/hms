@@ -13,25 +13,28 @@ import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
 import {Session} from 'next-auth';
 import {FaKey, FaMoneyBill1, FaReceipt} from "react-icons/fa6";
+import {getCompanyInfo} from "@/app/_db/settings";
 
 export interface SidebarProps {
     session: Session | null
 }
 
-export default function Sidebar({session}: SidebarProps) {
+export default async function Sidebar({session}: SidebarProps) {
+    const companyInfo = await getCompanyInfo();
+
     const menuItems = [
-        { name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt /> },
+        {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt/>},
         {
             name: 'Pusat Data',
             path: '/data-center',
-            icon: <FaDatabase />,
+            icon: <FaDatabase/>,
             children: [
-                { name: 'Lokasi Properti', path: '/data-center/locations'},
-                { name: 'Pengaturan Email', path: '/data-center/email-settings' },
-                { name: 'Denda', path: '/data-center/penalties' },
-                { name: 'Peraturan', path: '/data-center/rules' },
-                { name: 'Biaya', path: '/data-center/fees' },
-                { name: 'Pengeluaran', path: '/data-center/expenses' },
+                {name: 'Lokasi Properti', path: '/data-center/locations'},
+                {name: 'Pengaturan Email', path: '/data-center/email-settings'},
+                {name: 'Denda', path: '/data-center/penalties'},
+                {name: 'Peraturan', path: '/data-center/rules'},
+                {name: 'Biaya', path: '/data-center/fees'},
+                {name: 'Pengeluaran', path: '/data-center/expenses'},
             ]
         },
         {
@@ -46,10 +49,10 @@ export default function Sidebar({session}: SidebarProps) {
                 {name: 'Durasi', path: '/rooms/durations'},
             ]
         },
-        { name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus /> },
-        { name: 'Pemesanan', path: '/bookings', icon: <FaBed /> },
-        { name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill /> },
-        { name: 'Tagihan', path: '/bills', icon: <FaReceipt /> },
+        {name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus/>},
+        {name: 'Pemesanan', path: '/bookings', icon: <FaBed/>},
+        {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},
+        {name: 'Tagihan', path: '/bills', icon: <FaReceipt/>},
         {
             name: 'Keuangan',
             path: '/financials',
@@ -80,21 +83,21 @@ export default function Sidebar({session}: SidebarProps) {
     ];
 
     return (
-      <div className={`${styles.sidebar}`}>
-          <div className={styles.sidebarContent}>
-              <div className={styles.sidebarHeader}>
-                  <h2>Hotel Management System</h2>
-              </div>
-              <ul className={styles.sidebarMenu}>
-                      {menuItems.map((item, index) => (
+        <div className={`${styles.sidebar}`}>
+            <div className={styles.sidebarContent}>
+                <div className={styles.sidebarHeader}>
+                    <img className={"max-h-16 !w-auto"} src={ companyInfo.companyImage ?? ""} alt={companyInfo.companyName ?? ""} />
+                </div>
+                <ul className={styles.sidebarMenu}>
+                    {menuItems.map((item, index) => (
                         <SidebarItem key={index} {...item} />
-                      ))}
-              </ul>
-              <div className={styles.sidebarFooter}>
-                  <InteractiveUserDropdown user={session?.user}/>
-              </div>
-          </div>
-      </div>
+                    ))}
+                </ul>
+                <div className={styles.sidebarFooter}>
+                    <InteractiveUserDropdown user={session?.user}/>
+                </div>
+            </div>
+        </div>
     );
 }
 

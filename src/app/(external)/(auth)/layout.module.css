@@ -10,4 +10,6 @@
     @apply flex justify-center mb-6 relative;
 }
 
-.icon {}
+.icon {
+    @apply max-h-28;
+}

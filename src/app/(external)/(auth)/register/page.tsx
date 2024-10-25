@@ -8,7 +8,7 @@ export default async function RegisterPage() {
 
   return (
     <>
-      <h2 className={styles.title}>Masuk ke {companyName}</h2>
+      <h2 className={styles.title}>Daftar ke {companyName}</h2>
       <RegisterForm/>
     </>
   );
