@@ -15,7 +15,7 @@ export default function TenantsPage() {
     headerContext.setTitle("Penyewa");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"residents"} href={"/src/app/(internal)/(dashboard_layout)/residents"}>Penghuni</Link>,
+      <Link key={"residents"} href={"/src/app/(internal)/(dashboard_layout)/residents"}>Data Penghuni</Link>,
       <Link key={"tenants"} href={"/tenants"}>Penyewa</Link>
     ]);
   }, []);
