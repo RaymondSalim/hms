@@ -5,80 +5,101 @@ import {Button, Menu, MenuHandler, MenuItem, MenuList} from "@material-tailwind/
 import {Location as LocationModel} from "@prisma/client";
 import styles from "./locationPicker.module.css";
 import {useQuery} from "@tanstack/react-query";
-import {FaChevronDown} from "react-icons/fa6";
+import {FaCheck, FaChevronDown} from "react-icons/fa6";
 import {useState} from "react";
 
 export interface LocationPickerProps {
-  locationID?: number,
-  setLocationID: (locationID?: number) => void,
+    locationID?: number,
+    setLocationID: (locationID?: number) => void,
 }
 
 export default function LocationPicker(props: LocationPickerProps) {
-  const {data, isSuccess, isLoading} = useQuery({
-    queryKey: ['header.location'],
-    queryFn: () => getLocations()
-  });
-  const [openMenu, setOpenMenu] = useState(false);
+    const {data, isSuccess, isLoading} = useQuery({
+        queryKey: ['header.location'],
+        queryFn: () => getLocations()
+    });
+    const [openMenu, setOpenMenu] = useState(false);
 
-  let activeLocation: Partial<LocationModel> | undefined = data?.find(l => props.locationID && l.id == props.locationID);
-  if (!activeLocation) activeLocation = {
-    id: undefined,
-    name: "All Locations"
-  };
+    let activeLocation: Partial<LocationModel> | undefined = data?.find(l => props.locationID && l.id == props.locationID);
+    if (!activeLocation) activeLocation = {
+        id: undefined,
+        name: "All Locations"
+    };
 
-  return (
-    <>
-      {
-        isSuccess &&
-          <Menu open={openMenu} handler={setOpenMenu} placement="bottom-end">
-              <MenuHandler>
-                  <Button type="button" variant="text" className={styles.button}>
-                      <Location location={activeLocation}/>
-                      <FaChevronDown
-                          strokeWidth={2.5}
-                          className={`h-3.5 w-3.5 transition-transform ${
-                            openMenu ? "rotate-180" : ""
-                          }`}
-                      />
-                  </Button>
-              </MenuHandler>
-              <MenuList className={"max-h-64"}>
-                  <MenuItem onClick={() => props.setLocationID(undefined)}>
-                      <Location location={{
-                        id: undefined,
-                        name: "All Locations"
-                      }}/>
-                  </MenuItem>
+    return (
+        <>
+            {
+                isSuccess &&
+                <Menu open={openMenu} handler={setOpenMenu} placement="bottom-end">
+                    <MenuHandler>
+                        <Button type="button" variant="text" className={styles.button}>
+                            <Location location={activeLocation}/>
+                            <FaChevronDown
+                                strokeWidth={2.5}
+                                className={`h-3.5 w-3.5 transition-transform ${
+                                    openMenu ? "rotate-180" : ""
+                                }`}
+                            />
+                        </Button>
+                    </MenuHandler>
+                    <MenuList className={"max-h-64"}>
+                        <MenuItem
+                            onClick={() => props.setLocationID(undefined)}
+                            className={"flex gap-x-4"}
+                        >
+                            <div className={"w-4 flex items-center"}>
+                                {
+                                    props.locationID == undefined ?
+                                        <FaCheck/> :
+                                        ""
+                                }
+                            </div>
 
-                {
-                  data
-                    .filter(e => e.id != props.locationID)
-                    .map(l =>
-                      <MenuItem
-                        key={l.id}
-                        onClick={() => props.setLocationID(l.id)}
-                      >
-                        <Location location={l}/>
-                      </MenuItem>
-                    )
-                }
-              </MenuList>
-          </Menu>
-      }
-    </>
-  );
+                            <Location location={{
+                                id: undefined,
+                                name: "All Locations"
+                            }}/>
+                        </MenuItem>
+
+                        {
+                            data
+                                // .filter(e => e.id != props.locationID)
+                                .map(l =>
+                                    <MenuItem
+                                        key={l.id}
+                                        onClick={() => props.setLocationID(l.id)}
+                                        className={"flex gap-x-4"}
+                                    >
+                                        <div className={"w-4 flex items-center"}>
+                                            {
+                                                activeLocation.id == l.id ?
+                                                    <FaCheck/> :
+                                                    ""
+                                            }
+                                        </div>
+                                        <Location location={l}/>
+                                    </MenuItem>
+                                )
+                        }
+                    </MenuList>
+                </Menu>
+            }
+        </>
+    );
 }
 
 interface LocationProps {
-  location?: Partial<LocationModel>
-  onClick?: () => void
+    location?: Partial<LocationModel>
+    onClick?: () => void
 }
 
-function Location({location}: LocationProps) {
-  return (
-    <div className={styles.locationContainer}>
-      <span className={styles.locationName}>{location?.name}</span>
-      <span className={styles.locationAddress}>{location?.address}</span>
-    </div>
-  );
+function Location({
+                      location
+                  }: LocationProps) {
+    return (
+        <div className={styles.locationContainer}>
+            <span className={styles.locationName}>{location?.name}</span>
+            <span className={styles.locationAddress}>{location?.address}</span>
+        </div>
+    );
 }
