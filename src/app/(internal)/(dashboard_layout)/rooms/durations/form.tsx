@@ -64,36 +64,12 @@ export function DurationForm(props: RoomFormProps) {
             />
           </div>
           <div>
-            <label htmlFor="day_count">
-              <Typography variant="h6" color="blue-gray">
-                Jumlah Hari
-              </Typography>
-            </label>
-            <Input
-              disabled={durationData.month_count != undefined && durationData.month_count > 0}
-              min="0" onInput={({currentTarget}) => currentTarget.validity.valid || currentTarget.value == ''}
-              type="number"
-              variant="outlined"
-              name="day_count"
-              value={durationData.day_count ?? undefined}
-              onChange={(e) => setDurationData(prevDuration => ({...prevDuration, day_count: Number(e.target.value)}))}
-              size="lg"
-              placeholder="15"
-              error={!!fieldErrors?.day_count}
-              className={`${!!fieldErrors?.day_count ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
-            />
-          </div>
-          <div>
             <label htmlFor="month_count">
               <Typography variant="h6" color="blue-gray">
                 Jumlah Bulan
               </Typography>
             </label>
             <Input
-              disabled={durationData.day_count != undefined && durationData.day_count > 0}
               min="0" onInput={({currentTarget}) => currentTarget.validity.valid || currentTarget.value == ''}
               type="number"
               variant="outlined"
@@ -105,8 +81,8 @@ export function DurationForm(props: RoomFormProps) {
               }))}
               size="lg"
               placeholder="15"
-              error={!!fieldErrors?.day_count}
-              className={`${!!fieldErrors?.day_count ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+              error={!!fieldErrors?.month_count}
+              className={`${!!fieldErrors?.month_count ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
               labelProps={{
                 className: "before:content-none after:content-none",
               }}

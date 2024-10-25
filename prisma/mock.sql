@@ -9,11 +9,11 @@ SELECT setval(pg_get_serial_sequence('"roomtypes"', 'id'), coalesce(max(id) + 1,
 FROM "roomtypes";
 -- Required to increment sequence as we are inserting values with the ID set
 
-INSERT INTO durations (id, duration, day_count, month_count)
-VALUES (1, '1 month', NULL, 1),
-       (2, '3 months', NULL, 3),
-       (3, '6 months', NULL, 6),
-       (4, '12 months', NULL, 12);
+INSERT INTO durations (id, duration, month_count)
+VALUES (1, '1 month', 1),
+       (2, '3 months', 3),
+       (3, '6 months', 6),
+       (4, '12 months', 12);
 SELECT setval(pg_get_serial_sequence('"durations"', 'id'), coalesce(max(id) + 1, 1), false)
 FROM "durations";
 -- Required to increment sequence as we are inserting values with the ID set

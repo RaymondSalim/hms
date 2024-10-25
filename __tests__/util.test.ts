@@ -12,7 +12,6 @@ describe("test util functions", () => {
     const defaultDuration: Duration = {
       id: 0,
       duration: "",
-      day_count: null,
       month_count: null,
       createdAt: new Date(),
       updatedAt: new Date()
