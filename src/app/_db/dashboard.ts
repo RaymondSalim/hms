@@ -28,7 +28,7 @@ export async function getOverviewData(locationID?: number) {
                LEFT JOIN rooms r ON b.room_id = r.id
       WHERE ${locationClause}
         AND (
-          b.start_date + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
+          b.start_date + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
           ) BETWEEN ${firstDateOfWeek} AND ${lastDateOfWeek}
   `;
   // const bookingsCount: Promise<number> = bookingsCountRaw.then(e => new Promise(resolve => setTimeout(() => resolve(e[0].count), 10000)));
@@ -349,7 +349,7 @@ async function getCheckOutWithExtras(now: Date, sevenDaysAhead: Date, locationID
              t.id                                                                                          AS tenant_id,
              t.name                                                                                        AS tenant_name,
              d.duration,
-             b.start_date + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' *
+             b.start_date + INTERVAL '1 MONTH' *
                                                            COALESCE(d.month_count, 0)                      AS checkout_date
       FROM "bookings" b
                LEFT JOIN durations d ON b.duration_id = d.id
@@ -358,7 +358,7 @@ async function getCheckOutWithExtras(now: Date, sevenDaysAhead: Date, locationID
                LEFT JOIN roomtypes rt ON r.room_type_id = rt.id
       WHERE ${locationClause}
         AND (
-          b.start_date + INTERVAL '1 DAY' * d.day_count + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
+          b.start_date + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
           ) BETWEEN ${now} AND ${sevenDaysAhead}
   `;
 
