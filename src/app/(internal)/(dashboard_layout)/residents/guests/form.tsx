@@ -2,15 +2,15 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {Guest} from "@prisma/client";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {GuestWithTenant} from "@/app/_db/guest";
 import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
 import {useQuery} from "@tanstack/react-query";
-import {getTenantsWithRoomNumber} from "@/app/_db/tenant";
+import {getTenants} from "@/app/_db/tenant";
 import AsyncSelect from "react-select/async";
-import {HeaderContext} from "@/app/_context/HeaderContext";
 import {ZodFormattedError} from "zod";
+import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 
 interface GuestFormProps extends TableFormProps<GuestWithTenant> {
 }
@@ -18,6 +18,21 @@ interface GuestFormProps extends TableFormProps<GuestWithTenant> {
 export function GuestForm(props: GuestFormProps) {
   const [guestData, setGuestData] = useState<Partial<Guest>>(props.contentData ?? {});
   const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<GuestWithTenant> | undefined>(props.mutationResponse?.errors);
+
+  // Tenant Data
+  const {data: tenantData, isSuccess: tenantDataSuccess} = useQuery({
+    queryKey: ['tenants'],
+    queryFn: () => getTenants(),
+  });
+  const [tenantDataMapped, setTenantDataMapped] = useState<SelectOption<string>[]>([]);
+  useEffect(() => {
+    if (tenantDataSuccess) {
+      setTenantDataMapped(tenantData.map(e => ({
+        value: e.id,
+        label: `${e.name} | ${e.phone}`,
+      })));
+    }
+  }, [tenantData, tenantDataSuccess]);
 
   useEffect(() => {
     setFieldErrors(props.mutationResponse?.errors);
@@ -35,20 +50,20 @@ export function GuestForm(props: GuestFormProps) {
               </Typography>
             </label>
             <Input
-              variant="outlined"
-              name="name"
-              value={guestData.name}
-              onChange={(e) => setGuestData(prevGuest => ({...prevGuest, name: e.target.value}))}
-              size="lg"
-              placeholder="John Smith"
-              error={!!fieldErrors?.name}
-              className={`${!!fieldErrors?.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
+                variant="outlined"
+                name="name"
+                value={guestData.name}
+                onChange={(e) => setGuestData(prevGuest => ({...prevGuest, name: e.target.value}))}
+                size="lg"
+                placeholder="John Smith"
+                error={!!fieldErrors?.name}
+                className={`${!!fieldErrors?.name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
             />
             {
-              fieldErrors?.name &&
+                fieldErrors?.name &&
                 <Typography color="red">{fieldErrors?.name._errors}</Typography>
             }
           </div>
@@ -59,20 +74,24 @@ export function GuestForm(props: GuestFormProps) {
               </Typography>
             </label>
             <Input
-              variant="outlined"
-              name="email"
-              type={"email"}
-              // @ts-ignore
-              value={guestData.email}
-              onChange={(e) => setGuestData(prevGuest => ({...prevGuest, email: e.target.value}))}
-              size="lg"
-              placeholder="john@smith.com"
-              error={!!fieldErrors?.email}
-              className={`${!!fieldErrors?.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
+                variant="outlined"
+                name="email"
+                type={"email"}
+                // @ts-ignore
+                value={guestData.email}
+                onChange={(e) => setGuestData(prevGuest => ({...prevGuest, email: e.target.value}))}
+                size="lg"
+                placeholder="john@smith.com"
+                error={!!fieldErrors?.email}
+                className={`${!!fieldErrors?.email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
             />
+            {
+                fieldErrors?.email &&
+                <Typography color="red">{fieldErrors?.email._errors}</Typography>
+            }
           </div>
           <div>
             <label htmlFor="phone">
@@ -81,31 +100,59 @@ export function GuestForm(props: GuestFormProps) {
               </Typography>
             </label>
             <PhoneInput
-              phoneNumber={guestData.phone}
-              setPhoneNumber={(p) => setGuestData(prevGuest => ({...prevGuest, phone: p}))}
-              type="tel"
-              placeholder="Mobile Number"
-              error={!!fieldErrors?.phone}
-              className={`${!!fieldErrors?.phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
-              containerProps={{
-                className: "min-w-0",
-              }}
+                phoneNumber={guestData.phone}
+                setPhoneNumber={(p) => setGuestData(prevGuest => ({...prevGuest, phone: p}))}
+                type="tel"
+                placeholder="Mobile Number"
+                error={!!fieldErrors?.phone}
+                className={`${!!fieldErrors?.phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+                containerProps={{
+                  className: "min-w-0",
+                }}
             />
+            {
+                fieldErrors?.phone &&
+                <Typography color="red">{fieldErrors?.phone._errors}</Typography>
+            }
           </div>
+          {/*<div>*/}
+          {/*  <label htmlFor="tenant">*/}
+          {/*    <Typography variant="h6" color="blue-gray">*/}
+          {/*      Tamu Dari*/}
+          {/*    </Typography>*/}
+          {/*  </label>*/}
+          {/*  <TenantSelect tenantId={guestData.tenant_id}*/}
+          {/*                setTenantId={(v) => setGuestData(prevGuest => ({...prevGuest, tenant_id: v}))}/>*/}
+          {/*  {*/}
+          {/*      fieldErrors?.tenant_id &&*/}
+          {/*      <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>*/}
+          {/*  }*/}
+          {/*</div>*/}
           <div>
-            <label htmlFor="tenant">
+            <label htmlFor="tenant_id">
               <Typography variant="h6" color="blue-gray">
-                Tamu Dari
+                Penyewa
               </Typography>
             </label>
-            <TenantSelect tenantId={guestData.tenant_id}
-                          setTenantId={(v) => setGuestData(prevGuest => ({...prevGuest, tenant_id: v}))}/>
+            <SelectComponent<string>
+                setValue={(v) => setGuestData(prev => ({...prev, tenant_id: v}))}
+                options={tenantDataMapped}
+                selectedOption={
+                  tenantDataMapped.find(r => r.value == guestData.tenant_id)
+                }
+                placeholder={"Pick Tenant"}
+                isError={!!fieldErrors?.tenant_id}
+            />
+            {
+                fieldErrors?.tenant_id &&
+                <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>
+            }
           </div>
           {
-            props.mutationResponse?.failure &&
+              props.mutationResponse?.failure &&
               <Typography variant="h6" color="blue-gray" className="-mb-4">
                 {props.mutationResponse.failure}
               </Typography>
@@ -130,7 +177,6 @@ type Option = {
   value: string,
   label: string,
   name: string,
-  room_number?: string
 }
 
 interface TenantSelectProps {
@@ -139,13 +185,12 @@ interface TenantSelectProps {
 }
 
 export function TenantSelect(props: TenantSelectProps) {
-  const headerContext = useContext(HeaderContext);
   const [initialValue, setInitialValue] = useState<Option | null>(null);
   const [options, setOptions] = useState<Option[]>([]);
 
   const {data, isLoading, isSuccess} = useQuery({
-    queryKey: ['tenant.select', headerContext.locationID],
-    queryFn: () => getTenantsWithRoomNumber(headerContext.locationID),
+    queryKey: ['tenant.select'],
+    queryFn: () => getTenants(),
   });
 
   const loadOptions = (
@@ -159,7 +204,7 @@ export function TenantSelect(props: TenantSelectProps) {
       }
 
       let filtered = options?.filter(o => (
-        o.name.toLowerCase().includes(inputValue.toLowerCase()) || o.room_number?.toLowerCase().includes(inputValue.toLowerCase())
+        o.name.toLowerCase().includes(inputValue.toLowerCase())
       ));
 
       callback(filtered);
@@ -177,9 +222,8 @@ export function TenantSelect(props: TenantSelectProps) {
     if (isSuccess) {
       let options = data?.map(t => ({
         value: t.id,
-        label: t.name + (t.bookings[0]?.rooms?.room_number ? ` | ${t.bookings[0]?.rooms?.room_number}` : ''),
+        label: t.name + ` | ${t.phone}`,
         name: t.name,
-        room_number: t.bookings[0]?.rooms?.room_number,
       }));
 
       setOptions(options);

@@ -72,7 +72,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
             header: "Tanggal Mulai"
         }),
-        columnHelper.accessor(row => formatToDateTime(addToDate(row.start_date, row.durations?.day_count ?? 0, row.durations?.month_count ?? 0), false), {
+        columnHelper.accessor(row => formatToDateTime(addToDate(row.start_date, 0, row.durations?.month_count ?? 0), false), {
             header: "Tanggal Selesai",
         }),
         columnHelper.accessor(row => row.fee, {

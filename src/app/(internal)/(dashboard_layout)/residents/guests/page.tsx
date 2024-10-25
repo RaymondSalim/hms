@@ -15,7 +15,7 @@ export default function GuestsPage() {
     headerContext.setTitle("Tamu");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
-      <Link key={"residents"} href={"/src/app/(internal)/(dashboard_layout)/residents"}>Penyewa</Link>,
+      <Link key={"residents"} href={"/src/app/(internal)/(dashboard_layout)/residents"}>Data Penghuni</Link>,
       <Link key={"guests"} href={"/guests"}>Tamu</Link>
     ]);
   }, []);

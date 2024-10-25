@@ -7,8 +7,8 @@ import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {Duration} from "@prisma/client";
 import {DurationForm} from "@/app/(internal)/(dashboard_layout)/rooms/durations/form";
 import {
-    deleteDurationAction,
-    upsertDurationAction
+  deleteDurationAction,
+  upsertDurationAction
 } from "@/app/(internal)/(dashboard_layout)/rooms/durations/duration-actions";
 
 
@@ -25,11 +25,6 @@ export default function DurationsContent({contents}: ContentProps<Duration>) {
     }),
     columnHelper.accessor(row => row.duration, {
       header: "Durasi"
-    }),
-    columnHelper.accessor(row => row.day_count, {
-      header: "Jumlah Hari",
-      cell: props => props.cell.getValue() ?? "-",
-      enableGlobalFilter: false
     }),
     columnHelper.accessor(row => row.month_count, {
       header: "Jumlah Bulan",

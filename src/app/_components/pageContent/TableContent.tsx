@@ -12,8 +12,8 @@ import {
 import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
-import {Button, Dialog, Input, Typography} from "@material-tailwind/react";
-import {FaPlus} from "react-icons/fa6";
+import {Button, Dialog, IconButton, Input, Option, Select, Typography} from "@material-tailwind/react";
+import {FaArrowLeft, FaArrowRight, FaPlus} from "react-icons/fa6";
 import {DefaultError, MutationOptions, useMutation, UseMutationResult} from "@tanstack/react-query";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {toast} from "react-toastify";
@@ -71,6 +71,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     const [activeContent, setActiveContent] = useState<T | undefined>(props.queryParams?.initialActiveContent);
     const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10); // Default page size
+    const totalPages = Math.ceil(contentsState.length / pageSize);
 
     const [fromQuery, setFromQuery] = useState(false);
 
@@ -177,13 +182,19 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         })
     ], [contentsState]);
 
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        return contentsState.slice(startIndex, startIndex + pageSize);
+    }, [contentsState, currentPage, pageSize]);
+
+
     const tanTable = useReactTable({
         defaultColumn: {
             minSize: 0,
             size: 0,
         },
         columns: columns,
-        data: contentsState ?? [],
+        data: paginatedData,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -202,6 +213,12 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+    // Reset pagination when initial contents change
+    useEffect(() => {
+        setContentsState(props.initialContents);
+        setCurrentPage(1); // Reset to the first page on data change
+    }, [props.initialContents]);
 
     useEffect(() => {
         if (!deleteDialogOpen) {
@@ -244,12 +261,51 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     className={styles.input}
                 />
                 <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
-                    <FaPlus/>
+                    <FaPlus />
                     <span>Buat</span>
                 </Button>
             </div>
-            <div className={"w-full overflow-auto"}>
-                <TanTable tanTable={tanTable}/>
+            <div className="w-full" style={{ height: '400px', overflowY: 'auto' }}>
+                <TanTable tanTable={tanTable} />
+            </div>
+            <div className="flex items-center mt-4 gap-x-8">
+                <div className={"ml-auto"}>
+                    <Select
+                        onChange={(value) => setPageSize(Number(value))}
+                        label={"Item Per Halaman"}
+                        containerProps={{
+                            className: "!min-w-[175px]"
+                        }}
+                        value={pageSize.toString()}
+                        className="flex p-2 border rounded background-gray"
+                    >
+                        {[5, 10, 20, 50].map(size => (
+                            <Option key={size} value={size.toString()}>{size}</Option>
+                        ))}
+                    </Select>
+                </div>
+                <div className={"flex flex-row gap-x-8"}>
+                    <IconButton
+                        size="sm"
+                        variant="outlined"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <FaArrowLeft strokeWidth={2} className="h-4 w-4" />
+                    </IconButton>
+                    <Typography color="gray" className="font-normal">
+                        Page <strong className="text-gray-900">{currentPage}</strong> of{" "}
+                        <strong className="text-gray-900">{totalPages}</strong>
+                    </Typography>
+                    <IconButton
+                        size="sm"
+                        variant="outlined"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        <FaArrowRight strokeWidth={2} className="h-4 w-4" />
+                    </IconButton>
+                </div>
             </div>
             <Dialog
                 open={dialogOpen}

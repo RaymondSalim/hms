@@ -72,7 +72,6 @@ export function BookingForm(props: BookingFormProps) {
   const {data: roomData, isSuccess: roomDataSuccess} = useQuery({
     queryKey: ['rooms', locationID],
     queryFn: () => getRooms(undefined, locationID),
-
     enabled: locationID != undefined,
   });
   const [roomDataMapped, setRoomDataMapped] = useState<SelectOption<number>[]>([]);
@@ -80,7 +79,12 @@ export function BookingForm(props: BookingFormProps) {
     if (roomDataSuccess) {
       let roomDataFiltered = roomData;
       if (initialBookingData) {
-        roomDataFiltered = roomDataFiltered?.filter(rd => (rd.roomtypes?.id == initialBookingData.rooms?.room_type_id ?? true));
+        roomDataFiltered = roomDataFiltered?.filter(rd => {
+          if (rd.roomtypes && initialBookingData.rooms) {
+            return rd.roomtypes.id == initialBookingData.rooms.room_type_id;
+          }
+          return true;
+        });
       }
       setRoomDataMapped(roomDataFiltered.map(r => ({
         value: r.id,
@@ -404,7 +408,7 @@ export function BookingForm(props: BookingFormProps) {
                           value={Number(bookingData.fee) || ""}
                           onChange={(e) => setBookingData(prevRoom => ({
                             ...prevRoom,
-                            fee: e.target.value.length > 0 ? new Prisma.Decimal(e.target.value) : undefined
+                            fee: e.target.value.length > 0 ? new Prisma.Decimal(Number(e.target.value)) : undefined
                           }))}
                           size="lg"
                           placeholder="500000"
