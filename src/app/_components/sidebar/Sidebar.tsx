@@ -15,6 +15,15 @@ export default async function Sidebar({session}: SidebarProps) {
     const menuItems = [
         {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt/>},
         {
+            name: 'Data Penghuni',
+            path: '/residents',
+            icon: <FaUserFriends/>,
+            children: [
+                {name: "Penyewa", path: '/residents/tenants'},
+                {name: "Tamu", path: '/residents/guests'},
+            ]
+        },
+        {
             name: 'Pusat Data',
             path: '/data-center',
             icon: <FaDatabase/>,
@@ -31,11 +40,11 @@ export default async function Sidebar({session}: SidebarProps) {
             path: '/rooms',
             icon: <FaKey/>,
             children: [
-                {name: 'Semua Kamar', path: '/rooms/all-rooms'},
+                {name: 'Durasi Sewa', path: '/rooms/durations'},
                 {name: 'Ketersediaan Kamar', path: '/rooms/availability'},
+                {name: 'Semua Kamar', path: '/rooms/all-rooms'},
                 {name: 'Tipe Kamar', path: '/rooms/types'},
                 // {name: 'Status Kamar', path: '/rooms/status'},
-                {name: 'Durasi Sewa', path: '/rooms/durations'},
             ]
         },
         // {name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus/>},
@@ -52,15 +61,6 @@ export default async function Sidebar({session}: SidebarProps) {
         //         {name: 'Laporan', path: '/reports', icon: <FaChartBar/>},
         //     ]
         // },
-        {
-            name: 'Data Penghuni',
-            path: '/residents',
-            icon: <FaUserFriends/>,
-            children: [
-                {name: "Penyewa", path: '/residents/tenants'},
-                {name: "Tamu", path: '/residents/guests'},
-            ]
-        },
         {
             name: 'Pengaturan',
             path: '/settings',
