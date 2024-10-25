@@ -29,7 +29,6 @@ CREATE TABLE Users (
 CREATE TABLE Durations (
                            id SERIAL PRIMARY KEY,
                            duration VARCHAR(255) NOT NULL,
-                           day_count INT NOT NULL
 );
 
 CREATE TABLE RoomTypes (
