@@ -193,7 +193,7 @@ const Step1 = ({formData, setFormData}: StepProps) => {
     const [image, setImage] = useState<File | undefined>(undefined);
     useEffect(() => {
         if (image) {
-            if (image.size > 2048) {
+            if (image.size > 2048000) {
                 toast.error("Ukuran Gambar Terlalu Besar");
                 return;
             }

@@ -55,8 +55,8 @@ export async function registerUser(prevState: ResetUserType, formData: FormData)
             console.error("[register]", error.message);
         }
 
-        return { failure: "Registration unsuccessful" };
+        return { failure: "Registrasi tidak berhasil" };
     }
 
-    return { success: "Registration successful" };
+    return { success: "Registrasi berhasil" };
 }

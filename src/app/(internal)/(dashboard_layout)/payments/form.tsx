@@ -22,6 +22,7 @@ import {
   simulateUnpaidBillPaymentAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {Prisma} from "@prisma/client";
+import {toast} from "react-toastify";
 
 interface PaymentForm extends TableFormProps<PaymentIncludeAll> {
 }
@@ -519,14 +520,14 @@ export function PaymentForm(props: PaymentForm) {
                                onChange={(e) => {
                                  const file = e.target.files?.[0];
                                  if (file?.size && file?.size > 2048000) {
-                                   alert("TODO! file is too big"); // TODO!
+                                   toast.error("Ukuran Gambar Terlalu Besar");
                                    e.target.value = "";
                                  } else {
                                    setImage(file);
                                  }
                                }}
                                className="w-full font-semibold text-sm bg-white border file:cursor-pointer cursor-pointer file:border-0 file:py-3 file:px-4 file:mr-4 file:bg-gray-100 file:hover:bg-gray-200 file:text-gray-500 rounded"/>
-                        <p className="text-xs mt-2">PNG, JPG, JPEG, WEBP are Allowed. Max file size is 2MB</p>
+                        <p className="text-xs mt-2">PNG, JPG, JPEG, WEBP diperbolehkan. Ukuran maksimum gambar adalah 2MB</p>
                     </motion.div>
               }
               {
