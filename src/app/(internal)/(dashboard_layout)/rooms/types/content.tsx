@@ -7,8 +7,8 @@ import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {RoomType} from "@prisma/client";
 import {RoomTypesForm} from "@/app/(internal)/(dashboard_layout)/rooms/types/form";
 import {
-    deleteRoomTypeAction,
-    upsertRoomTypeAction
+  deleteRoomTypeAction,
+  upsertRoomTypeAction
 } from "@/app/(internal)/(dashboard_layout)/rooms/types/room-type-actions";
 
 
@@ -25,6 +25,9 @@ export default function RoomTypesContent({types}: RoomTypesContentProps) {
     }),
     columnHelper.accessor(row => row.type, {
       header: "Tipe"
+    }),
+    columnHelper.accessor(row => row.description, {
+      header: "Deskripsi",
     }),
     columnHelper.accessor(row => row.createdAt, {
       header: "Dibuat Pada",

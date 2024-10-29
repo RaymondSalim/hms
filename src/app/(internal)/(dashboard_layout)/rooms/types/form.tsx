@@ -23,24 +23,24 @@ export function RoomTypesForm(props: RoomFormProps) {
       <div className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           {
-            roomTypeData.id &&
+              roomTypeData.id &&
               <div>
-                  <label htmlFor="room_number">
-                      <Typography variant="h6" color="blue-gray">
-                          ID
-                      </Typography>
-                  </label>
-                  <Input
-                      disabled={true}
-                      variant="outlined"
-                      name="room_number"
-                      value={roomTypeData.id}
-                      size="lg"
-                      className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
-                      labelProps={{
-                        className: "before:content-none after:content-none",
-                      }}
-                  />
+                <label htmlFor="room_number">
+                  <Typography variant="h6" color="blue-gray">
+                    ID
+                  </Typography>
+                </label>
+                <Input
+                    disabled={true}
+                    variant="outlined"
+                    name="room_number"
+                    value={roomTypeData.id}
+                    size="lg"
+                    className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
+                    labelProps={{
+                      className: "before:content-none after:content-none",
+                    }}
+                />
               </div>
           }
           <div>
@@ -50,21 +50,40 @@ export function RoomTypesForm(props: RoomFormProps) {
               </Typography>
             </label>
             <Input
-              variant="outlined"
-              name="type"
-              value={roomTypeData.type}
-              onChange={(e) => setRoomTypeData(prevRoomType => ({...prevRoomType, type: e.target.value}))}
-              size="lg"
-              placeholder="Presidential"
-              error={!!fieldErrors?.type}
-              className={`${!!fieldErrors?.type ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
+                variant="outlined"
+                name="type"
+                value={roomTypeData.type}
+                onChange={(e) => setRoomTypeData(prevRoomType => ({...prevRoomType, type: e.target.value}))}
+                size="lg"
+                placeholder="Presidential"
+                error={!!fieldErrors?.type}
+                className={`${!!fieldErrors?.type ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+            />
+          </div>
+          <div>
+            <label htmlFor="description">
+              <Typography variant="h6" color="blue-gray">
+                Deskripsi
+              </Typography>
+            </label>
+            <Input
+                variant="outlined"
+                name="description"
+                value={roomTypeData.description ?? ""}
+                onChange={(e) => setRoomTypeData(prevRoomType => ({...prevRoomType, description: e.target.value}))}
+                size="lg"
+                error={!!fieldErrors?.description}
+                className={`${!!fieldErrors?.description ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
             />
           </div>
           {
-            props.mutationResponse?.failure &&
+              props.mutationResponse?.failure &&
               <Typography variant="h6" color="red" className="-mb-4">
                 {props.mutationResponse.failure}
               </Typography>
