@@ -8,8 +8,8 @@ import {paymentSchema} from "@/app/_lib/zod/payment/zod";
 import {getBookingByIDAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import prisma from "@/app/_lib/primsa";
 import {
-  createPaymentBillsAction,
   getUnpaidBillsDueAction,
+  simulateUnpaidBillPaymentAction,
   syncBillsWithPaymentDate
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
@@ -80,9 +80,10 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
       } else {
         res = await createPayment(dbData, tx);
         const unpaidBills = await getUnpaidBillsDueAction(booking.id);
-        const updatedData = await createPaymentBillsAction(data.amount, unpaidBills.bills, res.id, tx);
+        const simulation = await simulateUnpaidBillPaymentAction(data.amount, unpaidBills.bills, res.id);
+        const {balance: newBalance} = simulation.new;
 
-        finalBalance = updatedData.balance;
+        finalBalance = newBalance;
       }
 
       await syncBillsWithPaymentDate(booking.id, tx, [res]);
