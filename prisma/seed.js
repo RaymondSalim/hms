@@ -43,6 +43,39 @@ async function main() {
       description: "Administrator",
     }
   });
+  await prisma.roomStatus.upsert({
+    where: {
+      id: 1
+    },
+    update: {
+      status: "Dikonfirmasi"
+    },
+    create: {
+      status: "Dikonfirmasi",
+    }
+  });
+  await prisma.bookingStatus.upsert({
+    where: {
+      id: 1
+    },
+    update: {
+      status: "Dikonfirmasi"
+    },
+    create: {
+      status: "Dikonfirmasi",
+    }
+  });
+  await prisma.paymentStatus.upsert({
+    where: {
+      id: 1
+    },
+    update: {
+      status: "Dikonfirmasi"
+    },
+    create: {
+      status: "Dikonfirmasi",
+    }
+  });
 }
 
 main()
