@@ -20,12 +20,12 @@ const prisma = new PrismaClient({
       level: 'warn',
     },
   ],
-})
+});
 prisma.$on('query', (e) => {
-  console.log('Query: ' + e.query)
-  console.log('Params: ' + e.params)
-  console.log('Duration: ' + e.duration + 'ms')
-})
+  console.log('Query: ' + e.query);
+  console.log('Params: ' + e.params);
+  console.log('Duration: ' + e.duration + 'ms');
+});
 
 async function main() {
   console.log("Executing seed.js");
@@ -79,14 +79,14 @@ async function main() {
 }
 
 main()
-    .then(mock)
+    // .then(mock)
     .then(async () => {
-      console.log("success, disconnecting client")
+      console.log("success, disconnecting client");
       await prisma.$disconnect();
     })
     .catch(async (e) => {
       console.error(e);
-      console.log("error, disconnecting client")
+      console.log("error, disconnecting client");
       await prisma.$disconnect();
       process.exit(1);
     });

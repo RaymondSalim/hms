@@ -22,7 +22,7 @@ export async function generateMetadata(
 
     return {
         title: companyInfo.companyName,
-    }
+    };
 }
 
 export default async function RootLayout({
