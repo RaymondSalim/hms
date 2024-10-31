@@ -22,12 +22,12 @@ const prisma = new PrismaClient({
             level: 'warn',
         },
     ],
-})
+});
 prisma.$on('query', (e) => {
-    console.log('Query: ' + e.query)
-    console.log('Params: ' + e.params)
-    console.log('Duration: ' + e.duration + 'ms')
-})
+    console.log('Query: ' + e.query);
+    console.log('Params: ' + e.params);
+    console.log('Duration: ' + e.duration + 'ms');
+});
 async function mock() {
     console.log("Executing mock.js");
     const rawSql = await fs.readFile(path.join(__dirname, 'mock.sql'), {

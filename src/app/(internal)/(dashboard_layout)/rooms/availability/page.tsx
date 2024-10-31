@@ -51,6 +51,7 @@ export default function RoomsPage() {
             {
                 isSuccess &&
                 <RoomAvailabilityContent
+                    // @ts-expect-error ignore incorrect type
                     roomTypes={roomTypeData}
                     // @ts-expect-error ignore type incorrect
                     bookings={bookings}
