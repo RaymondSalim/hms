@@ -1,4 +1,4 @@
-import {Metadata, ResolvingMetadata} from "next";
+import {Metadata} from "next";
 import {Inter} from "next/font/google";
 import "./globals.css";
 import styles from "./layout.module.css";
@@ -9,15 +9,7 @@ import {getCompanyInfo} from "@/app/_db/settings";
 
 const inter = Inter({subsets: ["latin"]});
 
-type Props = {
-    params: Promise<{ id: string }>
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}
-
-export async function generateMetadata(
-    { params, searchParams }: Props,
-    parent: ResolvingMetadata
-): Promise<Metadata> {
+export async function generateMetadata(): Promise<Metadata> {
     const companyInfo = await getCompanyInfo();
 
     return {
