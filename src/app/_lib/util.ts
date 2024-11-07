@@ -113,3 +113,23 @@ export function generateRandomPassword(length: number) {
 
   return password;
 }
+
+export function parseDurationString(duration: string) {
+  const [value, unit] = duration.split(' ');
+  switch (unit) {
+    case 'hari':
+    case 'day':
+    case 'days':
+      return parseInt(value);
+    case 'bulan':
+    case 'month':
+    case 'months':
+      return parseInt(value) * 30;
+    case 'tahun':
+    case 'year':
+    case 'years':
+      return parseInt(value) * 365;
+    default:
+      return 0;
+  }
+}
