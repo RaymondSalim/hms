@@ -17,6 +17,7 @@ import {getSortedDurations} from "@/app/_db/duration";
 import {Prisma} from "@prisma/client";
 import {AiOutlineLoading} from "react-icons/ai";
 import {ZodFormattedError} from "zod";
+import CurrencyInput from "@/app/_components/input/currencyInput";
 
 interface RoomFormProps extends TableFormProps<RoomsWithTypeAndLocation> {
 }
@@ -287,46 +288,38 @@ export function RoomForm(props: RoomFormProps) {
                             {d.durations.duration}
                           </Typography>
                         </label>
-                        <Input
-                          disabled={roomData.roomtypes == undefined || roomData.location_id == undefined}
-                          variant="outlined"
-                          min="0"
-                          type="number"
-                          name={d.durations.duration}
-                          value={Number(roomData.roomtypes?.roomtypedurations[index]?.suggested_price) ?? ""}
-                          onChange={(e) => {
-                            if (isNaN(Number(e.currentTarget.value))) {
-                              return;
-                            }
+                        <CurrencyInput
+                            disabled={roomData.roomtypes == undefined || roomData.location_id == undefined}
+                            name={d.durations.duration}
+                            value={Number(roomData.roomtypes?.roomtypedurations[index]?.suggested_price) ?? ""}
+                            setValue={(newValue) => {
+                              setRoomData(prevRoom => {
+                                if (newValue == undefined) {
+                                  // @ts-ignore
+                                  prevRoom.roomtypes.roomtypedurations[index].suggested_price = null;
+                                  return {...prevRoom};
+                                }
 
-                            setRoomData(prevRoom => {
-                              if (e.target.value.length == 0) {
-                                // @ts-ignore
-                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = undefined;
+                                if (prevRoom.roomtypes?.roomtypedurations[index]) {
+                                  prevRoom.roomtypes.roomtypedurations[index].suggested_price = new Prisma.Decimal(newValue);
+                                } else {
+                                  // @ts-ignore
+                                  prevRoom.roomtypes.roomtypedurations[index] = {
+                                    room_type_id: prevRoom.roomtypes!.id,
+                                    location_id: prevRoom.location_id!,
+                                    durations: d.durations,
+                                    suggested_price: new Prisma.Decimal(newValue)
+                                  };
+                                }
+
                                 return {...prevRoom};
-                              }
-
-                              if (prevRoom.roomtypes?.roomtypedurations[index]) {
-                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = new Prisma.Decimal(e.target.value);
-                              } else {
-                                // @ts-ignore
-                                prevRoom.roomtypes.roomtypedurations[index] = {
-                                  room_type_id: prevRoom.roomtypes!.id,
-                                  location_id: prevRoom.location_id!,
-                                  durations: d.durations,
-                                  suggested_price: new Prisma.Decimal(e.target.value)
-                                };
-                              }
-
-                              return {...prevRoom};
-                            });
-                          }}
-                          size="lg"
-                          placeholder="5000000"
-                          className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
-                          labelProps={{
-                            className: "before:content-none after:content-none",
-                          }}
+                              });
+                            }}
+                            size="lg"
+                            className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
+                            labelProps={{
+                              className: "before:content-none after:content-none",
+                            }}
                         />
                       </div>
                     );

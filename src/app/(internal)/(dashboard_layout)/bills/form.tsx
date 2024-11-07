@@ -15,261 +15,253 @@ import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {NonUndefined} from "@/app/_lib/types";
 import {Prisma} from "@prisma/client";
 import {BillIncludeBookingAndPayments} from "@/app/_db/bills";
+import CurrencyInput from "@/app/_components/input/currencyInput";
 
 interface BillForm extends TableFormProps<BillIncludeBookingAndPayments> {
 }
 
 type DataType = Partial<NonUndefined<BillForm['contentData']>> & {
-  payment_proof_file?: {
-    fileName: string,
-    fileType: string,
-    b64File: string
-  }
+    payment_proof_file?: {
+        fileName: string,
+        fileType: string,
+        b64File: string
+    }
 };
 
 export function BillForm(props: BillForm) {
-  let parsedData: typeof props.contentData;
-  if (props.contentData) {
-    parsedData = {
-      ...props.contentData,
-      amount: new Prisma.Decimal(props.contentData.amount),
+    let parsedData: typeof props.contentData;
+    if (props.contentData) {
+        parsedData = {
+            ...props.contentData,
+            amount: new Prisma.Decimal(props.contentData.amount),
+        };
+    }
+
+    const [data, setData] = useState<DataType>(parsedData ?? {});
+    const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
+    const [locationID, setLocationID] = useState<number | undefined>(parsedData?.bookings?.rooms?.location_id ?? undefined);
+    const [popoverOpen, setIsPopoverOpen] = useState(false);
+
+    const today = new Date();
+
+    const [initialData, setInitialData] = useState<Partial<DataType>>(parsedData ?? {});
+    // Function to compare initial and current booking data
+    const hasChanges = (initialData: Partial<DataType>, currentData: Partial<DataType>) => {
+        return JSON.stringify(initialData) !== JSON.stringify(currentData);
     };
-  }
 
-  const [data, setData] = useState<DataType>(parsedData ?? {});
-  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
-  const [locationID, setLocationID] = useState<number | undefined>(parsedData?.bookings?.rooms?.location_id ?? undefined);
-  const [popoverOpen, setIsPopoverOpen] = useState(false);
+    // Location Data
+    const {data: locationData, isSuccess: locationDataSuccess} = useQuery({
+        queryKey: ['header.location'],
+        queryFn: () => getLocations(),
+    });
 
-  const today = new Date();
+    const [locationDataMapped, setLocationDataMapped] = useState<SelectOption<number>[]>([]);
+    useEffect(() => {
+        if (locationDataSuccess) {
+            setLocationDataMapped(locationData.map(e => ({
+                value: e.id,
+                label: `${e.name}`,
+            })));
+        }
+    }, [locationData, locationDataSuccess]);
 
-  const [initialData, setInitialData] = useState<Partial<DataType>>(parsedData ?? {});
-  // Function to compare initial and current booking data
-  const hasChanges = (initialData: Partial<DataType>, currentData: Partial<DataType>) => {
-    return JSON.stringify(initialData) !== JSON.stringify(currentData);
-  };
+    // Booking Data
+    const {data: bookingData, isSuccess: isBookingDataSuccess} = useQuery({
+        queryKey: ['bookings', 'location_id', locationID],
+        queryFn: () => getAllBookingsAction(locationID),
 
-  // Location Data
-  const {data: locationData, isSuccess: locationDataSuccess} = useQuery({
-    queryKey: ['header.location'],
-    queryFn: () => getLocations(),
-  });
+        enabled: locationID != undefined,
+    });
+    const [bookingDataMapped, setBookingDataMapped] = useState<SelectOption<number>[]>([]);
+    useEffect(() => {
+        if (isBookingDataSuccess) {
+            setBookingDataMapped(bookingData.map(r => ({
+                value: r.id,
+                label: `${r.id} | ${r.rooms?.room_number}`,
+            })));
+        }
+    }, [bookingData, isBookingDataSuccess]);
 
-  const [locationDataMapped, setLocationDataMapped] = useState<SelectOption<number>[]>([]);
-  useEffect(() => {
-    if (locationDataSuccess) {
-      setLocationDataMapped(locationData.map(e => ({
-        value: e.id,
-        label: `${e.name}`,
-      })));
-    }
-  }, [locationData, locationDataSuccess]);
+    // Use effect to set initialBookingData when the component mounts
+    useEffect(() => {
+        setInitialData(parsedData ?? {});
+    }, [parsedData]);
 
-  // Booking Data
-  const {data: bookingData, isSuccess: isBookingDataSuccess} = useQuery({
-    queryKey: ['bookings', 'location_id', locationID],
-    queryFn: () => getAllBookingsAction(locationID),
+    useEffect(() => {
+        setFieldErrors(props.mutationResponse?.errors);
+    }, [props.mutationResponse?.errors]);
 
-    enabled: locationID != undefined,
-  });
-  const [bookingDataMapped, setBookingDataMapped] = useState<SelectOption<number>[]>([]);
-  useEffect(() => {
-    if (isBookingDataSuccess) {
-      setBookingDataMapped(bookingData.map(r => ({
-        value: r.id,
-        label: `${r.id} | ${r.rooms?.room_number}`,
-      })));
-    }
-  }, [bookingData, isBookingDataSuccess]);
-
-  // Use effect to set initialBookingData when the component mounts
-  useEffect(() => {
-    setInitialData(parsedData ?? {});
-  }, [parsedData]);
-
-  useEffect(() => {
-    setFieldErrors(props.mutationResponse?.errors);
-  }, [props.mutationResponse?.errors]);
-
-  const isFormComplete = useMemo(() => {
-    return !!data?.booking_id &&
-      !!data?.amount;
-  }, [data]);
+    const isFormComplete = useMemo(() => {
+        return !!data?.booking_id &&
+            !!data?.amount;
+    }, [data]);
 
 
-  return (
-    <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{parsedData ? "Perubahan" : "Pembuatan"} Tagihan</h1>
-      <form className={"mt-4"}>
-        <div className="mb-1 flex flex-col gap-6">
-          <MotionConfig
-            key={"bill_form"}
-            transition={{duration: 0.5}}
-          >
-            <AnimatePresence>
-              <div>
-                <label htmlFor="location">
-                  <Typography variant="h6" color="blue-gray">
-                    Lokasi
-                  </Typography>
-                </label>
-                <SelectComponent<number>
-                  isDisabled={!!parsedData}
-                  setValue={(v) => setLocationID(v)}
-                  options={locationDataMapped}
-                  selectedOption={
-                    locationDataMapped.find(r => r.value == locationID)
-                  }
-                  placeholder={"Masukan Lokasi"}
-                  isError={false}
-                />
-              </div>
-              {
-                locationID &&
-                  <motion.div
-                      key={"booking_id"}
-                      initial={{opacity: 0, height: 0}}
-                      animate={{opacity: 1, height: "auto"}}
-                      exit={{opacity: 0, height: 0}}
-                  >
-                      <label htmlFor="booking_id">
-                          <Typography variant="h6" color="blue-gray">
-                              Pemesanan
-                          </Typography>
-                      </label>
-                      <SelectComponent<number>
-                          isDisabled={!!parsedData}
-                          setValue={(v) => setData(prevState => ({...prevState, booking_id: v}))}
-                          options={bookingDataMapped}
-                          selectedOption={bookingDataMapped.find(r => r.value == data?.bookings?.id)}
-                          placeholder={"Pilih Pemesanan"}
-                          isError={!!fieldErrors?.booking_id}
-                      />
-                    {
-                      fieldErrors?.booking_id &&
-                        <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
-                    }
-                  </motion.div>
+    return (
+        <div className={"w-full px-8 py-4"}>
+            <h1 className={"text-xl font-semibold text-black"}>{parsedData ? "Perubahan" : "Pembuatan"} Tagihan</h1>
+            <form className={"mt-4"}>
+                <div className="mb-1 flex flex-col gap-6">
+                    <MotionConfig
+                        key={"bill_form"}
+                        transition={{duration: 0.5}}
+                    >
+                        <AnimatePresence>
+                            <div>
+                                <label htmlFor="location">
+                                    <Typography variant="h6" color="blue-gray">
+                                        Lokasi
+                                    </Typography>
+                                </label>
+                                <SelectComponent<number>
+                                    isDisabled={!!parsedData}
+                                    setValue={(v) => setLocationID(v)}
+                                    options={locationDataMapped}
+                                    selectedOption={
+                                        locationDataMapped.find(r => r.value == locationID)
+                                    }
+                                    placeholder={"Masukan Lokasi"}
+                                    isError={false}
+                                />
+                            </div>
+                            {
+                                locationID &&
+                                <motion.div
+                                    key={"booking_id"}
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <label htmlFor="booking_id">
+                                        <Typography variant="h6" color="blue-gray">
+                                            Pemesanan
+                                        </Typography>
+                                    </label>
+                                    <SelectComponent<number>
+                                        isDisabled={!!parsedData}
+                                        setValue={(v) => setData(prevState => ({...prevState, booking_id: v}))}
+                                        options={bookingDataMapped}
+                                        selectedOption={bookingDataMapped.find(r => r.value == data?.bookings?.id)}
+                                        placeholder={"Pilih Pemesanan"}
+                                        isError={!!fieldErrors?.booking_id}
+                                    />
+                                    {
+                                        fieldErrors?.booking_id &&
+                                        <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
+                                    }
+                                </motion.div>
 
-              }
-              {
-                data?.booking_id &&
-                  <motion.div
-                      key={"bill_amount"}
-                      initial={{opacity: 0, height: 0}}
-                      animate={{opacity: 1, height: "auto"}}
-                      exit={{opacity: 0, height: 0}}
-                  >
-                      <label htmlFor="bill_amount">
-                          <Typography variant="h6" color="blue-gray">
-                              Jumlah Tagihan
-                          </Typography>
-                      </label>
-
-                      <Input
-                          value={data.amount?.toNumber()}
-                          onChange={e => setData(p => {
-                            let validNumber = Number(e.target.value);
-                            // @ts-expect-error
-                            setFieldErrors(fe => ({
-                              ...fe,
-                              amount: isNaN(validNumber) || undefined
-                            }));
-
-                            if (validNumber) {
-                              return {...p, amount: new Prisma.Decimal(validNumber)};
                             }
+                            {
+                                data?.booking_id &&
+                                <motion.div
+                                    key={"bill_amount"}
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <label htmlFor="bill_amount">
+                                        <Typography variant="h6" color="blue-gray">
+                                            Jumlah Tagihan
+                                        </Typography>
+                                    </label>
+                                    <CurrencyInput
+                                        value={data.amount?.toNumber()}
+                                        setValue={(newValue) => {
+                                            setData((old) => ({
+                                                ...old,
+                                                amount: newValue == undefined ? undefined : new Prisma.Decimal(newValue)
+                                            }));
+                                        }}
+                                        size="lg"
+                                        error={!!fieldErrors?.amount}
+                                        className={`${!!fieldErrors?.amount ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                        labelProps={{
+                                            className: "before:content-none after:content-none",
+                                        }}
+                                    />
+                                </motion.div>
+                            }
+                            {
+                                data?.amount &&
+                                <motion.div
+                                    key={"due_date"}
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <label htmlFor="due_date">
+                                        <Typography variant="h6" color="blue-gray">
+                                            Tanggal Jatuh Tempo
+                                        </Typography>
+                                    </label>
+                                    <Popover
+                                        open={popoverOpen}
+                                        handler={() => setIsPopoverOpen(p => !p)}
+                                        placement="bottom-end"
+                                    >
+                                        <PopoverHandler>
+                                            <Input
+                                                variant="outlined"
+                                                size="lg"
+                                                onChange={() => null}
+                                                value={data.due_date ? formatToDateTime(data.due_date, true, true) : ""}
+                                                error={!!fieldErrors?.due_date}
+                                                className={`relative ${!!fieldErrors?.due_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                labelProps={{
+                                                    className: "before:content-none after:content-none",
+                                                }}
+                                            />
+                                        </PopoverHandler>
+                                        <PopoverContent className={"z-[99999]"}>
+                                            <DayPicker
+                                                captionLayout="dropdown"
+                                                mode="single"
+                                                fixedWeeks={true}
+                                                selected={data.due_date ? data.due_date : new Date()}
+                                                onSelect={(d) => {
+                                                    setIsPopoverOpen(false);
+                                                    setData(p => ({...p, due_date: d}));
+                                                }}
+                                                showOutsideDays
+                                                classNames={{
+                                                    disabled: "rdp-disabled cursor-not-allowed",
+                                                }}
+                                                startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
+                                                endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    {
+                                        fieldErrors?.due_date &&
+                                        <Typography color="red">{fieldErrors?.due_date._errors}</Typography>
+                                    }
+                                </motion.div>
+                            }
+                            {
+                                props.mutationResponse?.failure &&
+                                <Typography variant="h6" color="red" className="-mb-4">
+                                    {props.mutationResponse.failure}
+                                </Typography>
+                            }
+                        </AnimatePresence>
+                    </MotionConfig>
+                </div>
 
-                            return {...p, amount: undefined};
-                          })}
-                          size="lg"
-                          error={!!fieldErrors?.amount}
-                          className={`${!!fieldErrors?.amount ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                          labelProps={{
-                            className: "before:content-none after:content-none",
-                          }}
-                      />
-                  </motion.div>
-              }
-              {
-                data?.amount &&
-                  <motion.div
-                      key={"due_date"}
-                      initial={{opacity: 0, height: 0}}
-                      animate={{opacity: 1, height: "auto"}}
-                      exit={{opacity: 0, height: 0}}
-                  >
-                      <label htmlFor="due_date">
-                          <Typography variant="h6" color="blue-gray">
-                              Tanggal Jatuh Tempo
-                          </Typography>
-                      </label>
-                      <Popover
-                          open={popoverOpen}
-                          handler={() => setIsPopoverOpen(p => !p)}
-                          placement="bottom-end"
-                      >
-                          <PopoverHandler>
-                              <Input
-                                  variant="outlined"
-                                  size="lg"
-                                  onChange={() => null}
-                                  value={data.due_date ? formatToDateTime(data.due_date, true, true) : ""}
-                                  error={!!fieldErrors?.due_date}
-                                  className={`relative ${!!fieldErrors?.due_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                  labelProps={{
-                                    className: "before:content-none after:content-none",
-                                  }}
-                              />
-                          </PopoverHandler>
-                          <PopoverContent className={"z-[99999]"}>
-                              <DayPicker
-                                  captionLayout="dropdown"
-                                  mode="single"
-                                  fixedWeeks={true}
-                                  selected={data.due_date ? data.due_date : new Date()}
-                                  onSelect={(d) => {
-                                    setIsPopoverOpen(false);
-                                    setData(p => ({...p, due_date: d}));
-                                  }}
-                                  showOutsideDays
-                                  classNames={{
-                                    disabled: "rdp-disabled cursor-not-allowed",
-                                  }}
-                                  startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                  endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                              />
-                          </PopoverContent>
-                      </Popover>
-                    {
-                      fieldErrors?.due_date &&
-                        <Typography color="red">{fieldErrors?.due_date._errors}</Typography>
-                    }
-                  </motion.div>
-              }
-              {
-                props.mutationResponse?.failure &&
-                  <Typography variant="h6" color="red" className="-mb-4">
-                    {props.mutationResponse.failure}
-                  </Typography>
-              }
-            </AnimatePresence>
-          </MotionConfig>
+                <div className={"flex gap-x-4 justify-end"}>
+                    <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
+                        Batal
+                    </Button>
+                    <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
+                            onClick={() => props.mutation.mutate(data)}
+                            color={"blue"} className="mt-6"
+                            loading={props.mutation.isPending}>
+                        {parsedData ? "Ubah" : "Buat"}
+                    </Button>
+                </div>
+            </form>
         </div>
-
-        <div className={"flex gap-x-4 justify-end"}>
-          <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-            Batal
-          </Button>
-          <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
-                  onClick={() => props.mutation.mutate(data)}
-                  color={"blue"} className="mt-6"
-                  loading={props.mutation.isPending}>
-            {parsedData ? "Ubah" : "Buat"}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
+    );
 }
 
