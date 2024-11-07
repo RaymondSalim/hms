@@ -111,6 +111,8 @@ export function RoomForm(props: RoomFormProps) {
           if (prevRoom.roomtypes) {
             prevRoom.roomtypes.roomtypedurations.forEach((rtd, index) => {
               prevRoom.roomtypes!.roomtypedurations[index] = roomTypeDurationData?.find(rtdf => rtdf.durations.id == rtd.durations.id) ?? rtd;
+              // @ts-expect-error set undefined/nullable to number
+              prevRoom.roomtypes!.roomtypedurations[index].location_id = roomData.location_id;
             });
           }
         } else {
