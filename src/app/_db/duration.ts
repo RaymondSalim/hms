@@ -11,25 +11,8 @@ export async function getSortedDurations() {
     }
   });
 
-  const parseDuration = (duration: string): number => {
-    const [value, unit] = duration.split(' ');
-    switch (unit) {
-      case 'day':
-      case 'days':
-        return parseInt(value);
-      case 'month':
-      case 'months':
-        return parseInt(value) * 30;
-      case 'year':
-      case 'years':
-        return parseInt(value) * 365;
-      default:
-        return 0;
-    }
-  };
-
   return durations.then(d => {
-    d.sort((a, b) => parseDuration(a.duration) - parseDuration(b.duration));
+    d.sort((a, b) => a.month_count - b.month_count);
     return d;
   });
 }
