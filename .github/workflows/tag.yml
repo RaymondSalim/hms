@@ -1,0 +1,33 @@
+name: Tag on Merge to Prod
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - prod
+
+jobs:
+  tag_on_merge:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Extract Tag from Title
+        id: extract_tag
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          if [[ "$title" =~ Release[[:space:]]+(.+) ]]; then
+            tag_name="${BASH_REMATCH[1]}"
+            echo "tag_name=$tag_name" >> $GITHUB_ENV
+          fi
+
+      - name: Create Tag
+        if: env.tag_name != ''
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git tag "$tag_name"
+          git push origin "$tag_name"
