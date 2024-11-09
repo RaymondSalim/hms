@@ -4,14 +4,20 @@ import {Tenant} from "@prisma/client";
 import {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {object, string} from "zod";
-import {createTenant, deleteTenant, TenantWithRooms, updateTenantByID} from "@/app/_db/tenant";
+import {
+    createTenant,
+    deleteTenant,
+    TenantWithRooms,
+    TenantWithRoomsAndSecondResident,
+    updateTenantByID
+} from "@/app/_db/tenant";
 import {tenantSchemaWithOptionalID} from "@/app/_lib/zod/tenant/zod";
 import {DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {OmitTimestamp, PartialBy} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 
 // Action to update tenants
-export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<GenericActionsType<TenantWithRooms>> {
+export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<GenericActionsType<TenantWithRoomsAndSecondResident>> {
     const {success, data, error} = tenantSchemaWithOptionalID.safeParse(tenantData);
 
     if (!success) {

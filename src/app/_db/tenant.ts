@@ -15,6 +15,18 @@ export type TenantWithRooms = Prisma.TenantGetPayload<{
     }
 }>;
 
+export type TenantWithRoomsAndSecondResident = Prisma.TenantGetPayload<{
+    include: {
+        bookings: {
+            include: {
+                rooms: true
+            }
+        },
+        second_resident: true
+    }
+}>;
+
+
 export async function getTenants(id?: string, locationID?: number, limit?: number, offset?: number) {
     return prisma.tenant.findMany({
         where: {
