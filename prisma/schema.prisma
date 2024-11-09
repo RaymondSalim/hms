@@ -409,6 +409,7 @@ model Tenant {
   second_resident          Tenant? @relation("TenantSecondResident", fields: [second_resident_id], references: [id])
   second_resident_of       Tenant? @relation("TenantSecondResident")
   second_resident_relation String? @db.VarChar(255)
+  family_certificate_file  String? @db.VarChar(512)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
