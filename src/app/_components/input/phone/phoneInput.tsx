@@ -3,7 +3,7 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useCountries} from "use-react-countries";
 import {Button, Input, InputProps, Menu, MenuHandler, MenuItem, MenuList,} from "@material-tailwind/react";
-import {parsePhoneNumber} from "libphonenumber-js";
+import {isValidPhoneNumber, parsePhoneNumber} from "libphonenumber-js";
 
 export interface PhoneInputProps extends InputProps {
   phoneNumber?: string | null;
@@ -34,7 +34,7 @@ export function PhoneInput(props: PhoneInputProps) {
   const {name, flags, countryCallingCode} = sortedCountries[country];
 
   useEffect(() => {
-    if (props.phoneNumber) {
+    if (props.phoneNumber && isValidPhoneNumber(props.phoneNumber)) {
       let phoneNumber = parsePhoneNumber(props.phoneNumber);
       let countryIndex = sortedCountries.findIndex(c => {
         return c.isoCountryCode == phoneNumber.country;
