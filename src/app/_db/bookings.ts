@@ -141,7 +141,19 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
 
 // TODO! Check if update booking actually updates bookings, or just bills
 export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp<Booking>, duration: Duration) {
-  const {fee, ...otherBookingData} = data;
+  const booking = prisma.booking.findFirst({
+    where: {
+      id: id
+    }
+  });
+
+  if (!booking) {
+    return {
+      failure: "Booking not found"
+    };
+  }
+
+  const {fee} = data;
   const startDate = new Date(data.start_date);
   let end_date = new Date();
 
@@ -202,34 +214,48 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
 
   return {
     success: await prisma.$transaction(async (prismaTrx) => {
-      // Get Booking
-      const existingBooking = await prismaTrx.booking.findFirst({
+      // Delete existing bills
+      await prismaTrx.bill.deleteMany({
         where: {
-          id: id
+          bookings: {
+            id: id
+          }
         }
       });
 
-      if (existingBooking) {
-        // Delete existing bills
-        await prismaTrx.bill.deleteMany({
-          where: {
-            bookings: {
-              id: existingBooking.id
-            }
-          }
+      // Create associated bills
+      for (const billData of bills) {
+        await prismaTrx.bill.create({
+          // @ts-ignore
+          data: {
+            ...billData,
+            booking_id: id,
+          },
         });
-
-        // Create associated bills
-        for (const billData of bills) {
-          await prismaTrx.bill.create({
-            // @ts-ignore
-            data: {
-              ...billData,
-              booking_id: existingBooking.id,
-            },
-          });
-        }
       }
+
+      // Update Booking
+      return prismaTrx.booking.update({
+        where: {
+          id: id
+        },
+        data: {
+          id: undefined,
+          ...data
+        },
+        include: {
+          rooms: {
+            include: {
+              locations: true,
+            }
+          },
+          durations: true,
+          bookingstatuses: true,
+          tenants: true,
+          checkInOutLogs: true
+        }
+      });
+
     })
   };
 }
