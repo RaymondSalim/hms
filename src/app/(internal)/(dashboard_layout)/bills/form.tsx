@@ -206,7 +206,7 @@ export function BillForm(props: BillForm) {
                                                 variant="outlined"
                                                 size="lg"
                                                 onChange={() => null}
-                                                value={data.due_date ? formatToDateTime(data.due_date, true, true) : ""}
+                                                value={data.due_date ? formatToDateTime(data.due_date, false) : ""}
                                                 error={!!fieldErrors?.due_date}
                                                 className={`relative ${!!fieldErrors?.due_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                                 labelProps={{
@@ -216,6 +216,7 @@ export function BillForm(props: BillForm) {
                                         </PopoverHandler>
                                         <PopoverContent className={"z-[99999]"}>
                                             <DayPicker
+                                                timeZone={"UTC"}
                                                 captionLayout="dropdown"
                                                 mode="single"
                                                 fixedWeeks={true}
