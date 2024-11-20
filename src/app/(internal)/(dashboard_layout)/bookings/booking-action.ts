@@ -20,9 +20,8 @@ export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
     };
   }
 
-  const {fee, start_date, duration_id, ...otherBookingData} = data;
+  const {id, fee, start_date, duration_id, ...otherBookingData} = data;
 
-  const startDate = new Date(start_date);
   const duration = await prisma.duration.findUnique({
     where: {id: duration_id},
   });
@@ -78,7 +77,7 @@ export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Bookin
         start_date: currBooking.start_date,
         end_date: currBooking.end_date
       }
-    )) {
+    ) && currBooking.id != id) {
       return {
         failure: `Booking overlaps with booking ID: ${currBooking.id}`
       };

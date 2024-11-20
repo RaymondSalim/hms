@@ -335,6 +335,7 @@ export function BookingForm(props: BookingFormProps) {
                                         </PopoverHandler>
                                         <PopoverContent className={"z-[99999]"}>
                                             <DayPicker
+                                                timeZone="UTC"
                                                 captionLayout="dropdown"
                                                 mode="single"
                                                 fixedWeeks={true}
