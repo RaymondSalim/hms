@@ -126,6 +126,15 @@ export async function createBill(bill: OmitIDTypeAndTimestamp<Bill>) {
   return prisma.bill.create({
     data: {
       ...bill
+    },
+    include: {
+      bookings: true
     }
-  });
+  }).then(b => ({
+    ...b,
+    bookings: {
+      ...b.bookings,
+      custom_id: `#-${b.bookings.id}`
+    }
+  }));
 }
