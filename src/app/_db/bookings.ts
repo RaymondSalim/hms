@@ -62,13 +62,13 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
       bills.push({
         amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
         description: `Tagihan prorata untuk ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
-        due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
+        due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours()),
       });
 
       // Add full monthly bills for subsequent months, except the last one
       for (let i = 1; i < duration.month_count; i++) {
-        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
+        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
+        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
         bills.push({
           amount: new Prisma.Decimal(fee),
           description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
@@ -77,11 +77,11 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
       }
 
       // Add full monthly bill for the last month
-      const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 1);
-      const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0);
+      const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 1, startDate.getHours());
+      const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0, startDate.getHours());
       bills.push({
         amount: new Prisma.Decimal(fee),
-        description: `Monthly bill for ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
+        description: `Tagihan bulanan untuk ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
         due_date: lastMonthEndDate,
       });
       end_date = lastMonthEndDate;
@@ -89,11 +89,11 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
     } else {
       // Add full monthly bills for totalMonths
       for (let i = 0; i < duration.month_count; i++) {
-        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
+        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
+        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
         bills.push({
           amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
+          description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
 
@@ -171,7 +171,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
       // Add prorated bill for the current month
       bills.push({
         amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
-        description: `Prorated bill for ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
+        description: `Tagihan prorata untuk ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
         due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
       });
 
@@ -181,7 +181,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
         const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
         bills.push({
           amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
+          description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
       }
@@ -191,7 +191,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
       const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0);
       bills.push({
         amount: new Prisma.Decimal(fee),
-        description: `Monthly bill for ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
+        description: `Tagihan bulanan untuk ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
         due_date: lastMonthEndDate,
       });
       end_date = lastMonthEndDate;
@@ -203,7 +203,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
         const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
         bills.push({
           amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
+          description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
 
