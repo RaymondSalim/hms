@@ -176,7 +176,7 @@ export default function BillsContent({bills}: BillsContentProps) {
         columnHelper.accessor(row => row.id, {
             header: "ID",
         }),
-        columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
+        columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id , {
             header: "ID Pemesanan",
         }),
         columnHelper.accessor(row => row.description, {
