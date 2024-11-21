@@ -76,7 +76,7 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
               open={showDialog}
               size={"md"}
               handler={() => setShowDialog(prev => !prev)}
-              className={"p-8"}
+              className={"p-8 h-[80dvh]"}
           >
             {dialogContent}
           </Dialog>
@@ -93,9 +93,8 @@ interface TenantInfoProps {
 
 function TenantInfo({ tenant, setDialogOpen }: TenantInfoProps){
   return (
-      <div className="container mx-auto p-6 space-y-8">
-        <Typography variant="h1" className="text-center">Informasi Penghuni</Typography>
-
+      <div className="container mx-auto p-6 space-y-8 h-full overflow-y-auto">
+        <h1 className={"text-xl font-semibold text-black"}>Informasi Penghuni</h1>
         <Card className="shadow-none">
           <CardBody className="space-y-4">
             {/* Basic Information */}
