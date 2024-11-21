@@ -62,13 +62,13 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
       bills.push({
         amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
         description: `Tagihan prorata untuk ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
-        due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
+        due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours()),
       });
 
       // Add full monthly bills for subsequent months, except the last one
       for (let i = 1; i < duration.month_count; i++) {
-        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
+        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
+        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
         bills.push({
           amount: new Prisma.Decimal(fee),
           description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
@@ -77,11 +77,11 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
       }
 
       // Add full monthly bill for the last month
-      const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 1);
-      const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0);
+      const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 1, startDate.getHours());
+      const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0, startDate.getHours());
       bills.push({
         amount: new Prisma.Decimal(fee),
-        description: `Monthly bill for ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
+        description: `Tagihan bulanan untuk ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
         due_date: lastMonthEndDate,
       });
       end_date = lastMonthEndDate;
@@ -89,11 +89,11 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
     } else {
       // Add full monthly bills for totalMonths
       for (let i = 0; i < duration.month_count; i++) {
-        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
+        const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
+        const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
         bills.push({
           amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
+          description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
 
@@ -141,7 +141,19 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
 
 // TODO! Check if update booking actually updates bookings, or just bills
 export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp<Booking>, duration: Duration) {
-  const {fee, ...otherBookingData} = data;
+  const booking = prisma.booking.findFirst({
+    where: {
+      id: id
+    }
+  });
+
+  if (!booking) {
+    return {
+      failure: "Booking not found"
+    };
+  }
+
+  const {fee} = data;
   const startDate = new Date(data.start_date);
   let end_date = new Date();
 
@@ -159,7 +171,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
       // Add prorated bill for the current month
       bills.push({
         amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
-        description: `Prorated bill for ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
+        description: `Tagihan prorata untuk ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
         due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
       });
 
@@ -169,7 +181,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
         const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
         bills.push({
           amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
+          description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
       }
@@ -179,7 +191,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
       const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0);
       bills.push({
         amount: new Prisma.Decimal(fee),
-        description: `Monthly bill for ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
+        description: `Tagihan bulanan untuk ${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()}`,
         due_date: lastMonthEndDate,
       });
       end_date = lastMonthEndDate;
@@ -191,7 +203,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
         const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0);
         bills.push({
           amount: new Prisma.Decimal(fee),
-          description: `Monthly bill for ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
+          description: `Tagihan bulanan untuk ${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()}`,
           due_date: billEndDate,
         });
 
@@ -202,34 +214,48 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
 
   return {
     success: await prisma.$transaction(async (prismaTrx) => {
-      // Get Booking
-      const existingBooking = await prismaTrx.booking.findFirst({
+      // Delete existing bills
+      await prismaTrx.bill.deleteMany({
         where: {
-          id: id
+          bookings: {
+            id: id
+          }
         }
       });
 
-      if (existingBooking) {
-        // Delete existing bills
-        await prismaTrx.bill.deleteMany({
-          where: {
-            bookings: {
-              id: existingBooking.id
-            }
-          }
+      // Create associated bills
+      for (const billData of bills) {
+        await prismaTrx.bill.create({
+          // @ts-ignore
+          data: {
+            ...billData,
+            booking_id: id,
+          },
         });
-
-        // Create associated bills
-        for (const billData of bills) {
-          await prismaTrx.bill.create({
-            // @ts-ignore
-            data: {
-              ...billData,
-              booking_id: existingBooking.id,
-            },
-          });
-        }
       }
+
+      // Update Booking
+      return prismaTrx.booking.update({
+        where: {
+          id: id
+        },
+        data: {
+          id: undefined,
+          ...data
+        },
+        include: {
+          rooms: {
+            include: {
+              locations: true,
+            }
+          },
+          durations: true,
+          bookingstatuses: true,
+          tenants: true,
+          checkInOutLogs: true
+        }
+      });
+
     })
   };
 }

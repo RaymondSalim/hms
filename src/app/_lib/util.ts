@@ -40,9 +40,9 @@ export function getLastDateOfBooking(start_date: Date, duration: Duration) {
 
   if (duration.month_count) {
     if (startDate.getDate() == 1) {
-      return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 0);
+      return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 0, startDate.getHours());
     }
-    return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count + 1, 0);
+    return new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count + 1, 0, startDate.getHours());
   }
 
   return startDate;

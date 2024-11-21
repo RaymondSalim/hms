@@ -2,7 +2,7 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React, {useContext, useState} from "react";
-import {addToDate, formatToDateTime} from "@/app/_lib/util";
+import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
@@ -69,10 +69,13 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         columnHelper.accessor(row => row.rooms?.room_number, {
             header: "Nomor Kamar"
         }),
-        columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
+        columnHelper.accessor(row => {
+            let date = formatToDateTime(row.start_date, false);
+            return date;
+        }, {
             header: "Tanggal Mulai"
         }),
-        columnHelper.accessor(row => formatToDateTime(addToDate(row.start_date, 0, row.durations?.month_count ?? 0), false), {
+        columnHelper.accessor(row => formatToDateTime(row.end_date, false), {
             header: "Tanggal Selesai",
         }),
         columnHelper.accessor(row => row.fee, {

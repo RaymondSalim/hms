@@ -1,0 +1,84 @@
+.fc {
+    @apply text-black
+}
+
+.fc-today-button {
+    @apply !capitalize
+}
+
+.fc-button-group {
+    @apply
+    !flex
+    !flex-row
+    !divide-x
+    !divide-gray-800
+}
+
+.fc-button {
+    @apply
+    !flex-shrink-0
+    !flex
+    !gap-x-3
+    !items-center
+    !align-middle
+    !select-none
+    !font-sans
+    !font-bold
+    !text-center
+    !uppercase
+    !transition-all
+    disabled:!opacity-50
+    disabled:!shadow-none
+    disabled:!pointer-events-none
+    !text-xs
+    !py-3
+    !px-6
+    !rounded-lg
+    !bg-gray-900
+    !text-white
+    !shadow-md
+    !shadow-gray-900/10
+    hover:!shadow-lg
+    hover:!shadow-gray-900/20
+    focus:!opacity-[0.85]
+    focus:!shadow-none
+    active:!opacity-[0.85]
+    active:!shadow-none
+}
+
+.fc-button:nth-child(1) {
+    @apply
+    !rounded-r-none
+    !border-r-0
+}
+
+.fc-button:nth-last-child(1) {
+    @apply
+    !rounded-l-none
+    !border-r-0
+}
+
+.fc-button:not(:nth-child(1)):not(:nth-last-child(1)) {
+    @apply
+    !rounded-none
+}
+
+.fc-button > svg {
+    @apply w-4 h-4
+}
+
+.fc-daygrid-day-top {
+    @apply p-1 justify-center
+}
+
+.fc-daygrid-day-number {
+    @apply text-xs text-center leading-6 h-6 w-6 table
+}
+
+.fc-day-today {
+    @apply !bg-transparent
+}
+
+.fc-day-today .fc-daygrid-day-number {
+    @apply rounded-full bg-blue-300 align-middle
+}

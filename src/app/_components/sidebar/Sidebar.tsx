@@ -1,4 +1,4 @@
-import {FaBed, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUserFriends} from 'react-icons/fa';
+import {FaBed, FaCalendar, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUserFriends} from 'react-icons/fa';
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
 import {Session} from 'next-auth';
@@ -47,6 +47,7 @@ export default async function Sidebar({session}: SidebarProps) {
                 // {name: 'Status Kamar', path: '/rooms/status'},
             ]
         },
+        {name: 'Kalender', path: '/calendar', icon: <FaCalendar/>},
         // {name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus/>},
         {name: 'Pemesanan', path: '/bookings', icon: <FaBed/>},
         {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},
