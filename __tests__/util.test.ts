@@ -12,7 +12,7 @@ describe("test util functions", () => {
     const defaultDuration: Duration = {
       id: 0,
       duration: "",
-      month_count: null,
+      month_count: 1,
       createdAt: new Date(),
       updatedAt: new Date()
     };
