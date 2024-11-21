@@ -8,7 +8,7 @@ import {
     CalenderEvent,
     CalenderEventRange,
     getCalendarEvents
-} from "@/app/(internal)/(dashboard_layout)/calendar/calendar-action";
+} from "@/app/(internal)/(dashboard_layout)/schedule/calendar/calendar-action";
 import {CalendarApi, EventClickArg} from "@fullcalendar/core";
 import FullCalendar from "@fullcalendar/react";
 import DayGrid from "@fullcalendar/daygrid";
@@ -35,7 +35,8 @@ export default function CalendarPage() {
         headerContext.setTitle("Kalender");
         headerContext.setShowLocationPicker(true);
         headerContext.setPaths([
-            <Link key={"calendar"} href={"/calendar"}>Kalender</Link>,
+            <Link key={"schedule"} href={"/schedule/calendar"}>Jadwal</Link>,
+            <Link key={"calendar"} href={"/schedule/calendar"}>Kalender</Link>,
         ]);
     }, []);
 
@@ -91,7 +92,7 @@ export default function CalendarPage() {
                     className="hidden bg-white border rounded shadow-md p-3 text-sm z-10"
                 ></div>
                 <FullCalendar
-                    timeZone="UTC"
+                    timeZone="local"
                     initialDate={range?.startDate}
                     datesSet={(date) => {
                         setRange({
@@ -146,27 +147,40 @@ export default function CalendarPage() {
                     //     {
                     //         start: ((): Date | string => {
                     //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 16));
                     //         })(),
-                    //         end: ((): Date | string => {
-                    //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
-                    //         })(),
-                    //         title: "test 3",
-                    //         color: "blue"
+                    //         // end: ((): Date | string => {
+                    //         //     const today = new Date();
+                    //         //     return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
+                    //         // })(),
+                    //         allDay: true,
+                    //         title: "test 3 (allday)",
+                    //         color: "orange"
                     //     },
-                    //     {
-                    //         start: ((): Date | string => {
-                    //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-                    //         })(),
-                    //         end: ((): Date | string => {
-                    //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
-                    //         })(),
-                    //         title: "test 4",
-                    //         color: "blue"
-                    //     },
+                    //     // {
+                    //     //     start: ((): Date | string => {
+                    //     //         const today = new Date();
+                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                    //     //     })(),
+                    //     //     end: ((): Date | string => {
+                    //     //         const today = new Date();
+                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
+                    //     //     })(),
+                    //     //     title: "test 3",
+                    //     //     color: "blue"
+                    //     // },
+                    //     // {
+                    //     //     start: ((): Date | string => {
+                    //     //         const today = new Date();
+                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                    //     //     })(),
+                    //     //     end: ((): Date | string => {
+                    //     //         const today = new Date();
+                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
+                    //     //     })(),
+                    //     //     title: "test 4",
+                    //     //     color: "blue"
+                    //     // },
                     // ]}
                     headerToolbar={{
                         left: "",
