@@ -3,23 +3,24 @@
 import {EventApi} from "@fullcalendar/core";
 import prisma from "@/app/_lib/primsa";
 import {CalenderEventTypes, CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
+import {Event} from "@prisma/client";
+import {GenericActionsType} from "@/app/_lib/actions";
 
 export type CalenderEventRange = {
     startDate: Date | string,
     endDate: Date | string,
 }
 
-export type CalenderEvent = Partial<EventApi> & {
+export type CalenderEvent = Partial<Omit<Event, "id">> & Partial<EventApi> & {
     type: {
-        main: CalenderEventTypes,
-        sub: any
+        main?: CalenderEventTypes,
+        sub?: any
     },
     originalData?: any
 }
 
 export async function getCalendarEvents(locationID?: number, dateRange?: CalenderEventRange): Promise<Partial<CalenderEvent>[]> {
     let events: Partial<CalenderEvent>[] = [];
-
     let startDate: Date | undefined;
     let endDate: Date | undefined;
 
@@ -54,7 +55,6 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
         },
         distinct: "id"
     });
-
     bookings.forEach(b => {
         events.push({
             id: `${b.id.toString()}_in`,
@@ -85,5 +85,52 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
         });
     });
 
+    const eventItems = await prisma.event.findMany({
+        where: {
+            OR: [
+                {
+                    start: {
+                        gte: startDate,
+                        lt: endDate,
+                    }
+                },
+                {
+                    end: {
+                        gte: startDate,
+                        lt: endDate,
+                    }
+                }
+            ],
+        },
+    });
+
+    eventItems.forEach(e => {
+        // @ts-expect-error null-undefined
+        events.push({
+            ...e,
+            id: e.id.toString(),
+            originalData: e
+        });
+    });
+
     return events;
+}
+
+export async function deleteCalendarEvent(id: number): Promise<GenericActionsType<boolean>> {
+    try {
+        await prisma.event.delete({
+            where: {
+                id
+            }
+        });
+    } catch (e) {
+        console.error(e);
+        return {
+            failure: "Request Unsuccessful",
+        };
+    }
+
+    return {
+        success: true,
+    };
 }

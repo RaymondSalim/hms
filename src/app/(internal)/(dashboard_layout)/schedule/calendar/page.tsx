@@ -3,10 +3,11 @@
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import React, {MouseEventHandler, ReactElement, useContext, useEffect, useRef, useState} from "react";
 import Link from "next/link";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {
     CalenderEvent,
     CalenderEventRange,
+    deleteCalendarEvent,
     getCalendarEvents
 } from "@/app/(internal)/(dashboard_layout)/schedule/calendar/calendar-action";
 import {CalendarApi, EventClickArg} from "@fullcalendar/core";
@@ -15,7 +16,16 @@ import DayGrid from "@fullcalendar/daygrid";
 import List from "@fullcalendar/list";
 import TimeGrid from "@fullcalendar/timegrid";
 import IDLocale from "@fullcalendar/core/locales/id";
-import {Button, ButtonGroup, Menu, MenuHandler, MenuItem, MenuList, Typography,} from "@material-tailwind/react";
+import {
+    Button,
+    ButtonGroup,
+    Dialog,
+    Menu,
+    MenuHandler,
+    MenuItem,
+    MenuList,
+    Typography,
+} from "@material-tailwind/react";
 import {FaChevronDown} from "react-icons/fa";
 
 import "./styles/fullcalender-overrides.css";
@@ -26,7 +36,7 @@ import {EventImpl} from "@fullcalendar/core/internal";
 import {CalenderEventTypes, CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {formatToDateTime} from "@/app/_lib/util";
 import {TbDoorEnter, TbDoorExit} from "react-icons/tb";
-import {Booking, Tenant} from "@prisma/client";
+import {Booking, Event, Tenant} from "@prisma/client";
 import {MdOutlineClose} from "react-icons/md";
 
 export default function CalendarPage() {
@@ -45,6 +55,8 @@ export default function CalendarPage() {
 
     const [tooltipOpen, setTooltipOpen] = useState(false);
     const [tooltipData, setTooltipData] = useState<EventImpl | undefined>();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteEventData, setDeleteEventData] = useState<{ id: number; calendarID: string } | null>(null);
 
     const {refs, floatingStyles} = useFloating({
         open: tooltipOpen,
@@ -77,11 +89,33 @@ export default function CalendarPage() {
     };
 
     const handleEventClick = (e: EventClickArg) => {
-        console.log(e);
         refs.setReference(e.el);
-        // TODO! Add cases for non booking events
         setTooltipData(e.event);
         setTooltipOpen(true);
+    };
+
+    const deleteMutation = useMutation({
+        mutationFn: async (arg: { id: number; calendarID: string }) => {
+            return await deleteCalendarEvent(arg.id);
+        },
+        onSuccess: (data, variables) => {
+            if (data.success) {
+                toast.success("Jadwal Berhasil Dihapus!", {});
+                calendarApi.current?.getEventById(variables.calendarID)?.remove();
+            }
+        },
+    });
+
+    const handleDelete = (id: number, calendarID: string) => {
+        setDeleteEventData({ id, calendarID });
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (deleteEventData) {
+            deleteMutation.mutate(deleteEventData);
+            setDeleteDialogOpen(false);
+        }
     };
 
     return (
@@ -130,7 +164,7 @@ export default function CalendarPage() {
                     //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12));
                     //         })(),
                     //         title: "test 1",
-                    //         color: "red"
+                    //         color: "#33b679"
                     //     },
                     //     {
                     //         start: ((): Date | string => {
@@ -241,9 +275,14 @@ export default function CalendarPage() {
                             style={floatingStyles}
                             className="relative bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-sm max-w-96 z-50"
                         >
-                            <TooltipContent event={tooltipData} closeTooltip={() => setTooltipOpen(false)}/>
+                            <TooltipContent
+                                event={tooltipData}
+                                onDelete={handleDelete}
+                                closeTooltip={() => setTooltipOpen(false)}
+                            />
                             <div className="mt-3 flex justify-end">
-                                <Button onClick={() => setTooltipOpen(false)} variant={"text"} className={"absolute right-2 top-2 flex justify-center items-center p-2"}>
+                                <Button onClick={() => setTooltipOpen(false)} variant={"text"}
+                                        className={"absolute right-2 top-2 flex justify-center items-center p-2"}>
                                     <MdOutlineClose className={"h-4 w-4 rounded-full"} size={"sm"}/>
                                 </Button>
                             </div>
@@ -251,6 +290,12 @@ export default function CalendarPage() {
                     )
                 }
             </div>
+            <DeleteDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onDelete={confirmDelete}
+                isPending={deleteMutation.isPending}
+            />
         </>
     );
 }
@@ -258,10 +303,12 @@ export default function CalendarPage() {
 interface TooltipContentProps {
     event?: EventImpl;
     closeTooltip: () => void;
+    onDelete: (id: number, calendarID: string) => void;
 }
 
-function TooltipContent({event, closeTooltip}: TooltipContentProps) {
+function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
     const tooltipRef = useRef<HTMLDivElement | null>(null);
+    const deleteDialogState = useState(false);
 
     // Close tooltip if clicked outside
     useEffect(() => {
@@ -279,13 +326,14 @@ function TooltipContent({event, closeTooltip}: TooltipContentProps) {
 
     if (!event || !event.extendedProps) return <></>;
     const data = event.extendedProps as CalenderEvent;
+    const originalData = data.originalData;
 
-    let tooltipContent: ReactElement = <></>;
+    let tooltipContent: ReactElement;
 
-    switch (data.type.main) {
+    switch (data.type?.main) {
         case CalenderEventTypes.BOOKING: {
-            const bookingData = data.originalData as Booking;
-            const tenantData = data.originalData.tenants as Tenant;
+            const bookingData = originalData as Booking;
+            const tenantData = originalData.tenants as Tenant;
             tooltipContent = (
                 <>
                     <div className={"flex gap-x-2 justify-between items-center mb-2"}>
@@ -330,16 +378,117 @@ function TooltipContent({event, closeTooltip}: TooltipContentProps) {
                     >Lihat pemesanan selengkapnya</Link>
                 </>
             );
+            break;
+        }
+        default: {
+            const eventData = originalData as Event;
+            tooltipContent = (
+                <>
+                    <div className="flex gap-x-2 items-center">
+                        <div
+                            className="h-3 w-3 rounded-full"
+                            style={{
+                                backgroundColor: eventData.borderColor ?? undefined,
+                            }}
+                        />
+                        <Typography variant="h5" color="black">
+                            {eventData.title}
+                        </Typography>
+                        <div className="w-10 h-1"></div>
+                    </div>
+                    <div className="mb-4">
+                        <Typography variant="small" className="text-gray-600">
+                            {`${formatToDateTime(eventData.start!, !eventData.allDay)} ${
+                                eventData.end ? `- ${formatToDateTime(eventData.end!, !eventData.allDay)}` : ""
+                            }`}
+                        </Typography>
+                    </div>
+
+                    {eventData.description && (
+                        <div className="mb-4">
+                            <Typography variant="h6" className="text-gray-800 mb-2">
+                                Deskripsi
+                            </Typography>
+                            <Typography className="text-gray-700">{eventData.description}</Typography>
+                        </div>
+                    )}
+
+                    <div className="mt-4 border-t pt-4">
+                        <Typography variant="small" className="text-gray-500 mb-4 block">
+                            Last updated: {formatToDateTime(eventData.updatedAt!)}
+                        </Typography>
+                        <div className="flex gap-x-4 justify-end">
+                            <Link
+                                key={`event-${eventData.id}`}
+                                href={{
+                                    pathname: "/schedule/create",
+                                    query: {
+                                        event_id: eventData.id,
+                                    },
+                                }}
+                                className="text-blue-600 dark:text-blue-500 hover:underline text-sm"
+                            >
+                                Ubah
+                            </Link>
+                            <button
+                                onClick={() => onDelete(eventData.id, event.id)}
+                                className="text-red-600 dark:text-red-500 hover:underline text-sm"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </>
+            );
+            break;
         }
     }
 
     return (
-        <div ref={tooltipRef} className={"relative"}>
-            {tooltipContent}
-            {/*TODO! This button is not working*/}
-            {/*<Button onClick={() => closeTooltip()} variant={"text"} className={"absolute right-0 top-0 flex justify-center items-center p-2"}>*/}
-            {/*    <MdOutlineClose className={"h-4 w-4 rounded-full"} size={"sm"}/>*/}
-            {/*</Button>*/}
-        </div>
+        <>
+            <div ref={tooltipRef} className={"relative"}>
+                {tooltipContent}
+                {/*TODO! This button is not working*/}
+                {/*<Button onClick={() => closeTooltip()} variant={"text"} className={"absolute right-0 top-0 flex justify-center items-center p-2"}>*/}
+                {/*    <MdOutlineClose className={"h-4 w-4 rounded-full"} size={"sm"}/>*/}
+                {/*</Button>*/}
+            </div>
+        </>
     );
 };
+
+function DeleteDialog({
+                          open,
+                          onClose,
+                          onDelete,
+                          isPending,
+                      }: {
+    open: boolean;
+    onClose: () => void;
+    onDelete: () => void;
+    isPending?: boolean;
+}) {
+    return (
+        <Dialog
+            open={open}
+            size={"md"}
+            handler={onClose}
+            className={"p-8"}
+        >
+            <h2 className={"text-xl font-semibold text-black mb-4"}>Hapus Jadwal</h2>
+            <span>Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.</span>
+            <div className={"flex gap-x-4 justify-end"}>
+                <Button onClick={onClose} variant={"outlined"} className="mt-6">
+                    Batal
+                </Button>
+                <Button onClick={onDelete}
+                        color={"red"}
+                        className="mt-6"
+                        loading={isPending}
+                >
+                    Hapus
+                </Button>
+            </div>
+        </Dialog>
+    );
+}

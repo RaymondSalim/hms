@@ -1,0 +1,7 @@
+input {
+    @apply !bg-white disabled:!bg-gray-200 checked:!bg-black
+}
+
+textarea {
+    @apply !bg-white;
+}
