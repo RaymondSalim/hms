@@ -1,7 +1,6 @@
-// Custom Zod type for ISO date string validation and conversion to Date
 import {z, ZodErrorMap} from "zod";
 
-export const isoDateStringToDate = (params?: ({
+type zodParams = {
     errorMap?: ZodErrorMap | undefined;
     invalid_type_error?: string | undefined;
     required_error?: string | undefined;
@@ -9,7 +8,9 @@ export const isoDateStringToDate = (params?: ({
     description?: string | undefined;
 } & {
     coerce?: true | undefined;
-}) | undefined) => {
+};
+
+export const isoDateStringToDate = (params?: zodParams) => {
     return z
         .string(params)
         .refine(
@@ -25,4 +26,21 @@ export const isoDateStringToDate = (params?: ({
             // Convert the valid ISO string to a Date object
             return new Date(value);
         });
+};
+
+export const jsonString = (params?: zodParams, optional: boolean = false) => {
+    const stringVal = optional ? z.string(params).nullish() : z.string(params);
+    const jsonVal = z.custom((val) => {
+        if (optional && val == undefined) return true;
+        try {
+            JSON.parse(val);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    });
+    return z.union([
+        stringVal,
+        jsonVal,
+    ]);
 };
