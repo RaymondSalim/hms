@@ -434,3 +434,21 @@ model EmailLogs {
 
   @@map("emaillogs")
 }
+
+model Event {
+  id              Int       @id @default(autoincrement())
+  title           String
+  description     String?
+  start           DateTime
+  end             DateTime?
+  allDay          Boolean   @default(false)
+  backgroundColor String?
+  borderColor     String?
+  textColor       String?
+  recurring       Boolean   @default(false)
+  extendedProps   Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("events")
+}

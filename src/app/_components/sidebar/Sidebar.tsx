@@ -47,7 +47,15 @@ export default async function Sidebar({session}: SidebarProps) {
                 // {name: 'Status Kamar', path: '/rooms/status'},
             ]
         },
-        {name: 'Kalender', path: '/calendar', icon: <FaCalendar/>},
+        {
+            name: 'Jadwal',
+            path: '/schedule',
+            icon: <FaCalendar/>,
+            children: [
+                {name: 'Kalender', path: '/schedule/calendar'},
+                {name: 'Buat Jadwal', path: '/schedule/create'},
+            ]
+        },
         // {name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus/>},
         {name: 'Pemesanan', path: '/bookings', icon: <FaBed/>},
         {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},

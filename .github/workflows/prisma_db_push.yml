@@ -1,0 +1,37 @@
+name: Prisma DB Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  db-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18 # Use your preferred Node.js version
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Set up Prisma and push schema to the database
+      - name: Prisma DB Push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }} # Use the DATABASE_URL secret from GitHub Actions
+        run: npx prisma db push
+
+      # Verify the schema was pushed successfully
+      - name: Verify Prisma DB Push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma validate
