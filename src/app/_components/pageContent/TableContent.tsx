@@ -75,7 +75,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10); // Default page size
-    const totalPages = Math.ceil(contentsState.length / pageSize);
+    const [totalPages, setTotalPages] = useState(0);
+    useEffect(() => {
+        setTotalPages(Math.ceil(contentsState.length / pageSize));
+        setCurrentPage(1);
+    }, [pageSize, contentsState]);
 
     const [fromQuery, setFromQuery] = useState(false);
 
