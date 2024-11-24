@@ -75,7 +75,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10); // Default page size
-    const totalPages = Math.ceil(contentsState.length / pageSize);
+    const [totalPages, setTotalPages] = useState(0);
+    useEffect(() => {
+        setTotalPages(Math.ceil(contentsState.length / pageSize));
+        setCurrentPage(1);
+    }, [pageSize, contentsState]);
 
     const [fromQuery, setFromQuery] = useState(false);
 
@@ -251,7 +255,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     }, [props.queryParams]);
 
     return (
-        <>
+        <div className={"p-8 flex-1 flex flex-col min-h-0 overflow-hidden"}>
             <div className={styles.searchBarAndCreate}>
                 <Input
                     value={searchValue}
@@ -265,7 +269,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     <span>Buat</span>
                 </Button>
             </div>
-            <div className="w-full" style={{ height: '400px', overflowY: 'auto' }}>
+            <div className="w-full flex-1 min-h-0 overflow-auto" style={{ height: '400px', overflowY: 'auto' }}>
                 <TanTable tanTable={tanTable} />
             </div>
             <div className="flex items-center mt-4 gap-x-8">
@@ -357,6 +361,6 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             {
                 props.customDialog
             }
-        </>
+        </div>
     );
 }

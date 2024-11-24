@@ -1,8 +1,8 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {Dispatch, SetStateAction, useState} from "react";
-import {formatToDateTime} from "@/app/_lib/util";
+import React, {useEffect, useRef, useState} from "react";
+import {delay, formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {TenantWithRoomsAndSecondResident} from "@/app/_db/tenant";
 import {TenantForm} from "@/app/(internal)/(dashboard_layout)/residents/tenants/form";
@@ -23,6 +23,17 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
   let [dialogContent, setDialogContent] = useState(<></>);
   let [showDialog, setShowDialog] = useState(false);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Ensure the dialog scrolls to the top when opened
+  useEffect(() => {
+    if (showDialog) {
+      delay(10).then(() => requestAnimationFrame(() => {
+        dialogRef.current?.scrollTo({top: 0, behavior: "smooth"});
+      }));
+    }
+  }, [showDialog, dialogContent]);
+
   const columnHelper = createColumnHelper<typeof tenants[0]>();
   const columns = [
     columnHelper.accessor(row => row.id, {
@@ -39,7 +50,7 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
       header: "Detail",
       cell: props =>
           <Link className={"text-blue-400"} type="button" href="" onClick={() => {
-            setDialogContent(<TenantInfo tenant={props.row.original} setDialogOpen={setShowDialog} />);
+            setDialogContent(<TenantInfo tenant={props.row.original} />);
             setShowDialog(true);
           }}>Lihat Selengkapnya</Link>
     }),
@@ -52,7 +63,6 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
   const query = useSearchParams();
 
   return (
-    <div className={"p-8"}>
       <TableContent<typeof tenants[0]>
         name={"Penyewa"}
         initialContents={tenants}
@@ -76,24 +86,29 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
               open={showDialog}
               size={"md"}
               handler={() => setShowDialog(prev => !prev)}
-              className={"p-8 h-[80dvh]"}
+              className={"flex flex-col gap-y-4 p-8 h-[80dvh]"}
           >
-            {dialogContent}
+            <div ref={dialogRef} className="overflow-y-auto h-full">
+              {dialogContent}
+            </div>
+            <div className={"flex gap-x-4 justify-end"}>
+              <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
+                Tutup
+              </Button>
+            </div>
           </Dialog>
         }
       />
-    </div>
   );
 }
 
 interface TenantInfoProps {
   tenant: TenantWithRoomsAndSecondResident;
-  setDialogOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-function TenantInfo({ tenant, setDialogOpen }: TenantInfoProps){
+function TenantInfo({tenant}: TenantInfoProps){
   return (
-      <div className="container mx-auto p-6 space-y-8 h-full overflow-y-auto">
+      <div className="container mx-auto p-6 h-full">
         <h1 className={"text-xl font-semibold text-black"}>Informasi Penghuni</h1>
         <Card className="shadow-none">
           <CardBody className="space-y-4">
@@ -166,11 +181,6 @@ function TenantInfo({ tenant, setDialogOpen }: TenantInfoProps){
               Terakhir Diubah: {new Date(tenant.updatedAt).toLocaleDateString()}
             </Typography>
           </CardFooter>
-          <div className={"flex gap-x-4 justify-end"}>
-            <Button onClick={() => setDialogOpen(false)} variant={"filled"} className="mt-6">
-              Tutup
-            </Button>
-          </div>
         </Card>
       </div>
   );

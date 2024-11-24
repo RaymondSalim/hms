@@ -39,7 +39,7 @@ export const HeaderProvider: React.FC<{ children: React.ReactNode, props?: Parti
                                                                                                                  children,
                                                                                                                  props
                                                                                                              }) => {
-    const [locationID, setLocationID] = useState(1);
+    const [locationID, setLocationID] = useState<number | undefined>();
     const [title, setTitle] = useState("");
     const [show, setShow] = useState(true);
     const [showLocationPicker, setShowLocationPicker] = useState(true);
@@ -55,7 +55,11 @@ export const HeaderProvider: React.FC<{ children: React.ReactNode, props?: Parti
 
     // Update localStorage whenever locationID changes
     useEffect(() => {
-        localStorage.setItem('locationID', locationID.toString());
+        if (locationID) {
+            localStorage.setItem('locationID', locationID.toString());
+        } else {
+            localStorage.removeItem('locationID');
+        }
     }, [locationID]);
 
     // Update the HTML title whenever the title state changes

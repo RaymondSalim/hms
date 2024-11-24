@@ -2,6 +2,7 @@ import nodemailerClient from "@/app/_lib/mailer";
 import {getUpcomingUnpaidBillsWithUsersByDate} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 
 export const maxDuration = 60; // This function can run for a maximum of 5 seconds
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     // Only allows endpoint to be called by vercel cron
