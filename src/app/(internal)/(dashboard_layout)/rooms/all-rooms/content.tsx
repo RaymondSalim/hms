@@ -71,7 +71,6 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
   }
 
   return (
-    <div className={"p-8"}>
       <TableContent<RoomsWithTypeAndLocation>
         name={"Kamar"}
         initialContents={rooms}
@@ -201,6 +200,5 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
           </Dialog>
         }
       />
-    </div>
   );
 }

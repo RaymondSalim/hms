@@ -176,7 +176,7 @@ export default function BillsContent({bills}: BillsContentProps) {
         columnHelper.accessor(row => row.id, {
             header: "ID",
         }),
-        columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id , {
+        columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id, {
             header: "ID Pemesanan",
         }),
         columnHelper.accessor(row => row.description, {
@@ -215,63 +215,61 @@ export default function BillsContent({bills}: BillsContentProps) {
     }
 
     return (
-        <div className={"p-8"}>
-            <TableContent<typeof bills[0]>
-                name={"Pemesanan"}
-                initialContents={dataState}
-                columns={columns}
-                form={
-                    // @ts-expect-error
-                    <BillForm/>
-                }
-                searchPlaceholder={"TODO!"} // TODO!
-                // TODO! Data should refresh on CRUD
-                upsert={{
-                    // @ts-expect-error
-                    mutationFn: upsertBillAction,
-                }}
+        <TableContent<typeof bills[0]>
+            name={"Pemesanan"}
+            initialContents={dataState}
+            columns={columns}
+            form={
+                // @ts-expect-error
+                <BillForm/>
+            }
+            searchPlaceholder={"TODO!"} // TODO!
+            // TODO! Data should refresh on CRUD
+            upsert={{
+                // @ts-expect-error
+                mutationFn: upsertBillAction,
+            }}
 
-                delete={{
-                    // @ts-expect-error
-                    mutationFn: deleteBillAction,
-                }}
-                additionalActions={{
-                    position: "before",
-                    actions: [
-                        {
-                            generateButton: (rowData) => {
-                                return (
-                                    <MdEmail
-                                        key={`${rowData.id}_email`}
-                                        className="h-5 w-5 cursor-pointer hover:text-blue-500"
-                                        onClick={() => {
-                                            setDialogContent(
-                                                <EmailConfirmationDialog
-                                                    activeData={rowData}
-                                                    sendBillEmailMutation={sendBillEmailMutation}
-                                                    setShowDialog={setShowDialog}
-                                                />
-                                            );
-                                            // setDialogContent(generateEmailConfirmationDialogContent(rowData, sendBillEmailMutation.isPending));
-                                            setShowDialog(true);
-                                        }}/>
-                                );
-                            }
+            delete={{
+                // @ts-expect-error
+                mutationFn: deleteBillAction,
+            }}
+            additionalActions={{
+                position: "before",
+                actions: [
+                    {
+                        generateButton: (rowData) => {
+                            return (
+                                <MdEmail
+                                    key={`${rowData.id}_email`}
+                                    className="h-5 w-5 cursor-pointer hover:text-blue-500"
+                                    onClick={() => {
+                                        setDialogContent(
+                                            <EmailConfirmationDialog
+                                                activeData={rowData}
+                                                sendBillEmailMutation={sendBillEmailMutation}
+                                                setShowDialog={setShowDialog}
+                                            />
+                                        );
+                                        // setDialogContent(generateEmailConfirmationDialogContent(rowData, sendBillEmailMutation.isPending));
+                                        setShowDialog(true);
+                                    }}/>
+                            );
                         }
-                    ]
-                }}
-                customDialog={
-                    <Dialog
-                        open={showDialog}
-                        size={"md"}
-                        handler={() => setShowDialog(prev => !prev)}
-                        className={"p-8"}
-                    >
-                        {dialogContent}
-                    </Dialog>
-                }
-            />
-        </div>
+                    }
+                ]
+            }}
+            customDialog={
+                <Dialog
+                    open={showDialog}
+                    size={"md"}
+                    handler={() => setShowDialog(prev => !prev)}
+                    className={"p-8"}
+                >
+                    {dialogContent}
+                </Dialog>
+            }
+        />
     );
 }
 

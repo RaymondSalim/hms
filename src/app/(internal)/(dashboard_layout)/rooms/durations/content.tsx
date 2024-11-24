@@ -39,7 +39,6 @@ export default function DurationsContent({contents}: ContentProps<Duration>) {
   ];
 
   return (
-    <div className={"p-8"}>
       <TableContent<typeof contents[0]>
         name={"Durasi"}
         initialContents={contents}
@@ -58,6 +57,5 @@ export default function DurationsContent({contents}: ContentProps<Duration>) {
           mutationFn: deleteDurationAction,
         }}
       />
-    </div>
   );
 }

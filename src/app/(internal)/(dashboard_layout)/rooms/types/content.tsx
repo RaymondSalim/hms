@@ -36,7 +36,6 @@ export default function RoomTypesContent({types}: RoomTypesContentProps) {
   ];
 
   return (
-    <div className={"p-8"}>
       <TableContent<RoomType>
         name={"Tipe Kamar"}
         initialContents={types}
@@ -55,6 +54,5 @@ export default function RoomTypesContent({types}: RoomTypesContentProps) {
           mutationFn: deleteRoomTypeAction,
         }}
       />
-    </div>
   );
 }

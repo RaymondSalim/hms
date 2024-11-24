@@ -125,7 +125,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     };
 
     return (
-        <div className={"p-8"}>
             <TableContent<BookingsIncludeAll>
                 name={"Pemesanan"}
                 initialContents={bookingsState}
@@ -210,6 +209,5 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                     ]
                 }}
             />
-        </div>
     );
 }

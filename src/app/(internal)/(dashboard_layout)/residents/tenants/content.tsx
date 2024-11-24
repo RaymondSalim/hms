@@ -63,7 +63,6 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
   const query = useSearchParams();
 
   return (
-    <div className={"p-8"}>
       <TableContent<typeof tenants[0]>
         name={"Penyewa"}
         initialContents={tenants}
@@ -100,7 +99,6 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
           </Dialog>
         }
       />
-    </div>
   );
 }
 
