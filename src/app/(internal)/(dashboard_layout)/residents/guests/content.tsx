@@ -47,7 +47,6 @@ export default function GuestsContent({guests}: GuestsContentProps) {
   ];
 
   return (
-    <div className={"p-8"}>
       <TableContent<GuestWithTenant>
         name={"Tamu"}
         initialContents={guests}
@@ -66,6 +65,5 @@ export default function GuestsContent({guests}: GuestsContentProps) {
           mutationFn: deleteGuestAction,
         }}
       />
-    </div>
   );
 }

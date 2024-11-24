@@ -94,8 +94,8 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
     }, [props]);
 
     return (
-        <div className={"p-8"}>
-            <div className="flex gap-x-4">
+        <>
+            <div className="p-8 flex gap-x-4">
                 <Menu
                     dismiss={{
                         itemPress: false,
@@ -107,7 +107,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             variant={"outlined"}
                         >
                             Tipe Kamar
-                            <FaChevronDown />
+                            <FaChevronDown/>
                         </Button>
                     </MenuHandler>
                     <MenuList>
@@ -129,42 +129,38 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                                     }}
                                     ripple={false}
                                     id={"all-rt"}
-                                    containerProps={{ className: "p-0" }}
-                                    className="hover:before:content-none"
-                                />
+                                    containerProps={{className: "p-0"}}
+                                    className="hover:before:content-none"/>
                                 Semua Tipe
                             </label>
                         </MenuItem>
-                        {
-                            roomTypes.map(rt => (
-                                <MenuItem key={rt.id} className="p-0">
-                                    <label
-                                        htmlFor={rt.id.toString()}
-                                        className="flex cursor-pointer items-center gap-2 p-2"
-                                    >
-                                        <Checkbox
-                                            checked={filteredRoomTypeIDs.has(rt.id)}
-                                            onChange={(e) => {
-                                                let newSet: Set<number>;
-                                                if (e.target.checked) {
-                                                    // @ts-expect-error js version regarding sets
-                                                    newSet = new Set([...filteredRoomTypeIDs, rt.id]);
-                                                } else {
-                                                    filteredRoomTypeIDs.delete(rt.id);
-                                                    newSet = new Set(filteredRoomTypeIDs);
-                                                }
-                                                setFilteredRoomTypeIDs(newSet);
-                                            }}
-                                            ripple={false}
-                                            id={rt.id.toString()}
-                                            containerProps={{ className: "p-0" }}
-                                            className="hover:before:content-none"
-                                        />
-                                        {rt.type}
-                                    </label>
-                                </MenuItem>
-                            ))
-                        }
+                        {roomTypes.map(rt => (
+                            <MenuItem key={rt.id} className="p-0">
+                                <label
+                                    htmlFor={rt.id.toString()}
+                                    className="flex cursor-pointer items-center gap-2 p-2"
+                                >
+                                    <Checkbox
+                                        checked={filteredRoomTypeIDs.has(rt.id)}
+                                        onChange={(e) => {
+                                            let newSet: Set<number>;
+                                            if (e.target.checked) {
+                                                // @ts-expect-error js version regarding sets
+                                                newSet = new Set([...filteredRoomTypeIDs, rt.id]);
+                                            } else {
+                                                filteredRoomTypeIDs.delete(rt.id);
+                                                newSet = new Set(filteredRoomTypeIDs);
+                                            }
+                                            setFilteredRoomTypeIDs(newSet);
+                                        }}
+                                        ripple={false}
+                                        id={rt.id.toString()}
+                                        containerProps={{className: "p-0"}}
+                                        className="hover:before:content-none"/>
+                                    {rt.type}
+                                </label>
+                            </MenuItem>
+                        ))}
                     </MenuList>
                 </Menu>
                 <Popover
@@ -191,8 +187,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             className={`relative !border-t-blue-gray-200 focus:!border-t-gray-900`}
                             labelProps={{
                                 className: "before:content-none after:content-none",
-                            }}
-                        />
+                            }}/>
                     </PopoverHandler>
                     <PopoverContent className={"z-[99999]"}>
                         <DayPicker
@@ -212,8 +207,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
                             classNames={{
                                 disabled: "rdp-disabled cursor-not-allowed",
-                            }}
-                        />
+                            }}/>
                     </PopoverContent>
                 </Popover>
                 <IconButton className={"border-[#b0bec5]"} variant={"outlined"}>
@@ -221,108 +215,94 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                 </IconButton>
             </div>
             <div className="mt-8">
-                {
-                    (roomTypes.length == 0 || filteredRoomTypeIDs.size == 0) ?
-                        <div className={"w-full flex gap-4 justify-center"}>
-                            <div className={"w-1/2 min-w-[300px] text-center"}>
-                                <RiErrorWarningLine color={"gray"} className={"w-14 h-14 mx-auto mb-4"}/>
-                                <Typography color={"gray"}>
-                                    {
-                                        roomTypes.length == 0 ?
-                                            "Tidak ada kamar yang tersedia pada tangga tersebut. Mohon pilih tanggal lain." :
-                                            "Mohon pilih setidaknya satu tipe kamar."
-                                    }
-                                </Typography>
-                            </div>
-                        </div> : <></>
-                }
+                {(roomTypes.length == 0 || filteredRoomTypeIDs.size == 0) ?
+                    <div className={"w-full flex gap-4 justify-center"}>
+                        <div className={"w-1/2 min-w-[300px] text-center"}>
+                            <RiErrorWarningLine color={"gray"} className={"w-14 h-14 mx-auto mb-4"}/>
+                            <Typography color={"gray"}>
+                                {roomTypes.length == 0 ?
+                                    "Tidak ada kamar yang tersedia pada tangga tersebut. Mohon pilih tanggal lain." :
+                                    "Mohon pilih setidaknya satu tipe kamar."}
+                            </Typography>
+                        </div>
+                    </div> : <></>}
                 <div className={"grid grid-flow-row gap-4 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]"}>
-                    {
-                        roomTypes.map(rt => {
-                            if (!filteredRoomTypeIDs.has(rt.id)) {
-                                return <></>;
-                            }
+                    {roomTypes.map(rt => {
+                        if (!filteredRoomTypeIDs.has(rt.id)) {
+                            return <></>;
+                        }
 
-                            return (
-                                <Card key={rt.id}
-                                      className="col-span-1 max-w-[26rem] min-w-[250px] shadow-lg transition-all hover:scale-[1.02]">
-                                    <CardHeader floated={false} color="blue-gray">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
-                                            alt="ui/ux review check" /*!TODO REPLACE*/
-                                        />
-                                        <div
-                                            className="to-bg-black-10 absolute inset-0 h-full w-full bg-gradient-to-tr from-transparent via-transparent to-black/60 "/>
-                                    </CardHeader>
-                                    <CardBody>
-                                        <div className="mb-3 flex items-center justify-between">
-                                            <Typography variant="h5" color="blue-gray" className="font-medium">
-                                                {rt.type}
-                                            </Typography>
-                                            <Chip
-                                                color={
-                                                    props.bookings ?
-                                                        (rt.roomLeft === 0 ? "red" : "green") :
-                                                        "blue-gray"
-                                                }
-                                                className="rounded-full"
-                                                value={(() => {
-                                                    let str = '';
-                                                    if (props.bookings) {
-                                                        str += `${rt.roomLeft}/`;
-                                                    }
-                                                    str += rt._count.rooms;
-
-                                                    return str;
-                                                })()}
-                                            />
-                                        </div>
-                                        <Typography color="gray">
-                                            {rt.description}
+                        return (
+                            <Card key={rt.id}
+                                  className="col-span-1 max-w-[26rem] min-w-[250px] shadow-lg transition-all hover:scale-[1.02]">
+                                <CardHeader floated={false} color="blue-gray">
+                                    <img
+                                        src="https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
+                                        alt="ui/ux review check" /*!TODO REPLACE*/ />
+                                    <div
+                                        className="to-bg-black-10 absolute inset-0 h-full w-full bg-gradient-to-tr from-transparent via-transparent to-black/60 "/>
+                                </CardHeader>
+                                <CardBody>
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <Typography variant="h5" color="blue-gray" className="font-medium">
+                                            {rt.type}
                                         </Typography>
-                                    </CardBody>
-                                    <CardFooter className="pt-3 mt-auto">
-                                        <Link
-                                            href={
-                                                dates != undefined ?
-                                                    {
-                                                        pathname: "/bookings",
-                                                        query: {
-                                                            location_id: props.locationID,
-                                                            room_type_id: rt.id
-                                                        }
-                                                    } : {}
-                                            }
-                                        >
-                                            <Button
-                                                disabled={rt.roomLeft === 0}
-                                                size="lg"
-                                                fullWidth={true}
-                                                onClick={() => {
-                                                    if (dates == undefined) {
-                                                        setIsPopoverOpen(true);
-                                                        return;
-                                                    }
-                                                }}
-                                            >
-                                                {
-                                                    dates == undefined ?
-                                                        "Pilih Tanggal" :
-                                                        (
-                                                            rt.roomLeft == 0 ?
-                                                                "Habis" :
-                                                                "Reservasi"
-                                                        )
+                                        <Chip
+                                            color={props.bookings ?
+                                                (rt.roomLeft === 0 ? "red" : "green") :
+                                                "blue-gray"}
+                                            className="rounded-full"
+                                            value={(() => {
+                                                let str = '';
+                                                if (props.bookings) {
+                                                    str += `${rt.roomLeft}/`;
                                                 }
-                                            </Button>
-                                        </Link>
-                                    </CardFooter>
-                                </Card>
-                            );
-                        })
-                    }
+                                                str += rt._count.rooms;
+
+                                                return str;
+                                            })()}/>
+                                    </div>
+                                    <Typography color="gray">
+                                        {rt.description}
+                                    </Typography>
+                                </CardBody>
+                                <CardFooter className="pt-3 mt-auto">
+                                    <Link
+                                        href={dates != undefined ?
+                                            {
+                                                pathname: "/bookings",
+                                                query: {
+                                                    location_id: props.locationID,
+                                                    room_type_id: rt.id
+                                                }
+                                            } : {}}
+                                    >
+                                        <Button
+                                            disabled={rt.roomLeft === 0}
+                                            size="lg"
+                                            fullWidth={true}
+                                            onClick={() => {
+                                                if (dates == undefined) {
+                                                    setIsPopoverOpen(true);
+                                                    return;
+                                                }
+                                            }}
+                                        >
+                                            {dates == undefined ?
+                                                "Pilih Tanggal" :
+                                                (
+                                                    rt.roomLeft == 0 ?
+                                                        "Habis" :
+                                                        "Reservasi"
+                                                )}
+                                        </Button>
+                                    </Link>
+                                </CardFooter>
+                            </Card>
+                        );
+                    })}
                 </div>
             </div>
-        </div>
+        </>
     );
 }

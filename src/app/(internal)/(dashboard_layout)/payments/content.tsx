@@ -86,7 +86,6 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
   }
 
   return (
-    <div className={"p-8"}>
       <TableContent<typeof payments[0]>
         name={"Pembayaran"}
         initialContents={dataState}
@@ -107,6 +106,5 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
           mutationFn: deletePaymentAction,
         }}
       />
-    </div>
   );
 }

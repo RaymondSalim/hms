@@ -5,8 +5,8 @@ import {createColumnHelper} from "@tanstack/react-table";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {UserForm} from "@/app/(internal)/(dashboard_layout)/settings/users/form";
 import {
-    deleteUserAction,
-    upsertSiteUserAction
+  deleteUserAction,
+  upsertSiteUserAction
 } from "@/app/(internal)/(dashboard_layout)/settings/users/site_users-action";
 import React from "react";
 import {formatToDateTime} from "@/app/_lib/util";
@@ -42,7 +42,6 @@ export default function UsersContent({users}: UsersContentProps) {
   const {data: session, status} = useSession();
 
   return (
-    <div className={"p-8"}>
       <TableContent<Omit<SiteUser, "password">>
         name={"Pengguna Situs"}
         initialContents={users}
@@ -62,6 +61,5 @@ export default function UsersContent({users}: UsersContentProps) {
         }}
         shouldShowRowAction={props => props.row.original.id != session?.user?.id}
       />
-    </div>
   );
 }

@@ -1,5 +1,6 @@
 .layout {
     max-height: 100dvh;
+    height: 100%;
     display: flex;
     background: #f5f6fa;
 }
