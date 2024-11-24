@@ -12,6 +12,10 @@
 
 .locationAddress {
     @apply
+    inline-block
+    max-w-[35ch]
+    overflow-hidden
+    whitespace-nowrap
     overflow-ellipsis
     font-light
     text-sm
