@@ -89,6 +89,52 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
         };
     }
 
+    const secondTenantIDFile = data?.second_resident_id_file_data;
+    let secondTenantIDS3Key: string | undefined = undefined;
+    try {
+        if (secondTenantIDFile) {
+            const b64Str = secondTenantIDFile.b64File.split(',')[1];
+            const buffer = Buffer.from(b64Str, 'base64');
+
+            // Upload file to s3 first
+            if (buffer) {
+                const key = `tenants/id/${new Date().toISOString()}/${data?.second_resident_name}_${secondTenantIDFile.fileName}`;
+                const command = new PutObjectCommand({
+                    Body: buffer,
+                    Bucket: process.env.S3_BUCKET,
+                    Key: key
+                });
+                await client.send(command);
+                secondTenantIDS3Key = key;
+            }
+        }
+    } catch (error) {
+        console.warn("[upsertTenantAction] error uploading to s3 with err: ", error);
+        // Delete previously uploaded ID
+        try {
+            const command = new DeleteObjectsCommand({
+                Bucket: process.env.S3_BUCKET,
+                Delete: {
+                    Objects: [
+                        {
+                            Key: idS3Key,
+                        },
+                        {
+                            Key: familyCertificateS3Key,
+                        }
+                    ],
+                }
+            });
+
+            await client.send(command);
+        } catch (error) {
+            console.warn("[upsertTenantAction] error deleting from s3 with err: ", error);
+        }
+        return {
+            failure: "Internal Server Error"
+        };
+    }
+
     let newTenantData: PartialBy<OmitTimestamp<Tenant>, "id"> = {
         id: data?.id,
         id_number: data?.id_number,
@@ -99,10 +145,17 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
         emergency_contact_name: data?.emergency_contact_name,
         emergency_contact_phone: data?.emergency_contact_phone,
         referral_source: data?.referral_source,
+
         second_resident_id: data?.second_resident_id,
         second_resident_relation: data?.second_resident_relation,
+        second_resident_id_number: data?.second_resident_id_number ?? null,
+        second_resident_name: data?.second_resident_name ?? null,
+        second_resident_email: data?.second_resident_email,
+        second_resident_phone: data?.second_resident_phone,
+
         id_file: idS3Key ?? data?.id_file ?? null,
         family_certificate_file: familyCertificateS3Key ?? data?.family_certificate_file ?? null,
+        second_resident_id_file: secondTenantIDS3Key ?? data?.second_resident_id_file ?? null,
     };
 
     try {
@@ -113,17 +166,6 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
                 res = await updateTenantByID(data.id, newTenantData, tx);
             } else {
                 res = await createTenant(newTenantData, tx);
-            }
-
-            if (res.second_resident) {
-                tx.tenant.update({
-                    where: {
-                        id: res.second_resident.id,
-                    },
-                    data: {
-                        family_certificate_file: familyCertificateS3Key,
-                    }
-                });
             }
         });
 
@@ -138,7 +180,8 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
                 Delete: {
                     Objects: [
                         { Key: idS3Key },
-                        { Key: familyCertificateS3Key }
+                        { Key: familyCertificateS3Key },
+                        { Key: secondTenantIDS3Key }
                     ]
                 }
             });

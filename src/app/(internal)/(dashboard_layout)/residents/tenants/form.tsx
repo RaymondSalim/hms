@@ -3,11 +3,9 @@
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useState} from "react";
 import {Button, Checkbox, Input, Textarea, Typography} from "@material-tailwind/react";
-import {getTenants, TenantWithRooms} from "@/app/_db/tenant";
+import {TenantWithRooms} from "@/app/_db/tenant";
 import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
 import {ZodFormattedError} from "zod";
-import {useQuery} from "@tanstack/react-query";
-import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {toast} from "react-toastify";
 import {fileToBase64} from "@/app/_lib/util";
@@ -16,18 +14,16 @@ import {NonUndefined} from "@/app/_lib/types";
 interface TenantFormProps extends TableFormProps<TenantWithRooms> {
 }
 
-type DataType = Partial<NonUndefined<TenantFormProps['contentData']>> & {
-    id_file_data?: {
-        fileName: string,
-        fileType: string,
-        b64File: string
-    }
+type FileData = {
+    fileName: string,
+    fileType: string,
+    b64File: string
+};
 
-    family_certificate_file_data?: {
-        fileName: string,
-        fileType: string,
-        b64File: string
-    }
+type DataType = Partial<NonUndefined<TenantFormProps['contentData']>> & {
+    id_file_data?: FileData
+    family_certificate_file_data?: FileData
+    second_resident_id_file_data?: FileData
 };
 
 export function TenantForm(props: TenantFormProps) {
@@ -38,6 +34,7 @@ export function TenantForm(props: TenantFormProps) {
     const [hasSecondTenant, setHasSecondTenant] = useState(false);
 
     const [idImage, setIDImage] = useState<File | undefined>(undefined);
+    const [secondResidentIDImage, setSecondResidentIDImage] = useState<File | undefined>(undefined);
     const [familyIDImage, setFamilyIDImage] = useState<File | undefined>(undefined);
     useEffect(() => {
         if (idImage) {
@@ -60,6 +57,26 @@ export function TenantForm(props: TenantFormProps) {
         }
     }, [idImage]);
     useEffect(() => {
+        if (secondResidentIDImage) {
+            fileToBase64(secondResidentIDImage)
+                .then((b64String): void => {
+                    setTenantData(d => ({
+                        ...d,
+                        second_resident_id_file_data: {
+                            fileName: secondResidentIDImage.name,
+                            fileType: secondResidentIDImage.type,
+                            b64File: b64String ?? ""
+                        }
+                    }));
+                });
+        } else {
+            setTenantData(d => ({
+                ...d,
+                second_resident_id_file: undefined
+            }));
+        }
+    }, [secondResidentIDImage]);
+    useEffect(() => {
         if (familyIDImage) {
             fileToBase64(familyIDImage)
                 .then((b64String): void => {
@@ -81,30 +98,20 @@ export function TenantForm(props: TenantFormProps) {
     }, [familyIDImage]);
 
     useEffect(() => {
-        if (tenantData.second_resident_id) setHasSecondTenant(true);
+        if (
+            tenantData.second_resident_name ||
+            tenantData.second_resident_phone ||
+            tenantData.second_resident_email ||
+            tenantData.second_resident_id_number ||
+            tenantData.second_resident_id_file ||
+            tenantData.second_resident_relation
+        ) setHasSecondTenant(true);
         if (tenantData.emergency_contact_name) setHasEmergencyContact(true);
     }, [tenantData]);
 
     useEffect(() => {
         setFieldErrors(props.mutationResponse?.errors);
     }, [props.mutationResponse?.errors]);
-
-    // Tenant Data
-    const {data: tenantSelectData, isSuccess: tenantDataSuccess} = useQuery({
-        queryKey: ['tenants'],
-        queryFn: () => getTenants(),
-    });
-    const [tenantDataMapped, setTenantDataMapped] = useState<SelectOption<string>[]>([]);
-    useEffect(() => {
-        if (tenantDataSuccess) {
-            setTenantDataMapped(tenantSelectData
-                .map(e => ({
-                value: e.id,
-                label: `${e.name} | ${e.phone}`,
-            }))
-            );
-        }
-    }, [tenantSelectData, tenantDataSuccess]);
 
     return (
         <div className={"w-full px-8 py-4"}>
@@ -207,7 +214,7 @@ export function TenantForm(props: TenantFormProps) {
                                 phoneNumber={tenantData.phone}
                                 setPhoneNumber={(p) => setTenantData(prevTenant => ({...prevTenant, phone: p}))}
                                 type="tel"
-                                placeholder="Mobile Number"
+                                placeholder="Nomor Telepon"
                                 error={!!fieldErrors?.phone}
                                 className={`${!!fieldErrors?.phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                 labelProps={{
@@ -364,16 +371,10 @@ export function TenantForm(props: TenantFormProps) {
                                             <Typography color="blue-gray" className="font-medium">
                                                 Ada Penghuni Kedua
                                             </Typography>
-                                            <Typography variant="small" color="gray" className="font-normal">
-                                                Pastikan anda telah membuat data untuk penghuni kedua dahulu.
-                                            </Typography>
-                                            <Typography variant="small" color="gray" className="font-normal">
-                                                Data KK akan otomatis terhubung.
-                                            </Typography>
                                         </div>
                                     }
                                     containerProps={{
-                                        className: "-mt-5 -ml-3",
+                                        className: "-ml-3",
                                     }}
                                     checked={hasSecondTenant}
                                     onChange={(e) => setHasSecondTenant(e.target.checked)}
@@ -392,54 +393,138 @@ export function TenantForm(props: TenantFormProps) {
                                             Penghuni Kedua
                                         </Typography>
                                         <div>
-                                            <label htmlFor="tenant_id">
+                                            <label htmlFor="second_tenant_name">
                                                 <Typography variant="h6" color="blue-gray">
                                                     Nama
                                                 </Typography>
                                             </label>
-                                            <SelectComponent<string>
-                                                setValue={(v) => setTenantData(prev => ({
-                                                    ...prev,
-                                                    second_resident_id: v
-                                                }))}
-                                                options={tenantDataMapped}
-                                                selectedOption={
-                                                    tenantDataMapped.find(r => r.value == tenantData.second_resident_id)
-                                                }
-                                                placeholder={"Pilih penghuni"}
-                                                isError={!!fieldErrors?.second_resident_id}
-                                            />
-                                            {
-                                                fieldErrors?.second_resident_id &&
-                                                <Typography
-                                                    color="red">{fieldErrors?.second_resident_id._errors}</Typography>
-                                            }
-                                        </div>
-                                        <div>
-                                            <label htmlFor="id">
-                                                <Typography variant="h6" color="blue-gray">
-                                                    Hubungan
-                                                </Typography>
-                                            </label>
                                             <Input
                                                 variant="outlined"
-                                                name="name"
-                                                value={tenantData.second_resident_relation ?? undefined}
+                                                name="second_tenant_name"
+                                                value={tenantData.second_resident_name ?? ""}
                                                 onChange={(e) => setTenantData(prevTenant => ({
                                                     ...prevTenant,
-                                                    second_resident_relation: e.target.value.length > 0 ? e.target.value : null
+                                                    second_resident_name: e.target.value
                                                 }))}
                                                 size="lg"
-                                                error={!!fieldErrors?.second_resident_relation}
-                                                className={`${!!fieldErrors?.second_resident_relation ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                placeholder="John Smith"
+                                                error={!!fieldErrors?.second_resident_name}
+                                                className={`${!!fieldErrors?.second_resident_name ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                                 labelProps={{
                                                     className: "before:content-none after:content-none",
                                                 }}
                                             />
                                             {
-                                                fieldErrors?.second_resident_relation &&
-                                                <Typography
-                                                    color="red">{fieldErrors?.second_resident_relation._errors}</Typography>
+                                                fieldErrors?.second_resident_name &&
+                                                <Typography color="red">{fieldErrors?.second_resident_name._errors}</Typography>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label htmlFor="second_resident_id">
+                                                <Typography variant="h6" color="blue-gray">
+                                                    Nomor Identitas
+                                                </Typography>
+                                            </label>
+                                            <Input
+                                                variant="outlined"
+                                                name="second_resident_id_number"
+                                                value={tenantData.second_resident_id_number ?? ""}
+                                                onChange={(e) => setTenantData(prevTenant => ({
+                                                    ...prevTenant,
+                                                    second_resident_id_number: e.target.value
+                                                }))}
+                                                size="lg"
+                                                error={!!fieldErrors?.second_resident_id_number}
+                                                className={`${!!fieldErrors?.second_resident_id_number ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                labelProps={{
+                                                    className: "before:content-none after:content-none",
+                                                }}
+                                            />
+                                            {
+                                                fieldErrors?.second_resident_id_number &&
+                                                <Typography color="red">{fieldErrors?.second_resident_id_number._errors}</Typography>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label htmlFor="second_resident_email">
+                                                <Typography variant="h6" color="blue-gray">
+                                                    Alamat Email
+                                                </Typography>
+                                            </label>
+                                            <Input
+                                                variant="outlined"
+                                                name="second_resident_email"
+                                                type={"email"}
+                                                // @ts-ignore
+                                                value={tenantData.second_resident_email}
+                                                onChange={(e) => setTenantData(prevTenant => ({
+                                                    ...prevTenant,
+                                                    second_resident_email: e.target.value
+                                                }))}
+                                                size="lg"
+                                                placeholder="john@smith.com"
+                                                error={!!fieldErrors?.second_resident_email}
+                                                className={`${!!fieldErrors?.second_resident_email ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                labelProps={{
+                                                    className: "before:content-none after:content-none",
+                                                }}
+                                            />
+                                            {
+                                                fieldErrors?.second_resident_email &&
+                                                <Typography color="red">{fieldErrors?.second_resident_email._errors}</Typography>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label htmlFor="second_resident_phone">
+                                                <Typography variant="h6" color="blue-gray">
+                                                    Nomor Telepon
+                                                </Typography>
+                                            </label>
+                                            <PhoneInput
+                                                phoneNumber={tenantData.second_resident_phone}
+                                                setPhoneNumber={(p) => setTenantData(prevTenant => ({
+                                                    ...prevTenant,
+                                                    second_resident_phone: p
+                                                }))}
+                                                type="tel"
+                                                placeholder="Nomor Telepon"
+                                                error={!!fieldErrors?.second_resident_phone}
+                                                className={`${!!fieldErrors?.second_resident_phone ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                labelProps={{
+                                                    className: "before:content-none after:content-none",
+                                                }}
+                                                containerProps={{
+                                                    className: "min-w-0",
+                                                }}
+                                            />
+                                            {
+                                                fieldErrors?.second_resident_phone &&
+                                                <Typography color="red">{fieldErrors?.second_resident_phone._errors}</Typography>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label htmlFor="second_resident_id_file">
+                                                <Typography variant="h6" color="blue-gray">
+                                                    KTP/SIM
+                                                </Typography>
+                                            </label>
+                                            <input type="file" accept="image/png, image/jpg, image/jpeg, image/webp"
+                                                   onChange={(e) => {
+                                                       const file = e.target.files?.[0];
+                                                       if (file?.size && file?.size > 5120000) {
+                                                           toast.error("Ukuran Gambar Terlalu Besar");
+                                                           e.target.value = "";
+                                                       } else {
+                                                           setSecondResidentIDImage(file);
+                                                       }
+                                                   }}
+                                                   className="w-full font-semibold text-sm bg-white border file:cursor-pointer cursor-pointer file:border-0 file:py-3 file:px-4 file:mr-4 file:bg-gray-100 file:hover:bg-gray-200 file:text-gray-500 rounded"/>
+                                            <p className="text-xs mt-2">PNG, JPG, JPEG, WEBP diperbolehkan. Ukuran
+                                                maksimum
+                                                gambar adalah 5MB</p>
+                                            {
+                                                fieldErrors?.second_resident_id_file &&
+                                                <Typography color="red">{fieldErrors?.second_resident_id_file._errors}</Typography>
                                             }
                                         </div>
                                         <div>
