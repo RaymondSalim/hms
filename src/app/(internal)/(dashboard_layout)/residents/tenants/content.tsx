@@ -109,7 +109,7 @@ interface TenantInfoProps {
 function TenantInfo({tenant}: TenantInfoProps){
   return (
       <div className="container mx-auto p-6 h-full">
-        <h1 className={"text-xl font-semibold text-black"}>Informasi Penghuni</h1>
+      <h1 className="text-xl font-semibold text-black">Informasi Penghuni</h1>
         <Card className="shadow-none">
           <CardBody className="space-y-4">
             {/* Basic Information */}
@@ -121,7 +121,9 @@ function TenantInfo({tenant}: TenantInfoProps){
 
             {/* Address */}
             <Typography variant="h5" className="font-semibold mt-4">Alamat</Typography>
-            <Typography><strong>Alamat terkini:</strong> {tenant.current_address || "N/A"}</Typography>
+          <Typography>
+            <strong>Alamat Terkini:</strong> {tenant.current_address || "N/A"}
+          </Typography>
 
             {/* Emergency Contact */}
             <Typography variant="h5" className="font-semibold mt-4">Kontak Darurat</Typography>
@@ -130,10 +132,38 @@ function TenantInfo({tenant}: TenantInfoProps){
 
             {/* Second Resident */}
             <Typography variant="h5" className="font-semibold mt-4">Penghuni Kedua</Typography>
-            {tenant.second_resident ? (
+          {tenant.second_resident_name ? (
                 <>
-                  <Typography><strong>Nama:</strong> {tenant.second_resident.name}</Typography>
-                  <Typography><strong>Hubunan:</strong> {tenant.second_resident_relation}</Typography>
+              <Typography>
+                <strong>Nama:</strong> {tenant.second_resident_name}
+              </Typography>
+              <Typography>
+                <strong>Nomor Identitas:</strong> {tenant.second_resident_id_number || "N/A"}
+              </Typography>
+              <Typography>
+                <strong>Hubungan:</strong> {tenant.second_resident_relation || "N/A"}
+              </Typography>
+              <Typography>
+                <strong>Email:</strong> {tenant.second_resident_email || "N/A"}
+              </Typography>
+              <Typography>
+                <strong>Nomor Telepon:</strong> {tenant.second_resident_phone || "N/A"}
+              </Typography>
+              <Typography>
+                <strong>Dokumen Identitas:</strong>{" "}
+                {tenant.second_resident_id_file ? (
+                  <Link
+                    href={{
+                      pathname: `/s3/${tenant.second_resident_id_file}`,
+                    }}
+                    className="text-blue-500 underline"
+                  >
+                    Unduh Dokumen
+                  </Link>
+                ) : (
+                  "N/A"
+                )}
+              </Typography>
                 </>
             ) : (
                 <Typography>Tidak ada penghuni kedua</Typography>
@@ -141,7 +171,9 @@ function TenantInfo({tenant}: TenantInfoProps){
 
             {/* Additional Information */}
             <Typography variant="h5" className="font-semibold mt-4">Informasi Tambahan</Typography>
-            <Typography><strong>Sumber referral:</strong> {tenant.referral_source || "N/A"}</Typography>
+          <Typography>
+            <strong>Sumber Referral:</strong> {tenant.referral_source || "N/A"}
+          </Typography>
 
             {/* Documents */}
             <Typography variant="h5" className="font-semibold mt-4">Dokumen</Typography>
