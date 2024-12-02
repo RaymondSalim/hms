@@ -121,29 +121,14 @@ export async function getTenantsWithRoomNumber(locationID?: number) {
 export async function createTenant(tenantData: OmitIDTypeAndTimestamp<Tenant>, tx?: TransactionClient) {
     let prismaClient = tx ?? prisma;
 
-    const hasSecondTenant = false;
-    let secondTenantID;
-    if (tenantData.second_resident_id != null) {
-        secondTenantID = tenantData.second_resident_id;
-    }
-
     return prismaClient.tenant.create({
-        data: hasSecondTenant ? {
-            ...tenantData,
-            second_resident_id: undefined,
-            second_resident: {
-                connect: {
-                    id: secondTenantID
-                }
-            }
-        } : tenantData,
+        data: tenantData,
         include: {
             bookings: {
                 include: {
                     rooms: true
                 }
             },
-            second_resident: true
         }
     });
 }
@@ -151,26 +136,10 @@ export async function createTenant(tenantData: OmitIDTypeAndTimestamp<Tenant>, t
 export async function updateTenantByID(id: string, tenantData: OmitIDTypeAndTimestamp<Tenant>, tx?: TransactionClient) {
     let prismaClient = tx ?? prisma;
 
-    const hasSecondTenant = false;
-    let secondTenantID;
-    if (tenantData.second_resident_id != null) {
-        secondTenantID = tenantData.second_resident_id;
-    }
-
     return prismaClient.tenant.update({
-        data: hasSecondTenant ? {
+        data: {
             id: undefined,
             ...tenantData,
-            second_resident_id: undefined,
-            second_resident: {
-                connect: {
-                    id: secondTenantID
-                }
-            }
-        } : {
-            id: undefined,
-            ...tenantData,
-            second_resident_id: undefined,
         },
         where: {id},
         include: {
@@ -179,7 +148,6 @@ export async function updateTenantByID(id: string, tenantData: OmitIDTypeAndTime
                     rooms: true
                 }
             },
-            second_resident: true
         }
     });
 }
