@@ -416,7 +416,36 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_name &&
-                                                <Typography color="red">{fieldErrors?.second_resident_name._errors}</Typography>
+                                                <Typography
+                                                    color="red">{fieldErrors?.second_resident_name._errors}</Typography>
+                                            }
+                                        </div>
+                                        <div>
+                                            <label htmlFor="second_tenant_relation">
+                                                <Typography variant="h6" color="blue-gray">
+                                                    Relasi
+                                                </Typography>
+                                            </label>
+                                            <Input
+                                                variant="outlined"
+                                                name="second_tenant_relation"
+                                                value={tenantData.second_resident_relation ?? ""}
+                                                onChange={(e) => setTenantData(prevTenant => ({
+                                                    ...prevTenant,
+                                                    second_resident_relation: e.target.value
+                                                }))}
+                                                size="lg"
+                                                placeholder="Saudara"
+                                                error={!!fieldErrors?.second_resident_relation}
+                                                className={`${!!fieldErrors?.second_resident_relation ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                labelProps={{
+                                                    className: "before:content-none after:content-none",
+                                                }}
+                                            />
+                                            {
+                                                fieldErrors?.second_resident_relation &&
+                                                <Typography
+                                                    color="red">{fieldErrors?.second_resident_relation._errors}</Typography>
                                             }
                                         </div>
                                         <div>
@@ -442,7 +471,8 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_id_number &&
-                                                <Typography color="red">{fieldErrors?.second_resident_id_number._errors}</Typography>
+                                                <Typography
+                                                    color="red">{fieldErrors?.second_resident_id_number._errors}</Typography>
                                             }
                                         </div>
                                         <div>
@@ -471,7 +501,8 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_email &&
-                                                <Typography color="red">{fieldErrors?.second_resident_email._errors}</Typography>
+                                                <Typography
+                                                    color="red">{fieldErrors?.second_resident_email._errors}</Typography>
                                             }
                                         </div>
                                         <div>
@@ -499,7 +530,8 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_phone &&
-                                                <Typography color="red">{fieldErrors?.second_resident_phone._errors}</Typography>
+                                                <Typography
+                                                    color="red">{fieldErrors?.second_resident_phone._errors}</Typography>
                                             }
                                         </div>
                                         <div>
@@ -524,7 +556,8 @@ export function TenantForm(props: TenantFormProps) {
                                                 gambar adalah 5MB</p>
                                             {
                                                 fieldErrors?.second_resident_id_file &&
-                                                <Typography color="red">{fieldErrors?.second_resident_id_file._errors}</Typography>
+                                                <Typography
+                                                    color="red">{fieldErrors?.second_resident_id_file._errors}</Typography>
                                             }
                                         </div>
                                         <div>
