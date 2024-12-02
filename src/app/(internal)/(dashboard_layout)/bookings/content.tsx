@@ -95,7 +95,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
 
     if (!headerContext.locationID) {
         // @ts-ignore
-        columns.splice(1, 0, columnHelper.accessor(row => row.rooms.locations?.name, {
+        columns.splice(1, 0, columnHelper.accessor(row => row.rooms?.locations?.name, {
                 header: "Lokasi",
                 size: 20
             })
