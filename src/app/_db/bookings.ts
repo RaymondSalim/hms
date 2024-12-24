@@ -60,7 +60,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<Booking>, durat
 
       // Add prorated bill for the current month
       bills.push({
-        amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
+        amount: new Prisma.Decimal(Math.round(proratedAmount)),
         description: `Tagihan prorata untuk ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
         due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours()),
       });
@@ -170,7 +170,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
 
       // Add prorated bill for the current month
       bills.push({
-        amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
+        amount: new Prisma.Decimal(Math.round(proratedAmount)),
         description: `Tagihan prorata untuk ${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth}`,
         due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth),
       });
