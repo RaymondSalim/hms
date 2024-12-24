@@ -91,21 +91,35 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
     } catch (error) {
       console.warn("error creating/updating payment with error: ", error);
       return {
-        failure: "Internal Server Error"
+        success: false,
+        error: "Internal Server Error"
       };
     }
 
     if (finalBalance != 0) {
-      throw new Error("Balance is not zero");
+      console.warn(`error creating/updating payment due to balance not zero: ${finalBalance}`);
+      return {
+        success: false,
+        error: "Pembayaran melebihi saldo yang harus dibayarkan"
+      };
     }
 
-    return res;
+    return {
+      success: true,
+      data: res
+    };
   }, {
     timeout: 60000, // TODO! Remove
   });
 
+  if (trxRes.success) {
+    return {
+      success: trxRes.data
+    };
+  }
+
   return {
-    success: trxRes
+    failure: trxRes.error
   };
 }
 

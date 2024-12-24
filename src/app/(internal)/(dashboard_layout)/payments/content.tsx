@@ -78,7 +78,7 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
 
   if (!headerContext.locationID) {
     // @ts-expect-error // TODO!
-    columns.splice(1, 0, columnHelper.accessor(row => row.rooms.locations?.name, {
+    columns.splice(1, 0, columnHelper.accessor(row => row.rooms?.locations?.name, {
         header: "Location",
         size: 20
       })

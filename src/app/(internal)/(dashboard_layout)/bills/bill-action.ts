@@ -208,10 +208,11 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
     };
   }
 
-  let parsedBillData: PartialBy<OmitTimestamp<Bill>, "id"> = {
+  let parsedBillData: PartialBy<OmitTimestamp<Bill>, "id" | "internal_description"> = {
     ...data,
     amount: new Prisma.Decimal(data?.amount),
-    description: data?.description ?? ""
+    description: data?.description ?? "",
+    internal_description: undefined,
   };
 
   try {
@@ -219,12 +220,14 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
     // Update
     if (data?.id) {
       res = await prisma.$transaction(async (tx) => {
+        // @ts-ignore type error due to internal_description
         let updated = await updateBillByID(data.id!, parsedBillData);
         await syncBillsWithPaymentDate(data.booking_id, tx);
         return updated;
       });
 
     } else {
+      // @ts-ignore type error due to internal_description
       res = await createBill(parsedBillData);
     }
 
