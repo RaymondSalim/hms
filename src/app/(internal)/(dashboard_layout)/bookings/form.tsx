@@ -78,16 +78,7 @@ export function BookingForm(props: BookingFormProps) {
     const [roomDataMapped, setRoomDataMapped] = useState<SelectOption<number>[]>([]);
     useEffect(() => {
         if (roomDataSuccess) {
-            let roomDataFiltered = roomData;
-            if (initialBookingData) {
-                roomDataFiltered = roomDataFiltered?.filter(rd => {
-                    if (rd.roomtypes && initialBookingData.rooms) {
-                        return rd.roomtypes.id == initialBookingData.rooms.room_type_id;
-                    }
-                    return true;
-                });
-            }
-            setRoomDataMapped(roomDataFiltered.map(r => ({
+            setRoomDataMapped(roomData.map(r => ({
                 value: r.id,
                 label: `${r.room_number} | ${r.roomtypes?.type}`,
                 type_id: r.roomtypes?.id
