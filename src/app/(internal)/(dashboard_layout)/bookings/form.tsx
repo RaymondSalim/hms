@@ -150,6 +150,7 @@ export function BookingForm(props: BookingFormProps) {
 
     // Suggested Pricing
     useEffect(() => {
+        if (initialBookingData.fee) return;
         if (bookingData.room_id && bookingData.duration_id) {
             const targetRt = roomData?.find(r =>
                 r.id == bookingData.room_id
@@ -394,6 +395,7 @@ export function BookingForm(props: BookingFormProps) {
                             {
                                 bookingData.duration_id &&
                                 <motion.div
+                                    key={"price"}
                                     initial={{opacity: 0, height: 0}}
                                     animate={{opacity: 1, height: "auto"}}
                                     exit={{opacity: 0, height: 0}}
