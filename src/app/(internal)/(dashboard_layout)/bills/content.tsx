@@ -179,6 +179,9 @@ export default function BillsContent({bills}: BillsContentProps) {
         columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id, {
             header: "ID Pemesanan",
         }),
+        columnHelper.accessor(row => row.bookings?.rooms?.room_number, {
+            header: "Kamar"
+        }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
             minSize: 275
