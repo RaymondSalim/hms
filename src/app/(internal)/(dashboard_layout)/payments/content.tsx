@@ -34,10 +34,10 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       header: "ID Pemesanan",
       size: 20
     }),
-    columnHelper.accessor(row => row.bookings.tenants, {
+    columnHelper.accessor(row => `${row.bookings.tenants?.name} | ${row.bookings.tenants?.phone}`, {
       header: "Penyewa",
       cell: props => {
-        const data = props.getValue();
+        const data = props.row.original.bookings.tenants;
         return ( // TODO! Make link
           <div className={"flex flex-col gap-y-1"}>
             <span>{data?.name}</span>
@@ -48,11 +48,6 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       sortingFn: (rowA, rowB) => {
         return rowA.original.bookings.tenants?.name.localeCompare(rowB.original.bookings.tenants?.name ?? '') ?? 0;
       },
-      filterFn: (row, columnId, filterValue) => {
-        if (filterValue.length < 3) return false;
-        return row.original.bookings.tenants?.name.includes(filterValue) ?? false;
-      }
-
     }),
     columnHelper.accessor(row => row.paymentstatuses?.status, {
       header: "Status",
