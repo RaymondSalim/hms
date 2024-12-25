@@ -1,5 +1,5 @@
 import React from "react";
-import {auth} from "@/app/_lib/auth";
+import {auth} from "@/app/_lib/auth/auth";
 import {redirect} from "next/navigation";
 import ToastProvider from "@/app/_components/toast";
 import QueryClientProviderWrapper from "@/app/(internal)/(dashboard_layout)/_providers/queryClientProvider";

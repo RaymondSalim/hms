@@ -3,7 +3,7 @@ import styles from "@/app/(internal)/(dashboard_layout)/styles/layout.module.css
 import React from "react";
 import {HeaderProvider} from "@/app/_context/HeaderContext";
 import Header from "@/app/_components/header/header";
-import {auth} from "@/app/_lib/auth";
+import {auth} from "@/app/_lib/auth/auth";
 import {redirect} from "next/navigation";
 import prisma from "@/app/_lib/primsa";
 import {SettingsKey} from "@/app/_enum/setting";

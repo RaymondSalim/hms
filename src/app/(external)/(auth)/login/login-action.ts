@@ -1,7 +1,7 @@
 "use server";
 
 import {signInSchema} from "@/app/_lib/zod/auth/zod";
-import {signIn} from "@/app/_lib/auth";
+import {signIn} from "@/app/_lib/auth/auth";
 import {CredentialsSignin} from "next-auth";
 import {isRedirectError} from "next/dist/client/components/redirect";
 

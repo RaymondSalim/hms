@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="postgres@localhost" uuid="7357effc-dd0e-4b6f-b54f-9af7d30eb478">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="prod@ep-odd-night-a10zk4q4-pooler.ap-southeast-1.aws.neon.tech" uuid="696f3c00-11a1-4929-b902-67b8e8e9fc85">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://ep-odd-night-a10zk4q4-pooler.ap-southeast-1.aws.neon.tech:5432/prod</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="staging@ep-odd-night-a10zk4q4-pooler.ap-southeast-1.aws.neon.tech [2]" uuid="547bae3f-d72a-4b7e-b6ce-0cc8da054ba6">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://ep-odd-night-a10zk4q4-pooler.ap-southeast-1.aws.neon.tech:5432/staging</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="[AWS][Prod] hms" uuid="5591594c-54e5-4319-babc-3e1f45fd1895">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://hms-db.cf8ak4k8mtkq.ap-southeast-1.rds.amazonaws.com:5432/prod</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="[AWS][Prod] hms admin" uuid="7c987255-cf37-417b-b2f1-3b7dafac27af">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://hms-db.cf8ak4k8mtkq.ap-southeast-1.rds.amazonaws.com:5432/prod</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </component>
+</project>

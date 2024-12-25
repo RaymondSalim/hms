@@ -317,53 +317,43 @@ model SiteUser {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
 
-  accounts Account[]
-  logs     Log[]
-  sessions Session[]
-  roles    Role?     @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  logs          Log[]
+  sessions      Session[]
+  roles         Role?          @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  refreshTokens RefreshToken[]
 
   @@map("siteusers")
 }
 
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
+model RefreshToken {
+  id          Int      @id @default(autoincrement())
+  token       String   @unique
+  userId      String
+  blacklisted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  siteUser SiteUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user SiteUser @relation(fields: [userId], references: [id])
 
-  @@id([provider, providerAccountId])
-  @@map("accounts")
+  @@map("refreshtokens")
 }
 
 model Session {
+  id           Int      @id @default(autoincrement())
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-
-  siteUser SiteUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         SiteUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
 model VerificationToken {
   identifier String
-  token      String
+  token      String   @unique
   expires    DateTime
 
-  @@id([identifier, token])
+  @@unique([identifier, token])
   @@map("verificationtokens")
 }
 

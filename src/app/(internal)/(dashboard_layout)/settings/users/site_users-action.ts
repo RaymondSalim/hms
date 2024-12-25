@@ -4,7 +4,7 @@ import {SiteUser} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {siteUserSchemaWithOptionalID} from "@/app/_lib/zod/user/zod";
 import {createUser, deleteUser, getUserByID, updateUser} from "@/app/_db/user";
-import {auth} from "@/app/_lib/auth";
+import {auth} from "@/app/_lib/auth/auth";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {object, string} from "zod";
 import bcrypt from "bcrypt";
