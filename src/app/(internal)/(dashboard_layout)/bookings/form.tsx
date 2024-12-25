@@ -78,16 +78,7 @@ export function BookingForm(props: BookingFormProps) {
     const [roomDataMapped, setRoomDataMapped] = useState<SelectOption<number>[]>([]);
     useEffect(() => {
         if (roomDataSuccess) {
-            let roomDataFiltered = roomData;
-            if (initialBookingData) {
-                roomDataFiltered = roomDataFiltered?.filter(rd => {
-                    if (rd.roomtypes && initialBookingData.rooms) {
-                        return rd.roomtypes.id == initialBookingData.rooms.room_type_id;
-                    }
-                    return true;
-                });
-            }
-            setRoomDataMapped(roomDataFiltered.map(r => ({
+            setRoomDataMapped(roomData.map(r => ({
                 value: r.id,
                 label: `${r.room_number} | ${r.roomtypes?.type}`,
                 type_id: r.roomtypes?.id
@@ -150,6 +141,7 @@ export function BookingForm(props: BookingFormProps) {
 
     // Suggested Pricing
     useEffect(() => {
+        if (initialBookingData.fee) return;
         if (bookingData.room_id && bookingData.duration_id) {
             const targetRt = roomData?.find(r =>
                 r.id == bookingData.room_id
@@ -394,6 +386,7 @@ export function BookingForm(props: BookingFormProps) {
                             {
                                 bookingData.duration_id &&
                                 <motion.div
+                                    key={"price"}
                                     initial={{opacity: 0, height: 0}}
                                     animate={{opacity: 1, height: "auto"}}
                                     exit={{opacity: 0, height: 0}}

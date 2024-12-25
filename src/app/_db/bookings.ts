@@ -3,6 +3,7 @@
 import prisma from "@/app/_lib/primsa";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {Bill, Booking, Duration, Prisma} from "@prisma/client";
+import {generatePaymentBillMappingFromPaymentsAndBills} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -222,35 +223,45 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
 
   return {
     success: await prisma.$transaction(async (prismaTrx) => {
-      // Delete existing bills
+      // Delete existing bills and paymentBills
+      const existingBills = await prismaTrx.bill.findMany({
+        where: { booking_id: id },
+        include: {paymentBills: true}
+      });
+      const existingPaymentBillIDs = existingBills.flatMap((bill) => bill.paymentBills.map((pb) => pb.id));
+      await prismaTrx.paymentBill.deleteMany({
+        where: { id: { in: existingPaymentBillIDs } },
+      });
       await prismaTrx.bill.deleteMany({
-        where: {
-          bookings: {
-            id: id
-          }
-        }
+        where: { booking_id: id },
       });
 
-      // Create associated bills
+      // Create new bills
+      const createdBills = [];
       for (const billData of bills) {
-        await prismaTrx.bill.create({
-          // @ts-ignore
-          data: {
-            ...billData,
-            booking_id: id,
-          },
+        const newBill = await prismaTrx.bill.create({
+          // @ts-expect-error decimal types
+          data: { ...billData, booking_id: id },
         });
+        createdBills.push(newBill);
       }
 
-      // Update Booking
+      // Sync paymentBills using the utility function
+      const existingPayments = await prismaTrx.payment.findMany({
+        where: { booking_id: id },
+      });
+
+      let generatedPaymentBills = await generatePaymentBillMappingFromPaymentsAndBills(existingPayments, createdBills);
+      await prismaTrx.paymentBill.createManyAndReturn({
+        data: [
+          ...generatedPaymentBills
+        ]
+      });
+
+      // Update the booking
       return prismaTrx.booking.update({
-        where: {
-          id: id
-        },
-        data: {
-          id: undefined,
-          ...data
-        },
+        where: {id},
+        data: {id: undefined, ...data},
         include: {
           rooms: {
             include: {
@@ -264,7 +275,50 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
         }
       });
 
-    })
+
+      // // Delete existing bills
+      // await prismaTrx.bill.deleteMany({
+      //   where: {
+      //     bookings: {
+      //       id: id
+      //     }
+      //   }
+      // });
+      //
+      // // Create associated bills
+      // for (const billData of bills) {
+      //   await prismaTrx.bill.create({
+      //     // @ts-ignore
+      //     data: {
+      //       ...billData,
+      //       booking_id: id,
+      //     },
+      //   });
+      // }
+      //
+      // // Update Booking
+      // return prismaTrx.booking.update({
+      //   where: {
+      //     id: id
+      //   },
+      //   data: {
+      //     id: undefined,
+      //     ...data
+      //   },
+      //   include: {
+      //     rooms: {
+      //       include: {
+      //         locations: true,
+      //       }
+      //     },
+      //     durations: true,
+      //     bookingstatuses: true,
+      //     tenants: true,
+      //     checkInOutLogs: true
+      //   }
+      // });
+
+    }, {timeout: 60000})
   };
 }
 

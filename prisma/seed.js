@@ -76,10 +76,22 @@ async function main() {
       status: "Dikonfirmasi",
     }
   });
+  await prisma.setting.upsert({
+    where: {
+      setting_key: "REGISTRATION_ENABLED"
+    },
+    update: {
+      setting_value: "false"
+    },
+    create: {
+      setting_key: "REGISTRATION_ENABLED",
+      setting_value: "false"
+    }
+  });
 }
 
 main()
-    // .then(mock)
+    .then(mock)
     .then(async () => {
       console.log("success, disconnecting client");
       await prisma.$disconnect();
