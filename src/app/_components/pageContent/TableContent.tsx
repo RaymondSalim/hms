@@ -355,11 +355,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
-    const itemRank = rankItem(row.getValue(columnId), value)
+    const itemRank = rankItem(row.getValue(columnId), value);
 
     // Store the itemRank info
-    addMeta({ itemRank })
+    addMeta({ itemRank });
 
     // Return if the item should be filtered in/out
-    return itemRank.passed
-}
+    return itemRank.passed;
+};
