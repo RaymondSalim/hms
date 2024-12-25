@@ -1,6 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const {mock} = require("./mock");
-const {SettingsKey} = require("../src/app/_enum/setting");
 
 const prisma = new PrismaClient({
   log: [
@@ -79,19 +78,20 @@ async function main() {
   });
   await prisma.setting.upsert({
     where: {
-      setting_key: SettingsKey.REGISTRATION_ENABLED
+      setting_key: "REGISTRATION_ENABLED"
     },
     update: {
       setting_value: "false"
     },
     create: {
+      setting_key: "REGISTRATION_ENABLED",
       setting_value: "false"
     }
   });
 }
 
 main()
-    // .then(mock)
+    .then(mock)
     .then(async () => {
       console.log("success, disconnecting client");
       await prisma.$disconnect();
