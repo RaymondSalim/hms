@@ -2,6 +2,7 @@ import Credentials from "@auth/core/providers/credentials";
 import {findUserByEmail} from "@/app/_db/user";
 import {PrismaAdapter} from "@auth/prisma-adapter";
 import prismaClient from "@/app/_lib/primsa";
+import prisma from "@/app/_lib/primsa";
 import NextAuth, {CredentialsSignin} from "next-auth";
 import {Provider} from "@auth/core/providers";
 import {signInSchema} from "@/app/_lib/zod/auth/zod";
@@ -92,11 +93,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.user = user;
       }
 
-      return token;
+      try {
+        const dbUser = await prisma.siteUser.findUnique({
+          // @ts-expect-error id field unknown
+          where: { id: token.user?.id },
+          select: { id: true },
+        });
+
+        if (!dbUser) {
+          throw new Error("User no longer exists or is inactive");
+        }
+
+        return token;
+      } catch (error) {
+        // @ts-expect-error error.message
+        console.error("JWT Validation Error:", error.message);
+        return null;
+      }
     },
     async session({session, token}) {
-      // @ts-ignore
-      session.user.id = token.user.id;
+      if (!token.user) {
+        throw new Error("[session]callback: Invalid User");
+      }
+
+      session.user = token.user; // Pass user info to the session
       return session;
     },
   }
