@@ -28,6 +28,7 @@ model Booking {
   penalties       Penalty[]
   bills           Bill[]
   checkInOutLogs  CheckInOutLog[]
+  addOns          BookingAddOn[]
 
   @@map("bookings")
 }
@@ -457,4 +458,45 @@ model Event {
   updatedAt       DateTime  @updatedAt
 
   @@map("events")
+}
+
+model AddOn {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  requiresInput Boolean  @default(false)
+  parentAddOnId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  parentAddOn AddOn?         @relation("ParentAddOn", fields: [parentAddOnId], references: [id])
+  children    AddOn[]        @relation("ParentAddOn")
+  pricing     AddOnPricing[]
+  bookings    BookingAddOn[]
+}
+
+model AddOnPricing {
+  id            String   @id @default(cuid())
+  addOnId       String
+  intervalStart Int
+  intervalEnd   Int?
+  price         Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  addOn AddOn @relation(fields: [addOnId], references: [id])
+}
+
+model BookingAddOn {
+  id        String    @id @default(cuid())
+  input     Json?
+  startDate DateTime
+  endDate   DateTime?
+  bookingId Int
+  addOnId   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  addOn   AddOn   @relation(fields: [addOnId], references: [id])
 }
