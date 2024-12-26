@@ -78,7 +78,7 @@ export function BillForm(props: BillForm) {
         if (isBookingDataSuccess) {
             setBookingDataMapped(bookingData.map(r => ({
                 value: r.id,
-                label: `${r.id} | ${r.rooms?.room_number}`,
+                label: `Pemesanan ${r.id} | Kamar ${r.rooms?.room_number}`,
             })));
         }
     }, [bookingData, isBookingDataSuccess]);
