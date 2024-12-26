@@ -7,6 +7,9 @@ import {SessionProvider} from "next-auth/react";
 import {auth} from "@/app/_lib/auth";
 import {getCompanyInfo} from "@/app/_db/settings";
 
+// eslint-disable-next-line @next/next/no-document-import-in-page
+import {Html, NextScript} from "next/document";
+
 const inter = Inter({subsets: ["latin"]});
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,13 +29,22 @@ export default async function RootLayout({
 
     return (
       <SessionProvider session={session}>
-          <html lang="en">
+          <Html lang="en">
           <body className={inter.className}>
           <div className={styles.layout}>
               {children}
           </div>
           </body>
-          </html>
+          <NextScript>
+                  <>
+                      <script
+                          defer
+                          src="https://static.cloudflareinsights.com/beacon.min.js"
+                          data-cf-beacon='{"token": "TOKEN_VALUE", "spa": true}'
+                      />
+                  </>
+          </NextScript>
+          </Html>
       </SessionProvider>
     );
 }
