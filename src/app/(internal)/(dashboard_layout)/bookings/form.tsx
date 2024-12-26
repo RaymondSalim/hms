@@ -80,7 +80,7 @@ export function BookingForm(props: BookingFormProps) {
         if (roomDataSuccess) {
             setRoomDataMapped(roomData.map(r => ({
                 value: r.id,
-                label: `${r.room_number} | ${r.roomtypes?.type}`,
+                label: `Kamar ${r.room_number} | ${r.roomtypes?.type}`,
                 type_id: r.roomtypes?.id
             })));
         }
