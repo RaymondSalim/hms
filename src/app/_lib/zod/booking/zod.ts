@@ -1,5 +1,6 @@
-import {date, number, object, preprocess, string, union} from "zod";
+import {date, number, object, preprocess, string, union, z} from "zod";
 import {isoDateStringToDate} from "@/app/_lib/zod/base/zod";
+import {BookingAddonSchema} from "@/app/_lib/zod/addon/zod";
 
 export const bookingSchema = object({
     id: number().min(1, "ID should be greater than 0").optional(),
@@ -24,4 +25,5 @@ export const bookingSchema = object({
         number({required_error: "Fee is required"})
             .min(1, "Fee should be greater than 0")
     ),
+    addons: z.array(BookingAddonSchema).optional(), // Addons associated with the booking
 });
