@@ -2,7 +2,7 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React, {useContext, useState} from "react";
-import {formatToDateTime} from "@/app/_lib/util";
+import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import Link from "next/link";
@@ -19,6 +19,7 @@ import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum"
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {usePathname, useRouter} from "next/navigation";
 import {BookingPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bookings/page";
+import {Prisma} from "@prisma/client";
 
 
 export interface BookingsContentProps {
@@ -42,10 +43,10 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             header: "ID",
             size: 20
         }),
-        columnHelper.accessor(row => row.tenants, {
+        columnHelper.accessor(row => `${row.tenants?.name} | ${row.tenants?.phone}`, {
             header: "Penyewa",
             cell: props => {
-                const data = props.getValue();
+                const data = props.row.original.tenants;
                 return ( // TODO! Make link
                     <div className={"flex flex-col gap-y-1"}>
                         <span>{data?.name}</span>
@@ -56,11 +57,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             sortingFn: (rowA, rowB) => {
                 return rowA.original.tenants?.name.localeCompare(rowB.original.tenants?.name ?? '') ?? 0;
             },
-            filterFn: (row, columnId, filterValue) => {
-                if (filterValue.length < 3) return false;
-                return row.original.tenants?.name.includes(filterValue) ?? false;
-            }
-
         }),
         columnHelper.accessor(row => row.bookingstatuses?.status, {
             header: "Status",
@@ -69,16 +65,13 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         columnHelper.accessor(row => row.rooms?.room_number, {
             header: "Nomor Kamar"
         }),
-        columnHelper.accessor(row => {
-            let date = formatToDateTime(row.start_date, false);
-            return date;
-        }, {
+        columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
             header: "Tanggal Mulai"
         }),
         columnHelper.accessor(row => formatToDateTime(row.end_date, false), {
             header: "Tanggal Selesai",
         }),
-        columnHelper.accessor(row => row.fee, {
+        columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.fee).toNumber()), {
             header: "Biaya"
         }),
         columnHelper.display({

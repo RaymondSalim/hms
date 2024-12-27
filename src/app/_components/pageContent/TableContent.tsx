@@ -6,6 +6,7 @@ import {
     createColumnHelper,
     getCoreRowModel,
     getFilteredRowModel,
+    getPaginationRowModel,
     getSortedRowModel,
     useReactTable
 } from "@tanstack/react-table";
@@ -17,6 +18,8 @@ import {FaArrowLeft, FaArrowRight, FaPlus} from "react-icons/fa6";
 import {DefaultError, MutationOptions, useMutation, UseMutationResult} from "@tanstack/react-query";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {toast} from "react-toastify";
+import {rankItem} from '@tanstack/match-sorter-utils';
+import {FilterFn} from '@tanstack/table-core';
 
 export interface TableFormProps<T> {
     contentData?: T
@@ -67,19 +70,10 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
-    const [searchValue, setSearchValue] = useState(props.initialSearchValue);
+    const [searchValue, setSearchValue] = useState(props.initialSearchValue ?? "");
     const [activeContent, setActiveContent] = useState<T | undefined>(props.queryParams?.initialActiveContent);
     const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
-
-    // Pagination state
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10); // Default page size
-    const [totalPages, setTotalPages] = useState(0);
-    useEffect(() => {
-        setTotalPages(Math.ceil(contentsState.length / pageSize));
-        setCurrentPage(1);
-    }, [pageSize, contentsState]);
 
     const [fromQuery, setFromQuery] = useState(false);
 
@@ -186,33 +180,25 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         })
     ], [contentsState]);
 
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize;
-        return contentsState.slice(startIndex, startIndex + pageSize);
-    }, [contentsState, currentPage, pageSize]);
-
-
     const tanTable = useReactTable({
         defaultColumn: {
             minSize: 0,
             size: 0,
         },
         columns: columns,
-        data: paginatedData,
+        data: contentsState,
+        filterFns: {
+          fuzzy: fuzzyFilter
+        },
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
         state: {
             globalFilter: searchValue,
         },
-        globalFilterFn: (row, columnId, filterValue) => {
-            if (typeof row.getValue(columnId) == "string") {
-                return (row.getValue(columnId) as string).toLowerCase().includes(filterValue.toLowerCase());
-            }
-
-            return false;
-        },
-
+        // @ts-expect-error custom filter fn definition
+        globalFilterFn: "fuzzy"
     });
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -221,7 +207,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     // Reset pagination when initial contents change
     useEffect(() => {
         setContentsState(props.initialContents);
-        setCurrentPage(1); // Reset to the first page on data change
+        tanTable.firstPage();
     }, [props.initialContents]);
 
     useEffect(() => {
@@ -275,12 +261,15 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             <div className="flex items-center mt-4 gap-x-8">
                 <div className={"ml-auto"}>
                     <Select
-                        onChange={(value) => setPageSize(Number(value))}
+                        onChange={(value) => {
+                            tanTable.setPageSize(Number(value));
+                            tanTable.firstPage();
+                        }}
                         label={"Item Per Halaman"}
                         containerProps={{
                             className: "!min-w-[175px]"
                         }}
-                        value={pageSize.toString()}
+                        value={tanTable.getState().pagination.pageSize.toString()}
                         className="flex p-2 border rounded background-gray"
                     >
                         {[5, 10, 20, 50].map(size => (
@@ -292,20 +281,20 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     <IconButton
                         size="sm"
                         variant="outlined"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
+                        onClick={() => tanTable.previousPage()}
+                        disabled={!tanTable.getCanPreviousPage()}
                     >
                         <FaArrowLeft strokeWidth={2} className="h-4 w-4" />
                     </IconButton>
                     <Typography color="gray" className="font-normal">
-                        Page <strong className="text-gray-900">{currentPage}</strong> of{" "}
-                        <strong className="text-gray-900">{totalPages}</strong>
+                        Page <strong className="text-gray-900">{tanTable.getState().pagination.pageIndex + 1}</strong> of{" "}
+                        <strong className="text-gray-900">{tanTable.getPageCount()}</strong>
                     </Typography>
                     <IconButton
                         size="sm"
                         variant="outlined"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
+                        onClick={() => tanTable.nextPage()}
+                        disabled={!tanTable.getCanNextPage()}
                     >
                         <FaArrowRight strokeWidth={2} className="h-4 w-4" />
                     </IconButton>
@@ -364,3 +353,13 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         </div>
     );
 }
+
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+    const itemRank = rankItem(row.getValue(columnId), value);
+
+    // Store the itemRank info
+    addMeta({ itemRank });
+
+    // Return if the item should be filtered in/out
+    return itemRank.passed;
+};
