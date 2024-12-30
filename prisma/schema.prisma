@@ -493,14 +493,14 @@ model AddOnPricing {
 }
 
 model BookingAddOn {
-  id         String    @id @default(cuid())
-  input      Json?
-  start_date DateTime
-  end_date   DateTime?
+  id         String   @id @default(cuid())
+  input      String?
+  start_date DateTime @db.Date
+  end_date   DateTime @db.Date
   booking_id Int
   addon_id   String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   booking Booking @relation(fields: [booking_id], references: [id])
   addOn   AddOn   @relation(fields: [addon_id], references: [id])
