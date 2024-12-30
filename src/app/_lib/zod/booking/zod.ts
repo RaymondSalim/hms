@@ -25,5 +25,5 @@ export const bookingSchema = object({
         number({required_error: "Fee is required"})
             .min(1, "Fee should be greater than 0")
     ),
-    addons: z.array(BookingAddonSchema).optional(), // Addons associated with the booking
+    addOns: z.array(BookingAddonSchema).optional(), // Addons associated with the booking
 });

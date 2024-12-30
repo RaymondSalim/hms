@@ -1,4 +1,5 @@
-import {number, z, ZodIssueCode} from "zod";
+import {date, number, union, z, ZodIssueCode} from "zod";
+import {isoDateStringToDate} from "@/app/_lib/zod/base/zod";
 
 // Addon Pricing Schema
 const AddonPricingSchema = z.object({
@@ -45,13 +46,8 @@ const AddonSchema = z.object({
 const BookingAddonSchema = z.object({
     addon_id: z.string().min(1, "ID is required").optional(),
     input: z.any().optional(), // Optional input field
-    start_date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: "Invalid start date",
-    }),
-    end_date: z.string().nullable().optional()
-        .refine((date) => (date !== null && !isNaN(Date.parse(date!))), {
-            message: "Invalid end date",
-        }),
+    start_date: z.union([isoDateStringToDate({required_error: "Tanggal Mulai diperlukan"}), date({required_error: "Tanggal Mulai diperlukan"})]),
+    end_date: union([isoDateStringToDate({required_error: "Tanggal Selesai diperlukan"}), date({required_error: "Tanggal Selesai diperlukan"})]),
 });
 
 export { AddonPricingSchema, AddonSchema, BookingAddonSchema };
