@@ -8,6 +8,7 @@ const AddonPricingSchema = z.object({
     addon_id: z.string().uuid().optional(),
     interval_start: z.number().min(0, "Jangka Waktu mulai harus lebih besar daripada 0").int(),
     interval_end: z.number().nullable().optional(),
+    is_full_payment: z.boolean().default(false),
     price: z.number().min(0, "Harga harus lebih besar daripada 0"),
 }).superRefine((obj, ctx) => {
     if (obj.interval_end && obj.interval_end < obj.interval_start) {
