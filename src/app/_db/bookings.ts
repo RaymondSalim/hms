@@ -41,7 +41,6 @@ export type BookingsIncludeAddons = Prisma.BookingGetPayload<{
 // TODO! Create/Update bookings, should also create bill item for booking addon
 
 export async function getBookingStatuses() {
-    prisma.bookingAddOn.fields
     return prisma.bookingStatus.findMany({
         orderBy: {
             createdAt: "asc",
