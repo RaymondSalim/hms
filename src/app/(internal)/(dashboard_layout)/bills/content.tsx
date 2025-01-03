@@ -6,7 +6,7 @@ import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {HeaderContext} from "@/app/_context/HeaderContext";
 import {Prisma} from "@prisma/client";
-import {BillIncludeBookingAndPayments} from "@/app/_db/bills";
+import {BillIncludeAll, BillIncludeBookingAndPayments} from "@/app/_db/bills";
 import {BillForm} from "@/app/(internal)/(dashboard_layout)/bills/form";
 import {
     deleteBillAction,
@@ -21,7 +21,7 @@ import {toast} from "react-toastify";
 
 
 export interface BillsContentProps {
-    bills: BillIncludeBookingAndPayments[]
+    bills: BillIncludeAll[]
 }
 
 export default function BillsContent({bills}: BillsContentProps) {
@@ -42,135 +42,6 @@ export default function BillsContent({bills}: BillsContentProps) {
         }
     });
 
-    // let generatePaymentsDialogContent = useCallback((activeData: typeof bills[0]) => (
-    //     <>
-    //         <Typography variant="h5" color="black" className="mb-4">Rincian Pembayaran</Typography>
-    //         <table className="w-full overflow-y-auto min-w-max table-auto text-left">
-    //             <thead>
-    //             <tr>
-    //                 {["ID", "Tanggal", "Jumlah Pembayaran", "Pembayaran yang Dialokasikan", ""].map((el) => (
-    //                     <th
-    //                         key={el}
-    //                         className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
-    //                     >
-    //                         <Typography
-    //                             variant="small"
-    //                             color="blue-gray"
-    //                             className="font-normal leading-none opacity-70"
-    //                         >
-    //                             {el}
-    //                         </Typography>
-    //                     </th>
-    //                 ))}
-    //             </tr>
-    //             </thead>
-    //             <tbody>
-    //             {
-    //                 activeData?.paymentBills &&
-    //                 activeData.paymentBills.length > 0 ?
-    //                     activeData.paymentBills
-    //                         .map((pb, index, arr) => {
-    //                             const isLast = index === arr.length - 1;
-    //                             const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
-    //
-    //                             return (
-    //                                 <tr key={pb.payment.id}>
-    //                                     <td className={classes}>
-    //                                         <Typography
-    //                                             variant="small"
-    //                                             color="blue-gray"
-    //                                             className="font-normal"
-    //                                         >
-    //                                             {pb.payment.id}
-    //                                         </Typography>
-    //                                     </td>
-    //                                     <td className={classes}>
-    //                                         <Typography
-    //                                             variant="small"
-    //                                             color="blue-gray"
-    //                                             className="font-normal"
-    //                                         >
-    //                                             {formatToDateTime(pb.payment.payment_date)}
-    //                                         </Typography>
-    //                                     </td>
-    //                                     <td className={classes}>
-    //                                         <Typography
-    //                                             variant="small"
-    //                                             color="blue-gray"
-    //                                             className="font-normal"
-    //                                         >
-    //                                             {formatToIDR(new Prisma.Decimal(pb.payment.amount).toNumber())}
-    //                                         </Typography>
-    //                                     </td>
-    //                                     <td className={classes}>
-    //                                         <Typography
-    //                                             variant="small"
-    //                                             color="blue-gray"
-    //                                             className="font-normal"
-    //                                         >
-    //                                             {formatToIDR(new Prisma.Decimal(pb.amount).toNumber())}
-    //                                         </Typography>
-    //                                     </td>
-    //                                     <td className={classes}>
-    //                                         <Link
-    //                                             href={{
-    //                                                 pathname: "/payments",
-    //                                                 query: {
-    //                                                     payment_id: pb.payment.id,
-    //                                                 }
-    //                                             }}
-    //                                             className="font-normal"
-    //                                         >
-    //                                             <Typography
-    //                                                 variant="small"
-    //                                                 color="blue-gray"
-    //                                                 className="font-normal"
-    //                                             >
-    //                                                 {"More Info"}
-    //                                             </Typography>
-    //                                         </Link>
-    //                                     </td>
-    //                                 </tr>
-    //                             );
-    //                         }) :
-    //                     <tr>
-    //                         <td colSpan={100}>
-    //                             <Typography>Tidak ada pembayaran yang telah dilakukan</Typography>
-    //                         </td>
-    //                     </tr>
-    //             }
-    //
-    //             </tbody>
-    //         </table>
-    //         <div className={"flex gap-x-4 justify-end"}>
-    //             <Button onClick={() => setShowDialog(false)} variant={"outlined"} className="mt-6">
-    //                 Close
-    //             </Button>
-    //         </div>
-    //     </>
-    // ), []);
-    // let generateEmailConfirmationDialogContent = useCallback((activeData: typeof bills[0]) => {
-    //     return (
-    //         <>
-    //             <Typography variant="h5" color="black" className="mb-4">Kirim Pengingat Tagihan</Typography>
-    //             <Typography variant="paragraph" color="black">Apakah anda mau mengirimkan email ini?</Typography>
-    //             <div className={"flex gap-x-4 justify-end"}>
-    //                 <Button onClick={() => setShowDialog(false)} variant={"outlined"} className="mt-6">
-    //                     Tutup
-    //                 </Button>
-    //                 <Button
-    //                     onClick={() => {
-    //                     if (activeData) {
-    //                         sendBillEmailMutation.mutate(activeData.id);
-    //                     }
-    //                 }} color={"blue"} className="mt-6" loading={sendBillEmailMutation.isPending}>
-    //                     Kirim
-    //                 </Button>
-    //             </div>
-    //         </>
-    //     )
-    // }, [sendBillEmailMutation]);
-
     const columnHelper = createColumnHelper<typeof bills[0]>();
     const columns = [
         columnHelper.accessor(row => row.id, {
@@ -186,7 +57,11 @@ export default function BillsContent({bills}: BillsContentProps) {
             header: "Deskripsi",
             minSize: 275
         }),
-        columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
+        columnHelper.accessor(row => formatToIDR(
+            row.bill_item
+                .map(bi => bi.amount)
+                .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0)
+                ).toNumber()), {
             header: "Jumlah",
         }),
         columnHelper.accessor(row => {
@@ -198,13 +73,24 @@ export default function BillsContent({bills}: BillsContentProps) {
             header: "Jumlah Terbayar",
         }),
         columnHelper.display({
-            header: "Pembayaran",
-            cell: props =>
-                <Link className={"text-blue-400"} type="button" href="" onClick={() => {
-                    setDialogContent(<PaymentsDialogContent activeData={props.row.original}
-                                                            setShowDialog={setShowDialog}/>);
-                    setShowDialog(true);
-                }}>Lihat Pembayaran</Link>
+            header: "Rincian Tagihan",
+            cell: props => (
+                <Link
+                    className="text-blue-500 hover:underline"
+                    onClick={() => {
+                        setDialogContent(
+                            <DetailsDialogContent
+                                activeData={props.row.original}
+                                setShowDialog={setShowDialog}
+                            />
+                        );
+                        setShowDialog(true);
+                    }}
+                    href={{}}
+                >
+                    Lihat Rincian
+                </Link>
+            ),
         }),
     ];
 
@@ -254,7 +140,6 @@ export default function BillsContent({bills}: BillsContentProps) {
                                                 setShowDialog={setShowDialog}
                                             />
                                         );
-                                        // setDialogContent(generateEmailConfirmationDialogContent(rowData, sendBillEmailMutation.isPending));
                                         setShowDialog(true);
                                     }}/>
                             );
@@ -265,7 +150,7 @@ export default function BillsContent({bills}: BillsContentProps) {
             customDialog={
                 <Dialog
                     open={showDialog}
-                    size={"md"}
+                    size={"lg"}
                     handler={() => setShowDialog(prev => !prev)}
                     className={"p-8"}
                 >
@@ -276,89 +161,124 @@ export default function BillsContent({bills}: BillsContentProps) {
     );
 }
 
-const PaymentsDialogContent = ({activeData, setShowDialog}: {
-    activeData: BillIncludeBookingAndPayments;
+const DetailsDialogContent = ({activeData, setShowDialog}: {
+    activeData: BillIncludeAll;
     setShowDialog: React.Dispatch<React.SetStateAction<boolean>>
-}) => {
-    return (
-        <>
-            <Typography variant="h5" color="black" className="mb-4">Rincian Pembayaran</Typography>
-            <table className="w-full overflow-y-auto min-w-max table-auto text-left">
-                <thead>
-                <tr>
-                    {["ID", "Tanggal", "Jumlah Pembayaran", "Pembayaran yang Dialokasikan", ""].map((el) => (
-                        <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                            <Typography variant="small" color="blue-gray"
-                                        className="font-normal leading-none opacity-70">
-                                {el}
-                            </Typography>
-                        </th>
-                    ))}
-                </tr>
-                </thead>
-                <tbody>
-                {
-                    activeData?.paymentBills && activeData.paymentBills.length > 0 ?
-                        activeData.paymentBills.map((pb, index, arr) => {
-                            const isLast = index === arr.length - 1;
-                            const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
-
-                            return (
-                                <tr key={pb.payment.id}>
-                                    <td className={classes}>
-                                        <Typography variant="small" color="blue-gray" className="font-normal">
-                                            {pb.payment.id}
-                                        </Typography>
-                                    </td>
-                                    <td className={classes}>
-                                        <Typography variant="small" color="blue-gray" className="font-normal">
-                                            {formatToDateTime(pb.payment.payment_date)}
-                                        </Typography>
-                                    </td>
-                                    <td className={classes}>
-                                        <Typography variant="small" color="blue-gray" className="font-normal">
-                                            {formatToIDR(new Prisma.Decimal(pb.payment.amount).toNumber())}
-                                        </Typography>
-                                    </td>
-                                    <td className={classes}>
-                                        <Typography variant="small" color="blue-gray" className="font-normal">
-                                            {formatToIDR(new Prisma.Decimal(pb.amount).toNumber())}
-                                        </Typography>
-                                    </td>
-                                    <td className={classes}>
-                                        <Link
-                                            href={{
-                                                pathname: "/payments",
-                                                query: {
-                                                    payment_id: pb.payment.id,
-                                                }
-                                            }}
-                                            className="font-normal"
-                                        >
-                                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                                {"More Info"}
-                                            </Typography>
-                                        </Link>
-                                    </td>
-                                </tr>
-                            );
-                        }) :
-                        <tr>
-                            <td colSpan={100}>
-                                <Typography>Tidak ada pembayaran yang telah dilakukan</Typography>
+}) => (
+    <>
+        <Typography variant="h5" color="black" className="mb-4">Detail Tagihan dan Pembayaran</Typography>
+        <Typography variant="h6" color="blue-gray" className="mb-2">Rincian Tagihan</Typography>
+        <table className="w-full table-auto text-left mb-6">
+            <thead>
+            <tr>
+                {["Deskripsi", "Harga"].map((el) => (
+                    <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
+                        <Typography variant="small" color="blue-gray"
+                                    className="font-normal leading-none opacity-70">
+                            {el}
+                        </Typography>
+                    </th>
+                ))}
+            </tr>
+            </thead>
+            <tbody>
+            {
+                activeData.bill_item && activeData.bill_item.length > 0 ?
+                    activeData.bill_item.map((item, index) => (
+                        <tr key={index}>
+                            <td className="border-b border-blue-gray-50 p-4">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    {item.description}
+                                </Typography>
+                            </td>
+                            <td className="border-b border-blue-gray-50 p-4">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    {formatToIDR(new Prisma.Decimal(item.amount).toNumber())}
+                                </Typography>
                             </td>
                         </tr>
-                }
-                </tbody>
-            </table>
-            <div className={"flex gap-x-4 justify-end"}>
-                <Button onClick={() => setShowDialog(false)} variant={"outlined"} className="mt-6">
-                    Close
-                </Button>
-            </div>
-        </>
-    );
-};
+                    )) :
+                    <tr>
+                        <td colSpan={3} className="p-4">
+                            <Typography>Tidak ada rincian tagihan.</Typography>
+                        </td>
+                    </tr>
+            }
+            </tbody>
+        </table>
+
+        <Typography variant="h6" color="blue-gray" className="mb-2">Pembayaran</Typography>
+        <table className="w-full table-auto text-left">
+            <thead>
+            <tr>
+                {["ID", "Tanggal", "Jumlah Pembayaran", "Pembayaran yang Dialokasikan", ""].map((el) => (
+                    <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
+                        <Typography variant="small" color="blue-gray"
+                                    className="font-normal leading-none opacity-70">
+                            {el}
+                        </Typography>
+                    </th>
+                ))}
+            </tr>
+            </thead>
+            <tbody>
+            {
+                activeData.paymentBills && activeData.paymentBills.length > 0 ?
+                    activeData.paymentBills.map((pb, index) => (
+                        <tr key={pb.payment.id}>
+                            <td className="border-b border-blue-gray-50 p-4">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    {pb.payment.id}
+                                </Typography>
+                            </td>
+                            <td className="border-b border-blue-gray-50 p-4">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    {formatToDateTime(pb.payment.payment_date)}
+                                </Typography>
+                            </td>
+                            <td className="border-b border-blue-gray-50 p-4">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    {formatToIDR(new Prisma.Decimal(pb.payment.amount).toNumber())}
+                                </Typography>
+                            </td>
+                            <td className="border-b border-blue-gray-50 p-4">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    {formatToIDR(new Prisma.Decimal(pb.amount).toNumber())}
+                                </Typography>
+                            </td>
+                            <td className="border-b border-blue-gray-50 p-4">
+                                <Link
+                                    href={{
+                                        pathname: "/payments",
+                                        query: {
+                                            payment_id: pb.payment.id,
+                                        }
+                                    }}
+                                    className="font-normal"
+                                >
+                                    <Typography variant="small" color="blue-gray" className="font-normal">
+                                        {"More Info"}
+                                    </Typography>
+                                </Link>
+                            </td>
+                        </tr>
+                    )) :
+                    <tr>
+                        <td colSpan={5} className="p-4">
+                            <Typography>Tidak ada pembayaran yang telah dilakukan</Typography>
+                        </td>
+                    </tr>
+            }
+            </tbody>
+        </table>
+
+        <div className="flex gap-x-4 justify-end">
+            <Button onClick={() => setShowDialog(false)} variant="outlined" className="mt-6">
+                Tutup
+            </Button>
+        </div>
+    </>
+);
 
 const EmailConfirmationDialog = ({activeData, sendBillEmailMutation, setShowDialog}: {
     activeData: BillIncludeBookingAndPayments;
