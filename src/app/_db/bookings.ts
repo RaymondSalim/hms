@@ -149,14 +149,15 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 })),
             });
 
-            newBills.forEach((bill, index) => {
+            for (const bill of newBills) {
+                const index = newBills.indexOf(bill);
                 if (billItems[index]) { // we can do this as right now, there are one billitem per bill
-                        prismaTrx.billItem.create({
-                            data: {
-                                ...billItems[index],
-                                bill_id: bill.id,
-                            },
-                        });
+                    await prismaTrx.billItem.create({
+                        data: {
+                            ...billItems[index],
+                            bill_id: bill.id,
+                        },
+                    });
                 }
 
                 const addonKey = `${bill.due_date.getFullYear()}-${bill.due_date.getMonth()}`;
@@ -165,19 +166,19 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                     const addonBills = addonBillItems.get(addonKey);
 
                     if (addonBills) {
-                            prismaTrx.billItem.createMany({
-                                data: addonBills.map(ab => ({...ab, bill_id: bill.id}))
-                            });
+                        await prismaTrx.billItem.createMany({
+                            data: addonBills.map(ab => ({...ab, bill_id: bill.id}))
+                        });
                     }
                 }
-            });
+            }
 
 
             // Create associated BookingAddOns
             if (bookingAddons) {
-                    prismaTrx.bookingAddOn.createMany({
-                        data: bookingAddons.map(na => ({...na, booking_id: newBooking.id}))
-                    });
+                await prismaTrx.bookingAddOn.createMany({
+                    data: bookingAddons.map(na => ({...na, booking_id: newBooking.id}))
+                });
             }
 
             return prismaTrx.booking.findFirst({
@@ -343,7 +344,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                     const addonBills = addonBillItems.get(addonKey);
 
                     if (addonBills) {
-                        prismaTrx.billItem.createMany({
+                        await prismaTrx.billItem.createMany({
                             data: addonBills.map(ab => ({...ab, bill_id: bill.id}))
                         });
                     }
