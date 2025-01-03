@@ -4,6 +4,7 @@ import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/Si
 import {Session} from 'next-auth';
 import {FaKey, FaReceipt} from "react-icons/fa6";
 import {getCompanyInfo} from "@/app/_db/settings";
+import {IoIosAddCircleOutline} from "react-icons/io";
 
 export interface SidebarProps {
     session: Session | null
@@ -58,6 +59,7 @@ export default async function Sidebar({session}: SidebarProps) {
         },
         // {name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus/>},
         {name: 'Pemesanan', path: '/bookings', icon: <FaBed/>},
+        {name: 'Layanan Tambahan', path: '/addons', icon: <IoIosAddCircleOutline />},
         {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},
         {name: 'Tagihan', path: '/bills', icon: <FaReceipt/>},
         // {

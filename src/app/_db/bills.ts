@@ -56,6 +56,28 @@ export type BillIncludeBookingAndPayments = Prisma.BillGetPayload<typeof billInc
   }
 }
 
+export const billIncludeAll = Prisma.validator<Prisma.BillDefaultArgs>()({
+  include: {
+    bookings: {
+      include: {
+        rooms: true
+      }
+    },
+    paymentBills: {
+      include: {
+        payment: true
+      }
+    },
+    bill_item: true
+  }
+});
+
+export type BillIncludeAll = Prisma.BillGetPayload<typeof billIncludeAll> & {
+  bookings: Booking & {
+    custom_id: string
+  }
+}
+
 export async function getBillsWithPayments(booking_id?: Prisma.IntFilter<"Bill"> | number, args?: Prisma.BillFindManyArgs) {
   return prisma.bill.findMany({
     ...args,
@@ -127,9 +149,7 @@ export async function createBill(bill: OmitIDTypeAndTimestamp<Bill>) {
     data: {
       ...bill
     },
-    include: {
-      bookings: true
-    }
+    include: billIncludeAll.include
   }).then(b => ({
     ...b,
     bookings: {

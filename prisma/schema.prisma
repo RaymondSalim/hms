@@ -28,6 +28,7 @@ model Booking {
   penalties       Penalty[]
   bills           Bill[]
   checkInOutLogs  CheckInOutLog[]
+  addOns          BookingAddOn[]
 
   @@map("bookings")
 }
@@ -124,19 +125,34 @@ model Log {
 }
 
 model Bill {
-  id                   Int      @id @default(autoincrement())
-  booking_id           Int
-  amount               Decimal  @db.Decimal(10, 2)
-  description          String   @db.VarChar(255)
-  internal_description String?  @db.VarChar(255)
-  due_date             DateTime @db.Date
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @default(now()) @updatedAt
+  id          Int        @id @default(autoincrement())
+  booking_id  Int
+  amount      Decimal    @db.Decimal(10, 2)
+  description String     @db.VarChar(255)
+  due_date    DateTime   @db.Date
+  bill_item   BillItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
 
   bookings     Booking       @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   paymentBills PaymentBill[]
 
   @@map("bills")
+}
+
+model BillItem {
+  id                   Int      @id @default(autoincrement())
+  bill_id              Int
+  description          String   @db.VarChar(255)
+  internal_description String?  @db.VarChar(255)
+  amount               Decimal  @db.Decimal(10, 2)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
+
+  bill Bill @relation(fields: [bill_id], references: [id], onDelete: Cascade)
+
+  @@index([bill_id])
+  @@map("bill_items")
 }
 
 model Payment {
@@ -390,6 +406,7 @@ model Location {
   rooms            Room[]
   expenses         Expense[]
   RoomTypeDuration RoomTypeDuration[]
+  addOns           AddOn[]
 
   @@map("locations")
 }
@@ -457,4 +474,50 @@ model Event {
   updatedAt       DateTime  @updatedAt
 
   @@map("events")
+}
+
+model AddOn {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  requires_input  Boolean  @default(false)
+  parent_addon_id String?
+  location_id     Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  parentAddOn AddOn?         @relation("ParentAddOn", fields: [parent_addon_id], references: [id])
+  children    AddOn[]        @relation("ParentAddOn")
+  location    Location?      @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+  pricing     AddOnPricing[]
+  bookings    BookingAddOn[]
+
+  @@unique([name, location_id])
+}
+
+model AddOnPricing {
+  id              String   @id @default(cuid())
+  addon_id        String
+  interval_start  Int
+  interval_end    Int?
+  price           Float
+  is_full_payment Boolean  @default(false) // New field to indicate full payment
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  addOn AddOn @relation(fields: [addon_id], references: [id])
+}
+
+model BookingAddOn {
+  id         String   @id @default(cuid())
+  input      String?
+  start_date DateTime @db.Date
+  end_date   DateTime @db.Date
+  booking_id Int
+  addon_id   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  booking Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  addOn   AddOn   @relation(fields: [addon_id], references: [id], onDelete: Restrict)
 }

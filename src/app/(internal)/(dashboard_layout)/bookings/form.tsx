@@ -2,15 +2,15 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
+import {Button, Checkbox, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getRooms, getRoomTypes} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
-import {Booking, Prisma} from "@prisma/client";
+import {Duration, Prisma} from "@prisma/client";
 import {ZodFormattedError} from "zod";
-import {BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
+import {BookingsIncludeAddons, BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
 import {formatToDateTime, generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
@@ -19,15 +19,27 @@ import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings
 import {DateSet} from "@/app/_lib/customSet";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import CurrencyInput from "@/app/_components/input/currencyInput";
+import {getAddonsByLocation} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
 
 interface BookingFormProps extends TableFormProps<BookingsIncludeAll> {
 }
 
 export function BookingForm(props: BookingFormProps) {
     const [bookingData, setBookingData] = useState<Partial<BookingsIncludeAll>>(props.contentData ?? {});
-    const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<Booking> | undefined>(props.mutationResponse?.errors);
+    const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<BookingsIncludeAddons> | undefined>(props.mutationResponse?.errors);
     const [locationID, setLocationID] = useState<number | undefined>(props.contentData?.rooms?.location_id ?? undefined);
     const today = new Date();
+
+    const [popoverOpenMap, setPopoverOpenMap] = useState<Record<string, boolean>>({});
+
+    const togglePopover = (index: string) => {
+        setPopoverOpenMap((prev) => ({
+            ...prev,
+            [index]: !prev[index],
+        }));
+    };
+
+    const [hasAddons, setHasAddons] = useState(false);
 
     const [initialBookingData, setInitialBookingData] = useState<Partial<BookingsIncludeAll>>(props.contentData ?? {});
     // Function to compare initial and current booking data
@@ -48,6 +60,9 @@ export function BookingForm(props: BookingFormProps) {
     // Use effect to set initialBookingData when the component mounts
     useEffect(() => {
         setInitialBookingData(props.contentData ?? {});
+        if (props.contentData?.addOns && props.contentData.addOns.length > 0) {
+            setHasAddons(true);
+        }
     }, [props.contentData]);
 
     useEffect(() => {
@@ -137,7 +152,21 @@ export function BookingForm(props: BookingFormProps) {
         }
     }, [tenantData, tenantDataSuccess]);
 
-    const [popoverOpen, setIsPopoverOpen] = useState(false);
+    // Addons Data
+    const {data: addonData, isSuccess: addonDataSuccess} = useQuery({
+        queryKey: ['addons', 'location_id', locationID],
+        queryFn: () => getAddonsByLocation(locationID),
+        enabled: hasAddons,
+    });
+    const [addonDataMapped, setAddonDataMapped] = useState<SelectOption<string>[]>([]);
+    useEffect(() => {
+        if (addonDataSuccess) {
+            setAddonDataMapped(addonData.map(a => ({
+                value: a.id,
+                label: `${a.name} | ${a.description}`,
+            })));
+        }
+    }, [addonData, addonDataSuccess]);
 
     // Suggested Pricing
     useEffect(() => {
@@ -209,6 +238,35 @@ export function BookingForm(props: BookingFormProps) {
         }
     }, [bookingData.start_date, disabledDatesSet, durationDataMapped, durationsData]);
 
+    // Helper Functions for Addons Management
+    const addAddonEntry = () => {
+        // @ts-expect-error missing required members of addOns
+        setBookingData((prev) => ({
+            ...prev,
+            addOns: [
+                ...(prev.addOns || []),
+                {id: undefined, booking_id: prev.id},
+            ],
+        }));
+    };
+
+    // @ts-expect-error error type definition of key
+    const updateAddonEntry = (index: number, key: keyof typeof bookingData.addOns[0], value: any) => {
+        setBookingData((prev) => ({
+            ...prev,
+            addOns: prev.addOns?.map((addon, i) =>
+                i === index ? {...addon, [key]: value} : addon
+            ),
+        }));
+    };
+
+    const removeAddonEntry = (index: number) => {
+        setBookingData((prev) => ({
+            ...prev,
+            addOns: prev.addOns?.filter((_, i) => i !== index),
+        }));
+    };
+
     return (
         <div className={"w-full px-8 py-4"}>
             <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Perubahan" : "Pembuatan"} Booking</h1>
@@ -217,7 +275,7 @@ export function BookingForm(props: BookingFormProps) {
                     <MotionConfig
                         transition={{duration: 0.5}}
                     >
-                        <AnimatePresence>
+                        <AnimatePresence key={"booking_form"}>
                             <div>
                                 <label htmlFor="tenant_id">
                                     <Typography variant="h6" color="blue-gray">
@@ -308,8 +366,8 @@ export function BookingForm(props: BookingFormProps) {
                                         </Typography>
                                     </label>
                                     <Popover
-                                        open={popoverOpen}
-                                        handler={() => setIsPopoverOpen(p => !p)}
+                                        open={popoverOpenMap["BOOKING_SD"]}
+                                        handler={() => togglePopover("BOOKING_SD")}
                                         placement="bottom-end"
                                     >
                                         <PopoverHandler>
@@ -333,7 +391,7 @@ export function BookingForm(props: BookingFormProps) {
                                                 fixedWeeks={true}
                                                 selected={bookingData.start_date}
                                                 onSelect={(d) => {
-                                                    setIsPopoverOpen(false);
+                                                    togglePopover("BOOKING_SD");
                                                     setBookingData(p => ({...p, start_date: d}));
                                                 }}
                                                 disabled={disabledDatesSet.values()}
@@ -442,6 +500,260 @@ export function BookingForm(props: BookingFormProps) {
                                         fieldErrors?.status_id &&
                                         <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
                                     }
+                                </motion.div>
+                            }
+                            {
+                                bookingData.duration_id &&
+                                <motion.div
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <Checkbox
+                                        label={
+                                            <Typography color="blue-gray" className="font-medium">
+                                                Ada tambahan layanan
+                                            </Typography>
+                                        }
+                                        checked={hasAddons}
+                                        onChange={(e) => setHasAddons(e.target.checked)}
+                                        containerProps={{
+                                            className: "-ml-3",
+                                        }}
+                                    />
+                                    {hasAddons && (
+                                        <motion.div
+                                            initial={{opacity: 0, height: 0}}
+                                            animate={{opacity: 1, height: "auto"}}
+                                            exit={{opacity: 0, height: 0}}
+                                            className="mt-4 space-y-6"
+                                        >
+                                            <label htmlFor="addons">
+                                                <Typography variant="h6" color="blue-gray">
+                                                    Layanan Tambahan
+                                                </Typography>
+                                            </label>
+
+                                            {/* Addon Management */}
+                                            {bookingData.addOns?.map((addon, index) => (
+                                                <motion.div
+                                                    initial={{opacity: 0, height: 0}}
+                                                    animate={{opacity: 1, height: "auto"}}
+                                                    exit={{opacity: 0, height: 0}}
+                                                    key={index}
+                                                    className="flex flex-col gap-4 border p-4 rounded-lg shadow-sm"
+                                                >
+                                                    {/* Addon Selection */}
+                                                    <SelectComponent<string>
+                                                        setValue={(value) =>
+                                                            setBookingData((prev) => {
+                                                                const updatedAddons = [...prev.addOns!];
+                                                                updatedAddons[index] = {
+                                                                    ...updatedAddons[index],
+                                                                    // @ts-expect-error undefined value
+                                                                    addon_id: value
+                                                                };
+                                                                return {...prev, addOns: updatedAddons};
+                                                            })
+                                                        }
+                                                        options={addonDataMapped}
+                                                        selectedOption={
+                                                            addonDataMapped.find(
+                                                                (addonOption) => addonOption.value === addon.addon_id
+                                                            )}
+                                                        placeholder="Pilih Layanan Tambahan"
+                                                        isError={!!fieldErrors?.addOns?.[index]?.addon_id}
+                                                    />
+                                                    {fieldErrors?.addOns?.[index]?.addon_id && (
+                                                        <Typography color="red">
+                                                            {fieldErrors.addOns[index].addon_id?._errors}
+                                                        </Typography>
+                                                    )}
+
+                                                    {/* Start Date */}
+                                                    <div>
+                                                        <Typography variant="h6" color="blue-gray">
+                                                            Tanggal Mulai
+                                                        </Typography>
+                                                        <Popover
+                                                            key={`${index}_p`}
+                                                            open={popoverOpenMap[`${index}_sd`]}
+                                                            handler={() => togglePopover(`${index}_sd`)}
+                                                            placement="bottom-end"
+                                                        >
+                                                            <PopoverHandler key={`${index}_ph`}>
+                                                                <Input
+                                                                    key={`${index}_sd_input`}
+                                                                    variant="outlined"
+                                                                    size="lg"
+                                                                    onChange={() => null}
+                                                                    value={addon.start_date ? formatToDateTime(addon.start_date, false) : ""}
+                                                                    error={!!fieldErrors?.addOns?.[index]?.start_date}
+                                                                    className={`relative ${!!fieldErrors?.addOns?.[index]?.start_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                                    labelProps={{
+                                                                        className: "before:content-none after:content-none",
+                                                                    }}
+                                                                />
+                                                            </PopoverHandler>
+                                                            <PopoverContent key={`${index}_pc`} className={"z-[99999]"}>
+                                                                <DayPicker
+                                                                    key={`${index}_dp`}
+                                                                    timeZone="UTC"
+                                                                    captionLayout="dropdown"
+                                                                    mode="single"
+                                                                    fixedWeeks={true}
+                                                                    selected={addon.start_date}
+                                                                    onSelect={(date) => {
+                                                                        togglePopover(`${index}_sd`);
+                                                                        updateAddonEntry(index, "start_date", date);
+                                                                    }}
+                                                                    showOutsideDays
+                                                                    classNames={{
+                                                                        disabled: "rdp-disabled cursor-not-allowed",
+                                                                    }}
+                                                                    startMonth={bookingData.start_date ?? new Date(today.getFullYear() - 5, today.getMonth())}
+                                                                    endMonth={(() => {
+                                                                        if (bookingData.start_date && (bookingData.durations || bookingData.duration_id)) {
+                                                                            let duration: Duration | undefined;
+                                                                            if (bookingData.durations) {
+                                                                                duration = bookingData.durations;
+                                                                            } else {
+                                                                                duration = durationsData?.find(d => d.id == bookingData.duration_id);
+                                                                            }
+
+                                                                            if (!duration) return new Date(today.getFullYear() + 5, today.getMonth());
+
+                                                                            return getLastDateOfBooking(bookingData.start_date, duration);
+                                                                        }
+
+                                                                        return new Date(today.getFullYear() + 5, today.getMonth());
+                                                                    })()}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        {fieldErrors?.addOns?.[index]?.start_date && (
+                                                            <Typography color="red">
+                                                                {fieldErrors.addOns[index].start_date?._errors}
+                                                            </Typography>
+                                                        )}
+                                                    </div>
+
+                                                    {/* End Date */}
+                                                    <div>
+                                                        <Typography variant="h6" color="blue-gray">
+                                                            Tanggal Selesai
+                                                        </Typography>
+                                                        <Popover
+                                                            key={`${index}_p_ed`}
+                                                            open={popoverOpenMap[`${index}_ed`]}
+                                                            handler={() => togglePopover(`${index}_ed`)}
+                                                            placement="bottom-end"
+                                                        >
+                                                            <PopoverHandler key={`${index}_ph_ed`}>
+                                                                <Input
+                                                                    key={`${index}_ed_input`}
+                                                                    variant="outlined"
+                                                                    size="lg"
+                                                                    value={addon.end_date ? formatToDateTime(addon.end_date, false) : ""}
+                                                                    onChange={() => null} // Managed via DayPicker
+                                                                    placeholder="Pilih tanggal selesai"
+                                                                    error={!!fieldErrors?.addOns?.[index]?.end_date}
+                                                                    className={`relative ${!!fieldErrors?.addOns?.[index]?.end_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                                    labelProps={{
+                                                                        className: "before:content-none after:content-none",
+                                                                    }}
+                                                                />
+                                                            </PopoverHandler>
+                                                            <PopoverContent key={`${index}_pc_ed`} className={"z-[99999]"}>
+                                                                <DayPicker
+                                                                    key={`${index}_dp_ed`}
+                                                                    timeZone="UTC"
+                                                                    captionLayout="dropdown"
+                                                                    mode="single"
+                                                                    fixedWeeks={true}
+                                                                    selected={addon.end_date}
+                                                                    onSelect={(date) => {
+                                                                        togglePopover(`${index}_ed`);
+                                                                        updateAddonEntry(index, "end_date", date);
+                                                                    }}
+                                                                    showOutsideDays
+                                                                    classNames={{
+                                                                        disabled: "rdp-disabled cursor-not-allowed",
+                                                                    }}
+                                                                    startMonth={bookingData.addOns?.[index]?.start_date ?? bookingData.start_date ?? new Date(today.getFullYear() - 5, today.getMonth())}
+                                                                    endMonth={(() => {
+                                                                        if (bookingData.start_date && (bookingData.durations || bookingData.duration_id)) {
+                                                                            let duration: Duration | undefined;
+                                                                            if (bookingData.durations) {
+                                                                                duration = bookingData.durations;
+                                                                            } else {
+                                                                                duration = durationsData?.find(d => d.id == bookingData.duration_id);
+                                                                            }
+
+                                                                            if (!duration) return new Date(today.getFullYear() + 5, today.getMonth());
+
+                                                                            return getLastDateOfBooking(bookingData.start_date, duration);
+                                                                        }
+
+                                                                        return new Date(today.getFullYear() + 5, today.getMonth());
+                                                                    })()}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        {fieldErrors?.addOns?.[index]?.end_date && (
+                                                            <Typography color="red">
+                                                                {fieldErrors.addOns[index].end_date?._errors}
+                                                            </Typography>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Additional Input */}
+                                                    <div>
+                                                        <Typography variant="h6" color="blue-gray">
+                                                            Deskripsi Tambahan
+                                                        </Typography>
+                                                        <Input
+                                                            value={addon.input || ""}
+                                                            onChange={(e) =>
+                                                                updateAddonEntry(index, "input", e.target.value)
+                                                            }
+                                                            size="lg"
+                                                            placeholder="Deskripsi untuk layanan tambahan ini"
+                                                            error={!!fieldErrors?.addOns?.[index]?.input}
+                                                            className={`${!!fieldErrors?.addOns?.[index]?.input ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                            labelProps={{
+                                                                className: "before:content-none after:content-none",
+                                                            }}
+                                                        />
+                                                        {fieldErrors?.addOns?.[index]?.input && (
+                                                            <Typography color="red">
+                                                                {fieldErrors.addOns[index].input?._errors}
+                                                            </Typography>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Remove Addon */}
+                                                    <Button
+                                                        color="red"
+                                                        size="sm"
+                                                        onClick={() => removeAddonEntry(index)}
+                                                    >
+                                                        Hapus
+                                                    </Button>
+                                                </motion.div>
+                                            ))}
+
+                                            <Button
+                                                color="green"
+                                                onClick={addAddonEntry}
+                                                className="mt-4 w-full flex gap-x-3 items-center justify-center"
+                                            >
+                                                <span className={"leading-loose"}>
+                                                     Tambah Layanan Tambahan
+                                                </span>
+                                            </Button>
+                                        </motion.div>
+                                    )}
                                 </motion.div>
                             }
                             {
