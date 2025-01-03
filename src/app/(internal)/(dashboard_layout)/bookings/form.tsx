@@ -385,7 +385,7 @@ export function BookingForm(props: BookingFormProps) {
                                         </PopoverHandler>
                                         <PopoverContent className={"z-[99999]"}>
                                             <DayPicker
-                                                timeZone="UTC"
+                                                timeZone={"UTC"}
                                                 captionLayout="dropdown"
                                                 mode="single"
                                                 fixedWeeks={true}
@@ -598,7 +598,7 @@ export function BookingForm(props: BookingFormProps) {
                                                             <PopoverContent key={`${index}_pc`} className={"z-[99999]"}>
                                                                 <DayPicker
                                                                     key={`${index}_dp`}
-                                                                    timeZone="UTC"
+                                                                    timeZone={"UTC"}
                                                                     captionLayout="dropdown"
                                                                     mode="single"
                                                                     fixedWeeks={true}
@@ -667,7 +667,7 @@ export function BookingForm(props: BookingFormProps) {
                                                             <PopoverContent key={`${index}_pc_ed`} className={"z-[99999]"}>
                                                                 <DayPicker
                                                                     key={`${index}_dp_ed`}
-                                                                    timeZone="UTC"
+                                                                    timeZone={"UTC"}
                                                                     captionLayout="dropdown"
                                                                     mode="single"
                                                                     fixedWeeks={true}
