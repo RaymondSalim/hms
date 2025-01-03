@@ -2,7 +2,17 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Card, CardBody, Input, Typography} from "@material-tailwind/react";
+import {
+    Accordion,
+    AccordionBody,
+    AccordionHeader,
+    Button,
+    Card,
+    CardBody,
+    Checkbox,
+    Input,
+    Typography
+} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
@@ -12,6 +22,7 @@ import "react-day-picker/style.css";
 import {AnimatePresence, MotionConfig} from "framer-motion";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
+import {FaAngleDown} from "react-icons/fa6";
 
 interface AddonFormProps extends TableFormProps<AddonIncludePricing> {
 }
@@ -34,13 +45,17 @@ export function AddonForm(props: AddonFormProps) {
             interval_end: null
         }]
     );
+    const [openAccordionIndex, setOpenAccordionIndex] = useState<number|undefined>(undefined);
+    const handleAccordionToggle = (index: number) => {
+        setOpenAccordionIndex((prev) => (prev === index ? undefined : index));
+    };
 
     const isButtonDisabled = useMemo(() => {
         console.log(addonData);
         return !addonData?.name ||
             !addonData?.location_id;/* ||*/
-            // !addonData.pricing?.[0]?.price ||
-            // !addonData.pricing?.[0]?.interval_start;
+        // !addonData.pricing?.[0]?.price ||
+        // !addonData.pricing?.[0]?.interval_start;
     }, [addonData]);
 
     // Location Data
@@ -60,7 +75,11 @@ export function AddonForm(props: AddonFormProps) {
 
 
     const addPricingEntry = () => {
-        setPricingData((prev) => [...prev, {price: 0, interval_start: (prev[prev.length - 1].interval_end ?? -1) + 1, interval_end: null}]);
+        setPricingData((prev) => [...prev, {
+            price: 0,
+            interval_start: (prev[prev.length - 1].interval_end ?? -1) + 1,
+            interval_end: null
+        }]);
     };
 
     const updatePricingEntry = (index: number, key: keyof typeof pricingData[0], value: any) => {
@@ -72,7 +91,7 @@ export function AddonForm(props: AddonFormProps) {
     const removePricingEntry = (index: number) => {
         if (pricingData.length > 1) {
             setPricingData((prev) => {
-                let filtered =  prev.filter((_, i) => i !== index);
+                let filtered = prev.filter((_, i) => i !== index);
 
                 // set the first pricing data's start to zero
                 filtered[0].interval_start = 0;
@@ -98,13 +117,10 @@ export function AddonForm(props: AddonFormProps) {
         setAddonData((prev) => ({...prev, pricing: pricingData}));
     }, [pricingData]);
 
-    useEffect(() => {
-        console.log(props.mutationResponse?.errors);
-    }, [props.mutationResponse]);
-
     return (
         <div className={"w-full px-8 py-4"}>
-            <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Perubahan" : "Pembuatan"} Layanan Tambahan</h1>
+            <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Perubahan" : "Pembuatan"} Layanan
+                Tambahan</h1>
             <form className={"mt-4"}>
                 <div className="mb-1 flex flex-col gap-6">
                     <MotionConfig
@@ -198,7 +214,8 @@ export function AddonForm(props: AddonFormProps) {
                                                     />
                                                     {
                                                         fieldErrors?.pricing?.[index]?.price &&
-                                                        <Typography color="red">{fieldErrors?.pricing?.[index]?.price?._errors}</Typography>
+                                                        <Typography
+                                                            color="red">{fieldErrors?.pricing?.[index]?.price?._errors}</Typography>
                                                     }
                                                 </div>
                                                 <div>
@@ -218,14 +235,15 @@ export function AddonForm(props: AddonFormProps) {
                                                         />
                                                         {
                                                             fieldErrors?.pricing?.[index]?.interval_start &&
-                                                            <Typography color="red">{fieldErrors?.pricing?.[index]?.interval_start?._errors}</Typography>
+                                                            <Typography
+                                                                color="red">{fieldErrors?.pricing?.[index]?.interval_start?._errors}</Typography>
                                                         }
                                                     </div>
                                                     <div className={"mt-4"}>
                                                         <Typography>Selesai:</Typography>
                                                         <Input
                                                             error={!!fieldErrors?.pricing?.[index]?.interval_end}
-                                                            required={index != arr.length- 1}
+                                                            required={index != arr.length - 1}
                                                             type="number"
                                                             className={`${!!fieldErrors?.pricing?.[index]?.interval_end ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                                             labelProps={{
@@ -237,9 +255,33 @@ export function AddonForm(props: AddonFormProps) {
                                                         <p className="text-xs mt-2">
                                                             Biarkan kosong jika selamanya.
                                                         </p>
+                                                        <Checkbox
+                                                            label={
+                                                                <Typography color="blue-gray" className="font-medium">
+                                                                    Pembayaran Penuh di Awal
+                                                                </Typography>
+                                                            }
+                                                            checked={pricing.is_full_payment}
+                                                            onChange={(e) => updatePricingEntry(index, "is_full_payment", e.target.checked)}
+                                                            containerProps={{
+                                                                className: "-ml-3",
+                                                            }}
+                                                        />
+                                                        <Accordion
+                                                            icon={<FaAngleDown className={`transition-all ${openAccordionIndex === index ? 'rotate-180' : 'rotate-0'}`} />}
+                                                            open={openAccordionIndex === index}
+                                                        >
+                                                            <AccordionHeader onClick={() => handleAccordionToggle(index)}>
+                                                                <Typography variant={"h6"}>Simulasi Tanggal</Typography>
+                                                            </AccordionHeader>
+                                                            <AccordionBody>
+                                                                {simulateSinglePricing(pricing)}
+                                                            </AccordionBody>
+                                                        </Accordion>
                                                         {
                                                             fieldErrors?.pricing?.[index]?.interval_end &&
-                                                            <Typography color="red">{fieldErrors?.pricing?.[index]?.interval_end?._errors}</Typography>
+                                                            <Typography
+                                                                color="red">{fieldErrors?.pricing?.[index]?.interval_end?._errors}</Typography>
                                                         }
                                                     </div>
                                                 </div>
@@ -257,7 +299,8 @@ export function AddonForm(props: AddonFormProps) {
                                         </CardBody>
                                     </Card>
                                 ))}
-                                <Button color="green" onClick={addPricingEntry} className="mt-4 w-full flex gap-x-3 items-center justify-center">
+                                <Button color="green" onClick={addPricingEntry}
+                                        className="mt-4 w-full flex gap-x-3 items-center justify-center">
                                     <span className={"leading-loose"}>
                                          Tambah Harga
                                     </span>
@@ -290,3 +333,95 @@ export function AddonForm(props: AddonFormProps) {
         ;
 }
 
+function simulateSinglePricing(pricing: Partial<AddOnPricing>, maxMonths = 6): JSX.Element {
+    if (!pricing.price || pricing.interval_start === undefined) {
+        return (
+            <Typography color="red">
+                Data harga tidak lengkap untuk simulasi.
+            </Typography>
+        );
+    }
+
+    const simulation = [];
+    const startMonth = pricing.interval_start;
+    const endMonth = pricing.interval_end ?? startMonth + maxMonths - 1; // Limit to maxMonths if no end
+    const isFullPayment = pricing.is_full_payment;
+
+    let currentMonth = startMonth;
+    const currentYear = new Date().getFullYear(); // Example year for simulation
+
+    while (currentMonth <= endMonth) {
+        const monthDate = new Date(currentYear, currentMonth - 1); // JavaScript months are 0-based
+        const monthYear = monthDate.toLocaleString("default", { month: "short", year: "numeric" });
+
+        if (isFullPayment && currentMonth != startMonth) {
+            simulation.push({
+                monthYear,
+                price: 0,
+            });
+        } else {
+            simulation.push({
+                monthYear,
+                price: pricing.price,
+            });
+        }
+
+
+        currentMonth++;
+    }
+
+    // If interval_end is null, add an ellipsis row
+    if (pricing.interval_end === null) {
+        simulation.push({
+            monthYear: "...",
+            price: pricing.price,
+        });
+        simulation.push({
+            monthYear: "...",
+            price: pricing.price,
+        });
+    } else {
+        // Add two extra rows with no charges
+        for (let i = 0; i < 2; i++) {
+            const monthDate = new Date(currentYear, currentMonth - 1); // JavaScript months are 0-based
+            const monthYear = monthDate.toLocaleString("default", { month: "short", year: "numeric" });
+
+            simulation.push({
+                monthYear,
+                price: 0,
+            });
+
+            currentMonth++;
+        }
+    }
+
+    return (
+        <div className="">
+            <div className="overflow-x-auto">
+                <table className="table-auto border-collapse border border-gray-400 w-full mt-4">
+                    <thead>
+                    <tr>
+                        <th className="border border-gray-300 px-4 py-2">Bulan</th>
+                        <th className="border border-gray-300 px-4 py-2">Harga</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {simulation.map((entry, index) => (
+                        <tr key={index}>
+                            <td className="border border-gray-300 px-4 py-2">
+                                {entry.monthYear}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2">
+                                {entry.price.toLocaleString("id-ID", {
+                                    style: "currency",
+                                    currency: "IDR",
+                                })}
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
