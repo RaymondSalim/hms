@@ -3,6 +3,7 @@
 import prisma from "@/app/_lib/primsa";
 import {Bill, Booking, BookingAddOn, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
+    billIncludeAll,
     BillIncludePayment,
     createBill,
     getAllBillsWithBooking,
@@ -170,6 +171,36 @@ export async function createPaymentBillsAction(balance: number, bills: BillInclu
     };
 }
 
+export async function getAllBillsIncludeAll(id?: number, locationID?: number, limit?: number, offset?: number) {
+    return getAllBillsWithBooking(
+        id,
+        {
+            where: {
+                bookings: {
+                    rooms: {
+                        location_id: locationID
+                    }
+                }
+            },
+            include: {
+                paymentBills: {
+                    include: {
+                        payment: true
+                    }
+                },
+                bookings: {
+                    include: {
+                        rooms: true
+                    }
+                },
+                bill_item: true
+            },
+            take: limit,
+            skip: offset,
+        }
+    );
+}
+
 export async function getAllBillsWithBookingAndPaymentsAction(id?: number, locationID?: number, limit?: number, offset?: number) {
     return getAllBillsWithBooking(
         id,
@@ -222,7 +253,10 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
                 // @ts-ignore type error due to internal_description
                 let updated = await updateBillByID(data.id!, parsedBillData);
                 await syncBillsWithPaymentDate(data.booking_id, tx);
-                return updated;
+                return tx.bill.findFirst({
+                    where: {id: data.id!},
+                    include: billIncludeAll.include
+                });
             });
 
         } else {
