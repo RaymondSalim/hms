@@ -9,16 +9,13 @@ ALTER TABLE "bill_items"
     ADD COLUMN "internal_description" VARCHAR(255);
 
 -- Copy Values
-UPDATE "bill_items"
-SET "internal_description" = (SELECT "internal_description"
-                              FROM "bills"
-                              WHERE "bills".id = "bill_items".bill_id
-    )
-WHERE EXISTS (
-    SELECT 1
-    FROM "bills"
-    WHERE "bills".id = "bill_items".bill_id
-    );
+INSERT INTO "bill_items" (bill_id, description, amount)
+SELECT
+    id AS bill_id,
+    internal_description AS description,
+    amount
+FROM "bills";
 
 -- AlterTable
-ALTER TABLE "bills" DROP COLUMN "internal_description";
+ALTER TABLE "bills"
+    DROP COLUMN "internal_description";
