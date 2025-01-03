@@ -1101,8 +1101,8 @@ describe('generateBillItemsFromBookingAddons', () => {
         let bookingAddons = [
             {
                 "addon_id": "cm56ey0dp000u1slel4rfzuy1",
-                "start_date": "2025-03-01T00:00:00.000Z",
-                "end_date": "2025-08-30T17:00:00.000Z"
+                "start_date": new Date(2025, 2, 1),
+                "end_date": new Date(2025, 7, 31)
             }
         ];
 
@@ -1141,7 +1141,7 @@ describe('generateBillItemsFromBookingAddons', () => {
 
         let booking = {
             "room_id": 3,
-            "start_date": "2025-03-01T00:00:00.000Z",
+            "start_date": new Date(2025, 2, 1),
             "duration_id": 3,
             "status_id": 2,
             "tenant_id": "ckabcde12345678901",
@@ -1153,7 +1153,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                     "end_date": "2025-08-30T17:00:00.000Z"
                 }
             ],
-            "end_date": "2025-08-31T00:00:00.000Z"
+            "end_date": new Date(2025, 7, 31)
         };
 
         // @ts-expect-error mockResolvedValue error
