@@ -8,7 +8,7 @@ import {getRooms, getRoomTypes} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
-import {Prisma} from "@prisma/client";
+import {Duration, Prisma} from "@prisma/client";
 import {ZodFormattedError} from "zod";
 import {BookingsIncludeAddons, BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
@@ -611,8 +611,23 @@ export function BookingForm(props: BookingFormProps) {
                                                                     classNames={{
                                                                         disabled: "rdp-disabled cursor-not-allowed",
                                                                     }}
-                                                                    startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                                                    endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
+                                                                    startMonth={bookingData.start_date ?? new Date(today.getFullYear() - 5, today.getMonth())}
+                                                                    endMonth={(() => {
+                                                                        if (bookingData.start_date && (bookingData.durations || bookingData.duration_id)) {
+                                                                            let duration: Duration | undefined;
+                                                                            if (bookingData.durations) {
+                                                                                duration = bookingData.durations;
+                                                                            } else {
+                                                                                duration = durationsData?.find(d => d.id == bookingData.duration_id);
+                                                                            }
+
+                                                                            if (!duration) return new Date(today.getFullYear() + 5, today.getMonth());
+
+                                                                            return getLastDateOfBooking(bookingData.start_date, duration);
+                                                                        }
+
+                                                                        return new Date(today.getFullYear() + 5, today.getMonth());
+                                                                    })()}
                                                                 />
                                                             </PopoverContent>
                                                         </Popover>
@@ -665,9 +680,23 @@ export function BookingForm(props: BookingFormProps) {
                                                                     classNames={{
                                                                         disabled: "rdp-disabled cursor-not-allowed",
                                                                     }}
-                                                                    startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                                                    endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
+                                                                    startMonth={bookingData.addOns?.[index]?.start_date ?? bookingData.start_date ?? new Date(today.getFullYear() - 5, today.getMonth())}
+                                                                    endMonth={(() => {
+                                                                        if (bookingData.start_date && (bookingData.durations || bookingData.duration_id)) {
+                                                                            let duration: Duration | undefined;
+                                                                            if (bookingData.durations) {
+                                                                                duration = bookingData.durations;
+                                                                            } else {
+                                                                                duration = durationsData?.find(d => d.id == bookingData.duration_id);
+                                                                            }
 
+                                                                            if (!duration) return new Date(today.getFullYear() + 5, today.getMonth());
+
+                                                                            return getLastDateOfBooking(bookingData.start_date, duration);
+                                                                        }
+
+                                                                        return new Date(today.getFullYear() + 5, today.getMonth());
+                                                                    })()}
                                                                 />
                                                             </PopoverContent>
                                                         </Popover>
