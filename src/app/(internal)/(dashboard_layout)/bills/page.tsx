@@ -6,7 +6,7 @@ import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
 import BillsContent from "@/app/(internal)/(dashboard_layout)/bills/content";
-import {getAllBillsWithBookingAndPaymentsAction} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
+import {getAllBillsIncludeAll,} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 
 export default function BillPage() {
   const headerContext = useContext(HeaderContext);
@@ -25,7 +25,7 @@ export default function BillPage() {
     isSuccess
   } = useQuery({
     queryKey: ['bills', 'location_id', headerContext.locationID],
-    queryFn: () => getAllBillsWithBookingAndPaymentsAction(undefined, headerContext.locationID)
+    queryFn: () => getAllBillsIncludeAll(undefined, headerContext.locationID)
   });
 
   return (
