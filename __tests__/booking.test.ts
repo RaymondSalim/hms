@@ -1,15 +1,55 @@
 import {prismaMock} from './singleton_prisma';
-import {Duration, Prisma} from '@prisma/client';
-import {createBooking, getAllBookings, getBookingByID, updateBookingByID} from "@/app/_db/bookings";
+import {AddOnPricing, BookingAddOn, Duration, Prisma} from '@prisma/client';
+import {
+    BookingsIncludeAddons,
+    createBooking,
+    getAllBookings,
+    getBookingByID,
+    updateBookingByID
+} from "@/app/_db/bookings";
 import {describe, expect, it} from "@jest/globals";
+import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
 
 describe('Booking Actions', () => {
     describe('createBooking', () => {
         it('should create a booking with associated bills and add-ons', async () => {
             const startDate = new Date(2024, 11, 1);
-            const mockBookingData = {
+
+            const internetAddonPricing: AddOnPricing[] = [
+                {
+                    id: '0', interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true,
+                    addon_id: 'addon-1',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                },
+                {
+                    id: '0', interval_start: 3, interval_end: null, price: 120000,
+                    addon_id: 'addon-1',
+                    is_full_payment: false,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                },
+            ];
+            const internetAddon: Partial<AddonIncludePricing> = {
+                id: 'addon-1',
+                name: 'Internet',
+                pricing: internetAddonPricing,
+            };
+
+            const internetBookingAddon: BookingAddOn = {
+                start_date: startDate,
+                end_date: new Date(2025, 1, 28),
+                booking_id: 1,
+                addon_id: 'addon-1',
+                id: '',
+                input: null,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            const mockBookingData: Omit<BookingsIncludeAddons, "id" | "createdAt" | "updatedAt" | "end_date"> = {
                 fee: new Prisma.Decimal(1000),
-                addOns: [{addon_id: 'addon-1', input: 'Extra bed', start_date: startDate}],
+                addOns: [internetBookingAddon],
                 start_date: startDate,
                 tenant_id: 'tenant-1',
                 room_id: 1,
@@ -24,6 +64,17 @@ describe('Booking Actions', () => {
             prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
             // @ts-expect-error
             prismaMock.booking.create.mockResolvedValue(mockCreatedBooking);
+            // @ts-expect-error mockResolvedValue error
+            prismaMock.addOn.findFirstOrThrow.mockResolvedValue(internetAddon);
+            // @ts-expect-error mockResolvedValue error
+            prismaMock.bill.createManyAndReturn.mockResolvedValue([
+                {id: 1, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)},
+                {id: 2, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)},
+                {id: 3, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1)}
+            ]);
+            // @ts-expect-error mockResolvedValue error
+            prismaMock.booking.findFirst.mockResolvedValue(mockCreatedBooking);
+
 
             // @ts-expect-error mockBookingData type
             const result = await createBooking(mockBookingData, mockDuration);
@@ -32,16 +83,31 @@ describe('Booking Actions', () => {
             expect(prismaMock.booking.create).toHaveBeenCalledWith({
                 // data: expect.objectContaining({fee: "1000"}),
                 data: expect.any(Object),
+                // include: expect.any(Object),
+            });
+            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledTimes(1);
+            expect(prismaMock.bookingAddOn.createMany).toHaveBeenCalledTimes(1);
+            expect(prismaMock.billItem.createMany).toHaveBeenCalledWith({
+                data: expect.arrayContaining([
+                    {
+                        bill_id: 1,
+                        description: 'Biaya Layanan Tambahan (Internet) (December 1 - February 28)',
+                        amount: new Prisma.Decimal(300000),
+                    },
+                ])
+            });
+            expect(prismaMock.booking.findFirst).toHaveBeenCalledWith({
+                where: {id: mockCreatedBooking.id},
                 include: expect.any(Object),
             });
-            expect(prismaMock.bill.create).toHaveBeenCalledTimes(mockDuration.month_count!); // One for each month in duration
-            // expect(prismaMock.bookingAddOn.create).toHaveBeenCalledTimes(1);
         });
 
         it('should handle prorated billing when start_date is not the first of the month', async () => {
+            const startDate = new Date(2024, 10, 15);
             const mockBookingData = {
                 fee: 1500,
-                start_date: new Date(2024, 10, 15), // Nov 15, 2024
+                addOns: [],
+                start_date: startDate,
                 tenant_id: 'tenant-1',
                 room_id: 1,
                 duration_id: 2,
@@ -53,19 +119,16 @@ describe('Booking Actions', () => {
             prismaMock.$transaction.mockImplementation((callback) => callback(prismaMock));
             // @ts-expect-error
             prismaMock.booking.create.mockResolvedValue(mockBookingData);
+            // @ts-expect-error mockResolvedValue error
+            prismaMock.bill.createManyAndReturn.mockResolvedValue([
+                {id: 1, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)},
+                {id: 2, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)},
+                {id: 3, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1)}
+            ]);
 
             // @ts-expect-error mockBookingData type
             await createBooking(mockBookingData, mockDuration);
-
-            expect(prismaMock.bill.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        description: expect.stringContaining('PRORATA'),
-                        amount: expect.any(Prisma.Decimal),
-                    }),
-                }),
-            );
-            expect(prismaMock.bill.create).toHaveBeenCalledTimes(mockDuration.month_count + 1); // One for each month in duration + prorata
+            expect(prismaMock.billItem.create).toHaveBeenCalledTimes(mockDuration.month_count + 1); // One for each month in duration + prorata
         });
     });
 
@@ -73,38 +136,51 @@ describe('Booking Actions', () => {
         it('should update a booking with new bills and add-ons', async () => {
             const mockBookingID = 1;
             const startDate = new Date(2024, 11, 1);
+
+            const internetAddonPricing: AddOnPricing[] = [
+                {
+                    id: '0', interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true,
+                    addon_id: 'addon-id-1',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                },
+                {
+                    id: '0', interval_start: 3, interval_end: null, price: 120000,
+                    addon_id: 'addon-id-1',
+                    is_full_payment: false,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                },
+            ];
+            const internetAddon: Partial<AddonIncludePricing> = {
+                id: 'addon--id1',
+                name: 'Internet',
+                pricing: internetAddonPricing,
+            };
+            const internetBookingAddon: BookingAddOn = {
+                start_date: startDate,
+                end_date: new Date(2025, 1, 28),
+                booking_id: 1,
+                addon_id: 'addon-id-1',
+                id: '',
+                input: "Internet",
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            const internetBookingAddon2: BookingAddOn = {
+                start_date: startDate,
+                end_date: new Date(2025, 1, 28),
+                booking_id: 1,
+                addon_id: 'addon-id-2',
+                id: 'addon-2',
+                input: null,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
             const mockData = {
                 fee: 2000,
-                addOns: [
-                    // New
-                    {
-                        input: 'New Extra Bed 1',
-                        start_date: startDate,
-                        addon_id: 'addon-id-1',
-                        booking_id: mockBookingID
-                    },
-                    {
-                        input: 'New Extra Bed 2',
-                        start_date: startDate,
-                        addon_id: 'addon-id-1',
-                        booking_id: mockBookingID
-                    },
-                    // Update
-                    {
-                        id: 'addon-2',
-                        input: 'Extra bed 2',
-                        start_date: startDate,
-                        addon_id: 'addon-id-2',
-                        booking_id: mockBookingID
-                    },
-                    {
-                        id: 'addon-3',
-                        input: 'Extra bed 3',
-                        start_date: startDate,
-                        addon_id: 'addon-id-2',
-                        booking_id: mockBookingID
-                    },
-                ],
+                addOns: [internetBookingAddon, internetBookingAddon2],
                 start_date: startDate,
             };
             // @ts-expect-error duration error type
@@ -130,6 +206,7 @@ describe('Booking Actions', () => {
                     addon_id: 'addon-id-1',
                     booking_id: mockBookingID
                 },
+                // To be deleted
                 {
                     id: 'addon-3',
                     input: 'Extra bed 3',
@@ -137,7 +214,6 @@ describe('Booking Actions', () => {
                     addon_id: 'addon-id-1',
                     booking_id: mockBookingID
                 },
-                // To be deleted
                 {
                     id: 'addon-4',
                     input: 'Extra bed',
@@ -152,6 +228,14 @@ describe('Booking Actions', () => {
                     addon_id: 'addon-id-1',
                     booking_id: mockBookingID
                 }
+            ]);
+            // @ts-expect-error mockResolvedValue
+            prismaMock.addOn.findFirstOrThrow.mockResolvedValue(internetAddon);
+            // @ts-expect-error mockResolvedValue error
+            prismaMock.bill.createManyAndReturn.mockResolvedValue([
+                {id: 1, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)},
+                {id: 2, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)},
+                {id: 3, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1)}
             ]);
 
             // @ts-expect-error mockData type
@@ -170,13 +254,13 @@ describe('Booking Actions', () => {
                     booking_id: mockBookingID
                 }
             });
-            expect(prismaMock.bill.create).toHaveBeenCalledTimes(mockDuration.month_count); // For new monthly bills
+            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledTimes(1);
             expect(prismaMock.booking.update).toHaveBeenCalledTimes(1);
 
             expect(prismaMock.bookingAddOn.deleteMany).toHaveBeenCalledWith({
                 where: {
                     id: {
-                        in: ['addon-4', 'addon-5']
+                        in: ['addon-3', 'addon-4', 'addon-5']
                     }
                 }
             });
@@ -185,16 +269,9 @@ describe('Booking Actions', () => {
                     id: "addon-2"
                 }
             }));
-            expect(prismaMock.bookingAddOn.update).toHaveBeenCalledWith(expect.objectContaining({
-                where: {
-                    id: "addon-3"
-                }
-            }));
             expect(prismaMock.bookingAddOn.createMany).toHaveBeenCalledWith({
                 data: expect.arrayContaining([expect.objectContaining({
-                    input: "New Extra Bed 1"
-                }), expect.objectContaining({
-                    input: "New Extra Bed 2"
+                    input: "Internet"
                 })])
             });
         });
