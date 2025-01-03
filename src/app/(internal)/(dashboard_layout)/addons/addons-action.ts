@@ -154,5 +154,8 @@ export async function getAddonsByLocation(id?: number) {
     include: {
       pricing: true,
     }
-  });
+  }).then(a => a.map(ai => ({
+    ...ai,
+    pricing: ai.pricing.sort((p1, p2) => p1.interval_start - p2.interval_start),
+  })));
 }
