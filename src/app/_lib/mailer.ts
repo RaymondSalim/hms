@@ -147,16 +147,24 @@ const TEMPLATES_MAPPING: {
     Yth. %s,
 
     Kami ingin mengingatkan bahwa tagihan %s sebesar %s jatuh tempo pada %s. Mohon segera lakukan pembayaran sebelum tanggal tersebut.
-
+    
+    Pembayaran dapat dilakukan melalui transfer ke rekening dibawah:
+    BCA 
+    5491118777 
+    Adriana Nugroho
+    
     Jika pembayaran sudah dilakukan, harap abaikan email ini.
 
     Terima kasih,
-    MICASA Suites
+    MICASA Suites   
     `,
     _NO_REPLY_DISCLAIMER: `
     
     Email ini tidak dipantau. 
     Jika Anda memiliki pertanyaan atau kebutuhan, silakan hubungi nomor telepon MICASA Suites.
+    
+    +62 811-1234-777
+    Jalan Puskesmas No.35-22, Cengkareng, Jakarta Raya, Indonesia 11750
     `
 };
 

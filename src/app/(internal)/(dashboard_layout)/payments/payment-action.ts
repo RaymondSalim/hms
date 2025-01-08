@@ -80,6 +80,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
       } else {
         res = await createPayment(dbData, tx);
         const unpaidBills = await getUnpaidBillsDueAction(booking.id);
+        // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
         const simulation = await simulateUnpaidBillPaymentAction(data.amount, unpaidBills.bills, res.id);
         const {balance: newBalance} = simulation.new;
 

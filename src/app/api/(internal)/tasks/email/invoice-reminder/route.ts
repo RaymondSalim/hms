@@ -1,7 +1,10 @@
 import nodemailerClient from "@/app/_lib/mailer";
-import {getUpcomingUnpaidBillsWithUsersByDate} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
+import prisma from "@/app/_lib/primsa";
+import {SettingsKey} from "@/app/_enum/setting";
+import pLimit from "p-limit";
+import {generateBillEmailReminders} from "@/app/api/(internal)/tasks/email/invoice-reminder/invoice-reminder-action";
 
-export const maxDuration = 60; // This function can run for a maximum of 5 seconds
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -13,50 +16,45 @@ export async function GET(request: Request) {
         });
     }
 
-    const pageSize = 10;
-    let page = 0;
-    let hasMoreData = true;
-    let total = 0;
-    let processed = 0;
-
-    let allEmails: string[] = [];
-
-    while (hasMoreData) {
-        const {
-            bills,
-            total: billsCount
-        } = await getUpcomingUnpaidBillsWithUsersByDate(new Date(), pageSize, page * pageSize);
-        total = billsCount;
-
-        // @ts-expect-error tenants type
-        const emails = bills.bills.flatMap(b => (b.bookings.tenants?.email) ?? []);
-        processed += emails.length;
-        allEmails = allEmails.concat(emails);
-
-        if (processed == total) {
-            break;
+    let emailReminderEnabled = await prisma.setting.findFirst({
+        where: {
+            setting_key: SettingsKey.MONTHLY_INVOICE_EMAIL_REMINDER_ENABLED
         }
+    });
+
+    if (!emailReminderEnabled || emailReminderEnabled.setting_value?.toLowerCase() === "false") {
+        return new Response('Forbidden', { status: 403 });
     }
 
-    if (allEmails.length > 0) {
-        // @ts-ignore
-        const uniqueEmails = [...new Set(allEmails)];
-        try {
-            await nodemailerClient.sendMail({
-                from: {
-                    name: "MICASA Suites",
-                    address: "noreply@micasasuites.com"
-                },
-                to: uniqueEmails,
-                subject: "Peringatan Pembayaran",
-                text: "Mohon bayar."
-            });
-        } catch (error) {
-            console.error(error);
-            return Response.json({success: false, message: "Internal Server Error Occurred"});
-        }
+    let allEmailToBeSent = await generateBillEmailReminders();
 
-        return Response.json({success: true});
+    if (allEmailToBeSent.length > 0) {
+        let sent = 0;
+        const limit = pLimit(14);
+        const emailPromises = allEmailToBeSent.map(email => limit(async () => {
+            try {
+                await nodemailerClient.sendMail({
+                    ...email,
+                    from: {
+                        name: "MICASA Suites",
+                        address: "noreply@micasasuites.com",
+                    },
+                    subject: "Peringatan Untuk Membayar Tagihan",
+                });
+                sent++;
+            } catch (error) {
+                console.error(`Error sending email to ${email.to}.`, error);
+            }
+        }));
+        await Promise.all(emailPromises);
+
+        return Response.json({
+            success: true,
+            stats: {
+                sent,
+                target: allEmailToBeSent.length
+            }
+        });
     }
 
     return Response.json({success: true, message: "No Emails Sent"});
