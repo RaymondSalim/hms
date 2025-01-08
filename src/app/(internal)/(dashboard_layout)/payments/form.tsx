@@ -141,6 +141,7 @@ export function PaymentForm(props: PaymentForm) {
     const {data: simulationData, isSuccess: simulationDataSuccess, isLoading: simulationDataIsLoading} = useQuery({
         queryKey: ['payment.simulation', 'balance', data.amount, 'booking_id', data.booking_id],
         enabled: Boolean(data.amount && data.booking_id && data.payment_date && unpaidBillsDataSuccess),
+        // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
         queryFn: () => simulateUnpaidBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills)
     });
 
