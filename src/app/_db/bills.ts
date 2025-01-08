@@ -60,7 +60,8 @@ export const billIncludeAll = Prisma.validator<Prisma.BillDefaultArgs>()({
   include: {
     bookings: {
       include: {
-        rooms: true
+        rooms: true,
+        tenants: true
       }
     },
     paymentBills: {
@@ -76,6 +77,7 @@ export type BillIncludeAll = Prisma.BillGetPayload<typeof billIncludeAll> & {
   bookings: Booking & {
     custom_id: string
   }
+  sumPaidAmount: Prisma.Decimal
 }
 
 export async function getBillsWithPayments(booking_id?: Prisma.IntFilter<"Bill"> | number, args?: Prisma.BillFindManyArgs) {

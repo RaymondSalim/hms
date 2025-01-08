@@ -3,6 +3,7 @@
 import prisma from "@/app/_lib/primsa";
 import {Bill, Booking, BookingAddOn, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
+    BillIncludeAll,
     billIncludeAll,
     BillIncludePayment,
     createBill,
@@ -23,7 +24,7 @@ export type BillIncludePaymentAndSum = BillIncludePayment & {
 
 export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma.BillFindManyArgs): Promise<{
     total?: number,
-    bills: BillIncludePaymentAndSum[]
+    bills: BillIncludeAll[]
 }> {
     const bills = await getBillsWithPayments(booking_id, {
         ...args,
@@ -35,7 +36,8 @@ export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma
     let totalDue = new Prisma.Decimal(0);
 
     // Only get unpaid bills and also add a new field "sumPaidAmount"
-    const unpaidBills: BillIncludePaymentAndSum[] = bills
+    // @ts-expect-error missing rooms
+    const unpaidBills: BillIncludeAll[] = bills
         .map(b => {
             totalDue = totalDue.add(b.amount);
             const paidAmount = b.paymentBills.reduce((acc, b) => {
@@ -364,16 +366,17 @@ export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, li
                 include: {
                     tenants: true
                 }
-            }
+            },
+            bill_item: true
         },
         skip: offset,
         take: limit
     });
 
     return {
-        bills: bills,
+        ...bills,
         total: await prisma.bill.count({
-            where: where
+            where: where,
         })
     };
 }

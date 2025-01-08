@@ -22,7 +22,6 @@ export async function POST(request: Request) {
         return Response.json({status: 400, message: error.message});
     }
     let resp;
-    // TODO! Replace values
     try {
         resp = await nodemailerClient.sendMail({
             subject: data?.subject,
