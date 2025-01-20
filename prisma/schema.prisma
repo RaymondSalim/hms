@@ -17,6 +17,7 @@ model Booking {
   duration_id Int?
   status_id   Int?
   fee         Decimal  @db.Decimal(10, 2)
+  deposit     Decimal? @db.Decimal(10, 2)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
