@@ -10,23 +10,24 @@ import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
 import {Duration, Prisma} from "@prisma/client";
 import {ZodFormattedError} from "zod";
-import {BookingsIncludeAddons, BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
+import {BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DayPicker} from "react-day-picker";
 import {formatToDateTime, generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
 import "react-day-picker/style.css";
-import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
+import {getAllBookingsAction,} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {DateSet} from "@/app/_lib/customSet";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {getAddonsByLocation} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
+import {OmitTimestamp} from "@/app/_db/db";
 
 interface BookingFormProps extends TableFormProps<BookingsIncludeAll> {
 }
 
 export function BookingForm(props: BookingFormProps) {
-    const [bookingData, setBookingData] = useState<Partial<BookingsIncludeAll>>(props.contentData ?? {});
-    const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<BookingsIncludeAddons> | undefined>(props.mutationResponse?.errors);
+    const [bookingData, setBookingData] = useState<Partial<OmitTimestamp<BookingsIncludeAll>>>(props.contentData ?? {});
+    const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<OmitTimestamp<BookingsIncludeAll>> | undefined>(props.mutationResponse?.errors);
     const [locationID, setLocationID] = useState<number | undefined>(props.contentData?.rooms?.location_id ?? undefined);
     const today = new Date();
 
@@ -500,6 +501,67 @@ export function BookingForm(props: BookingFormProps) {
                                         fieldErrors?.status_id &&
                                         <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
                                     }
+                                </motion.div>
+                            }
+                            {
+                                bookingData.duration_id &&
+                                <motion.div
+                                    key={"deposit"}
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <Checkbox
+                                        label={
+                                            <Typography color="blue-gray" className="font-medium">
+                                                Deposit diperlukan
+                                            </Typography>
+                                        }
+                                        checked={bookingData.deposit != undefined}
+                                        onChange={(e) => {
+                                            setBookingData(b => ({
+                                                ...b,
+                                                deposit: e.target.checked ? new Prisma.Decimal(0) : undefined
+                                            }));
+                                        }}
+                                        containerProps={{
+                                            className: "-ml-3",
+                                        }}
+                                    />
+                                    {bookingData.deposit != undefined && (
+                                        <motion.div
+                                            initial={{opacity: 0, height: 0}}
+                                            animate={{opacity: 1, height: "auto"}}
+                                            exit={{opacity: 0, height: 0}}
+                                            className="mt-4 space-y-6"
+                                        >
+                                            <label htmlFor="fee">
+                                                <Typography variant="h6" color="blue-gray">
+                                                    Deposit
+                                                </Typography>
+                                            </label>
+                                            <CurrencyInput
+                                                name={"deposit"}
+                                                value={Number(bookingData.deposit) || ""}
+                                                setValue={(newValue) => {
+                                                    setBookingData(old => ({
+                                                        ...old,
+                                                        deposit: newValue == undefined ? undefined : new Prisma.Decimal(newValue)
+                                                    }));
+                                                }}
+                                                size="lg"
+                                                error={!!fieldErrors?.deposit}
+                                                className={`${!!fieldErrors?.deposit ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                labelProps={{
+                                                    className: "before:content-none after:content-none",
+                                                }}
+                                            />
+                                            {
+                                                fieldErrors?.deposit &&
+                                                <Typography color="red">{fieldErrors?.deposit._errors}</Typography>
+                                            }
+                                        </motion.div>
+                                    )}
                                 </motion.div>
                             }
                             {

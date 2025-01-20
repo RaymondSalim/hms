@@ -48,8 +48,8 @@ export async function getBookingStatuses() {
     });
 }
 
-export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsIncludeAddons>, duration: Duration) {
-    const {fee, addOns: bookingAddons, ...otherBookingData} = data;
+export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsIncludeAll>, duration: Duration) {
+    const {fee, addOns: bookingAddons, deposit} = data;
     const startDate = new Date(data.start_date);
     let end_date = new Date();
 
@@ -122,20 +122,39 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
         }
     }
 
-    const addonBillItems = await generateBillItemsFromBookingAddons(bookingAddons, data);
+    let addonBillItems: Map<string, PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[]> | undefined;
+    if (bookingAddons) {
+        addonBillItems = await generateBillItemsFromBookingAddons(bookingAddons, data);
+    }
 
     return {
         success: await prisma.$transaction(async (prismaTrx) => {
-
             const newBooking = await prismaTrx.booking.create({
                 data: {
-                    ...otherBookingData,
                     fee,
+                    start_date: data.start_date,
                     end_date,
-                    durations: undefined,
-                    rooms: undefined,
-                    bookingstatuses: undefined,
-                    tenants: undefined,
+                    deposit,
+                    rooms: {
+                        connect: {
+                            id: data.room_id!
+                        }
+                    },
+                    tenants: {
+                        connect: {
+                            id: data.tenant_id!
+                        }
+                    },
+                    durations: {
+                        connect: {
+                            id: data.duration_id!
+                        }
+                    },
+                    bookingstatuses: {
+                        connect: {
+                            id: data.status_id!
+                        }
+                    }
                 },
             });
 
@@ -145,9 +164,20 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 data: bills.map((b) => ({
                     ...b,
                     booking_id: newBooking.id,
-                    amount: 0,
+                    amount: 0, // TODO! Drop
                 })),
             });
+
+            // Add Bill Item for deposit
+            if (deposit) {
+                await prismaTrx.billItem.create({
+                    data: {
+                        bill_id: newBills[0].id,
+                        amount: deposit,
+                        description: "Deposit Kamar"
+                    }
+                });
+            }
 
             for (const bill of newBills) {
                 const index = newBills.indexOf(bill);
@@ -162,7 +192,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
 
                 const addonKey = `${bill.due_date.getFullYear()}-${bill.due_date.getMonth()}`;
 
-                if (addonBillItems.has(addonKey)) {
+                if (addonBillItems?.has(addonKey)) {
                     const addonBills = addonBillItems.get(addonKey);
 
                     if (addonBills) {
@@ -190,7 +220,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
 }
 
 // TODO! Check if update booking actually updates bookings, or just bills
-export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp<BookingsIncludeAddons>, duration: Duration) {
+export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp<BookingsIncludeAll>, duration: Duration) {
     const {addOns: bookingAddons, ...otherData} = data;
     const existingBooking = await prisma.booking.findFirst({
         where: {id},
@@ -329,6 +359,17 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                 data: bills.map((b) => ({...b, booking_id: id, amount: 0})),
             });
 
+            // Add Bill Item for deposit
+            if (otherData.deposit) {
+                await prismaTrx.billItem.create({
+                    data: {
+                        bill_id: newBills[0].id,
+                        amount: otherData.deposit,
+                        description: "Deposit Kamar"
+                    }
+                });
+            }
+
             for (const bill of newBills) {
                 const index = newBills.indexOf(bill);
                 const billItem = billItems[index];
@@ -366,7 +407,32 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
             // Update the booking
             return prismaTrx.booking.update({
                 where: {id},
-                data: {...otherData},
+                data: {
+                    fee,
+                    start_date: data.start_date,
+                    end_date,
+                    deposit: data.deposit,
+                    rooms: {
+                        connect: {
+                            id: data.room_id!
+                        }
+                    },
+                    tenants: {
+                        connect: {
+                            id: data.tenant_id!
+                        }
+                    },
+                    durations: {
+                        connect: {
+                            id: data.duration_id!
+                        }
+                    },
+                    bookingstatuses: {
+                        connect: {
+                            id: data.status_id!
+                        }
+                    }
+                },
                 include: includeAll
             });
         }, {timeout: 25000})

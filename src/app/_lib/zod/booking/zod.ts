@@ -25,5 +25,20 @@ export const bookingSchema = object({
         number({required_error: "Fee is required"})
             .min(1, "Fee should be greater than 0")
     ),
+    deposit: preprocess(
+        (val) => {
+            if (val == undefined) {
+                return undefined;
+            }
+
+            if (typeof val == "string") {
+                return Number(val);
+            }
+
+            return val;
+        },
+        number({required_error: "Deposit perlu diisi"})
+            .min(1, "Deposit harus lebih besar daripada 0")
+    ).optional(),
     addOns: z.array(BookingAddonSchema).optional(), // Addons associated with the booking
 });
