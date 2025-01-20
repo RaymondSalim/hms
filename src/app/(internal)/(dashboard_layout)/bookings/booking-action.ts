@@ -1,17 +1,17 @@
 "use server";
 
-import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {Booking, CheckInOutLog, Prisma} from "@prisma/client";
+import {OmitTimestamp} from "@/app/_db/db";
+import {CheckInOutLog, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
-import {createBooking, getAllBookings, getBookingByID, updateBookingByID} from "@/app/_db/bookings";
+import {BookingsIncludeAll, createBooking, getAllBookings, getBookingByID, updateBookingByID} from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 
-export async function upsertBookingAction(reqData: OmitIDTypeAndTimestamp<Booking>) {
+export async function upsertBookingAction(reqData: OmitTimestamp<BookingsIncludeAll>) {
   const {success, data, error} = bookingSchema.safeParse(reqData);
 
   if (!success) {
