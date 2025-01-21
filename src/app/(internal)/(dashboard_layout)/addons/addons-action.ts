@@ -46,7 +46,7 @@ export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) 
           await trx.addOnPricing.deleteMany({
             where: {
               id: {
-                notIn: pricingIDs
+                in: pricingIDs
               }
             }
           });
@@ -56,13 +56,15 @@ export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) 
         for (const p of data.pricing) {
           let {id:_, ...pricingData} = p;
           await trx.addOnPricing.upsert({
-            where: {id: p.id},
+            where: {id: p.id ?? "non-id"},
             update: {
-              ...pricingData
+              ...pricingData,
+              addon_id: data.id
             },
             // @ts-expect-error weird id error
             create: {
-              ...pricingData
+              ...pricingData,
+              addon_id: data.id
             }
           });
         }
