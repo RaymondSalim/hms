@@ -3,9 +3,8 @@ import {isoDateStringToDate} from "@/app/_lib/zod/base/zod";
 
 // Addon Pricing Schema
 const AddonPricingSchema = z.object({
-    // id: z.string().min(1, "ID is required").optional(),
-    id: z.string().uuid().optional(),
-    addon_id: z.string().uuid().optional(),
+    id: z.string().cuid().optional(),
+    addon_id: z.string().cuid().optional(),
     interval_start: z.number().min(0, "Jangka Waktu mulai harus lebih besar daripada 0").int(),
     interval_end: z.number().nullable().optional(),
     is_full_payment: z.boolean().default(false),

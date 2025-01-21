@@ -31,6 +31,8 @@ export function AddonForm(props: AddonFormProps) {
     const [addonData, setAddonData] = useState<Partial<AddonIncludePricing>>(props.contentData ?? {});
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<AddonIncludePricing> | undefined>(props.mutationResponse?.errors);
 
+    const [showPricingSimulation, setShowPricingSimulation] = useState(false);
+
     const [initialData, setInitialData] = useState<Partial<typeof props.contentData>>(props.contentData ?? {});
     // Function to compare initial and current booking data
     const hasChanges = (initialData: Partial<typeof props.contentData>, currentData: Partial<typeof props.contentData>) => {
@@ -45,10 +47,6 @@ export function AddonForm(props: AddonFormProps) {
             interval_end: null
         }]
     );
-    const [openAccordionIndex, setOpenAccordionIndex] = useState<number|undefined>(undefined);
-    const handleAccordionToggle = (index: number) => {
-        setOpenAccordionIndex((prev) => (prev === index ? undefined : index));
-    };
 
     const isButtonDisabled = useMemo(() => {
         console.log(addonData);
@@ -77,7 +75,7 @@ export function AddonForm(props: AddonFormProps) {
     const addPricingEntry = () => {
         setPricingData((prev) => [...prev, {
             price: 0,
-            interval_start: (prev[prev.length - 1].interval_end ?? -1) + 1,
+            interval_start: (prev[Math.max(prev.length - 1, 0)]?.interval_end ?? -1) + 1,
             interval_end: null
         }]);
     };
@@ -267,17 +265,6 @@ export function AddonForm(props: AddonFormProps) {
                                                                 className: "-ml-3",
                                                             }}
                                                         />
-                                                        <Accordion
-                                                            icon={<FaAngleDown className={`transition-all ${openAccordionIndex === index ? 'rotate-180' : 'rotate-0'}`} />}
-                                                            open={openAccordionIndex === index}
-                                                        >
-                                                            <AccordionHeader onClick={() => handleAccordionToggle(index)}>
-                                                                <Typography variant={"h6"}>Simulasi Tanggal</Typography>
-                                                            </AccordionHeader>
-                                                            <AccordionBody>
-                                                                {simulateSinglePricing(pricing)}
-                                                            </AccordionBody>
-                                                        </Accordion>
                                                         {
                                                             fieldErrors?.pricing?.[index]?.interval_end &&
                                                             <Typography
@@ -305,6 +292,17 @@ export function AddonForm(props: AddonFormProps) {
                                          Tambah Harga
                                     </span>
                                 </Button>
+                                <Accordion
+                                    icon={<FaAngleDown className={`transition-all ${showPricingSimulation ? 'rotate-180' : 'rotate-0'}`} />}
+                                    open={showPricingSimulation}
+                                >
+                                    <AccordionHeader onClick={() => setShowPricingSimulation(o => !o)}>
+                                        <Typography variant={"h6"}>Simulasi Tanggal</Typography>
+                                    </AccordionHeader>
+                                    <AccordionBody>
+                                        {simulateAddonPricing(pricingData)}
+                                    </AccordionBody>
+                                </Accordion>
                             </div>
                             {
                                 props.mutationResponse?.failure &&
@@ -331,6 +329,90 @@ export function AddonForm(props: AddonFormProps) {
         </div>
     )
         ;
+}
+
+function simulateAddonPricing(pricingData: Partial<AddOnPricing>[], maxMonths = 6): JSX.Element {
+    if (!pricingData || pricingData.length === 0) {
+        return (
+            <Typography color="red">
+                Data harga tidak tersedia untuk simulasi.
+            </Typography>
+        );
+    }
+
+    const simulation: { monthYear: string; price: number; }[] = [];
+    const currentYear = new Date().getFullYear(); // Example year for simulation
+    let maxEndMonth = 0;
+
+    // Generate simulation data for all pricing intervals
+    pricingData.forEach((pricing) => {
+        if (!pricing.price || pricing.interval_start === undefined) {
+            return;
+        }
+
+        const startMonth = pricing.interval_start;
+        const endMonth = pricing.interval_end ?? startMonth + maxMonths - 1; // Limit to maxMonths if no end
+        const isFullPayment = pricing.is_full_payment;
+
+        let currentMonth = startMonth;
+        while (currentMonth <= endMonth) {
+            const monthDate = new Date(currentYear, currentMonth - 1); // JavaScript months are 0-based
+            const monthYear = monthDate.toLocaleString("default", { month: "short", year: "numeric" });
+
+            if (isFullPayment && currentMonth !== startMonth) {
+                simulation.push({
+                    monthYear,
+                    price: 0,
+                });
+            } else {
+                simulation.push({
+                    monthYear,
+                    price: pricing.price,
+                });
+            }
+
+            currentMonth++;
+            maxEndMonth = Math.max(maxEndMonth, currentMonth);
+        }
+
+        // Add ellipsis row for open-ended pricing
+        if (pricing.interval_end === null) {
+            simulation.push({
+                monthYear: "...",
+                price: pricing.price,
+            });
+        }
+    });
+
+    return (
+        <div className="">
+            <div className="overflow-x-auto">
+                <table className="table-auto border-collapse border border-gray-400 w-full mt-4">
+                    <thead>
+                    <tr>
+                        <th className="border border-gray-300 px-4 py-2">Bulan</th>
+                        <th className="border border-gray-300 px-4 py-2">Harga</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {simulation.map((entry, index) => (
+                        <tr key={index}>
+                            <td className="border border-gray-300 px-4 py-2">
+                                {entry.monthYear}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2">
+                                {entry.price.toLocaleString("id-ID", {
+                                    style: "currency",
+                                    currency: "IDR",
+                                })}
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 }
 
 function simulateSinglePricing(pricing: Partial<AddOnPricing>, maxMonths = 6): JSX.Element {
