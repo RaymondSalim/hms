@@ -118,15 +118,21 @@ export function PaymentForm(props: PaymentForm) {
         queryFn: () => getUnpaidBillsDueAction(data.booking_id!)
     });
     useEffect(() => {
-        if (unpaidBillsDataSuccess) {
-            let sum: Partial<BillIncludePaymentAndSum> = {
+        if (unpaidBillsDataSuccess && unpaidBillsData) {
+            let sum: typeof totalData = {
                 amount: new Prisma.Decimal(0),
                 sumPaidAmount: new Prisma.Decimal(0)
             };
 
-            unpaidBillsData?.bills.forEach(ub => {
+            unpaidBillsData.bills = unpaidBillsData.bills.map(ub => {
+                // @ts-expect-error TS2339
+                ub.amount = ub.bill_item.reduce(
+                    (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+                );
+                // @ts-expect-error TS2339
                 sum.amount = sum.amount?.add(ub.amount) ?? new Prisma.Decimal(ub.amount);
                 sum.sumPaidAmount = sum.sumPaidAmount?.add(ub.sumPaidAmount) ?? new Prisma.Decimal(ub.sumPaidAmount);
+                return ub;
             });
 
             setTotalData(s => ({
@@ -145,7 +151,7 @@ export function PaymentForm(props: PaymentForm) {
         queryFn: () => simulateUnpaidBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills)
     });
 
-    const [totalData, setTotalData] = useState<Partial<BillAndPayment>>({});
+    const [totalData, setTotalData] = useState<Partial<BillAndPayment & { amount: Prisma.Decimal }>>({});
 
     const [image, setImage] = useState<File | undefined>(undefined);
     useEffect(() => {
@@ -416,6 +422,7 @@ export function PaymentForm(props: PaymentForm) {
                                         <div className={"flex flex-col"}>
                                             {unpaidBillsData?.bills.map((ub, index, arr) => {
                                                 const newData = simulationData?.new.payments.find(p => p.bill_id == ub.id);
+                                                // @ts-expect-error TS2339
                                                 const due = Number(ub.amount) - Number(ub.sumPaidAmount);
                                                 return (
                                                     <div key={ub.id}
@@ -425,6 +432,7 @@ export function PaymentForm(props: PaymentForm) {
                                                         {/* Existing Information Column */}
                                                         <div className="flex flex-col text-sm col-span-3 row-start-2">
                                                             <p className="text-gray-700">Jumlah: <span
+                                                                // @ts-expect-error TS2339
                                                                 className="font-bold">{formatToIDR(Number(ub.amount))}</span>
                                                             </p>
                                                             <p className="text-gray-700">Terbayar: <span

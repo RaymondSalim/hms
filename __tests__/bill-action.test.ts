@@ -6,8 +6,8 @@ import {
     getUnpaidBillsDueAction,
     simulateUnpaidBillPaymentAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
-import {AddOnPricing, Bill, Booking, BookingAddOn, Payment, Prisma} from "@prisma/client";
-import {BillIncludePayment} from "@/app/_db/bills";
+import {AddOnPricing, Booking, BookingAddOn, Payment, Prisma} from "@prisma/client";
+import {BillIncludeBillItem, BillIncludePayment} from "@/app/_db/bills";
 import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
 
 describe('BillAction', () => {
@@ -16,17 +16,47 @@ describe('BillAction', () => {
             const today = new Date();
             const bills: Partial<BillIncludePayment>[] = [
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
                     paymentBills: []
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
                     paymentBills: []
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: today,
                     paymentBills: []
                 }
@@ -36,6 +66,7 @@ describe('BillAction', () => {
             prismaMock.bill.findMany.mockResolvedValue(bills);
 
             const unpaidBills = await getUnpaidBillsDueAction(1);
+            // @ts-expect-error TS2345
             let resp = await simulateUnpaidBillPaymentAction(2000000, unpaidBills.bills);
 
             expect(resp.new.balance)
@@ -43,7 +74,11 @@ describe('BillAction', () => {
 
             resp.new.payments.forEach((pb, index) => {
                 expect(pb.amount?.toNumber())
-                    .toEqual(bills[index].amount?.toNumber());
+                    .toEqual(
+                        bills[index].bill_item?.reduce(
+                            (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+                        ).toNumber()
+                    );
             });
         });
 
@@ -51,17 +86,47 @@ describe('BillAction', () => {
             const today = new Date();
             const bills: Partial<BillIncludePayment>[] = [
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
                     paymentBills: []
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
                     paymentBills: []
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: today,
                     paymentBills: []
                 }
@@ -71,16 +136,21 @@ describe('BillAction', () => {
             prismaMock.bill.findMany.mockResolvedValue(bills);
 
             const unpaidBills = await getUnpaidBillsDueAction(1);
+            // @ts-expect-error TS2345
             let resp = await simulateUnpaidBillPaymentAction(1250000, unpaidBills.bills);
 
             expect(resp.new.balance)
                 .toBe(0);
 
             expect(resp.new.payments[0].amount?.toNumber())
-                .toEqual(bills[0].amount?.toNumber());
+                .toEqual(bills[0].bill_item?.reduce(
+                    (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+                ).toNumber());
 
             expect(resp.new.payments[1].amount?.toNumber())
-                .toEqual(bills[1].amount?.toNumber());
+                .toEqual(bills[1].bill_item?.reduce(
+                    (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+                ).toNumber());
 
             expect(resp.new.payments[2].amount?.toNumber())
                 .toEqual(250000);
@@ -90,7 +160,17 @@ describe('BillAction', () => {
             const today = new Date();
             const bills: Partial<BillIncludePayment>[] = [
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
                     paymentBills: [
                         {
@@ -102,7 +182,17 @@ describe('BillAction', () => {
                     ]
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
                     paymentBills: [
                         {
@@ -114,7 +204,17 @@ describe('BillAction', () => {
                     ]
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: today,
                     paymentBills: [
                         {
@@ -131,6 +231,7 @@ describe('BillAction', () => {
             prismaMock.bill.findMany.mockResolvedValue(bills);
 
             const unpaidBills = await getUnpaidBillsDueAction(1);
+            // @ts-expect-error TS2345
             let resp = await simulateUnpaidBillPaymentAction(1500000, unpaidBills.bills);
 
             expect(resp.new.balance)
@@ -150,7 +251,17 @@ describe('BillAction', () => {
             const today = new Date();
             const bills: Partial<BillIncludePayment>[] = [
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
                     paymentBills: [
                         {
@@ -162,7 +273,17 @@ describe('BillAction', () => {
                     ]
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
                     paymentBills: [
                         {
@@ -174,7 +295,17 @@ describe('BillAction', () => {
                     ]
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: today,
                     paymentBills: [
                         {
@@ -191,6 +322,7 @@ describe('BillAction', () => {
             prismaMock.bill.findMany.mockResolvedValue(bills);
 
             const unpaidBills = await getUnpaidBillsDueAction(1);
+            // @ts-expect-error TS2345
             let resp = await simulateUnpaidBillPaymentAction(1500000, unpaidBills.bills);
 
             expect(resp.new.balance)
@@ -204,17 +336,47 @@ describe('BillAction', () => {
             const today = new Date();
             const bills: Partial<BillIncludePayment>[] = [
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
                     paymentBills: []
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
                     paymentBills: []
                 },
                 {
-                    amount: new Prisma.Decimal(500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     due_date: today,
                     paymentBills: []
                 }
@@ -224,6 +386,7 @@ describe('BillAction', () => {
             prismaMock.bill.findMany.mockResolvedValue(bills);
 
             const unpaidBills = await getUnpaidBillsDueAction(1);
+            // @ts-expect-error TS2345
             let resp = await simulateUnpaidBillPaymentAction(250000, unpaidBills.bills);
 
             expect(resp.new.balance)
@@ -251,7 +414,7 @@ describe('BillAction', () => {
                 },
             ];
 
-            const bills: OmitTimestamp<Bill>[] = [];
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [];
 
             let paymentBills = await generatePaymentBillMappingFromPaymentsAndBills(payments, bills);
 
@@ -260,11 +423,21 @@ describe('BillAction', () => {
         test('no payment and one bill', async () => {
             const payments: OmitTimestamp<Payment>[] = [];
 
-            const bills: OmitTimestamp<Bill>[] = [
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [
                 {
                     id: 1,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(350000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(350000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 }
@@ -302,11 +475,21 @@ describe('BillAction', () => {
                 }
             ];
 
-            const bills: OmitTimestamp<Bill>[] = [
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [
                 {
                     id: 1,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(350000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(350000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 }
@@ -349,11 +532,21 @@ describe('BillAction', () => {
                 }
             ];
 
-            const bills: OmitTimestamp<Bill>[] = [
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [
                 {
                     id: 1,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(2000000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(2000000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 }
@@ -398,11 +591,21 @@ describe('BillAction', () => {
                 }
             ];
 
-            const bills: OmitTimestamp<Bill>[] = [
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [
                 {
                     id: 1,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(2000000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(2000000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 }
@@ -447,18 +650,38 @@ describe('BillAction', () => {
                 }
             ];
 
-            const bills: OmitTimestamp<Bill>[] = [
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [
                 {
                     id: 1,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(2500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(2500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 },
                 {
                     id: 2,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(3500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(3500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 }
@@ -469,7 +692,9 @@ describe('BillAction', () => {
             expect(paymentBills).toHaveLength(2);
             paymentBills.forEach((pb, index) => {
                 expect(pb).toEqual({
-                    amount: bills[index].amount,
+                    amount: bills[index].bill_item.reduce(
+                        (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+                    ),
                     payment_id: 1,
                     bill_id: bills[index].id
                 });
@@ -487,18 +712,38 @@ describe('BillAction', () => {
                 },
             ];
 
-            const bills: OmitTimestamp<Bill>[] = [
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [
                 {
                     id: 1,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(3500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(3500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 },
                 {
                     id: 2,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(3500000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(3500000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 }
@@ -508,12 +753,16 @@ describe('BillAction', () => {
 
             expect(paymentBills).toHaveLength(2);
             expect(paymentBills[0]).toEqual({
-                amount: bills[0].amount,
+                amount: bills[0].bill_item.reduce(
+                    (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+                ),
                 payment_id: 1,
                 bill_id: bills[0].id
             });
             expect(paymentBills[1]).toEqual({
-                amount: payments[0].amount.minus(bills[0].amount),
+                amount: payments[0].amount.minus(bills[0].bill_item.reduce(
+                    (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+                )),
                 payment_id: 1,
                 bill_id: bills[1].id
             });
@@ -538,25 +787,55 @@ describe('BillAction', () => {
                 },
             ];
 
-            const bills: OmitTimestamp<Bill>[] = [
+            const bills: OmitTimestamp<BillIncludeBillItem>[] = [
                 {
                     id: 1,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(3000000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(3000000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 },
                 {
                     id: 2,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(3000000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(3000000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 },
                 {
                     id: 3,
                     booking_id: 1,
-                    amount: new Prisma.Decimal(3000000),
+                    bill_item: [
+                        {
+                            amount: new Prisma.Decimal(3000000),
+                            id: 0,
+                            bill_id: 1,
+                            description: "",
+                            internal_description: null,
+                            createdAt: new Date(),
+                            updatedAt: new Date()
+                        }
+                    ],
                     description: "",
                     due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
                 }
@@ -721,7 +1000,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(120000),
+                                amount: new Prisma.Decimal(120000),
                     },
                 ],
             ],
@@ -807,7 +1086,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                        amount: new Prisma.Decimal(300000),
+                                amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -816,7 +1095,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (April 15 - April 30)',
-                        amount: new Prisma.Decimal(64000),
+                                amount: new Prisma.Decimal(64000),
                     },
                 ],
             ],
@@ -825,7 +1104,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (May 1 - June 14)',
-                        amount: new Prisma.Decimal(176000),
+                                amount: new Prisma.Decimal(176000),
                     },
                 ],
             ],
@@ -857,7 +1136,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                        amount: new Prisma.Decimal(300000),
+                                amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -889,7 +1168,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
+                                amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -923,7 +1202,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
+                                amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -932,7 +1211,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -941,7 +1220,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -950,7 +1229,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -959,7 +1238,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -993,7 +1272,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
+                                amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1002,7 +1281,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1011,7 +1290,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1020,11 +1299,11 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(120000),
+                                amount: new Prisma.Decimal(120000),
                     },
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1033,11 +1312,11 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(120000),
+                                amount: new Prisma.Decimal(120000),
                     },
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(50000),
+                                amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1076,7 +1355,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
+                                amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1086,11 +1365,11 @@ describe('generateBillItemsFromBookingAddons', () => {
 
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - April 30)',
-                        amount: new Prisma.Decimal(150000),
+                                amount: new Prisma.Decimal(150000),
                     },
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(120000),
+                                amount: new Prisma.Decimal(120000),
                     },
                 ],
             ],
