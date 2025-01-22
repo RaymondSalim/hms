@@ -128,7 +128,6 @@ model Log {
 model Bill {
   id          Int        @id @default(autoincrement())
   booking_id  Int
-  amount      Decimal    @db.Decimal(10, 2)
   description String     @db.VarChar(255)
   due_date    DateTime   @db.Date
   bill_item   BillItem[]
