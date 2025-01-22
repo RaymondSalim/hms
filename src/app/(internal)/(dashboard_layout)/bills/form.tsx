@@ -90,7 +90,7 @@ export function BillForm(props: BillForm) {
     }, [props.mutationResponse?.errors]);
 
     const isFormComplete = useMemo(() => {
-        return !!data?.booking_id
+        return !!data?.booking_id;
     }, [data]);
 
 
