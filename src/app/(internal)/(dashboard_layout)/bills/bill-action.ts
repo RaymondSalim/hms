@@ -5,6 +5,7 @@ import {Bill, Booking, BookingAddOn, Payment, PaymentBill, Prisma} from "@prisma
 import {
     BillIncludeAll,
     billIncludeAll,
+    BillIncludeBillItem,
     BillIncludePayment,
     createBill,
     getAllBillsWithBooking,
@@ -30,6 +31,10 @@ export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma
         ...args,
         orderBy: {
             due_date: "asc"
+        },
+        include: {
+            ...args?.include,
+            bill_item: true
         }
     });
 
@@ -39,13 +44,17 @@ export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma
     // @ts-expect-error missing rooms
     const unpaidBills: BillIncludeAll[] = bills
         .map(b => {
-            totalDue = totalDue.add(b.amount);
+            const currBillAmount = b.bill_item.reduce(
+                (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+            );
+            totalDue = totalDue.add(currBillAmount);
             const paidAmount = b.paymentBills.reduce((acc, b) => {
                 return acc.add(b.amount);
             }, new Prisma.Decimal(0));
 
             return {
                 ...b,
+                amount: currBillAmount,
                 sumPaidAmount: paidAmount
             };
         })
@@ -67,7 +76,10 @@ export async function simulateUnpaidBillPaymentAction(balance: number, filteredB
 
     for (let i = 0; i < filteredBills.length; i++) {
         let currBills = filteredBills[i];
-        let outstanding = new Prisma.Decimal(currBills.amount);
+        let billAmount = currBills.bill_item.reduce(
+            (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+        );
+        let outstanding = new Prisma.Decimal(billAmount);
 
         if (currBills.sumPaidAmount) {
             outstanding = outstanding.minus(new Prisma.Decimal(currBills.sumPaidAmount));
@@ -112,7 +124,7 @@ export async function simulateUnpaidBillPaymentAction(balance: number, filteredB
     };
 }
 
-export async function generatePaymentBillMappingFromPaymentsAndBills(payments: OmitTimestamp<Payment>[], bills: OmitTimestamp<Bill>[]): Promise<OmitIDTypeAndTimestamp<PaymentBill>[]> {
+export async function generatePaymentBillMappingFromPaymentsAndBills(payments: OmitTimestamp<Payment>[], bills: OmitTimestamp<BillIncludeBillItem>[]): Promise<OmitIDTypeAndTimestamp<PaymentBill>[]> {
     const paymentBills: OmitIDTypeAndTimestamp<PaymentBill>[] = [];
 
     if (bills.length == 0 || payments.length == 0) {
@@ -125,20 +137,27 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
     payments.sort((a, b) => a.payment_date.getTime() - b.payment_date.getTime());
 
     let billIndex = 0;
+    let paid = new Prisma.Decimal(0);
+
     for (const currPayment of payments) {
         let balance = currPayment.amount;
 
         while (balance.gt(0) && billIndex < billsCopy.length) {
             const currBill = billsCopy[billIndex];
 
-            if (currBill.amount.lte(balance)) {
+            const currBillAmount = currBill.bill_item.reduce(
+                (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+            ).minus(paid);
+
+            if (currBillAmount.lte(balance)) {
                 // Full payment of the bill
-                balance = balance.minus(currBill.amount);
+                balance = balance.minus(currBillAmount);
                 paymentBills.push({
                     payment_id: currPayment.id,
                     bill_id: currBill.id,
-                    amount: currBill.amount
+                    amount: currBillAmount
                 });
+                paid = new Prisma.Decimal(0);
                 billIndex++;
             } else {
                 // Partial payment of the bill
@@ -147,7 +166,7 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
                     bill_id: currBill.id,
                     amount: balance
                 });
-                currBill.amount = currBill.amount.minus(balance);
+                paid = paid.plus(new Prisma.Decimal(balance));
                 balance = new Prisma.Decimal(0);
                 break;
             }
@@ -243,7 +262,6 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
 
     let parsedBillData: PartialBy<OmitTimestamp<Bill>, "id"> = {
         ...data,
-        amount: new Prisma.Decimal(data?.amount),
         description: data?.description ?? "",
     };
 
@@ -322,7 +340,8 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
                 include: {
                     payment: true
                 }
-            }
+            },
+            bill_item: true,
         }
     });
     let paymentBillsID = bills.flatMap((b) => b.paymentBills.map(pb => pb.id));
@@ -391,7 +410,8 @@ export async function sendBillEmailAction(billID: number) {
                 include: {
                     tenants: true
                 }
-            }
+            },
+            bill_item: true,
         }
     });
 
@@ -402,13 +422,16 @@ export async function sendBillEmailAction(billID: number) {
     }
 
     const tenant = billData.bookings.tenants!;
+    const currBillAmount = billData.bill_item.reduce(
+        (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+    );
 
     try {
         const template = await withTemplate(
             EMAIL_TEMPLATES.BILL_REMINDER,
             tenant.name,
             billData.id.toString(),
-            formatToIDR(billData.amount.toNumber()),
+            formatToIDR(currBillAmount.toNumber()),
             formatToDateTime(billData.due_date),
         );
 
@@ -637,7 +660,7 @@ export async function generateBillItemsFromBookingAddons(
     return new Map(
         Array.from(billItemsByMonth.entries()).map(([month, monthItems]) => [
             month,
-            monthItems.map(({ effectiveEndDate, addonID, isBacktracked, ...item }) => item) // Remove temporary field
+            monthItems.map(({effectiveEndDate, addonID, isBacktracked, ...item}) => item) // Remove temporary field
         ])
     );
 }

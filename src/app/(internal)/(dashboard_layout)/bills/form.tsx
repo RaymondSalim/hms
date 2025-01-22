@@ -13,9 +13,7 @@ import "react-day-picker/style.css";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {NonUndefined} from "@/app/_lib/types";
-import {Prisma} from "@prisma/client";
 import {BillIncludeBookingAndPayments} from "@/app/_db/bills";
-import CurrencyInput from "@/app/_components/input/currencyInput";
 
 interface BillForm extends TableFormProps<BillIncludeBookingAndPayments> {
 }
@@ -33,7 +31,6 @@ export function BillForm(props: BillForm) {
     if (props.contentData) {
         parsedData = {
             ...props.contentData,
-            amount: new Prisma.Decimal(props.contentData.amount),
         };
     }
 
@@ -93,8 +90,7 @@ export function BillForm(props: BillForm) {
     }, [props.mutationResponse?.errors]);
 
     const isFormComplete = useMemo(() => {
-        return !!data?.booking_id &&
-            !!data?.amount;
+        return !!data?.booking_id;
     }, [data]);
 
 
@@ -155,36 +151,6 @@ export function BillForm(props: BillForm) {
                             }
                             {
                                 data?.booking_id &&
-                                <motion.div
-                                    key={"bill_amount"}
-                                    initial={{opacity: 0, height: 0}}
-                                    animate={{opacity: 1, height: "auto"}}
-                                    exit={{opacity: 0, height: 0}}
-                                >
-                                    <label htmlFor="bill_amount">
-                                        <Typography variant="h6" color="blue-gray">
-                                            Jumlah Tagihan
-                                        </Typography>
-                                    </label>
-                                    <CurrencyInput
-                                        value={data.amount?.toNumber()}
-                                        setValue={(newValue) => {
-                                            setData((old) => ({
-                                                ...old,
-                                                amount: newValue == undefined ? undefined : new Prisma.Decimal(newValue)
-                                            }));
-                                        }}
-                                        size="lg"
-                                        error={!!fieldErrors?.amount}
-                                        className={`${!!fieldErrors?.amount ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                        labelProps={{
-                                            className: "before:content-none after:content-none",
-                                        }}
-                                    />
-                                </motion.div>
-                            }
-                            {
-                                data?.amount &&
                                 <motion.div
                                     key={"due_date"}
                                     initial={{opacity: 0, height: 0}}

@@ -15,7 +15,9 @@ const billIncludesPayment = Prisma.validator<Prisma.BillDefaultArgs>()({
   include: includePayments
 });
 
-export type BillIncludePayment = Prisma.BillGetPayload<typeof billIncludesPayment>
+export type BillIncludePayment = Prisma.BillGetPayload<typeof billIncludesPayment> & {
+  sumPaidAmount: Prisma.Decimal
+}
 
 const includeBooking: Prisma.BillInclude = {
   bookings: {
@@ -55,6 +57,14 @@ export type BillIncludeBookingAndPayments = Prisma.BillGetPayload<typeof billInc
     custom_id: string
   }
 }
+
+export const billIncludeBillItem = Prisma.validator<Prisma.BillDefaultArgs>()({
+  include: {
+    bill_item: true
+  }
+});
+
+export type BillIncludeBillItem = Prisma.BillGetPayload<typeof billIncludeBillItem>
 
 export const billIncludeAll = Prisma.validator<Prisma.BillDefaultArgs>()({
   include: {

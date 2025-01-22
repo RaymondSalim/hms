@@ -236,7 +236,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
     const startDate = new Date(data.start_date);
     let end_date = new Date();
 
-    const bills: PartialBy<BillUncheckedCreateInput, "id" | "amount" | "booking_id">[] = [];
+    const bills: PartialBy<BillUncheckedCreateInput, "id" | "booking_id">[] = [];
     const billItems: PartialBy<BillItemUncheckedCreateInput, "bill_id">[] = [];
 
     if (duration.month_count) {
@@ -397,7 +397,18 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                 where: {booking_id: id},
             });
 
-            let generatedPaymentBills = await generatePaymentBillMappingFromPaymentsAndBills(existingPayments, newBills);
+            const createdBills = await prismaTrx.bill.findMany({
+                where: {
+                    id: {
+                        in: newBills.map(nb => nb.id)
+                    },
+                },
+                include: {
+                    bill_item: true
+                }
+            });
+
+            let generatedPaymentBills = await generatePaymentBillMappingFromPaymentsAndBills(existingPayments, createdBills);
             await prismaTrx.paymentBill.createManyAndReturn({
                 data: [
                     ...generatedPaymentBills
