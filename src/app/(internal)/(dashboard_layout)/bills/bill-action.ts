@@ -137,6 +137,8 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
     payments.sort((a, b) => a.payment_date.getTime() - b.payment_date.getTime());
 
     let billIndex = 0;
+    let paid = new Prisma.Decimal(0);
+
     for (const currPayment of payments) {
         let balance = currPayment.amount;
 
@@ -145,7 +147,7 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
 
             const currBillAmount = currBill.bill_item.reduce(
                 (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
-            );
+            ).minus(paid);
 
             if (currBillAmount.lte(balance)) {
                 // Full payment of the bill
@@ -155,6 +157,7 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
                     bill_id: currBill.id,
                     amount: currBillAmount
                 });
+                paid = new Prisma.Decimal(0);
                 billIndex++;
             } else {
                 // Partial payment of the bill
@@ -163,6 +166,7 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
                     bill_id: currBill.id,
                     amount: balance
                 });
+                paid = paid.plus(new Prisma.Decimal(balance));
                 balance = new Prisma.Decimal(0);
                 break;
             }
