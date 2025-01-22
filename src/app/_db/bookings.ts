@@ -164,7 +164,6 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 data: bills.map((b) => ({
                     ...b,
                     booking_id: newBooking.id,
-                    amount: 0, // TODO! Drop
                 })),
             });
 
@@ -356,7 +355,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
 
             // Create new Bills and BillItems
             const newBills = await prismaTrx.bill.createManyAndReturn({
-                data: bills.map((b) => ({...b, booking_id: id, amount: 0})),
+                data: bills.map((b) => ({...b, booking_id: id})),
             });
 
             // Add Bill Item for deposit
