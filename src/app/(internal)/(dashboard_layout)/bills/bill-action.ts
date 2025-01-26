@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
-import {Bill, Booking, BookingAddOn, Payment, PaymentBill, Prisma} from "@prisma/client";
+import {Bill, Booking, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
     BillIncludeAll,
     billIncludeAll,
@@ -18,6 +18,9 @@ import {billSchemaWithOptionalID} from "@/app/_lib/zod/bill/zod";
 import {number, object} from "zod";
 import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
+import {BookingsIncludeAll} from "@/app/_db/bookings";
+import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
+import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 
 export type BillIncludePaymentAndSum = BillIncludePayment & {
     sumPaidAmount: Prisma.Decimal
@@ -663,4 +666,88 @@ export async function generateBillItemsFromBookingAddons(
             monthItems.map(({effectiveEndDate, addonID, isBacktracked, ...item}) => item) // Remove temporary field
         ])
     );
+}
+
+export async function generateRoomBillAndBillItems(
+    data: Pick<BookingsIncludeAll, "fee" | "start_date">,
+    duration: Pick<Duration, "month_count">
+) {
+    const fee = data.fee;
+    const startDate = new Date(data.start_date);
+    let endDate = new Date();
+
+    const bills: PartialBy<BillUncheckedCreateInput, "id" | "booking_id">[] = [];
+    const billItems: PartialBy<BillItemUncheckedCreateInput, "bill_id">[] = [];
+
+    if (duration.month_count) {
+        const totalDaysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+
+        // Calculate prorated amount if start_date is not the first of the month
+        if (startDate.getDate() !== 1) {
+            const remainingDays = totalDaysInMonth - startDate.getDate() + 1;
+            const dailyRate = Number(fee) / totalDaysInMonth;
+            const proratedAmount = dailyRate * remainingDays;
+
+            bills.push({
+                description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', {month: 'long'})}`,
+                due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours())
+            });
+            billItems.push({
+                amount: new Prisma.Decimal(Math.round(proratedAmount)),
+                description: `Biaya Sewa Kamar (${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth})`,
+            });
+
+            // Add full monthly bills for subsequent months, except the last one
+            for (let i = 1; i < duration.month_count; i++) {
+                const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
+                const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
+
+                billItems.push({
+                    amount: new Prisma.Decimal(fee),
+                    description: `Biaya Sewa Kamar (${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`,
+                });
+                bills.push({
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {month: 'long'})}`,
+                    due_date: billEndDate,
+                });
+            }
+
+            // Add full monthly bill for the last month
+            const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 1, startDate.getHours());
+            const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0, startDate.getHours());
+            billItems.push({
+                amount: new Prisma.Decimal(fee),
+                description: `Biaya Sewa Kamar (${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()})`,
+            });
+            bills.push({
+                description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', {month: 'long'})}`,
+                due_date: lastMonthEndDate,
+            });
+            endDate = lastMonthEndDate;
+
+        } else {
+            // Add full monthly bills for totalMonths
+            for (let i = 0; i < duration.month_count; i++) {
+                const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
+                const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
+
+                billItems.push({
+                    amount: new Prisma.Decimal(fee),
+                    description: `Biaya Sewa Kamar (${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`,
+                });
+                bills.push({
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {month: 'long'})}`,
+                    due_date: billEndDate,
+                });
+
+                endDate = billEndDate;
+            }
+        }
+    }
+
+    return {
+        bills,
+        billItems,
+        endDate
+    };
 }

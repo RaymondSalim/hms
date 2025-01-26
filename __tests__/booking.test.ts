@@ -1,5 +1,5 @@
 import {prismaMock} from './singleton_prisma';
-import {AddOnPricing, BookingAddOn, Duration, Prisma} from '@prisma/client';
+import {AddOnPricing, BillType, BookingAddOn, Duration, Prisma} from '@prisma/client';
 import {
     BookingsIncludeAddons,
     createBooking,
@@ -49,13 +49,14 @@ describe('Booking Actions', () => {
 
             const mockBookingData: Omit<BookingsIncludeAddons, "id" | "createdAt" | "updatedAt" | "end_date"> = {
                 fee: new Prisma.Decimal(1000),
+                deposit: new Prisma.Decimal(500),
                 addOns: [internetBookingAddon],
                 start_date: startDate,
                 tenant_id: 'tenant-1',
                 room_id: 1,
                 duration_id: 2,
                 status_id: 1,
-                custom_id: "#-1"
+                custom_id: "#-1",
             };
             const mockDuration: Partial<Duration> = {id: 2, month_count: 3};
             const mockCreatedBooking = {id: 1, ...mockBookingData};
@@ -93,8 +94,26 @@ describe('Booking Actions', () => {
                         bill_id: 1,
                         description: 'Biaya Layanan Tambahan (Internet) (December 1 - February 28)',
                         amount: new Prisma.Decimal(300000),
+                        type: BillType.GENERATED
                     },
                 ])
+            });
+            expect(prismaMock.billItem.create).toHaveBeenCalledWith({
+                data:
+                    expect.objectContaining({
+                        description: "Biaya Sewa Kamar (December 1-31)",
+                        amount: new Prisma.Decimal(1000),
+                        type: BillType.GENERATED
+                    })
+            });
+            expect(prismaMock.billItem.create).toHaveBeenCalledWith({
+                data:
+                    {
+                        bill_id: 1,
+                        description: 'Deposit Kamar',
+                        amount: new Prisma.Decimal(500),
+                        type: BillType.GENERATED
+                    },
             });
             expect(prismaMock.booking.findFirst).toHaveBeenCalledWith({
                 where: {id: mockCreatedBooking.id},

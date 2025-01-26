@@ -3,6 +3,7 @@ import {prismaMock} from "./singleton_prisma";
 import {
     generateBillItemsFromBookingAddons,
     generatePaymentBillMappingFromPaymentsAndBills,
+    generateRoomBillAndBillItems,
     getUnpaidBillsDueAction,
     simulateUnpaidBillPaymentAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
@@ -1479,5 +1480,168 @@ describe('generateBillItemsFromBookingAddons', () => {
                 ]
             ]
         ]);
+    });
+});
+
+describe("generateRoomBillAndBillItems", () => {
+    it("should generate bills and bill items for a full month starting on the 1st", async () => {
+        const data = {
+            fee: new Prisma.Decimal(300000),
+            start_date: new Date(2023, 0, 1), // January 1, 2023
+        };
+        const duration = { month_count: 3 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan January",
+                due_date: new Date(2023, 0, 31), // January 31, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan February",
+                due_date: new Date(2023, 1, 28), // February 28, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan March",
+                due_date: new Date(2023, 2, 31), // March 31, 2023
+            },
+        ]);
+
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (January 1-31)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (February 1-28)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (March 1-31)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2023, 2, 31)); // March 31, 2023
+    });
+
+    it("should generate prorated bills and bill items if the start date is not the 1st", async () => {
+        const data = {
+            fee: new Prisma.Decimal(300000),
+            start_date: new Date(2023, 0, 15), // January 15, 2023
+        };
+        const duration = { month_count: 3 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan January",
+                due_date: new Date(2023, 0, 31), // January 31, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan February",
+                due_date: new Date(2023, 1, 28), // February 28, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan March",
+                due_date: new Date(2023, 2, 31), // March 31, 2023
+            },
+        ]);
+
+        const proratedAmount = Math.round((300000 / 31) * 17); // 17 days remaining in January
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(proratedAmount),
+                description: "Biaya Sewa Kamar (January 15-31)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (February 1-28)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (March 1-31)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2023, 2, 31)); // March 31, 2023
+    });
+
+    it("should handle single-month durations correctly", async () => {
+        const data = {
+            fee: new Prisma.Decimal(250000),
+            start_date: new Date(2023, 4, 10), // May 10, 2023
+        };
+        const duration = { month_count: 1 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan May",
+                due_date: new Date(2023, 4, 31), // May 31, 2023
+            },
+        ]);
+
+        const proratedAmount = Math.round((250000 / 31) * 22); // 22 days remaining in May
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(proratedAmount),
+                description: "Biaya Sewa Kamar (May 10-31)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2023, 4, 31)); // May 31, 2023
+    });
+
+    it("should handle durations with no months correctly (edge case)", async () => {
+        const data = {
+            fee: new Prisma.Decimal(500000),
+            start_date: new Date(2023, 6, 1), // July 1, 2023
+        };
+        const duration = { month_count: 0 }; // No months
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([]);
+        expect(result.billItems).toEqual([]);
+        expect(result.endDate).toEqual(new Date()); // Should return the current date
+    });
+
+    it("should handle leap years correctly", async () => {
+        const data = {
+            fee: new Prisma.Decimal(200000),
+            start_date: new Date(2024, 1, 20), // February 20, 2024 (Leap Year)
+        };
+        const duration = { month_count: 2 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan February",
+                due_date: new Date(2024, 1, 29), // February 29, 2024
+            },
+            {
+                description: "Tagihan untuk Bulan March",
+                due_date: new Date(2024, 2, 31), // March 31, 2024
+            },
+        ]);
+
+        const proratedAmount = Math.round((200000 / 29) * 10); // 10 days remaining in February
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(proratedAmount),
+                description: "Biaya Sewa Kamar (February 20-29)",
+            },
+            {
+                amount: new Prisma.Decimal(200000),
+                description: "Biaya Sewa Kamar (March 1-31)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2024, 2, 31)); // March 31, 2024
     });
 });
