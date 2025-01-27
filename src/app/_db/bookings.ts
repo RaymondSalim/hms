@@ -8,6 +8,7 @@ import {
     generatePaymentBillMappingFromPaymentsAndBills,
     generateRoomBillAndBillItems
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
+import {matchBillItemsToBills} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -154,7 +155,6 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
     };
 }
 
-// TODO! Check if update booking actually updates bookings, or just bills
 export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp<BookingsIncludeAll>, duration: Duration) {
     const {fee, addOns: bookingAddons, ...otherData} = data;
     const existingBooking = await prisma.booking.findFirst({
@@ -183,9 +183,20 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
         },
     });
 
-    const staleBillItems: Map<Date, BillItem[]> = new Map();
+    const staleBillItems: Map<Date, Omit<BillItem, "bill_id">[]> = new Map();
     existingBills.forEach(b => {
-       staleBillItems.set(b.due_date, b.bill_item);
+        const filteredBillItems = b.bill_item
+            .filter(bi => bi.type != BillType.GENERATED)
+            .map(bi => ({
+                ...bi,
+                bill_id: undefined
+            }));
+        if (filteredBillItems.length > 0) {
+            staleBillItems.set(
+                b.due_date,
+                filteredBillItems
+            );
+        }
     });
 
     return {
@@ -276,6 +287,20 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                     }
                 }
             }
+
+            // Recreate Bill Items of type: CREATED
+            const billItemMapping = await matchBillItemsToBills(staleBillItems, newBills);
+            const newBillItems = Array.from(billItemMapping.entries())
+                .flatMap(([bill_id, billItems]) => {
+                    return billItems.map(bi => ({
+                        ...bi,
+                        bill_id: bill_id,
+                    }));
+                });
+
+            await prismaTrx.billItem.createMany({
+                data: newBillItems,
+            });
 
             // Sync paymentBills using the utility function
             const existingPayments = await prismaTrx.payment.findMany({
