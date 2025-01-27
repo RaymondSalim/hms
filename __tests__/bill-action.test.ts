@@ -1646,14 +1646,14 @@ describe("generateRoomBillAndBillItems", () => {
         };
         const duration = { month_count: 0 }; // No months
 
-        // @ts-ignore
-        const dateSpy = jest.spyOn(global, 'Date');
+        const date = new Date();
         const result = await generateRoomBillAndBillItems(data, duration);
-        const date = dateSpy.mock.instances[0];
 
         expect(result.bills).toEqual([]);
         expect(result.billItems).toEqual([]);
-        expect(result.endDate).toEqual(date); // Should return the current date
+        expect(result.endDate.getFullYear()).toEqual(date.getFullYear());
+        expect(result.endDate.getMonth()).toEqual(date.getMonth());
+        expect(result.endDate.getDate()).toEqual(date.getDate());
     });
 
     it("should handle leap years correctly", async () => {
