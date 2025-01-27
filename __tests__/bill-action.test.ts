@@ -3,12 +3,14 @@ import {prismaMock} from "./singleton_prisma";
 import {
     generateBillItemsFromBookingAddons,
     generatePaymentBillMappingFromPaymentsAndBills,
+    generateRoomBillAndBillItems,
     getUnpaidBillsDueAction,
     simulateUnpaidBillPaymentAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
-import {AddOnPricing, Booking, BookingAddOn, Payment, Prisma} from "@prisma/client";
+import {AddOnPricing, BillType, Booking, BookingAddOn, Payment, Prisma} from "@prisma/client";
 import {BillIncludeBillItem, BillIncludePayment} from "@/app/_db/bills";
 import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
+import {matchBillItemsToBills} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 
 describe('BillAction', () => {
     describe('test simulateBillPaymentAction', () => {
@@ -24,7 +26,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -39,7 +42,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -54,7 +58,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: today,
@@ -94,7 +99,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -109,7 +115,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -124,7 +131,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: today,
@@ -168,7 +176,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -190,7 +199,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -212,7 +222,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: today,
@@ -259,7 +270,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -281,7 +293,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -303,7 +316,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: today,
@@ -344,7 +358,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -359,7 +374,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -374,7 +390,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     due_date: today,
@@ -435,7 +452,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -487,7 +505,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -544,7 +563,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -603,7 +623,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -662,7 +683,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -679,7 +701,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -724,7 +747,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -741,7 +765,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -799,7 +824,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -816,7 +842,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -833,7 +860,8 @@ describe('BillAction', () => {
                             description: "",
                             internal_description: null,
                             createdAt: new Date(),
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            type: BillType.GENERATED
                         }
                     ],
                     description: "",
@@ -1479,5 +1507,293 @@ describe('generateBillItemsFromBookingAddons', () => {
                 ]
             ]
         ]);
+    });
+});
+
+describe("generateRoomBillAndBillItems", () => {
+    it("should generate bills and bill items for a full month starting on the 1st", async () => {
+        const data = {
+            fee: new Prisma.Decimal(300000),
+            start_date: new Date(2023, 0, 1), // January 1, 2023
+        };
+        const duration = { month_count: 3 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan January",
+                due_date: new Date(2023, 0, 31), // January 31, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan February",
+                due_date: new Date(2023, 1, 28), // February 28, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan March",
+                due_date: new Date(2023, 2, 31), // March 31, 2023
+            },
+        ]);
+
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (January 1-31)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (February 1-28)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (March 1-31)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2023, 2, 31)); // March 31, 2023
+    });
+
+    it("should generate prorated bills and bill items if the start date is not the 1st", async () => {
+        const data = {
+            fee: new Prisma.Decimal(300000),
+            start_date: new Date(2023, 0, 15), // January 15, 2023
+        };
+        const duration = { month_count: 3 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan January",
+                due_date: new Date(2023, 0, 31), // January 31, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan February",
+                due_date: new Date(2023, 1, 28), // February 28, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan March",
+                due_date: new Date(2023, 2, 31), // March 31, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan April",
+                due_date: new Date(2023, 3, 30), // April 30, 2023
+            },
+        ]);
+
+        const proratedAmount = Math.round((300000 / 31) * 17); // 17 days remaining in January
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(proratedAmount),
+                description: "Biaya Sewa Kamar (January 15-31)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (February 1-28)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (March 1-31)",
+            },
+            {
+                amount: new Prisma.Decimal(300000),
+                description: "Biaya Sewa Kamar (April 1-30)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2023, 3, 30)); // April 30, 2023
+    });
+
+    it("should handle single-month durations correctly", async () => {
+        const data = {
+            fee: new Prisma.Decimal(250000),
+            start_date: new Date(2023, 4, 10), // May 10, 2023
+        };
+        const duration = { month_count: 1 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan May",
+                due_date: new Date(2023, 4, 31), // May 31, 2023
+            },
+            {
+                description: "Tagihan untuk Bulan June",
+                due_date: new Date(2023, 5, 30), // May 31, 2023
+            },
+        ]);
+
+        const proratedAmount = Math.round((250000 / 31) * 22); // 22 days remaining in May
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(proratedAmount),
+                description: "Biaya Sewa Kamar (May 10-31)",
+            },
+            {
+                amount: new Prisma.Decimal(data.fee),
+                description: "Biaya Sewa Kamar (June 1-30)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2023, 5, 30)); // June 30, 2023
+    });
+
+    it("should handle durations with no months correctly (edge case)", async () => {
+        const data = {
+            fee: new Prisma.Decimal(500000),
+            start_date: new Date(2023, 6, 1), // July 1, 2023
+        };
+        const duration = { month_count: 0 }; // No months
+
+        const date = new Date();
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([]);
+        expect(result.billItems).toEqual([]);
+        expect(result.endDate.getFullYear()).toEqual(date.getFullYear());
+        expect(result.endDate.getMonth()).toEqual(date.getMonth());
+        expect(result.endDate.getDate()).toEqual(date.getDate());
+    });
+
+    it("should handle leap years correctly", async () => {
+        const data = {
+            fee: new Prisma.Decimal(200000),
+            start_date: new Date(2024, 1, 20), // February 20, 2024 (Leap Year)
+        };
+        const duration = { month_count: 2 };
+
+        const result = await generateRoomBillAndBillItems(data, duration);
+
+        expect(result.bills).toEqual([
+            {
+                description: "Tagihan untuk Bulan February",
+                due_date: new Date(2024, 1, 29), // February 29, 2024
+            },
+            {
+                description: "Tagihan untuk Bulan March",
+                due_date: new Date(2024, 2, 31), // March 31, 2024
+            },
+            {
+                description: "Tagihan untuk Bulan April",
+                due_date: new Date(2024, 3, 30), // April 33, 2024
+            },
+        ]);
+
+        const proratedAmount = Math.round((200000 / 29) * 10); // 10 days remaining in February
+        expect(result.billItems).toEqual([
+            {
+                amount: new Prisma.Decimal(proratedAmount),
+                description: "Biaya Sewa Kamar (February 20-29)",
+            },
+            {
+                amount: new Prisma.Decimal(200000),
+                description: "Biaya Sewa Kamar (March 1-31)",
+            },
+            {
+                amount: new Prisma.Decimal(200000),
+                description: "Biaya Sewa Kamar (April 1-30)",
+            },
+        ]);
+
+        expect(result.endDate).toEqual(new Date(2024, 3, 30)); // April 30, 2024
+    });
+});
+
+describe("matchBillItemsToBills", () => {
+    it("should correctly match bill items to the closest bills", async () => {
+        const billItemsByDueDate = new Map([
+            [new Date("2023-01-10"), [{ id: 1, description: "Item 1" }, { id: 2, description: "Item 2" }]],
+            [new Date("2023-02-15"), [{ id: 3, description: "Item 3" }]],
+            [new Date("2023-03-20"), [{ id: 4, description: "Item 4" }]],
+        ]);
+
+        const bills = [
+            { id: 101, due_date: new Date("2023-01-10") },
+            { id: 102, due_date: new Date("2023-02-01") },
+            { id: 103, due_date: new Date("2023-03-25") },
+        ];
+
+        // @ts-expect-error TS2345: bill-items incomplete
+        const result = await matchBillItemsToBills(billItemsByDueDate, bills);
+
+        expect(result).toEqual(
+            new Map([
+                [
+                    101,
+                    [
+                        { id: 1, description: "Item 1" },
+                        { id: 2, description: "Item 2" },
+                    ],
+                ],
+                [102, [{ id: 3, description: "Item 3" }]],
+                [103, [{ id: 4, description: "Item 4" }]],
+            ])
+        );
+    });
+
+    it("should match items to the closest earlier bill if no exact match exists", async () => {
+        const billItemsByDueDate = new Map([
+            [new Date("2023-02-10"), [{ id: 5, description: "Item 5" }]],
+        ]);
+
+        const bills = [
+            { id: 201, due_date: new Date("2023-01-31") },
+            { id: 202, due_date: new Date("2023-03-01") },
+        ];
+
+        // @ts-expect-error TS2345: bill-items incomplete
+        const result = await matchBillItemsToBills(billItemsByDueDate, bills);
+
+        expect(result).toEqual(
+            new Map([
+                [201, [{ id: 5, description: "Item 5" }]],
+            ])
+        );
+    });
+
+    it("should match items to the closest earlier bill if no exact match exists 2", async () => {
+        const billItemsByDueDate = new Map([
+            [new Date("2023-05-10"), [{ id: 6, description: "Item 6" }]],
+        ]);
+
+        const bills = [
+            { id: 301, due_date: new Date("2023-03-01") },
+            { id: 302, due_date: new Date("2023-04-01") },
+        ];
+
+        // @ts-expect-error TS2345: bill-items incomplete
+        const result = await matchBillItemsToBills(billItemsByDueDate, bills);
+
+        expect(result).toEqual(
+            new Map([
+                [302, [{ id: 6, description: "Item 6" }]],
+            ])
+        );
+    });
+
+    it("should handle an empty list of bills", async () => {
+        const billItemsByDueDate = new Map([
+            [new Date("2023-02-10"), [{ id: 7, description: "Item 7" }]],
+        ]);
+
+        const bills: { id: number; due_date: Date }[] = [];
+
+        // @ts-expect-error TS2345: bill-items incomplete
+        const result = await matchBillItemsToBills(billItemsByDueDate, bills);
+
+        expect(result).toEqual(new Map());
+    });
+
+    it("should handle an empty map of bill items", async () => {
+        const billItemsByDueDate = new Map();
+        const bills = [
+            { id: 401, due_date: new Date("2023-01-01") },
+            { id: 402, due_date: new Date("2023-02-01") },
+        ];
+
+        const result = await matchBillItemsToBills(billItemsByDueDate, bills);
+
+        expect(result).toEqual(new Map());
     });
 });

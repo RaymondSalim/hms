@@ -140,11 +140,17 @@ model Bill {
   @@map("bills")
 }
 
+enum BillType {
+  GENERATED
+  CREATED
+}
+
 model BillItem {
   id                   Int      @id @default(autoincrement())
   bill_id              Int
   description          String   @db.VarChar(255)
   internal_description String?  @db.VarChar(255)
+  type                 BillType @default(GENERATED)
   amount               Decimal  @db.Decimal(10, 2)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @default(now()) @updatedAt
