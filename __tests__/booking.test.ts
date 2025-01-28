@@ -223,33 +223,36 @@ describe('Booking Actions', () => {
             // @ts-expect-error mockBookingData type
             await createBooking(mockBookingData, mockDuration);
             // @ts-expect-error mock
-            expect(prismaMock.bill.createManyAndReturn.mock.calls[0][0])
-                .toEqual({
-                    data: expect.arrayContaining([
-                        expect.objectContaining({
-                            bill_item: {
-                                createMany: {
-                                    data: expect.arrayContaining([
-                                        expect.objectContaining({
-                                            amount: new Prisma.Decimal(800)
-                                        })
-                                    ])
-                                }
+            expect(prismaMock.bill.create.mock.calls[0][0])
+                .toEqual(expect.objectContaining({
+                    data: expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        amount: new Prisma.Decimal(800)
+                                    })
+                                ])
                             }
-                        }),
-                        expect.objectContaining({
-                            bill_item: {
-                                createMany: {
-                                    data: expect.arrayContaining([
-                                        expect.objectContaining({
-                                            amount: new Prisma.Decimal(1500)
-                                        })
-                                    ])
-                                }
+                        }
+                    })
+                }));
+            // @ts-expect-error mock
+            expect(prismaMock.bill.create.mock.calls[1][0])
+                .toEqual(expect.objectContaining({
+                    data: expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        amount: new Prisma.Decimal(1500)
+                                    })
+                                ])
                             }
-                        })
-                    ])
-                });
+                        }
+                    })
+                }));
+
             // expect(prismaMock.billItem.create).toHaveBeenCalledTimes(mockDuration.month_count + 1); // One for each month in duration + prorata
         });
     });
