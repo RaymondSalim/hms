@@ -9,6 +9,7 @@ import {
     generatePaymentBillMappingFromPaymentsAndBills
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {matchBillItemsToBills} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
+import {BillIncludeBillItem} from "@/app/_db/bills";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -91,13 +92,20 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 },
             });
 
-            // Create associated bills
-            const newBills = await prismaTrx.bill.createManyAndReturn({
-                data: billsWithBillItems.map((b) => ({
-                    ...b,
-                    booking_id: newBooking.id,
-                })),
-            });
+            const newBills: BillIncludeBillItem[] = [];
+            for (const bill of billsWithBillItems) {
+                newBills.push(
+                    await prismaTrx.bill.create({
+                        data: {
+                            ...bill,
+                            booking_id: newBooking.id,
+                        },
+                        include: {
+                            bill_item: true
+                        }
+                    })
+                );
+            }
 
             // Add Bill Item for deposit
             if (deposit) {
@@ -231,9 +239,20 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
             });
 
             // Create new Bills and BillItems
-            const newBills = await prismaTrx.bill.createManyAndReturn({
-                data: billsWithBillItems.map((b) => ({...b, booking_id: id})),
-            });
+            const newBills: BillIncludeBillItem[] = [];
+            for (const billItem of billsWithBillItems) {
+                newBills.push(
+                    await prismaTrx.bill.create({
+                        data: {
+                            ...billItem,
+                            booking_id: id,
+                        },
+                        include: {
+                            bill_item: true
+                        }
+                    })
+                );
+            }
 
             // Add Bill Item for deposit
             if (otherData.deposit) {
