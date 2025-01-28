@@ -1,5 +1,5 @@
 import {prismaMock} from './singleton_prisma';
-import {AddOnPricing, BillItem, BillType, BookingAddOn, Duration, Payment, Prisma} from '@prisma/client';
+import {AddOnPricing, Bill, BillItem, BillType, BookingAddOn, Duration, Payment, Prisma} from '@prisma/client';
 import {
     BookingsIncludeAddons,
     createBooking,
@@ -9,7 +9,6 @@ import {
 } from "@/app/_db/bookings";
 import {describe, expect, it} from "@jest/globals";
 import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
-import {BillIncludeBillItem} from "@/app/_db/bills";
 
 describe('Booking Actions', () => {
     describe('createBooking', () => {
@@ -87,7 +86,23 @@ describe('Booking Actions', () => {
                 data: expect.any(Object),
                 // include: expect.any(Object),
             });
-            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledTimes(1);
+            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledWith({
+                data: expect.arrayContaining([
+                    expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        description: "Biaya Sewa Kamar (December 1-31)",
+                                        amount: new Prisma.Decimal(1000),
+                                        type: BillType.GENERATED
+                                    })
+                                ])
+                            }
+                        }
+                    })
+                ])
+            });
             expect(prismaMock.bookingAddOn.createMany).toHaveBeenCalledTimes(1);
             expect(prismaMock.billItem.createMany).toHaveBeenCalledWith({
                 data: expect.arrayContaining([
@@ -98,14 +113,6 @@ describe('Booking Actions', () => {
                         type: BillType.GENERATED
                     },
                 ])
-            });
-            expect(prismaMock.billItem.create).toHaveBeenCalledWith({
-                data:
-                    expect.objectContaining({
-                        description: "Biaya Sewa Kamar (December 1-31)",
-                        amount: new Prisma.Decimal(1000),
-                        type: BillType.GENERATED
-                    })
             });
             expect(prismaMock.billItem.create).toHaveBeenCalledWith({
                 data:
@@ -148,7 +155,35 @@ describe('Booking Actions', () => {
 
             // @ts-expect-error mockBookingData type
             await createBooking(mockBookingData, mockDuration);
-            expect(prismaMock.billItem.create).toHaveBeenCalledTimes(mockDuration.month_count + 1); // One for each month in duration + prorata
+            // @ts-expect-error mock
+            expect(prismaMock.bill.createManyAndReturn.mock.calls[0][0])
+                .toEqual({
+                    data: expect.arrayContaining([
+                        expect.objectContaining({
+                            bill_item: {
+                                createMany: {
+                                    data: expect.arrayContaining([
+                                        expect.objectContaining({
+                                            amount: new Prisma.Decimal(800)
+                                        })
+                                    ])
+                                }
+                            }
+                        }),
+                        expect.objectContaining({
+                            bill_item: {
+                                createMany: {
+                                    data: expect.arrayContaining([
+                                        expect.objectContaining({
+                                            amount: new Prisma.Decimal(1500)
+                                        })
+                                    ])
+                                }
+                            }
+                        })
+                    ])
+                });
+            // expect(prismaMock.billItem.create).toHaveBeenCalledTimes(mockDuration.month_count + 1); // One for each month in duration + prorata
         });
     });
 
@@ -272,7 +307,7 @@ describe('Booking Actions', () => {
             ]);
             // @ts-expect-error mockResolvedValue
             prismaMock.addOn.findFirstOrThrow.mockResolvedValue(internetAddon);
-            const newBills: Partial<BillIncludeBillItem>[] = [
+            const newBills: Partial<Bill & {bill_item: Partial<BillItem>[]}>[] = [
                 {
                     id: 100,
                     due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1),
@@ -364,20 +399,29 @@ describe('Booking Actions', () => {
                     booking_id: mockBookingID
                 }
             });
-            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledTimes(1);
+            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledWith({
+                data: expect.arrayContaining([
+                    expect.objectContaining({
+                        bill_item: expect.objectContaining({
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        description: expect.stringContaining("Biaya Sewa Kamar"),
+                                        amount: mockBookingData.fee,
+                                        type: BillType.GENERATED
+                                    })
+                                ])
+                            }
+                        })
+                    })
+                ])
+            });
             expect(prismaMock.booking.update).toHaveBeenCalledTimes(1);
             expect(prismaMock.billItem.create).toHaveBeenCalledWith({
                 data: expect.objectContaining({
                     bill_id: 100,
                     description: "Deposit Kamar",
                     amount: mockBookingData.deposit,
-                    type: BillType.GENERATED
-                })
-            });
-            expect(prismaMock.billItem.create).toHaveBeenCalledWith({
-                data: expect.objectContaining({
-                    description: expect.stringContaining("Biaya Sewa Kamar"),
-                    amount: mockBookingData.fee,
                     type: BillType.GENERATED
                 })
             });
