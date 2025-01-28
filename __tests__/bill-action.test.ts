@@ -2,8 +2,8 @@ import {beforeEach, describe, expect, it, test} from "@jest/globals";
 import {prismaMock} from "./singleton_prisma";
 import {
     generateBillItemsFromBookingAddons,
+    generateBookingBillandBillItems,
     generatePaymentBillMappingFromPaymentsAndBills,
-    generateRoomBillAndBillItems,
     getUnpaidBillsDueAction,
     simulateUnpaidBillPaymentAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
@@ -1028,7 +1028,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
-                                amount: new Prisma.Decimal(120000),
+                        amount: new Prisma.Decimal(120000),
                     },
                 ],
             ],
@@ -1114,7 +1114,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                                amount: new Prisma.Decimal(300000),
+                        amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1123,7 +1123,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (April 15 - April 30)',
-                                amount: new Prisma.Decimal(64000),
+                        amount: new Prisma.Decimal(64000),
                     },
                 ],
             ],
@@ -1132,7 +1132,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (May 1 - June 14)',
-                                amount: new Prisma.Decimal(176000),
+                        amount: new Prisma.Decimal(176000),
                     },
                 ],
             ],
@@ -1164,7 +1164,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                                amount: new Prisma.Decimal(300000),
+                        amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1196,7 +1196,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                                amount: new Prisma.Decimal(300000),
+                        amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1230,7 +1230,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                                amount: new Prisma.Decimal(300000),
+                        amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1239,7 +1239,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1248,7 +1248,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1257,7 +1257,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1266,7 +1266,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1300,7 +1300,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                                amount: new Prisma.Decimal(300000),
+                        amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1309,7 +1309,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1318,7 +1318,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1327,11 +1327,11 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
-                                amount: new Prisma.Decimal(120000),
+                        amount: new Prisma.Decimal(120000),
                     },
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1340,11 +1340,11 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
-                                amount: new Prisma.Decimal(120000),
+                        amount: new Prisma.Decimal(120000),
                     },
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
-                                amount: new Prisma.Decimal(50000),
+                        amount: new Prisma.Decimal(50000),
                     },
                 ],
             ],
@@ -1383,7 +1383,7 @@ describe('generateBillItemsFromBookingAddons', () => {
                 [
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                                amount: new Prisma.Decimal(300000),
+                        amount: new Prisma.Decimal(300000),
                     },
                 ],
             ],
@@ -1393,11 +1393,11 @@ describe('generateBillItemsFromBookingAddons', () => {
 
                     {
                         description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - April 30)',
-                                amount: new Prisma.Decimal(150000),
+                        amount: new Prisma.Decimal(150000),
                     },
                     {
                         description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
-                                amount: new Prisma.Decimal(120000),
+                        amount: new Prisma.Decimal(120000),
                     },
                 ],
             ],
@@ -1516,22 +1516,55 @@ describe("generateRoomBillAndBillItems", () => {
             fee: new Prisma.Decimal(300000),
             start_date: new Date(2023, 0, 1), // January 1, 2023
         };
-        const duration = { month_count: 3 };
+        const duration = {month_count: 3};
 
-        const result = await generateRoomBillAndBillItems(data, duration);
+        const result = await generateBookingBillandBillItems(data, duration);
 
-        expect(result.bills).toEqual([
+        expect(result.billsWithBillItems).toEqual([
             {
                 description: "Tagihan untuk Bulan January",
                 due_date: new Date(2023, 0, 31), // January 31, 2023
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(300000),
+                                description: "Biaya Sewa Kamar (January 1-31)",
+                                type: BillType.GENERATED
+                            }
+                        ],
+                    }
+                }
             },
             {
                 description: "Tagihan untuk Bulan February",
                 due_date: new Date(2023, 1, 28), // February 28, 2023
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(300000),
+                                description: "Biaya Sewa Kamar (February 1-28)",
+                                type: BillType.GENERATED
+                            },
+                        ]
+                    }
+                }
             },
             {
                 description: "Tagihan untuk Bulan March",
                 due_date: new Date(2023, 2, 31), // March 31, 2023
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(300000),
+                                description: "Biaya Sewa Kamar (March 1-31)",
+                                type: BillType.GENERATED
+                            },
+                        ]
+                    }
+                }
             },
         ]);
 
@@ -1539,14 +1572,17 @@ describe("generateRoomBillAndBillItems", () => {
             {
                 amount: new Prisma.Decimal(300000),
                 description: "Biaya Sewa Kamar (January 1-31)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(300000),
                 description: "Biaya Sewa Kamar (February 1-28)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(300000),
                 description: "Biaya Sewa Kamar (March 1-31)",
+                type: BillType.GENERATED
             },
         ]);
 
@@ -1556,50 +1592,139 @@ describe("generateRoomBillAndBillItems", () => {
     it("should generate prorated bills and bill items if the start date is not the 1st", async () => {
         const data = {
             fee: new Prisma.Decimal(300000),
+            secondResidentFee: new Prisma.Decimal(150000),
             start_date: new Date(2023, 0, 15), // January 15, 2023
         };
-        const duration = { month_count: 3 };
+        const duration = {month_count: 3};
 
-        const result = await generateRoomBillAndBillItems(data, duration);
+        const result = await generateBookingBillandBillItems(data, duration);
 
-        expect(result.bills).toEqual([
+        const proratedAmount = Math.round((300000 / 31) * 17); // 17 days remaining in January
+        expect(result.billsWithBillItems).toEqual([
             {
                 description: "Tagihan untuk Bulan January",
                 due_date: new Date(2023, 0, 31), // January 31, 2023
+                bill_item: {
+                    createMany: {
+                        data: expect.arrayContaining([
+                            {
+                                amount: new Prisma.Decimal(Math.round(proratedAmount / 2)),
+                                description: "Biaya Penghuni Kedua (January 15-31)",
+                                type: BillType.GENERATED
+                            },
+                            {
+                                amount: new Prisma.Decimal(proratedAmount),
+                                description: "Biaya Sewa Kamar (January 15-31)",
+                                type: BillType.GENERATED
+                            },
+                        ])
+                    }
+                }
             },
             {
                 description: "Tagihan untuk Bulan February",
                 due_date: new Date(2023, 1, 28), // February 28, 2023
+                bill_item: {
+                    createMany: {
+                        data: expect.arrayContaining([
+                            {
+                                amount: new Prisma.Decimal(300000),
+                                description: "Biaya Sewa Kamar (February 1-28)",
+                                type: BillType.GENERATED
+                            },
+                            {
+                                amount: new Prisma.Decimal(150000),
+                                description: "Biaya Penghuni Kedua (February 1-28)",
+                                type: BillType.GENERATED
+                            }
+                        ])
+                    }
+                }
             },
             {
                 description: "Tagihan untuk Bulan March",
                 due_date: new Date(2023, 2, 31), // March 31, 2023
+                bill_item: {
+                    createMany: {
+                        data: expect.arrayContaining([
+                            {
+                                amount: new Prisma.Decimal(300000),
+                                description: "Biaya Sewa Kamar (March 1-31)",
+                                type: BillType.GENERATED
+                            },
+                            {
+                                amount: new Prisma.Decimal(150000),
+                                description: "Biaya Penghuni Kedua (March 1-31)",
+                                type: BillType.GENERATED
+                            }
+                        ])
+                    }
+                }
             },
             {
                 description: "Tagihan untuk Bulan April",
                 due_date: new Date(2023, 3, 30), // April 30, 2023
+                bill_item: {
+                    createMany: {
+                        data: expect.arrayContaining([
+                            {
+                                amount: new Prisma.Decimal(300000),
+                                description: "Biaya Sewa Kamar (April 1-30)",
+                                type: BillType.GENERATED
+                            },
+                            {
+                                amount: new Prisma.Decimal(150000),
+                                description: "Biaya Penghuni Kedua (April 1-30)",
+                                type: BillType.GENERATED
+                            }
+                        ])
+                    }
+                }
             },
         ]);
 
-        const proratedAmount = Math.round((300000 / 31) * 17); // 17 days remaining in January
-        expect(result.billItems).toEqual([
+        expect(result.billItems).toEqual(expect.arrayContaining([
             {
                 amount: new Prisma.Decimal(proratedAmount),
                 description: "Biaya Sewa Kamar (January 15-31)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(300000),
                 description: "Biaya Sewa Kamar (February 1-28)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(300000),
                 description: "Biaya Sewa Kamar (March 1-31)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(300000),
                 description: "Biaya Sewa Kamar (April 1-30)",
+                type: BillType.GENERATED
             },
-        ]);
+            {
+                amount: new Prisma.Decimal(Math.round(proratedAmount / 2)),
+                description: "Biaya Penghuni Kedua (January 15-31)",
+                type: BillType.GENERATED
+            },
+            {
+                amount: new Prisma.Decimal(150000),
+                description: "Biaya Penghuni Kedua (February 1-28)",
+                type: BillType.GENERATED
+            },
+            {
+                amount: new Prisma.Decimal(150000),
+                description: "Biaya Penghuni Kedua (March 1-31)",
+                type: BillType.GENERATED
+            },
+            {
+                amount: new Prisma.Decimal(150000),
+                description: "Biaya Penghuni Kedua (April 1-30)",
+                type: BillType.GENERATED
+            }
+        ]));
 
         expect(result.endDate).toEqual(new Date(2023, 3, 30)); // April 30, 2023
     });
@@ -1609,30 +1734,54 @@ describe("generateRoomBillAndBillItems", () => {
             fee: new Prisma.Decimal(250000),
             start_date: new Date(2023, 4, 10), // May 10, 2023
         };
-        const duration = { month_count: 1 };
+        const duration = {month_count: 1};
 
-        const result = await generateRoomBillAndBillItems(data, duration);
+        const result = await generateBookingBillandBillItems(data, duration);
 
-        expect(result.bills).toEqual([
+        const proratedAmount = Math.round((250000 / 31) * 22); // 22 days remaining in May
+        expect(result.billsWithBillItems).toEqual([
             {
                 description: "Tagihan untuk Bulan May",
                 due_date: new Date(2023, 4, 31), // May 31, 2023
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(proratedAmount),
+                                description: "Biaya Sewa Kamar (May 10-31)",
+                                type: BillType.GENERATED
+                            }
+                        ]
+                    },
+                }
             },
             {
                 description: "Tagihan untuk Bulan June",
                 due_date: new Date(2023, 5, 30), // May 31, 2023
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(data.fee),
+                                description: "Biaya Sewa Kamar (June 1-30)",
+                                type: BillType.GENERATED
+                            },
+                        ]
+                    }
+                }
             },
         ]);
 
-        const proratedAmount = Math.round((250000 / 31) * 22); // 22 days remaining in May
         expect(result.billItems).toEqual([
             {
                 amount: new Prisma.Decimal(proratedAmount),
                 description: "Biaya Sewa Kamar (May 10-31)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(data.fee),
                 description: "Biaya Sewa Kamar (June 1-30)",
+                type: BillType.GENERATED
             },
         ]);
 
@@ -1644,12 +1793,12 @@ describe("generateRoomBillAndBillItems", () => {
             fee: new Prisma.Decimal(500000),
             start_date: new Date(2023, 6, 1), // July 1, 2023
         };
-        const duration = { month_count: 0 }; // No months
+        const duration = {month_count: 0}; // No months
 
         const date = new Date();
-        const result = await generateRoomBillAndBillItems(data, duration);
+        const result = await generateBookingBillandBillItems(data, duration);
 
-        expect(result.bills).toEqual([]);
+        expect(result.billsWithBillItems).toEqual([]);
         expect(result.billItems).toEqual([]);
         expect(result.endDate.getFullYear()).toEqual(date.getFullYear());
         expect(result.endDate.getMonth()).toEqual(date.getMonth());
@@ -1661,38 +1810,74 @@ describe("generateRoomBillAndBillItems", () => {
             fee: new Prisma.Decimal(200000),
             start_date: new Date(2024, 1, 20), // February 20, 2024 (Leap Year)
         };
-        const duration = { month_count: 2 };
+        const duration = {month_count: 2};
 
-        const result = await generateRoomBillAndBillItems(data, duration);
+        const result = await generateBookingBillandBillItems(data, duration);
 
-        expect(result.bills).toEqual([
+        const proratedAmount = Math.round((200000 / 29) * 10); // 10 days remaining in February
+        expect(result.billsWithBillItems).toEqual([
             {
                 description: "Tagihan untuk Bulan February",
                 due_date: new Date(2024, 1, 29), // February 29, 2024
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(proratedAmount),
+                                description: "Biaya Sewa Kamar (February 20-29)",
+                                type: BillType.GENERATED
+                            },
+                        ]
+                    }
+                }
             },
             {
                 description: "Tagihan untuk Bulan March",
                 due_date: new Date(2024, 2, 31), // March 31, 2024
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(200000),
+                                description: "Biaya Sewa Kamar (March 1-31)",
+                                type: BillType.GENERATED
+                            },
+                        ]
+                    }
+                }
             },
             {
                 description: "Tagihan untuk Bulan April",
                 due_date: new Date(2024, 3, 30), // April 33, 2024
+                bill_item: {
+                    createMany: {
+                        data: [
+                            {
+                                amount: new Prisma.Decimal(200000),
+                                description: "Biaya Sewa Kamar (April 1-30)",
+                                type: BillType.GENERATED
+                            },
+                        ]
+                    }
+                }
             },
         ]);
 
-        const proratedAmount = Math.round((200000 / 29) * 10); // 10 days remaining in February
         expect(result.billItems).toEqual([
             {
                 amount: new Prisma.Decimal(proratedAmount),
                 description: "Biaya Sewa Kamar (February 20-29)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(200000),
                 description: "Biaya Sewa Kamar (March 1-31)",
+                type: BillType.GENERATED
             },
             {
                 amount: new Prisma.Decimal(200000),
                 description: "Biaya Sewa Kamar (April 1-30)",
+                type: BillType.GENERATED
             },
         ]);
 
@@ -1703,15 +1888,15 @@ describe("generateRoomBillAndBillItems", () => {
 describe("matchBillItemsToBills", () => {
     it("should correctly match bill items to the closest bills", async () => {
         const billItemsByDueDate = new Map([
-            [new Date("2023-01-10"), [{ id: 1, description: "Item 1" }, { id: 2, description: "Item 2" }]],
-            [new Date("2023-02-15"), [{ id: 3, description: "Item 3" }]],
-            [new Date("2023-03-20"), [{ id: 4, description: "Item 4" }]],
+            [new Date("2023-01-10"), [{id: 1, description: "Item 1"}, {id: 2, description: "Item 2"}]],
+            [new Date("2023-02-15"), [{id: 3, description: "Item 3"}]],
+            [new Date("2023-03-20"), [{id: 4, description: "Item 4"}]],
         ]);
 
         const bills = [
-            { id: 101, due_date: new Date("2023-01-10") },
-            { id: 102, due_date: new Date("2023-02-01") },
-            { id: 103, due_date: new Date("2023-03-25") },
+            {id: 101, due_date: new Date("2023-01-10")},
+            {id: 102, due_date: new Date("2023-02-01")},
+            {id: 103, due_date: new Date("2023-03-25")},
         ];
 
         // @ts-expect-error TS2345: bill-items incomplete
@@ -1722,24 +1907,24 @@ describe("matchBillItemsToBills", () => {
                 [
                     101,
                     [
-                        { id: 1, description: "Item 1" },
-                        { id: 2, description: "Item 2" },
+                        {id: 1, description: "Item 1"},
+                        {id: 2, description: "Item 2"},
                     ],
                 ],
-                [102, [{ id: 3, description: "Item 3" }]],
-                [103, [{ id: 4, description: "Item 4" }]],
+                [102, [{id: 3, description: "Item 3"}]],
+                [103, [{id: 4, description: "Item 4"}]],
             ])
         );
     });
 
     it("should match items to the closest earlier bill if no exact match exists", async () => {
         const billItemsByDueDate = new Map([
-            [new Date("2023-02-10"), [{ id: 5, description: "Item 5" }]],
+            [new Date("2023-02-10"), [{id: 5, description: "Item 5"}]],
         ]);
 
         const bills = [
-            { id: 201, due_date: new Date("2023-01-31") },
-            { id: 202, due_date: new Date("2023-03-01") },
+            {id: 201, due_date: new Date("2023-01-31")},
+            {id: 202, due_date: new Date("2023-03-01")},
         ];
 
         // @ts-expect-error TS2345: bill-items incomplete
@@ -1747,19 +1932,19 @@ describe("matchBillItemsToBills", () => {
 
         expect(result).toEqual(
             new Map([
-                [201, [{ id: 5, description: "Item 5" }]],
+                [201, [{id: 5, description: "Item 5"}]],
             ])
         );
     });
 
     it("should match items to the closest earlier bill if no exact match exists 2", async () => {
         const billItemsByDueDate = new Map([
-            [new Date("2023-05-10"), [{ id: 6, description: "Item 6" }]],
+            [new Date("2023-05-10"), [{id: 6, description: "Item 6"}]],
         ]);
 
         const bills = [
-            { id: 301, due_date: new Date("2023-03-01") },
-            { id: 302, due_date: new Date("2023-04-01") },
+            {id: 301, due_date: new Date("2023-03-01")},
+            {id: 302, due_date: new Date("2023-04-01")},
         ];
 
         // @ts-expect-error TS2345: bill-items incomplete
@@ -1767,14 +1952,14 @@ describe("matchBillItemsToBills", () => {
 
         expect(result).toEqual(
             new Map([
-                [302, [{ id: 6, description: "Item 6" }]],
+                [302, [{id: 6, description: "Item 6"}]],
             ])
         );
     });
 
     it("should handle an empty list of bills", async () => {
         const billItemsByDueDate = new Map([
-            [new Date("2023-02-10"), [{ id: 7, description: "Item 7" }]],
+            [new Date("2023-02-10"), [{id: 7, description: "Item 7"}]],
         ]);
 
         const bills: { id: number; due_date: Date }[] = [];
@@ -1788,8 +1973,8 @@ describe("matchBillItemsToBills", () => {
     it("should handle an empty map of bill items", async () => {
         const billItemsByDueDate = new Map();
         const bills = [
-            { id: 401, due_date: new Date("2023-01-01") },
-            { id: 402, due_date: new Date("2023-02-01") },
+            {id: 401, due_date: new Date("2023-01-01")},
+            {id: 402, due_date: new Date("2023-02-01")},
         ];
 
         const result = await matchBillItemsToBills(billItemsByDueDate, bills);
