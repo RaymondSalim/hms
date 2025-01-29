@@ -578,18 +578,18 @@ export function BookingForm(props: BookingFormProps) {
                                                 Ada Penghuni Kedua
                                             </Typography>
                                         }
-                                        checked={bookingData.secondResidentFee != undefined}
+                                        checked={bookingData.second_resident_fee != undefined}
                                         onChange={(e) => {
                                             setBookingData(b => ({
                                                 ...b,
-                                                secondResidentFee: e.target.checked ? new Prisma.Decimal(0) : undefined
+                                                second_resident_fee: e.target.checked ? new Prisma.Decimal(0) : undefined
                                             }));
                                         }}
                                         containerProps={{
                                             className: "-ml-3",
                                         }}
                                     />
-                                    {bookingData.secondResidentFee != undefined && (
+                                    {bookingData.second_resident_fee != undefined && (
                                         <motion.div
                                             initial={{opacity: 0, height: 0}}
                                             animate={{opacity: 1, height: "auto"}}
@@ -602,24 +602,24 @@ export function BookingForm(props: BookingFormProps) {
                                                 </Typography>
                                             </label>
                                             <CurrencyInput
-                                                name={"secondResidentFee"}
-                                                value={Number(bookingData.secondResidentFee) || ""}
+                                                name={"second_resident_fee"}
+                                                value={Number(bookingData.second_resident_fee) || ""}
                                                 setValue={(newValue) => {
                                                     setBookingData(old => ({
                                                         ...old,
-                                                        secondResidentFee: newValue == undefined ? undefined : new Prisma.Decimal(newValue)
+                                                        second_resident_fee: newValue == undefined ? undefined : new Prisma.Decimal(newValue)
                                                     }));
                                                 }}
                                                 size="lg"
-                                                error={!!fieldErrors?.secondResidentFee}
-                                                className={`${!!fieldErrors?.secondResidentFee ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
+                                                error={!!fieldErrors?.second_resident_fee}
+                                                className={`${!!fieldErrors?.second_resident_fee ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
                                                 labelProps={{
                                                     className: "before:content-none after:content-none",
                                                 }}
                                             />
                                             {
-                                                fieldErrors?.secondResidentFee &&
-                                                <Typography color="red">{fieldErrors?.secondResidentFee._errors}</Typography>
+                                                fieldErrors?.second_resident_fee &&
+                                                <Typography color="red">{fieldErrors?.second_resident_fee._errors}</Typography>
                                             }
                                         </motion.div>
                                     )}
