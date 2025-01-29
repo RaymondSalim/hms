@@ -1592,7 +1592,7 @@ describe("generateRoomBillAndBillItems", () => {
     it("should generate prorated bills and bill items if the start date is not the 1st", async () => {
         const data = {
             fee: new Prisma.Decimal(300000),
-            secondResidentFee: new Prisma.Decimal(150000),
+            second_resident_fee: new Prisma.Decimal(150000),
             start_date: new Date(2023, 0, 15), // January 15, 2023
         };
         const duration = {month_count: 3};
