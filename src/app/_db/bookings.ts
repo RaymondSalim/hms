@@ -68,6 +68,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                     fee,
                     start_date: data.start_date,
                     end_date: endDate,
+                    second_resident_fee: data.second_resident_fee,
                     deposit,
                     rooms: {
                         connect: {
@@ -329,6 +330,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                     start_date: data.start_date,
                     end_date: endDate,
                     deposit: data.deposit,
+                    second_resident_fee: data.second_resident_fee,
                     rooms: {
                         connect: {
                             id: data.room_id!
