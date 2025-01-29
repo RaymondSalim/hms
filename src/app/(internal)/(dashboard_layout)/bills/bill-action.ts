@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
-import {Bill, Booking, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
+import {Bill, BillType, Booking, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
     BillIncludeAll,
     billIncludeAll,
@@ -18,7 +18,7 @@ import {billSchemaWithOptionalID} from "@/app/_lib/zod/bill/zod";
 import {number, object} from "zod";
 import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
-import {BookingsIncludeAll} from "@/app/_db/bookings";
+import {UpsertBookingPayload} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
 import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 
@@ -668,8 +668,8 @@ export async function generateBillItemsFromBookingAddons(
     );
 }
 
-export async function generateRoomBillAndBillItems(
-    data: Pick<BookingsIncludeAll, "fee" | "start_date">,
+export async function generateBookingBillandBillItems(
+    data: Pick<UpsertBookingPayload, "fee" | "start_date" | "secondResidentFee">,
     duration: Pick<Duration, "month_count">
 ) {
     const fee = data.fee;
@@ -677,7 +677,7 @@ export async function generateRoomBillAndBillItems(
     let endDate = new Date();
 
     const bills: PartialBy<BillUncheckedCreateInput, "id" | "booking_id">[] = [];
-    const billItems: PartialBy<BillItemUncheckedCreateInput, "bill_id">[] = [];
+    let billItems: PartialBy<BillItemUncheckedCreateInput, "bill_id">[] = [];
 
     if (duration.month_count) {
         const totalDaysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
@@ -688,40 +688,96 @@ export async function generateRoomBillAndBillItems(
             const dailyRate = Number(fee) / totalDaysInMonth;
             const proratedAmount = dailyRate * remainingDays;
 
+            let bi = [];
+            let billItemDate = `(${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth})`;
+            bi.push({
+                amount: new Prisma.Decimal(Math.round(proratedAmount)),
+                description: `Biaya Sewa Kamar ${billItemDate}`,
+                type: BillType.GENERATED
+            });
+            if (data.secondResidentFee) {
+                const dailyRate = Number(data.secondResidentFee) / totalDaysInMonth;
+                const proratedAmount = dailyRate * remainingDays;
+                bi.push({
+                    amount: new Prisma.Decimal(Math.round(proratedAmount)),
+                    description: `Biaya Penghuni Kedua ${billItemDate}`,
+                    type: BillType.GENERATED
+                });
+            }
+            billItems = billItems.concat(bi);
+
             bills.push({
                 description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', {month: 'long'})}`,
-                due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours())
+                due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours()),
+                bill_item: {
+                    createMany: {
+                        data: bi
+                    }
+                },
             });
-            billItems.push({
-                amount: new Prisma.Decimal(Math.round(proratedAmount)),
-                description: `Biaya Sewa Kamar (${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth})`,
-            });
+
 
             // Add full monthly bills for subsequent months, except the last one
             for (let i = 1; i < duration.month_count; i++) {
                 const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
                 const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
 
-                billItems.push({
+                let bi = [];
+                let billItemDate = `(${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`;
+
+                bi.push({
                     amount: new Prisma.Decimal(fee),
-                    description: `Biaya Sewa Kamar (${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`,
+                    description: `Biaya Sewa Kamar ${billItemDate}`,
+                    type: BillType.GENERATED
                 });
+                if (data.secondResidentFee) {
+                    bi.push({
+                        amount: data.secondResidentFee,
+                        description: `Biaya Penghuni Kedua ${billItemDate}`,
+                        type: BillType.GENERATED
+                    });
+                }
+                billItems = billItems.concat(bi);
+
                 bills.push({
                     description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {month: 'long'})}`,
                     due_date: billEndDate,
+                    bill_item: {
+                        createMany: {
+                            data: bi
+                        }
+                    },
                 });
             }
 
             // Add full monthly bill for the last month
             const lastMonthStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + duration.month_count, 1, startDate.getHours());
             const lastMonthEndDate = new Date(lastMonthStartDate.getFullYear(), lastMonthStartDate.getMonth() + 1, 0, startDate.getHours());
-            billItems.push({
+
+            bi = [];
+            billItemDate = `(${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()})`;
+            bi.push({
                 amount: new Prisma.Decimal(fee),
-                description: `Biaya Sewa Kamar (${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()})`,
+                description: `Biaya Sewa Kamar ${billItemDate}`,
+                type: BillType.GENERATED
             });
+            if (data.secondResidentFee) {
+                bi.push({
+                    amount: data.secondResidentFee,
+                    description: `Biaya Penghuni Kedua ${billItemDate}`,
+                    type: BillType.GENERATED
+                });
+            }
+            billItems = billItems.concat(bi);
+
             bills.push({
                 description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', {month: 'long'})}`,
                 due_date: lastMonthEndDate,
+                bill_item: {
+                    createMany: {
+                        data: bi
+                    }
+                },
             });
             endDate = lastMonthEndDate;
 
@@ -731,13 +787,30 @@ export async function generateRoomBillAndBillItems(
                 const billStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1, startDate.getHours());
                 const billEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + i + 1, 0, startDate.getHours());
 
-                billItems.push({
+                let bi = [];
+                let billItemDate = `(${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`;
+                bi.push({
                     amount: new Prisma.Decimal(fee),
-                    description: `Biaya Sewa Kamar (${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`,
+                    description: `Biaya Sewa Kamar ${billItemDate}`,
+                    type: BillType.GENERATED
                 });
+                if (data.secondResidentFee) {
+                    bi.push({
+                        amount: data.secondResidentFee,
+                        description: `Biaya Penghuni Kedua ${billItemDate}`,
+                        type: BillType.GENERATED
+                    });
+                }
+                billItems = billItems.concat(bi);
+
                 bills.push({
                     description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {month: 'long'})}`,
                     due_date: billEndDate,
+                    bill_item: {
+                        createMany: {
+                            data: bi
+                        }
+                    },
                 });
 
                 endDate = billEndDate;
@@ -746,7 +819,7 @@ export async function generateRoomBillAndBillItems(
     }
 
     return {
-        bills,
+        billsWithBillItems: bills,
         billItems,
         endDate
     };
