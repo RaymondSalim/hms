@@ -669,7 +669,7 @@ export async function generateBillItemsFromBookingAddons(
 }
 
 export async function generateBookingBillandBillItems(
-    data: Pick<UpsertBookingPayload, "fee" | "start_date" | "secondResidentFee">,
+    data: Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">,
     duration: Pick<Duration, "month_count">
 ) {
     const fee = data.fee;
@@ -695,8 +695,8 @@ export async function generateBookingBillandBillItems(
                 description: `Biaya Sewa Kamar ${billItemDate}`,
                 type: BillType.GENERATED
             });
-            if (data.secondResidentFee) {
-                const dailyRate = Number(data.secondResidentFee) / totalDaysInMonth;
+            if (data.second_resident_fee) {
+                const dailyRate = Number(data.second_resident_fee) / totalDaysInMonth;
                 const proratedAmount = dailyRate * remainingDays;
                 bi.push({
                     amount: new Prisma.Decimal(Math.round(proratedAmount)),
@@ -730,9 +730,9 @@ export async function generateBookingBillandBillItems(
                     description: `Biaya Sewa Kamar ${billItemDate}`,
                     type: BillType.GENERATED
                 });
-                if (data.secondResidentFee) {
+                if (data.second_resident_fee) {
                     bi.push({
-                        amount: data.secondResidentFee,
+                        amount: data.second_resident_fee,
                         description: `Biaya Penghuni Kedua ${billItemDate}`,
                         type: BillType.GENERATED
                     });
@@ -761,9 +761,9 @@ export async function generateBookingBillandBillItems(
                 description: `Biaya Sewa Kamar ${billItemDate}`,
                 type: BillType.GENERATED
             });
-            if (data.secondResidentFee) {
+            if (data.second_resident_fee) {
                 bi.push({
-                    amount: data.secondResidentFee,
+                    amount: data.second_resident_fee,
                     description: `Biaya Penghuni Kedua ${billItemDate}`,
                     type: BillType.GENERATED
                 });
@@ -794,9 +794,9 @@ export async function generateBookingBillandBillItems(
                     description: `Biaya Sewa Kamar ${billItemDate}`,
                     type: BillType.GENERATED
                 });
-                if (data.secondResidentFee) {
+                if (data.second_resident_fee) {
                     bi.push({
-                        amount: data.secondResidentFee,
+                        amount: data.second_resident_fee,
                         description: `Biaya Penghuni Kedua ${billItemDate}`,
                         type: BillType.GENERATED
                     });

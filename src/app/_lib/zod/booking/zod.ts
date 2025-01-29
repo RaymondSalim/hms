@@ -40,7 +40,7 @@ export const bookingSchema = object({
         number({required_error: "Deposit perlu diisi"})
             .min(1, "Deposit harus lebih besar daripada 0")
     ).optional(),
-    secondResidentFee: preprocess(
+    second_resident_fee: preprocess(
         (val) => {
             if (val == undefined) {
                 return undefined;

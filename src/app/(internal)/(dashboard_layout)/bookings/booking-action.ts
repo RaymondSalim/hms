@@ -11,9 +11,7 @@ import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@p
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 
-export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll> & {
-    secondResidentFee?: Prisma.Decimal
-}
+export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
 
 export async function upsertBookingAction(reqData: UpsertBookingPayload) {
     const {success, data, error} = bookingSchema.safeParse(reqData);
