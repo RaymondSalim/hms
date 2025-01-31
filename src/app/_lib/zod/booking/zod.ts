@@ -40,5 +40,20 @@ export const bookingSchema = object({
         number({required_error: "Deposit perlu diisi"})
             .min(1, "Deposit harus lebih besar daripada 0")
     ).optional(),
+    second_resident_fee: preprocess(
+        (val) => {
+            if (val == undefined) {
+                return undefined;
+            }
+
+            if (typeof val == "string") {
+                return Number(val);
+            }
+
+            return val;
+        },
+        number({required_error: "Tambahan harga perlu diisi"})
+            .min(0, "Tambahan harga harus lebih besar atau sama dengan 0")
+    ).optional(),
     addOns: z.array(BookingAddonSchema).optional(), // Addons associated with the booking
 });

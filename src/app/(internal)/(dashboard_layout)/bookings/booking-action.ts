@@ -1,7 +1,7 @@
 "use server";
 
 import {OmitTimestamp} from "@/app/_db/db";
-import {CheckInOutLog, Prisma} from "@prisma/client";
+import {Bill, BillItem, CheckInOutLog, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
@@ -11,171 +11,215 @@ import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@p
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 
-export async function upsertBookingAction(reqData: OmitTimestamp<BookingsIncludeAll>) {
-  const {success, data, error} = bookingSchema.safeParse(reqData);
+export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
 
-  if (!success) {
-    return {
-      errors: error?.format()
-    };
-  }
+export async function upsertBookingAction(reqData: UpsertBookingPayload) {
+    const {success, data, error} = bookingSchema.safeParse(reqData);
 
-  const {id, fee, start_date, duration_id, ...otherBookingData} = data;
+    if (!success) {
+        return {
+            errors: error?.format()
+        };
+    }
 
-  const duration = await prisma.duration.findUnique({
-    where: {id: duration_id},
-  });
+    const {id, fee, start_date, duration_id, ...otherBookingData} = data;
 
-  if (!duration) {
-    return {
-      failure: "Invalid Duration ID"
-    };
-  }
+    const duration = await prisma.duration.findUnique({
+        where: {id: duration_id},
+    });
 
-  // Verify that booking does not overlap
-  const today = new Date();
-  const lastDate = getLastDateOfBooking(start_date, duration);
-  data.end_date = lastDate;
+    if (!duration) {
+        return {
+            failure: "Invalid Duration ID"
+        };
+    }
 
-  const bookings = await prisma.booking.findMany({
-    where: {
-      AND: [
-        {
-          start_date: {
-            gte: new Date(today.getFullYear() - 2, today.getMonth(), today.getDate()),
-          }
+    // Verify that booking does not overlap
+    const today = new Date();
+    const lastDate = getLastDateOfBooking(start_date, duration);
+    data.end_date = lastDate;
+
+    const bookings = await prisma.booking.findMany({
+        where: {
+            AND: [
+                {
+                    start_date: {
+                        gte: new Date(today.getFullYear() - 2, today.getMonth(), today.getDate()),
+                    }
+                },
+                {
+                    room_id: otherBookingData.room_id
+                }
+            ],
+
         },
-        {
-          room_id: otherBookingData.room_id
+        include: {
+            durations: true
         }
-      ],
+    });
 
-    },
-    include: {
-      durations: true
-    }
-  });
-
-  type BookingDates = {
-    start_date: Date,
-    end_date: Date
-  };
-
-  function isBookingPossible(firstBooking: BookingDates, secondBooking: BookingDates) {
-    return secondBooking.start_date >= firstBooking.end_date || secondBooking.end_date <= firstBooking.start_date;
-  }
-
-  // TODO! Improvement: Divide into n-chunks then parallel
-  for (let i = 0; i < bookings.length; i++) {
-    let currBooking = bookings[i];
-    if (!isBookingPossible(
-      {
-        start_date: start_date,
-        end_date: lastDate,
-      },
-      {
-        start_date: currBooking.start_date,
-        end_date: currBooking.end_date
-      }
-    ) && currBooking.id != id) {
-      return {
-        failure: `Booking overlaps with booking ID: ${currBooking.id}`
-      };
-    }
-  }
-
-  try {
-    let res;
-
-    if (data?.id) {
-      // @ts-expect-error TS2345
-      res = await updateBookingByID(data.id, data, duration);
-    } else {
-      // @ts-expect-error TS2345
-      res = await createBooking(data, duration);
-    }
-    return {
-      // @ts-ignore
-      ...res
+    type BookingDates = {
+        start_date: Date,
+        end_date: Date
     };
-  } catch (error) {
-    if (error instanceof PrismaClientKnownRequestError) {
-      console.error("[upsertBookingAction][PrismaKnownError]", error.code, error.message);
-      if (error.code == "P2002") {
-        return {failure: "Booking is taken"};
-      }
-    } else if (error instanceof PrismaClientUnknownRequestError) {
-      console.error("[upsertBookingAction][PrismaUnknownError]", error.message);
-    } else {
-      console.error("[upsertBookingAction]", error);
+
+    function isBookingPossible(firstBooking: BookingDates, secondBooking: BookingDates) {
+        return secondBooking.start_date >= firstBooking.end_date || secondBooking.end_date <= firstBooking.start_date;
     }
 
-    return {failure: "Request unsuccessful"};
-  }
+    // TODO! Improvement: Divide into n-chunks then parallel
+    for (let i = 0; i < bookings.length; i++) {
+        let currBooking = bookings[i];
+        if (!isBookingPossible(
+            {
+                start_date: start_date,
+                end_date: lastDate,
+            },
+            {
+                start_date: currBooking.start_date,
+                end_date: currBooking.end_date
+            }
+        ) && currBooking.id != id) {
+            return {
+                failure: `Booking overlaps with booking ID: ${currBooking.id}`
+            };
+        }
+    }
+
+    try {
+        let res;
+
+        if (data?.id) {
+            // @ts-expect-error TS2345
+            res = await updateBookingByID(data.id, data, duration);
+        } else {
+            // @ts-expect-error TS2345
+            res = await createBooking(data, duration);
+        }
+        return {
+            // @ts-ignore
+            ...res
+        };
+    } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError) {
+            console.error("[upsertBookingAction][PrismaKnownError]", error.code, error.message);
+            if (error.code == "P2002") {
+                return {failure: "Booking is taken"};
+            }
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            console.error("[upsertBookingAction][PrismaUnknownError]", error.message);
+        } else {
+            console.error("[upsertBookingAction]", error);
+        }
+
+        return {failure: "Request unsuccessful"};
+    }
 }
 
 export async function getAllBookingsAction(...args: Parameters<typeof getAllBookings>) {
-  return getAllBookings(...args);
+    return getAllBookings(...args);
 }
 
 export async function deleteBookingAction(id: number) {
-  const parsedData = object({id: number().positive()}).safeParse({
-    id: id,
-  });
-
-  if (!parsedData.success) {
-    return {
-      errors: parsedData.error.format()
-    };
-  }
-
-  try {
-    let res = await prisma.booking.delete({
-      where: {
-        id: parsedData.data.id,
-      }
+    const parsedData = object({id: number().positive()}).safeParse({
+        id: id,
     });
 
-    return {
-      success: res,
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      failure: "Error deleting booking",
-    };
-  }
+    if (!parsedData.success) {
+        return {
+            errors: parsedData.error.format()
+        };
+    }
+
+    try {
+        let res = await prisma.booking.delete({
+            where: {
+                id: parsedData.data.id,
+            }
+        });
+
+        return {
+            success: res,
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            failure: "Error deleting booking",
+        };
+    }
 
 }
 
 export async function checkInOutAction(data: {
-  booking_id: number,
-  action: CheckInOutType
+    booking_id: number,
+    action: CheckInOutType
 }): Promise<GenericActionsType<CheckInOutLog>> {
-  const booking = await prisma.booking.findFirst({
-    where: {
-      id: data.booking_id
+    const booking = await prisma.booking.findFirst({
+        where: {
+            id: data.booking_id
+        }
+    });
+
+    if (!booking) {
+        return {
+            failure: "Booking not found"
+        };
     }
-  });
 
-  if (!booking) {
     return {
-      failure: "Booking not found"
+        success: await prisma.checkInOutLog.create({
+            data: {
+                tenant_id: booking.tenant_id!,
+                booking_id: data.booking_id,
+                event_date: new Date(),
+                event_type: data.action
+            },
+        })
     };
-  }
-
-  return {
-    success: await prisma.checkInOutLog.create({
-      data: {
-        tenant_id: booking.tenant_id!,
-        booking_id: data.booking_id,
-        event_date: new Date(),
-        event_type: data.action
-      },
-    })
-  };
 }
 
 export async function getBookingByIDAction<T extends Prisma.BookingInclude>(id: number, include?: T) {
-  return getBookingByID(id, include);
+    return getBookingByID(id, include);
+}
+
+export async function matchBillItemsToBills(
+    billItemsByDueDate: Map<Date, Omit<BillItem, "bill_id">[]>,
+    bills: Pick<Bill, "due_date" | "id">[]
+): Promise<Map<number, Omit<BillItem, "bill_id">[]>> {
+    // Sort bills by due_date for easier matching
+    const sortedBills = bills.sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
+
+    // Create a map to hold the results
+    const matchedBillItems: Map<number, Omit<BillItem, "bill_id">[]> = new Map();
+
+    Array.from(billItemsByDueDate.entries()).forEach(([dueDate, billItems]) => {
+        let closestBill: Pick<Bill, "due_date" | "id"> | null = null;
+
+        // Find the closest bill by due_date
+        for (const bill of sortedBills) {
+            if (
+                !closestBill ||
+                Math.abs(bill.due_date.getTime() - dueDate.getTime()) <
+                Math.abs(closestBill.due_date.getTime() - dueDate.getTime())
+            ) {
+                closestBill = bill;
+            }
+
+            // If we find an earlier match, we prefer it
+            if (bill.due_date.getTime() >= dueDate.getTime()) {
+                break;
+            }
+        }
+
+        if (closestBill) {
+            if (!matchedBillItems.has(closestBill.id)) {
+                matchedBillItems.set(closestBill.id, []);
+            }
+            matchedBillItems.get(closestBill.id)?.push(...billItems);
+        } else {
+            console.debug(`No matching bill found for due_date: ${dueDate}`);
+        }
+    });
+
+    return matchedBillItems;
 }

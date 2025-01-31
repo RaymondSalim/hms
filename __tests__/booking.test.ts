@@ -1,5 +1,5 @@
 import {prismaMock} from './singleton_prisma';
-import {AddOnPricing, BookingAddOn, Duration, Prisma} from '@prisma/client';
+import {AddOnPricing, Bill, BillItem, BillType, BookingAddOn, Duration, Payment, Prisma} from '@prisma/client';
 import {
     BookingsIncludeAddons,
     createBooking,
@@ -49,13 +49,14 @@ describe('Booking Actions', () => {
 
             const mockBookingData: Omit<BookingsIncludeAddons, "id" | "createdAt" | "updatedAt" | "end_date"> = {
                 fee: new Prisma.Decimal(1000),
+                deposit: new Prisma.Decimal(500),
                 addOns: [internetBookingAddon],
                 start_date: startDate,
                 tenant_id: 'tenant-1',
                 room_id: 1,
                 duration_id: 2,
                 status_id: 1,
-                custom_id: "#-1"
+                custom_id: "#-1",
             };
             const mockDuration: Partial<Duration> = {id: 2, month_count: 3};
             const mockCreatedBooking = {id: 1, ...mockBookingData};
@@ -66,12 +67,43 @@ describe('Booking Actions', () => {
             prismaMock.booking.create.mockResolvedValue(mockCreatedBooking);
             // @ts-expect-error mockResolvedValue error
             prismaMock.addOn.findFirstOrThrow.mockResolvedValue(internetAddon);
-            // @ts-expect-error mockResolvedValue error
-            prismaMock.bill.createManyAndReturn.mockResolvedValue([
-                {id: 1, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)},
-                {id: 2, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)},
-                {id: 3, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1)}
-            ]);
+            prismaMock.bill.create
+                // @ts-expect-error mockResolvedValue error
+                .mockResolvedValueOnce({
+                    id: 100, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1),
+                    bill_item: [
+                        {
+                            id: 5,
+                            type: BillType.GENERATED,
+                            amount: mockBookingData.fee
+                        },
+                        {
+                            id: 6,
+                            type: BillType.GENERATED,
+                            amount: mockBookingData.deposit
+                        },
+                    ]
+                })
+                .mockResolvedValueOnce({
+                    id: 200, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1),
+                    bill_item: [
+                        {
+                            id: 7,
+                            type: BillType.GENERATED,
+                            amount: mockBookingData.fee
+                        },
+                    ]
+                })
+                .mockResolvedValueOnce({
+                    id: 300, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1),
+                    bill_item: [
+                        {
+                            id: 8,
+                            type: BillType.GENERATED,
+                            amount: mockBookingData.fee
+                        },
+                    ]
+                });
             // @ts-expect-error mockResolvedValue error
             prismaMock.booking.findFirst.mockResolvedValue(mockCreatedBooking);
 
@@ -85,16 +117,73 @@ describe('Booking Actions', () => {
                 data: expect.any(Object),
                 // include: expect.any(Object),
             });
-            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledTimes(1);
+            expect(prismaMock.bill.create)
+                .toHaveBeenNthCalledWith(1, expect.objectContaining({
+                    data: expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        description: "Biaya Sewa Kamar (December 1-31)",
+                                        amount: new Prisma.Decimal(1000),
+                                        type: BillType.GENERATED
+                                    })
+                                ])
+                            }
+                        }
+                    })
+                }));
+            expect(prismaMock.bill.create)
+                .toHaveBeenNthCalledWith(2, expect.objectContaining({
+                    data: expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        description: "Biaya Sewa Kamar (January 1-31)",
+                                        amount: new Prisma.Decimal(1000),
+                                        type: BillType.GENERATED
+                                    })
+                                ])
+                            }
+                        }
+                    })
+                }));
+            expect(prismaMock.bill.create)
+                .toHaveBeenNthCalledWith(3, expect.objectContaining({
+                    data: expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        description: "Biaya Sewa Kamar (February 1-28)",
+                                        amount: new Prisma.Decimal(1000),
+                                        type: BillType.GENERATED
+                                    })
+                                ])
+                            }
+                        }
+                    })
+                }));
             expect(prismaMock.bookingAddOn.createMany).toHaveBeenCalledTimes(1);
             expect(prismaMock.billItem.createMany).toHaveBeenCalledWith({
                 data: expect.arrayContaining([
                     {
-                        bill_id: 1,
+                        bill_id: 100,
                         description: 'Biaya Layanan Tambahan (Internet) (December 1 - February 28)',
                         amount: new Prisma.Decimal(300000),
+                        type: BillType.GENERATED
                     },
                 ])
+            });
+            expect(prismaMock.billItem.create).toHaveBeenCalledWith({
+                data:
+                    {
+                        bill_id: 100,
+                        description: 'Deposit Kamar',
+                        amount: new Prisma.Decimal(500),
+                        type: BillType.GENERATED
+                    },
             });
             expect(prismaMock.booking.findFirst).toHaveBeenCalledWith({
                 where: {id: mockCreatedBooking.id},
@@ -119,21 +208,57 @@ describe('Booking Actions', () => {
             prismaMock.$transaction.mockImplementation((callback) => callback(prismaMock));
             // @ts-expect-error
             prismaMock.booking.create.mockResolvedValue(mockBookingData);
-            // @ts-expect-error mockResolvedValue error
-            prismaMock.bill.createManyAndReturn.mockResolvedValue([
-                {id: 1, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)},
-                {id: 2, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)},
-                {id: 3, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1)}
-            ]);
+            prismaMock.bill.create
+                // @ts-expect-error mockReturnValueOnce error
+                .mockReturnValueOnce({
+                    id: 1, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)
+                })
+                .mockReturnValueOnce({
+                    id: 2, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)
+                })
+                .mockReturnValueOnce({
+                    id: 3, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1)
+                });
 
             // @ts-expect-error mockBookingData type
             await createBooking(mockBookingData, mockDuration);
-            expect(prismaMock.billItem.create).toHaveBeenCalledTimes(mockDuration.month_count + 1); // One for each month in duration + prorata
+            // @ts-expect-error mock
+            expect(prismaMock.bill.create.mock.calls[0][0])
+                .toEqual(expect.objectContaining({
+                    data: expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        amount: new Prisma.Decimal(800)
+                                    })
+                                ])
+                            }
+                        }
+                    })
+                }));
+            // @ts-expect-error mock
+            expect(prismaMock.bill.create.mock.calls[1][0])
+                .toEqual(expect.objectContaining({
+                    data: expect.objectContaining({
+                        bill_item: {
+                            createMany: {
+                                data: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        amount: new Prisma.Decimal(1500)
+                                    })
+                                ])
+                            }
+                        }
+                    })
+                }));
+
+            // expect(prismaMock.billItem.create).toHaveBeenCalledTimes(mockDuration.month_count + 1); // One for each month in duration + prorata
         });
     });
 
     describe('updateBookingByID', () => {
-        it('should update a booking with new bills and add-ons', async () => {
+        it('should update a booking with new bills, bill items, and add-ons', async () => {
             const mockBookingID = 1;
             const startDate = new Date(2024, 11, 1);
 
@@ -153,7 +278,7 @@ describe('Booking Actions', () => {
                 },
             ];
             const internetAddon: Partial<AddonIncludePricing> = {
-                id: 'addon--id1',
+                id: 'addon-id-1',
                 name: 'Internet',
                 pricing: internetAddonPricing,
             };
@@ -178,22 +303,43 @@ describe('Booking Actions', () => {
                 updatedAt: new Date()
             };
 
-            const mockData = {
-                fee: 2000,
+            const mockBookingData = {
+                fee: new Prisma.Decimal(2000),
                 addOns: [internetBookingAddon, internetBookingAddon2],
                 start_date: startDate,
+                deposit: new Prisma.Decimal(1000)
             };
             // @ts-expect-error duration error type
             const mockDuration: Duration = {id: 2, month_count: 3};
+            const mockCreatedBillItem: Partial<BillItem> = {
+                id: 10,
+                type: BillType.CREATED,
+                amount: new Prisma.Decimal(300)
+            };
+            const mockPayments: Partial<Payment>[] = [
+                {
+                    id: 1,
+                    amount: new Prisma.Decimal(200),
+                    payment_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -5)
+                },
+                {
+                    id: 2,
+                    amount: new Prisma.Decimal(1800),
+                    payment_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -3)
+                },
+                {
+                    id: 3,
+                    amount: new Prisma.Decimal(2000),
+                    payment_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -15)
+                }
+            ];
 
             // @ts-expect-error
             prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
             // @ts-expect-error
             prismaMock.booking.findFirst.mockResolvedValue({id: mockBookingID});
             // @ts-expect-error
-            prismaMock.bill.findMany.mockResolvedValue([{paymentBills: [{id: 1}, {id: 2}]}, {paymentBills: [{id: 3}]}]);
-            // @ts-expect-error
-            prismaMock.payment.findMany.mockResolvedValue([]);
+            prismaMock.payment.findMany.mockResolvedValue(mockPayments);
             // @ts-expect-error
             prismaMock.booking.update.mockResolvedValue({});
             // @ts-expect-error
@@ -231,32 +377,72 @@ describe('Booking Actions', () => {
             ]);
             // @ts-expect-error mockResolvedValue
             prismaMock.addOn.findFirstOrThrow.mockResolvedValue(internetAddon);
-            // @ts-expect-error mockResolvedValue error
-            prismaMock.bill.createManyAndReturn.mockResolvedValue([
-                {id: 1, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)},
-                {id: 2, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)},
-                {id: 3, due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1)}
-            ]);
+            const newBills: Partial<Bill & { bill_item: Partial<BillItem>[] }>[] = [
+                {
+                    id: 100,
+                    due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1),
+                    bill_item: [
+                        {
+                            id: 5,
+                            type: BillType.GENERATED,
+                            amount: new Prisma.Decimal(mockBookingData.fee)
+                        },
+                        {
+                            id: 6,
+                            type: BillType.GENERATED,
+                            amount: new Prisma.Decimal(mockBookingData.deposit)
+                        },
+                        mockCreatedBillItem
+                    ]
+                },
+                {
+                    id: 200,
+                    due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1),
+                    bill_item: [
+                        {
+                            id: 7,
+                            type: BillType.GENERATED,
+                            amount: new Prisma.Decimal(mockBookingData.fee)
+                        },
+                    ]
+                },
+                {
+                    id: 300,
+                    due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 3, -1),
+                    bill_item: [
+                        {
+                            id: 8,
+                            type: BillType.GENERATED,
+                            amount: new Prisma.Decimal(mockBookingData.fee)
+                        },
+                    ]
+                }
+            ];
+            prismaMock.bill.create
+                // @ts-expect-error mockReturnValueOnce error
+                .mockResolvedValueOnce(newBills[0])
+                .mockResolvedValueOnce(newBills[1])
+                .mockResolvedValueOnce(newBills[2]);
+            prismaMock.bill.findMany
+                // @ts-expect-error mockResolvedValue error
+                .mockReturnValueOnce([ // existing bills
+                    {
+                        paymentBills: [{id: 1}, {id: 2}],
+                        bill_item: [mockCreatedBillItem],
+                        due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 1, -1)
+                    },
+                    {
+                        paymentBills: [{id: 3}],
+                        bill_item: [],
+                        due_date: new Date(startDate.getFullYear(), startDate.getMonth() + 2, -1)
+                    }
+                ])
+                .mockReturnValueOnce(newBills);
 
             // @ts-expect-error mockData type
-            const result = await updateBookingByID(mockBookingID, mockData, mockDuration);
+            const result = await updateBookingByID(mockBookingID, mockBookingData, mockDuration);
 
             expect(result.success).toBeTruthy();
-            expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalledWith({
-                where: {
-                    id: {
-                        in: [1, 2, 3]
-                    }
-                }
-            });
-            expect(prismaMock.bill.deleteMany).toHaveBeenCalledWith({
-                where: {
-                    booking_id: mockBookingID
-                }
-            });
-            expect(prismaMock.bill.createManyAndReturn).toHaveBeenCalledTimes(1);
-            expect(prismaMock.booking.update).toHaveBeenCalledTimes(1);
-
             expect(prismaMock.bookingAddOn.deleteMany).toHaveBeenCalledWith({
                 where: {
                     id: {
@@ -273,6 +459,108 @@ describe('Booking Actions', () => {
                 data: expect.arrayContaining([expect.objectContaining({
                     input: "Internet"
                 })])
+            });
+            expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalledWith({
+                where: {
+                    id: {
+                        in: [1, 2, 3]
+                    }
+                }
+            });
+            expect(prismaMock.bill.deleteMany).toHaveBeenCalledWith({
+                where: {
+                    booking_id: mockBookingID
+                }
+            });
+            expect(prismaMock.bill.create).toHaveBeenNthCalledWith(1, expect.objectContaining({
+                data: expect.objectContaining({
+                    bill_item: expect.objectContaining({
+                        createMany: {
+                            data: expect.arrayContaining([
+                                expect.objectContaining({
+                                    description: expect.stringContaining("Biaya Sewa Kamar"),
+                                    amount: mockBookingData.fee,
+                                    type: BillType.GENERATED
+                                })
+                            ])
+                        }
+                    })
+                })
+            }));
+            expect(prismaMock.bill.create).toHaveBeenNthCalledWith(2, expect.objectContaining({
+                data: expect.objectContaining({
+                    bill_item: expect.objectContaining({
+                        createMany: {
+                            data: expect.arrayContaining([
+                                expect.objectContaining({
+                                    description: expect.stringContaining("Biaya Sewa Kamar"),
+                                    amount: mockBookingData.fee,
+                                    type: BillType.GENERATED
+                                })
+                            ])
+                        }
+                    })
+                })
+            }));
+            expect(prismaMock.bill.create).toHaveBeenNthCalledWith(3, expect.objectContaining({
+                data: expect.objectContaining({
+                    bill_item: expect.objectContaining({
+                        createMany: {
+                            data: expect.arrayContaining([
+                                expect.objectContaining({
+                                    description: expect.stringContaining("Biaya Sewa Kamar"),
+                                    amount: mockBookingData.fee,
+                                    type: BillType.GENERATED
+                                })
+                            ])
+                        }
+                    })
+                })
+            }));
+            expect(prismaMock.booking.update).toHaveBeenCalledTimes(1);
+            expect(prismaMock.billItem.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    bill_id: 100,
+                    description: "Deposit Kamar",
+                    amount: mockBookingData.deposit,
+                    type: BillType.GENERATED
+                })
+            });
+            expect(prismaMock.billItem.createMany).toHaveBeenNthCalledWith(1, {
+                data: expect.arrayContaining([
+                    expect.objectContaining({
+                        description: expect.stringContaining("Biaya Layanan Tambahan"),
+                        type: BillType.GENERATED
+                    })
+                ])
+            });
+            expect(prismaMock.billItem.createMany).toHaveBeenNthCalledWith(2, {
+                data: expect.arrayContaining([
+                    expect.objectContaining({
+                        ...mockCreatedBillItem,
+                        bill_id: 100,
+                    })
+                ])
+            });
+            expect(prismaMock.paymentBill.createManyAndReturn).toHaveBeenCalledWith({
+                data: expect.arrayContaining([
+                    expect.objectContaining({
+                        amount: new Prisma.Decimal(200),
+                        bill_id: 100,
+                    }),
+                    expect.objectContaining({
+                        amount: new Prisma.Decimal(1800),
+                        bill_id: 100,
+                    }),
+                    expect.objectContaining({
+                        amount: new Prisma.Decimal(1300),
+                        bill_id: 100,
+                    }),
+                    expect.objectContaining({
+                        amount: new Prisma.Decimal(700),
+                        bill_id: 200,
+                    })
+                ])
             });
         });
 
