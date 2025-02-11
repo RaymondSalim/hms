@@ -14,6 +14,9 @@ export default function ToastProvider({ children }: ToastProviderProps) {
             {children}
             <ToastContainer
                 position="bottom-left"
+                style={{
+                    zIndex: 99999
+                }}
             />
         </>
     );
