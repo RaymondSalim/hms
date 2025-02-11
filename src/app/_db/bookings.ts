@@ -10,6 +10,7 @@ import {
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {matchBillItemsToBills} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {BillIncludeBillItem} from "@/app/_db/bills";
+import {parsePrismaJson} from "@/app/_lib/util";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -198,7 +199,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
 
         const tamuBillItems = b.bill_item
             .filter((bi: BillItem) => {
-                let a = Prisma.parseJson(bi.related_id);
+                let a = parsePrismaJson(bi.related_id);
                 return a && a.hasOwnProperty("guest_stay_id");
             })
             .map((bi: BillItem) => ({

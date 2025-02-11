@@ -1,11 +1,6 @@
 import {Prisma, PrismaClient} from '@prisma/client';
 import QueryEvent = Prisma.QueryEvent;
 
-// @ts-ignore
-Prisma.parseJson = <T = string | number | boolean | Record<string, any> | Array<any> | null>(json: Prisma.JsonValue): T => {
-    return json as T;
-};
-
 const prismaClientSingleton = () => {
     let prisma = new PrismaClient({
         log: process.env.NODE_ENV != "production" ? [
@@ -26,13 +21,6 @@ const prismaClientSingleton = () => {
             console.groupEnd();
         });
     }
-
-    // ["Booking", ["start_date", "end_date"]],
-    //                     ["CheckInOutLog", ["event_date"]],
-    //                     ["Expense", ["event_date"]],
-    //                     ["Bill", ["due_date"]],
-    //                     ["Payment", ["payment_date"]],
-    //                     ["Report", ["generated_at"]],
 
     return prisma;
 };
