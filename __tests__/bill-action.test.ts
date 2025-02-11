@@ -27,7 +27,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -43,7 +44,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -59,7 +61,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -100,7 +103,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -116,7 +120,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -132,7 +137,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -177,7 +183,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -200,7 +207,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -223,7 +231,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -271,7 +280,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -294,7 +304,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -317,7 +328,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -359,7 +371,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -375,7 +388,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -391,7 +405,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -453,7 +468,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -506,7 +522,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -564,7 +581,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -624,7 +642,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -684,7 +703,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -702,7 +722,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -748,7 +769,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -766,7 +788,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -825,7 +848,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -843,7 +867,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -861,7 +886,8 @@ describe('BillAction', () => {
                             internal_description: null,
                             createdAt: new Date(),
                             updatedAt: new Date(),
-                            type: BillType.GENERATED
+                            type: BillType.GENERATED,
+                            related_id: null
                         }
                     ],
                     description: "",

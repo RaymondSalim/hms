@@ -26,6 +26,7 @@ model Booking {
   rooms           Room?           @relation(fields: [room_id], references: [id], onUpdate: NoAction)
   bookingstatuses BookingStatus?  @relation(fields: [status_id], references: [id], onUpdate: NoAction)
   tenants         Tenant?         @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
+  guests          Guest[]
   payments        Payment[]
   penalties       Penalty[]
   bills           Bill[]
@@ -103,17 +104,32 @@ model Expense {
 }
 
 model Guest {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(255)
-  email     String?  @db.VarChar(255)
-  phone     String?  @db.VarChar(255)
-  tenant_id String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(255)
+  email      String?  @db.VarChar(255)
+  phone      String?  @db.VarChar(255)
+  booking_id Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
-  tenants Tenant @relation(fields: [tenant_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  booking   Booking     @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  GuestStay GuestStay[]
 
   @@map("guests")
+}
+
+model GuestStay {
+  id         Int      @id @default(autoincrement())
+  guest_id   Int
+  start_date DateTime @db.Date
+  end_date   DateTime @db.Date
+  daily_fee  Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  guest Guest @relation(fields: [guest_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("guest_stays")
 }
 
 model Log {
@@ -149,6 +165,7 @@ enum BillType {
 model BillItem {
   id                   Int      @id @default(autoincrement())
   bill_id              Int
+  related_id           Json?
   description          String   @db.VarChar(255)
   internal_description String?  @db.VarChar(255)
   type                 BillType @default(GENERATED)
@@ -445,7 +462,6 @@ model Tenant {
   updatedAt DateTime @default(now()) @updatedAt
 
   bookings       Booking[]
-  guests         Guest[]
   checkInOutLogs CheckInOutLog[]
 
   @@map("tenants")

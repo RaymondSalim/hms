@@ -1,4 +1,4 @@
-import {Duration} from "@prisma/client";
+import {Duration, Prisma} from "@prisma/client";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 
 export const delay = (time: number) => new Promise((resolve, reject) => setTimeout(resolve, time));
@@ -132,4 +132,8 @@ export function parseDurationString(duration: string) {
     default:
       return 0;
   }
+}
+
+export function parsePrismaJson<T = Record<string, any>>(json: Prisma.JsonValue): T {
+  return json as T;
 }

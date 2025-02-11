@@ -669,7 +669,7 @@ export async function generateBillItemsFromBookingAddons(
 }
 
 export async function generateBookingBillandBillItems(
-    data: Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">,
+    data: PartialBy<Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">, "second_resident_fee">,
     duration: Pick<Duration, "month_count">
 ) {
     const fee = data.fee;

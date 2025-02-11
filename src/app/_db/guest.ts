@@ -4,73 +4,39 @@ import {Guest, Prisma} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 
-export type GuestWithTenant = Prisma.GuestGetPayload<{
+const guestIncludeAll = {
   include: {
-    tenants: {
+    booking: {
       include: {
-        bookings: {
-          include: {
-            rooms: true
-          }
-        }
+        tenants: true
       }
-    }
+    },
+    GuestStay: true
   }
-}>
+};
+
+export type GuestIncludeAll = Prisma.GuestGetPayload<typeof guestIncludeAll>
 
 export async function getGuests(id?: number, locationID?: number, limit?: number, offset?: number) {
   return prisma.guest.findMany({
     where: {
       id: id,
-      tenants: {
-        OR: [
-          {
-            bookings: {
-              some: {
-                rooms: {
-                  location_id: locationID
-                }
-              }
-            }
-          },
-          {
-            bookings: {
-              none: {}
-            }
-          }
-        ],
+      booking: {
+        rooms: {
+          location_id: locationID
+        }
       }
     },
     skip: offset,
     take: limit,
-    include: {
-      tenants: {
-        include: {
-          bookings: {
-            include: {
-              rooms: true,
-            }
-          }
-        }
-      }
-    }
+    include: guestIncludeAll.include
   });
 }
 
 export async function createGuest(guestData: OmitIDTypeAndTimestamp<Guest>) {
   return prisma.guest.create({
     data: guestData,
-    include: {
-      tenants: {
-        include: {
-          bookings: {
-            include: {
-              rooms: true
-            }
-          }
-        }
-      }
-    }
+    include: guestIncludeAll.include
   });
 }
 
@@ -81,33 +47,13 @@ export async function updateGuestByID(id: number, guestData: OmitIDTypeAndTimest
       id: undefined
     },
     where: {id},
-    include: {
-      tenants: {
-        include: {
-          bookings: {
-            include: {
-              rooms: true
-            }
-          }
-        }
-      }
-    }
+    include: guestIncludeAll.include
   });
 }
 
 export async function deleteGuest(id: number) {
   return prisma.guest.delete({
     where: {id},
-    include: {
-      tenants: {
-        include: {
-          bookings: {
-            include: {
-              rooms: true
-            }
-          }
-        }
-      }
-    }
+    include: guestIncludeAll.include
   });
 }
