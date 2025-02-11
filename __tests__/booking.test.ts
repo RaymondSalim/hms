@@ -57,6 +57,7 @@ describe('Booking Actions', () => {
                 duration_id: 2,
                 status_id: 1,
                 custom_id: "#-1",
+                second_resident_fee: null
             };
             const mockDuration: Partial<Duration> = {id: 2, month_count: 3};
             const mockCreatedBooking = {id: 1, ...mockBookingData};

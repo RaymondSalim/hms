@@ -28,7 +28,7 @@ describe('BillAction', () => {
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -45,7 +45,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -62,7 +62,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -104,7 +104,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -121,7 +121,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -138,7 +138,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -184,7 +184,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -208,7 +208,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -232,7 +232,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -281,7 +281,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -305,7 +305,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -329,7 +329,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -372,7 +372,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 2, today.getDate()),
@@ -389,7 +389,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()),
@@ -406,7 +406,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     due_date: today,
@@ -469,7 +469,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -523,7 +523,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -582,7 +582,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -643,7 +643,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -704,7 +704,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -723,7 +723,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -770,7 +770,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -789,7 +789,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -849,7 +849,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -868,7 +868,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
@@ -887,7 +887,7 @@ related_id: Prisma.DbNull
                             createdAt: new Date(),
                             updatedAt: new Date(),
                             type: BillType.GENERATED,
-related_id: Prisma.DbNull
+                            related_id: null
                         }
                     ],
                     description: "",
