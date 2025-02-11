@@ -669,7 +669,7 @@ export async function generateBillItemsFromBookingAddons(
 }
 
 export async function generateBookingBillandBillItems(
-    data: Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">,
+    data: PartialBy<Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">, "second_resident_fee">,
     duration: Pick<Duration, "month_count">
 ) {
     const fee = data.fee;
@@ -707,7 +707,7 @@ export async function generateBookingBillandBillItems(
             billItems = billItems.concat(bi);
 
             bills.push({
-                description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', {month: 'long'})}`,
+                description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
                 due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours()),
                 bill_item: {
                     createMany: {
@@ -740,7 +740,7 @@ export async function generateBookingBillandBillItems(
                 billItems = billItems.concat(bi);
 
                 bills.push({
-                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {month: 'long'})}`,
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
                     due_date: billEndDate,
                     bill_item: {
                         createMany: {
@@ -771,7 +771,7 @@ export async function generateBookingBillandBillItems(
             billItems = billItems.concat(bi);
 
             bills.push({
-                description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', {month: 'long'})}`,
+                description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
                 due_date: lastMonthEndDate,
                 bill_item: {
                     createMany: {
@@ -804,7 +804,7 @@ export async function generateBookingBillandBillItems(
                 billItems = billItems.concat(bi);
 
                 bills.push({
-                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {month: 'long'})}`,
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
                     due_date: billEndDate,
                     bill_item: {
                         createMany: {

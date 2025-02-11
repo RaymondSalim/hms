@@ -4,35 +4,35 @@ import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {Guest} from "@prisma/client";
 import React, {useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
-import {GuestWithTenant} from "@/app/_db/guest";
+import {GuestIncludeAll} from "@/app/_db/guest";
 import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
 import {useQuery} from "@tanstack/react-query";
-import {getTenants} from "@/app/_db/tenant";
-import AsyncSelect from "react-select/async";
 import {ZodFormattedError} from "zod";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
+import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
+import {formatToDateTime} from "@/app/_lib/util";
 
-interface GuestFormProps extends TableFormProps<GuestWithTenant> {
+interface GuestFormProps extends TableFormProps<GuestIncludeAll> {
 }
 
 export function GuestForm(props: GuestFormProps) {
   const [guestData, setGuestData] = useState<Partial<Guest>>(props.contentData ?? {});
-  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<GuestWithTenant> | undefined>(props.mutationResponse?.errors);
+  const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<GuestIncludeAll> | undefined>(props.mutationResponse?.errors);
 
   // Tenant Data
-  const {data: tenantData, isSuccess: tenantDataSuccess} = useQuery({
-    queryKey: ['tenants'],
-    queryFn: () => getTenants(),
+  const {data: bookingData, isSuccess: bookingDataSuccess} = useQuery({
+    queryKey: ['booking'],
+    queryFn: () => getAllBookingsAction(),
   });
-  const [tenantDataMapped, setTenantDataMapped] = useState<SelectOption<string>[]>([]);
+  const [bookingDataMapped, setBookingDataMapped] = useState<SelectOption<number>[]>([]);
   useEffect(() => {
-    if (tenantDataSuccess) {
-      setTenantDataMapped(tenantData.map(e => ({
+    if (bookingDataSuccess) {
+      setBookingDataMapped(bookingData.map(e => ({
         value: e.id,
-        label: `${e.name} | ${e.phone}`,
+        label: `#-${e.id} | ${formatToDateTime(e.start_date, false)} - ${formatToDateTime(e.end_date, false)}`,
       })));
     }
-  }, [tenantData, tenantDataSuccess]);
+  }, [bookingData, bookingDataSuccess]);
 
   useEffect(() => {
     setFieldErrors(props.mutationResponse?.errors);
@@ -118,37 +118,24 @@ export function GuestForm(props: GuestFormProps) {
                 <Typography color="red">{fieldErrors?.phone._errors}</Typography>
             }
           </div>
-          {/*<div>*/}
-          {/*  <label htmlFor="tenant">*/}
-          {/*    <Typography variant="h6" color="blue-gray">*/}
-          {/*      Tamu Dari*/}
-          {/*    </Typography>*/}
-          {/*  </label>*/}
-          {/*  <TenantSelect tenantId={guestData.tenant_id}*/}
-          {/*                setTenantId={(v) => setGuestData(prevGuest => ({...prevGuest, tenant_id: v}))}/>*/}
-          {/*  {*/}
-          {/*      fieldErrors?.tenant_id &&*/}
-          {/*      <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>*/}
-          {/*  }*/}
-          {/*</div>*/}
           <div>
-            <label htmlFor="tenant_id">
+            <label htmlFor="booking_id">
               <Typography variant="h6" color="blue-gray">
-                Penyewa
+                Tamu dari Pemesanan
               </Typography>
             </label>
-            <SelectComponent<string>
-                setValue={(v) => setGuestData(prev => ({...prev, tenant_id: v}))}
-                options={tenantDataMapped}
+            <SelectComponent<number>
+                setValue={(v) => setGuestData(prev => ({...prev, booking_id: v}))}
+                options={bookingDataMapped}
                 selectedOption={
-                  tenantDataMapped.find(r => r.value == guestData.tenant_id)
+                  bookingDataMapped.find(r => r.value == guestData.booking_id)
                 }
-                placeholder={"Pick Tenant"}
-                isError={!!fieldErrors?.tenant_id}
+                placeholder={"Pilih pemesanan"}
+                isError={!!fieldErrors?.booking_id}
             />
             {
-                fieldErrors?.tenant_id &&
-                <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>
+                fieldErrors?.booking_id &&
+                <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
             }
           </div>
           {
@@ -170,78 +157,5 @@ export function GuestForm(props: GuestFormProps) {
 
       </form>
     </div>
-  );
-}
-
-type Option = {
-  value: string,
-  label: string,
-  name: string,
-}
-
-interface TenantSelectProps {
-  tenantId?: string
-  setTenantId: (value?: string) => void;
-}
-
-export function TenantSelect(props: TenantSelectProps) {
-  const [initialValue, setInitialValue] = useState<Option | null>(null);
-  const [options, setOptions] = useState<Option[]>([]);
-
-  const {data, isLoading, isSuccess} = useQuery({
-    queryKey: ['tenant.select'],
-    queryFn: () => getTenants(),
-  });
-
-  const loadOptions = (
-    inputValue: string,
-    callback: (options: Option[]) => void
-  ) => {
-    if (isSuccess) {
-      if (inputValue.length <= 2) {
-        callback(options);
-        return;
-      }
-
-      let filtered = options?.filter(o => (
-        o.name.toLowerCase().includes(inputValue.toLowerCase())
-      ));
-
-      callback(filtered);
-    }
-  };
-
-  useEffect(() => {
-    if (props.tenantId) {
-      let initial = options.find(o => o.value == props.tenantId);
-      setInitialValue(initial ?? null);
-    }
-  }, [options]);
-
-  useEffect(() => {
-    if (isSuccess) {
-      let options = data?.map(t => ({
-        value: t.id,
-        label: t.name + ` | ${t.phone}`,
-        name: t.name,
-      }));
-
-      setOptions(options);
-    }
-  }, [data, isSuccess]);
-
-  return (
-    <AsyncSelect
-      onChange={(n) => {
-        setInitialValue(n);
-        props.setTenantId(n?.value);
-      }}
-      isLoading={isLoading}
-      isClearable={true}
-      cacheOptions
-      loadOptions={loadOptions}
-      value={initialValue}
-      placeholder={"Masukan Nama Tenant"}
-    />
   );
 }

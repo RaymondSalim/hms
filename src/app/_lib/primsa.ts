@@ -22,13 +22,6 @@ const prismaClientSingleton = () => {
         });
     }
 
-    // ["Booking", ["start_date", "end_date"]],
-    //                     ["CheckInOutLog", ["event_date"]],
-    //                     ["Expense", ["event_date"]],
-    //                     ["Bill", ["due_date"]],
-    //                     ["Payment", ["payment_date"]],
-    //                     ["Report", ["generated_at"]],
-
     return prisma;
 };
 

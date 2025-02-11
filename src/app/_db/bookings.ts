@@ -10,6 +10,7 @@ import {
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {matchBillItemsToBills} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {BillIncludeBillItem} from "@/app/_db/bills";
+import {parsePrismaJson} from "@/app/_lib/util";
 import BookingInclude = Prisma.BookingInclude;
 
 const includeAll: BookingInclude = {
@@ -182,20 +183,37 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
     });
 
     const staleBillItems: Map<Date, Omit<BillItem, "bill_id">[]> = new Map();
-    existingBills.forEach(b => {
-        const filteredBillItems = b.bill_item
-            .filter(bi => bi.type != BillType.GENERATED)
-            .map(bi => ({
+    existingBills.forEach((b: BillIncludeBillItem) => {
+        const generatedBillItems = b.bill_item
+            .filter((bi: BillItem) => bi.type != BillType.GENERATED)
+            .map((bi: BillItem) => ({
                 ...bi,
                 bill_id: undefined
             }));
-        if (filteredBillItems.length > 0) {
+        if (generatedBillItems.length > 0) {
             staleBillItems.set(
                 b.due_date,
-                filteredBillItems
+                generatedBillItems
+            );
+        }
+
+        const tamuBillItems = b.bill_item
+            .filter((bi: BillItem) => {
+                let a = parsePrismaJson(bi.related_id);
+                return a && a.hasOwnProperty("guest_stay_id");
+            })
+            .map((bi: BillItem) => ({
+                ...bi,
+                bill_id: undefined
+            }));
+        if (tamuBillItems.length > 0) {
+            staleBillItems.set(
+                b.due_date,
+                tamuBillItems
             );
         }
     });
+
 
     return {
         success: await prisma.$transaction(async (prismaTrx) => {
@@ -292,6 +310,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                     return billItems.map(bi => ({
                         ...bi,
                         bill_id: bill_id,
+                        related_id: bi.related_id ?? Prisma.DbNull
                     }));
                 });
 
