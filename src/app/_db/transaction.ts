@@ -1,4 +1,4 @@
-import {$Enums, Transaction} from "@prisma/client";
+import {$Enums, Prisma, Transaction} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 import TransactionType = $Enums.TransactionType;
@@ -27,9 +27,12 @@ export async function createTransaction(transactionData: OmitIDTypeAndTimestamp<
   });
 }
 
-export async function updateTransactionByID(id: number, expenseData: OmitIDTypeAndTimestamp<Transaction>) {
+export async function updateTransactionByID(id: number, transactionData: OmitIDTypeAndTimestamp<Transaction>) {
   return prisma.transaction.update({
-    data: expenseData,
+    data: {
+      ...transactionData,
+      related_id: transactionData.related_id ?? Prisma.DbNull
+    },
     where: {
       id: id,
     },
