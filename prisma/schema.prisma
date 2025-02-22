@@ -86,6 +86,7 @@ model Transaction {
   description String          @db.VarChar(255)
   date        DateTime        @db.Date
   category    String?         @db.VarChar(255)
+  related_id  Json?
   location_id Int
   type        TransactionType
 
