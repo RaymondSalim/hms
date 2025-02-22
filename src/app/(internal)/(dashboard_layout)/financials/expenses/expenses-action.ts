@@ -1,7 +1,7 @@
 import {expenseObject, expenseObjectWithID} from "@/app/_lib/zod/expenses/zod";
 import {Expense, Prisma} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {createExpense, deleteExpense, updateExpenseByID} from "@/app/_db/expense";
+import {createTransaction, deleteTransaction, updateTransactionByID} from "@/app/_db/transaction";
 import {number, object} from "zod";
 
 export type ExpenseActionsType<T = OmitIDTypeAndTimestamp<Expense>> = {
@@ -27,7 +27,7 @@ export async function createExpenseAction(prevState: ExpenseActionsType, formDat
     }
 
     try {
-        let res = await createExpense({
+        let res = await createTransaction({
             ...parsedData.data,
             category_id: parsedData.data.category_id,
             date: new Date(parsedData.data.date),
@@ -63,7 +63,7 @@ export async function updateExpenseAction(prevState: ExpenseActionsType, formDat
     }
 
     try {
-        let res = await updateExpenseByID(parsedData.data.id, {
+        let res = await updateTransactionByID(parsedData.data.id, {
             ...parsedData.data,
             category_id: parsedData.data.category_id ?? null,
             date: new Date(parsedData.data.date),
@@ -94,7 +94,7 @@ export async function deleteExpenseAction(prevState: ExpenseActionsType<Pick<Exp
     }
 
     try {
-        let res = await deleteExpense(parsedData.data.id);
+        let res = await deleteTransaction(parsedData.data.id);
 
         return {
             success: res,

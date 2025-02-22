@@ -2,7 +2,7 @@ import {FaBed, FaCalendar, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUs
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
 import {Session} from 'next-auth';
-import {FaKey, FaReceipt} from "react-icons/fa6";
+import {FaChartBar, FaFileInvoiceDollar, FaKey, FaReceipt} from "react-icons/fa6";
 import {getCompanyInfo} from "@/app/_db/settings";
 import {IoIosAddCircleOutline} from "react-icons/io";
 
@@ -62,16 +62,17 @@ export default async function Sidebar({session}: SidebarProps) {
         {name: 'Layanan Tambahan', path: '/addons', icon: <IoIosAddCircleOutline />},
         {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},
         {name: 'Tagihan', path: '/bills', icon: <FaReceipt/>},
-        // {
-        //     name: 'Keuangan',
-        //     path: '/financials',
-        //     icon: <FaMoneyBill1/>,
-        //     children: [
-        //         {name: 'Pemasukan', path: '/incomes', icon: <FaFileInvoiceDollar/>},
-        //         {name: 'Pengeluaran', path: '/expenses', icon: <FaFileInvoiceDollar/>},
-        //         {name: 'Laporan', path: '/reports', icon: <FaChartBar/>},
-        //     ]
-        // },
+        {
+            name: 'Keuangan',
+            path: '/financials',
+            icon: <FaMoneyBill/>,
+            children: [
+                {name: 'Ringkasan', path: '/financials/summary', icon: <FaFileInvoiceDollar/>},
+                {name: 'Pemasukan', path: '/financials/incomes', icon: <FaFileInvoiceDollar/>},
+                {name: 'Pengeluaran', path: '/financials/expenses', icon: <FaFileInvoiceDollar/>},
+                {name: 'Laporan', path: '/financials/reports', icon: <FaChartBar/>},
+            ]
+        },
         {
             name: 'Pengaturan',
             path: '/settings',

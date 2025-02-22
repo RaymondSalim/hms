@@ -3,9 +3,9 @@
 import styles from "./dashboard.module.css";
 import Overview from "@/app/(internal)/(dashboard_layout)/dashboard/_components/overview";
 import Events from "@/app/(internal)/(dashboard_layout)/dashboard/_components/events";
-import IncomeExpense from "@/app/(internal)/(dashboard_layout)/dashboard/_components/income-expense";
 import Payments from "@/app/(internal)/(dashboard_layout)/dashboard/_components/payments";
 import Bills from "./_components/bills";
+import FinancialGraph from "@/app/(internal)/(dashboard_layout)/dashboard/_components/financial-graph";
 
 export default async function DashboardPage() {
   return (
@@ -20,7 +20,7 @@ export default async function DashboardPage() {
             <Payments/>
           </div>
           <div>
-            <IncomeExpense/>
+            <FinancialGraph/>
             <Bills/>
           </div>
         </div>
