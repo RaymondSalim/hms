@@ -82,7 +82,7 @@ enum TransactionType {
 
 model Transaction {
   id          Int             @id @default(autoincrement())
-  amount      Decimal         @db.Decimal(10, 2)
+  amount      Decimal         @db.Decimal(12, 2)
   description String          @db.VarChar(255)
   date        DateTime        @db.Date
   category    String?         @db.VarChar(255)
