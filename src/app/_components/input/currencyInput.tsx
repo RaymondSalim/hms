@@ -35,7 +35,7 @@ export default function CurrencyInput({setValue, ...props}: CurrencyInputProps) 
         // If there's no valid number (empty input or only symbols), reset the value to 0 or empty string
         if (valueWithoutSymbols === "") {
             setDisplayValue("");
-            setValue(0);
+            setValue(undefined);
             return;
         }
 
