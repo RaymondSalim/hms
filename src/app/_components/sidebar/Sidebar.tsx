@@ -2,7 +2,7 @@ import {FaBed, FaCalendar, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUs
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
 import {Session} from 'next-auth';
-import {FaChartBar, FaFileInvoiceDollar, FaKey, FaReceipt} from "react-icons/fa6";
+import {FaFileInvoiceDollar, FaKey, FaReceipt} from "react-icons/fa6";
 import {getCompanyInfo} from "@/app/_db/settings";
 import {IoIosAddCircleOutline} from "react-icons/io";
 
@@ -70,7 +70,7 @@ export default async function Sidebar({session}: SidebarProps) {
                 {name: 'Ringkasan', path: '/financials/summary', icon: <FaFileInvoiceDollar/>},
                 {name: 'Pemasukan', path: '/financials/incomes', icon: <FaFileInvoiceDollar/>},
                 {name: 'Pengeluaran', path: '/financials/expenses', icon: <FaFileInvoiceDollar/>},
-                {name: 'Laporan', path: '/financials/reports', icon: <FaChartBar/>},
+                // {name: 'Laporan', path: '/financials/reports', icon: <FaChartBar/>},
             ]
         },
         {
