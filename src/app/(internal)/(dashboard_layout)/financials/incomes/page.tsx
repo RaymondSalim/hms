@@ -7,31 +7,31 @@ import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
 import {getTransactions} from "@/app/_db/transaction";
 import {TransactionType} from "@prisma/client";
-import ExpensesContent from "@/app/(internal)/(dashboard_layout)/financials/expenses/content";
+import IncomesContent from "@/app/(internal)/(dashboard_layout)/financials/incomes/content";
 
-export default function ExpensePage() {
+export default function IncomePage() {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
-    headerContext.setTitle("Semua Pengeluaran");
+    headerContext.setTitle("Semua Pemasukan");
     headerContext.setShowLocationPicker(true);
     headerContext.setPaths([
       <Link key={"financials"} href={"/financials"}>Keuangan</Link>,
-      <Link key={"expenses"} href={"/expenses"}>Pengeluaran</Link>,
+      <Link key={"incomes"} href={"/incomes"}>Pemasukan</Link>,
     ]);
   }, []);
 
   const {
-    data: expenses,
+    data: incomes,
     isLoading,
     isSuccess,
     refetch
   } = useQuery({
-    queryKey: ['expenses', 'location_id', headerContext.locationID],
+    queryKey: ['incomes', 'location_id', headerContext.locationID],
     queryFn: () => getTransactions({
       where: {
         location_id: headerContext.locationID,
-        type: TransactionType.EXPENSE
+        type: TransactionType.INCOME
       },
       orderBy: {
         date: "desc"
@@ -47,8 +47,8 @@ export default function ExpensePage() {
       }
       {
         isSuccess &&
-          <ExpensesContent
-              expenses={expenses}
+          <IncomesContent
+              incomes={incomes}
               refetchFn={refetch}
           />
       }

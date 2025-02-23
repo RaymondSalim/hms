@@ -28,7 +28,7 @@ export default function FinancialSummaryPage() {
     const [transactions, setTransactions] = useState<IncomeExpenseGraphProps['data'] | undefined>(undefined);
 
     const {data: groupedIncomeExpense, isLoading: isTransactionsLoading, isSuccess: isTransactionsSuccess} = useQuery({
-        queryKey: ["transaction", selectedPeriod, headerContext.locationID],
+        queryKey: ["groupedIncomeExpense", selectedPeriod, headerContext.locationID],
         queryFn: () => getGroupedIncomeExpense(selectedPeriod, headerContext.locationID),
     });
 
