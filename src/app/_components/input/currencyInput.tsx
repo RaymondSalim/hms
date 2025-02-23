@@ -5,7 +5,7 @@ export type CurrencyInputProps = {
     setValue: ((newValue: number | undefined) => void);
 } & InputProps & React.RefAttributes<HTMLInputElement>;
 
-export default function CurrencyInput(props: CurrencyInputProps) {
+export default function CurrencyInput({setValue, ...props}: CurrencyInputProps) {
     const [displayValue, setDisplayValue] = useState(formatCurrency(props.value));
 
     useEffect(() => {
@@ -35,7 +35,7 @@ export default function CurrencyInput(props: CurrencyInputProps) {
         // If there's no valid number (empty input or only symbols), reset the value to 0 or empty string
         if (valueWithoutSymbols === "") {
             setDisplayValue("");
-            props.setValue(0);
+            setValue(0);
             return;
         }
 
@@ -44,9 +44,9 @@ export default function CurrencyInput(props: CurrencyInputProps) {
         const parsedValue = parseFloat(valueToParse);
 
         if (!isNaN(parsedValue)) {
-            props.setValue(parsedValue); // Update the actual numeric value
+            setValue(parsedValue); // Update the actual numeric value
         } else {
-            props.setValue(undefined);
+            setValue(undefined);
         }
     }
 
