@@ -5,7 +5,6 @@ import {format} from "date-fns";
 import prisma from "@/app/_lib/primsa";
 import {Period} from "@/app/_enum/financial";
 import {getDatesInRange} from "@/app/_lib/util";
-import TransactionFindManyArgs = Prisma.TransactionFindManyArgs;
 
 export interface GroupedIncomeExpense {
     labels: string[];
@@ -383,10 +382,6 @@ function formatDateToString(date: Date): string {
         dateStyle: "long",
         timeZone: 'Asia/Jakarta',
     }).format(date);
-}
-
-export async function getTransactions(args: TransactionFindManyArgs) {
-    return prisma.transaction.findMany(args);
 }
 
 /**

@@ -1,17 +1,12 @@
-import {$Enums, Prisma, Transaction} from "@prisma/client";
+"use server";
+
+import {Prisma, Transaction} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
-import TransactionType = $Enums.TransactionType;
+import TransactionFindManyArgs = Prisma.TransactionFindManyArgs;
 
-export async function getTransactions(id?: number, limit?: number, offset?: number, type?: TransactionType) {
-  return prisma.transaction.findMany({
-    where: {
-      id: id,
-      type: type,
-    },
-    skip: offset,
-    take: limit,
-  });
+export async function getTransactions(args: TransactionFindManyArgs) {
+  return prisma.transaction.findMany(args);
 }
 
 export async function createTransaction(transactionData: OmitIDTypeAndTimestamp<Transaction>) {
