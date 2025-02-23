@@ -15,7 +15,14 @@ import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
 import {Button, Dialog, IconButton, Input, Option, Select, Typography} from "@material-tailwind/react";
 import {FaArrowLeft, FaArrowRight, FaPlus} from "react-icons/fa6";
-import {DefaultError, MutationOptions, useMutation, UseMutationResult} from "@tanstack/react-query";
+import {
+    DefaultError,
+    MutationOptions,
+    QueryObserverResult,
+    RefetchOptions,
+    useMutation,
+    UseMutationResult
+} from "@tanstack/react-query";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {toast} from "react-toastify";
 import {rankItem} from '@tanstack/match-sorter-utils';
@@ -66,6 +73,7 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
     }
 
     customDialog?: ReactElement
+    refetchFn?: (options?: RefetchOptions) => Promise<QueryObserverResult<T[]>>
 }
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
