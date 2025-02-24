@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import Select, {StylesConfig} from "react-select";
+import CreatableSelect from "react-select/creatable";
 
 export type SelectOption<T> = {
     value: T,
@@ -9,7 +10,8 @@ export type SelectOption<T> = {
     [key: string]: any
 }
 
-export interface SelectProps<T> {
+export type SelectProps<T> = {
+    type?: "select" | "creatable";
     setValue: (value?: T) => void;
 
     selectedOption?: SelectOption<T>,
@@ -23,9 +25,9 @@ export interface SelectProps<T> {
     isSearchable?: boolean
     formatOptionLabel?: (data: SelectOption<T>) => React.ReactNode;
     styles?: StylesConfig<SelectOption<T>>;
-}
+};
 
-export function SelectComponent<T = string>(props: SelectProps<T>) {
+export function SelectComponent<T = string>({type = "select", ...props}: SelectProps<T>) {
     const [value, setValue] = useState<SelectOption<T> | undefined>(undefined);
     const [options, setOptions] = useState<SelectOption<T>[]>(props.options);
     const [isError, setIsError] = useState(false);
@@ -69,8 +71,10 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
         setIsDisabled(props.isDisabled ?? false);
     }, [props.isDisabled]);
 
+    const Component = type == "select" ? (Select) : (CreatableSelect);
+
     return (
-        <Select
+        <Component
             menuPosition={"fixed"}
             onChange={(n: SelectOption<T> | null) => {
                 setValue(n ?? undefined);
@@ -99,6 +103,8 @@ export function SelectComponent<T = string>(props: SelectProps<T>) {
                     marginLeft: '8px'
                 }),
             }}
+            formatCreateLabel={(s) => `Buat "${s}"`}
+            noOptionsMessage={(s) => `Tidak Ada Pilihan ${s.inputValue.length > 0 ? '"${s.inputValue}"' : ""}`}
         />
     );
 }

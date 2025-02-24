@@ -50,8 +50,8 @@ export async function getAllPayments(id?: number, locationID?: number, limit?: n
         .then(mapCustomID);
 }
 
-export async function deletePayment(id: number) {
-    return prisma.payment.delete({
+export async function deletePayment(id: number, trx?: Prisma.TransactionClient) {
+    return (trx ?? prisma).payment.delete({
         where: {
             id
         }
@@ -66,8 +66,8 @@ export async function getPaymentStatus() {
     });
 }
 
-export async function updatePaymentByID(id: number, data: OmitIDTypeAndTimestamp<Payment>) {
-    return prisma.payment.update({
+export async function updatePaymentByID(id: number, data: OmitIDTypeAndTimestamp<Payment>, trx?: Prisma.TransactionClient) {
+    return (trx ?? prisma).payment.update({
         where: {
             id
         },

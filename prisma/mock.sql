@@ -434,3 +434,23 @@ SELECT setval(pg_get_serial_sequence('"payment_bills"', 'id'), coalesce(max(paym
 FROM "payment_bills";
 
 
+INSERT INTO transactions (
+    amount,
+    description,
+    date,
+    category,
+    location_id,
+    type,
+    "createdAt",
+    "updatedAt"
+)
+SELECT
+    round(random()::numeric * 10000, 2) AS amount,
+    'Transaction ' || gs AS description,
+    '2025-01-01'::date + ((random() * 364)::int) AS date,
+    CASE WHEN random() < 0.5 THEN 'Salary' ELSE 'Rent' END AS category,
+    4 AS location_id,
+    CASE WHEN random() < 0.5 THEN 'INCOME'::"TransactionType" ELSE 'EXPENSE'::"TransactionType" END AS type,
+    now() AS "createdAt",
+    now() AS "updatedAt"
+FROM generate_series(1,50) gs;

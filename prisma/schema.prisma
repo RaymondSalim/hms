@@ -62,17 +62,6 @@ model CheckInOutLog {
   @@map("checkinoutlogs")
 }
 
-model Category {
-  id        Int      @id @default(autoincrement())
-  category  String   @db.VarChar(255)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  expenses Expense[]
-
-  @@map("categories")
-}
-
 model Duration {
   id          Int      @id @default(autoincrement())
   duration    String   @db.VarChar(255)
@@ -86,21 +75,27 @@ model Duration {
   @@map("durations")
 }
 
-model Expense {
-  id          Int      @id @default(autoincrement())
-  amount      Decimal  @db.Decimal(10, 2)
-  description String   @db.VarChar(255)
-  date        DateTime @db.Date
-  category_id Int?
-  location_id Int?
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id          Int             @id @default(autoincrement())
+  amount      Decimal         @db.Decimal(12, 2)
+  description String          @db.VarChar(255)
+  date        DateTime        @db.Date
+  category    String?         @db.VarChar(255)
+  related_id  Json?
+  location_id Int
+  type        TransactionType
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  categories Category? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  locations  Location? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+  locations Location? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
-  @@map("expenses")
+  @@map("transactions")
 }
 
 model Guest {
@@ -428,7 +423,7 @@ model Location {
   updatedAt DateTime @default(now()) @updatedAt
 
   rooms            Room[]
-  expenses         Expense[]
+  transactions     Transaction[]
   RoomTypeDuration RoomTypeDuration[]
   addOns           AddOn[]
 

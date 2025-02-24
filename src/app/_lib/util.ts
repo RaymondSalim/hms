@@ -1,5 +1,8 @@
-import {Duration, Prisma} from "@prisma/client";
+import {Duration, Prisma, Transaction} from "@prisma/client";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
+import {format} from "date-fns";
+import {GroupedIncomeExpense, SimplifiedIncomeExpense} from "@/app/_db/dashboard";
+import type {ChartData} from "chart.js";
 
 export const delay = (time: number) => new Promise((resolve, reject) => setTimeout(resolve, time));
 
@@ -136,4 +139,71 @@ export function parseDurationString(duration: string) {
 
 export function parsePrismaJson<T = Record<string, any>>(json: Prisma.JsonValue): T {
   return json as T;
+}
+
+export function getDatesInRange(start: Date, end: Date, groupBy: "day" | string = "day"): string[] {
+  const dates: string[] = [];
+  let current = new Date(start);
+  const dateFormat = groupBy === "day" ? "dd-MM-yyyy" : "MMM yyyy";
+  while (current <= end) {
+    dates.push(format(current, dateFormat));
+    if (groupBy === "day") {
+      current.setDate(current.getDate() + 1);
+    } else {
+      current.setMonth(current.getMonth() + 1);
+      current.setDate(1);
+    }
+  }
+  return dates;
+}
+
+/**
+ * Converts grouped income and expense transactions into total amounts.
+ * @param groupedData - The grouped transaction data with arrays of transactions.
+ * @returns Simplified object containing totals for income and expenses.
+ */
+export function convertGroupedTransactionsToTotals(
+    groupedData: GroupedIncomeExpense
+): SimplifiedIncomeExpense {
+  const { labels, incomeData, expenseData } = groupedData;
+
+  const totalIncomeData = incomeData.map((transactions) =>
+      transactions.reduce((sum, tx) => sum + Number(tx.amount), 0)
+  );
+
+  const totalExpenseData = expenseData.map((transactions) =>
+      transactions.reduce((sum, tx) => sum + Number(tx.amount), 0)
+  );
+
+  return {
+    labels,
+    incomeData: totalIncomeData,
+    expenseData: totalExpenseData,
+  };
+}
+
+/**
+ * Groups transactions by category and prepares data for a Chart.js pie chart.
+ * @param transactions - Array of Transaction objects
+ * @returns PieChartData with category labels and corresponding amounts
+ */
+export function preparePieChartData(transactions: Transaction[]): ChartData<"pie", number[]> {
+  const categoryGroups: Record<string, number> = transactions.reduce((acc, transaction) => {
+    const category = transaction.category || "Uncategorized";
+    acc[category] = (acc[category] || 0) + Number(transaction.amount);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const labels = Object.keys(categoryGroups);
+  const data = Object.values(categoryGroups);
+
+  return {
+    labels,
+    datasets: [
+      {
+        data,
+        hoverOffset: 4
+      }
+    ]
+  };
 }
