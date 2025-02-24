@@ -23,7 +23,7 @@ interface ExpenseFormProps extends TableFormProps<Transaction> {
 type DataType = Partial<NonUndefined<ExpenseFormProps['contentData']>>;
 
 export function ExpenseForm(props: ExpenseFormProps) {
-    let parsedData: typeof props.contentData
+    let parsedData: typeof props.contentData;
     if (props.contentData) {
         parsedData = {
             ...props.contentData,

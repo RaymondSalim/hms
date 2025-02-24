@@ -23,7 +23,7 @@ interface IncomeFormProps extends TableFormProps<Transaction> {
 type DataType = Partial<NonUndefined<IncomeFormProps['contentData']>>;
 
 export function IncomeForm(props: IncomeFormProps) {
-    let parsedData: typeof props.contentData
+    let parsedData: typeof props.contentData;
     if (props.contentData) {
         parsedData = {
             ...props.contentData,

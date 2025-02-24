@@ -75,48 +75,13 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
             };
 
             if (data?.id) {
-                res = await updatePaymentByID(data.id!, dbData, tx);
-
-                let transaction = await prisma.transaction.findFirst({
-                    where: {
-                        related_id: {
-                            path: ['payment_id'],
-                            equals: data.id!
-                        }
-                    }
-                });
-
-                if (transaction) {
-                    await tx.transaction.update({
-                        where: {
-                            id: transaction.id
-                        },
-                        data: {
-                            amount: data.amount,
-                        }
-                    })
-                }
-                // TODO! Fix updating payment does not recalculate the whole payment structure
+                res = await updatePaymentWithTransaction(data.id!, dbData, tx);
             } else {
-                res = await createPayment(dbData, tx);
+                res = await createPaymentWithBills(dbData, tx);
                 const unpaidBills = await getUnpaidBillsDueAction(booking.id);
                 // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
                 const simulation = await simulateUnpaidBillPaymentAction(data.amount, unpaidBills.bills, res.id);
                 const {balance: newBalance} = simulation.new;
-
-                await tx.transaction.create({
-                    data: {
-                        location_id: res.bookings.rooms?.location_id!,
-                        category: "Biaya Sewa",
-                        amount: dbData.amount,
-                        date: dbData.payment_date,
-                        description: `Pemasukan untuk Pembayaran #${res.id}`,
-                        type: TransactionType.INCOME,
-                        related_id: {
-                            payment_id: res.id
-                        }
-                    }
-                })
 
                 finalBalance = newBalance;
             }
@@ -178,7 +143,7 @@ export async function deletePaymentAction(id: number) {
     if (!payment) {
         return {
             failure: "payment not found"
-        }
+        };
     }
 
     const client = new S3Client({region: process.env.AWS_REGION});
@@ -235,4 +200,51 @@ export async function deletePaymentAction(id: number) {
 
 export async function getPaymentStatusAction() {
     return getPaymentStatus();
+}
+
+export async function createPaymentWithBills(dbData: OmitIDTypeAndTimestamp<Payment>, trx?: Prisma.TransactionClient) {
+    const prismaTx = trx ?? prisma;
+    let res = await createPayment(dbData, prismaTx);
+    await prismaTx.transaction.create({
+        data: {
+            location_id: res.bookings.rooms?.location_id!,
+            category: "Biaya Sewa",
+            amount: dbData.amount,
+            date: dbData.payment_date,
+            description: `Pemasukan untuk Pembayaran #${res.id}`,
+            type: TransactionType.INCOME,
+            related_id: {
+                payment_id: res.id
+            }
+        }
+    });
+
+    return res;
+}
+
+export async function updatePaymentWithTransaction(id: number, dbData: OmitIDTypeAndTimestamp<Payment>, trx?: Prisma.TransactionClient) {
+    const prismaTx = trx ?? prisma;
+    let res = await updatePaymentByID(id, dbData, prismaTx);
+
+    let transaction = await prisma.transaction.findFirst({
+        where: {
+            related_id: {
+                path: ['payment_id'],
+                equals: id
+            }
+        }
+    });
+
+    if (transaction) {
+        await prismaTx.transaction.update({
+            where: {
+                id: transaction.id
+            },
+            data: {
+                amount: dbData.amount,
+            }
+        });
+    }
+
+    return res;
 }
