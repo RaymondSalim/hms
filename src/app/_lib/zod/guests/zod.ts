@@ -5,7 +5,6 @@ export const guestSchema = object({
     name: string().min(1, "Name is required"),
     email: string().email("Email address tidak valid").nullable(),
     phone: string().nullable(),
-    tenant_id: string().min(1, "Tenant ID is required"),
     booking_id: number().min(1, "Booking ID is required"),
 });
 
