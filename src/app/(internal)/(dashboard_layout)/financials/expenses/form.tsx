@@ -4,7 +4,7 @@ import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useContext, useEffect, useMemo, useState} from "react";
 import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
-import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
+import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {ZodFormattedError} from "zod";
 import {DayPicker} from "react-day-picker";

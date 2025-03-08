@@ -17,7 +17,7 @@ import {
     Textarea,
     Typography
 } from "@material-tailwind/react";
-import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
+import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {Event} from "@prisma/client";
 import {ZodFormattedError} from "zod";
 import {GenericActionsType} from "@/app/_lib/actions";
