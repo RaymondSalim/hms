@@ -20,6 +20,7 @@ import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {usePathname, useRouter} from "next/navigation";
 import {BookingPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bookings/page";
 import {Prisma} from "@prisma/client";
+import {SelectOption} from "@/app/_components/input/select";
 
 
 export interface BookingsContentProps {
@@ -40,11 +41,15 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     const columnHelper = createColumnHelper<BookingsIncludeAll>();
     const columns = [
         columnHelper.accessor(row => row.id, {
+            id: "id",
             header: "ID",
-            size: 20
+            enableColumnFilter: true,
+            size: 20,
         }),
         columnHelper.accessor(row => `${row.tenants?.name} | ${row.tenants?.phone}`, {
+            id: "tenant",
             header: "Penyewa",
+            enableColumnFilter: true,
             cell: props => {
                 const data = props.row.original.tenants;
                 return ( // TODO! Make link
@@ -59,20 +64,25 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             },
         }),
         columnHelper.accessor(row => row.bookingstatuses?.status, {
+            id: "status",
             header: "Status",
+            enableColumnFilter: true,
             cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
         }),
         columnHelper.accessor(row => row.rooms?.room_number, {
-            header: "Nomor Kamar"
+            id: "room_number",
+            header: "Nomor Kamar",
+            enableColumnFilter: true,
         }),
         columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
-            header: "Tanggal Mulai"
+            header: "Tanggal Mulai",
         }),
         columnHelper.accessor(row => formatToDateTime(row.end_date, false), {
             header: "Tanggal Selesai",
         }),
         columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.fee).toNumber()), {
-            header: "Biaya"
+            id: "fee",
+            header: "Biaya",
         }),
         columnHelper.display({
             header: "Tagihan",
@@ -90,6 +100,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         // @ts-ignore
         columns.splice(1, 0, columnHelper.accessor(row => row.rooms?.locations?.name, {
                 header: "Lokasi",
+                enableColumnFilter: false,
                 size: 20
             })
         );
@@ -116,6 +127,14 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         router.replace(`${pathname}`);
         setNewQueryParams(undefined);
     };
+    const filterKeys: SelectOption<string>[] = columns
+        .filter(c => (
+            c.enableColumnFilter && c.header && c.id
+        ))
+        .map(c => ({
+            label: c.header!.toString(),
+            value: c.id!,
+        }));
 
     return (
             <TableContent<BookingsIncludeAll>
@@ -201,6 +220,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                         }
                     ]
                 }}
+                filterKeys={filterKeys}
             />
     );
 }
