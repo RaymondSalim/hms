@@ -3,6 +3,7 @@
 import {
     CellContext,
     ColumnDef,
+    ColumnFiltersState,
     createColumnHelper,
     getCoreRowModel,
     getFilteredRowModel,
@@ -13,7 +14,7 @@ import {
 import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
-import {Button, Dialog, IconButton, Input, Option, Select, Typography} from "@material-tailwind/react";
+import {Button, Dialog, IconButton, Option, Select, Typography} from "@material-tailwind/react";
 import {FaArrowLeft, FaArrowRight, FaPlus} from "react-icons/fa6";
 import {
     DefaultError,
@@ -27,6 +28,8 @@ import {GenericActionsType} from "@/app/_lib/actions";
 import {toast} from "react-toastify";
 import {rankItem} from '@tanstack/match-sorter-utils';
 import {FilterFn} from '@tanstack/table-core';
+import SmartSearchInput, {SmartSearchFilter} from "@/app/_components/input/smartSearchInput";
+import {SelectOption} from "@/app/_components/input/select";
 
 export interface TableFormProps<T> {
     contentData?: T
@@ -74,16 +77,17 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
 
     customDialog?: ReactElement
     refetchFn?: (options?: RefetchOptions) => Promise<QueryObserverResult<T[]>>
+    filterKeys: SelectOption<string>[]
 }
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
-    const [searchValue, setSearchValue] = useState(props.initialSearchValue ?? "");
     const [activeContent, setActiveContent] = useState<T | undefined>(props.queryParams?.initialActiveContent);
     const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
-
     const [fromQuery, setFromQuery] = useState(false);
+    const [globalFilter, setGlobalFilter] = useState<string>();
+    const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>();
 
     const upsertContentMutation = useMutation({
         ...props.upsert,
@@ -140,7 +144,6 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 setDeleteDialogOpen(false);
                 toast.success(`Penghapusan Berhasil!`);
             }
-            // TODO! Alert
         }
     });
 
@@ -188,25 +191,30 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         })
     ], [contentsState]);
 
+    const handleSearchSubmit = (filter?: SmartSearchFilter[], global?: string) => {
+        setColumnFilter(
+            filter?.map(f => ({id: f.key, value: f.value}))
+        );
+        setGlobalFilter(global);
+    };
+
     const tanTable = useReactTable({
         defaultColumn: {
             minSize: 0,
             size: 0,
+            filterFn: "includesString",
         },
         columns: columns,
         data: contentsState,
-        filterFns: {
-          fuzzy: fuzzyFilter
-        },
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         state: {
-            globalFilter: searchValue,
+            globalFilter: globalFilter,
+            columnFilters: columnFilter
         },
-        // @ts-expect-error custom filter fn definition
-        globalFilterFn: "fuzzy"
+        globalFilterFn: fuzzyFilter,
     });
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -251,12 +259,16 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     return (
         <div className={"p-8 flex-1 flex flex-col min-h-0 overflow-hidden"}>
             <div className={styles.searchBarAndCreate}>
-                <Input
-                    value={searchValue}
-                    onChange={e => setSearchValue(e.target.value)}
-                    label={"Search"}
-                    placeholder={props.searchPlaceholder ?? "Search"}
-                    className={styles.input}
+                {/*<Input*/}
+                {/*    value={searchValue}*/}
+                {/*    onChange={e => setSearchValue(e.target.value)}*/}
+                {/*    label={"Search"}*/}
+                {/*    placeholder={props.searchPlaceholder ?? "Search"}*/}
+                {/*    className={styles.input}*/}
+                {/*/>*/}
+                <SmartSearchInput
+                    suggestions={props.filterKeys}
+                    onSubmit={handleSearchSubmit}
                 />
                 <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
                     <FaPlus />
@@ -362,7 +374,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     );
 }
 
-const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+export const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
     const itemRank = rankItem(row.getValue(columnId), value);
 
     // Store the itemRank info
