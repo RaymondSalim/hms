@@ -65,7 +65,10 @@ export default function SmartSearchInput({suggestions, onSubmit}: SmartSearchInp
                 event.preventDefault();
 
                 const trimmedValue = inputValue.trim();
-                if (trimmedValue.length == 0) return handleSubmit();
+                if (trimmedValue.length == 0) {
+                    delay(125).then(() => setOpen(false));
+                    handleSubmit();
+                }
 
                 // Check if input matches column filter format (e.g., "Name: John Doe")
                 const separatorIndex = trimmedValue.indexOf(":");
