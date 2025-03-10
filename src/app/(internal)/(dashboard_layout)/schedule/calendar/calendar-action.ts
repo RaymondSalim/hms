@@ -65,7 +65,7 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
             allDay: true,
             // @ts-expect-error type error
             start: b.start_date.toISOString(),
-            title: `${b.rooms?.room_number} | ${b.id} Kontrak Dimulai`,
+            title: `Kamar ${b.rooms?.room_number} | ${b.id} Kontrak Dimulai`,
             backgroundColor: "blue",
             originalData: b,
         });
@@ -79,7 +79,7 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
             allDay: true,
             // @ts-expect-error type error
             start: b.end_date.toISOString(),
-            title: `${b.rooms?.room_number} | ${b.id} Kontrak Selesai`,
+            title: `Kamar ${b.rooms?.room_number} | ${b.id} Kontrak Selesai`,
             backgroundColor: "red",
             originalData: b,
         });
