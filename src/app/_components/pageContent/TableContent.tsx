@@ -14,7 +14,7 @@ import {
 import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
-import {Button, Dialog, IconButton, Option, Select, Typography} from "@material-tailwind/react";
+import {Button, Dialog, IconButton, Input, Option, Select, Typography} from "@material-tailwind/react";
 import {FaArrowLeft, FaArrowRight, FaPlus} from "react-icons/fa6";
 import {
     DefaultError,
@@ -50,7 +50,7 @@ interface CustomMutationOptions<
     ) => Promise<unknown> | unknown;
 }
 
-export interface TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> {
+export type TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> = {
     name: string,
     initialContents: T[],
     initialSearchValue?: string,
@@ -77,8 +77,14 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
 
     customDialog?: ReactElement
     refetchFn?: (options?: RefetchOptions) => Promise<QueryObserverResult<T[]>>
-    filterKeys: SelectOption<string>[]
+} & (
+    {
+        searchType: "smart",
+        filterKeys: SelectOption<string>[]
+    } | {
+    searchType: "default" | undefined
 }
+    )
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
@@ -259,24 +265,33 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     return (
         <div className={"p-8 flex-1 flex flex-col min-h-0 overflow-hidden"}>
             <div className={styles.searchBarAndCreate}>
-                {/*<Input*/}
-                {/*    value={searchValue}*/}
-                {/*    onChange={e => setSearchValue(e.target.value)}*/}
-                {/*    label={"Search"}*/}
-                {/*    placeholder={props.searchPlaceholder ?? "Search"}*/}
-                {/*    className={styles.input}*/}
-                {/*/>*/}
-                <SmartSearchInput
-                    suggestions={props.filterKeys}
-                    onSubmit={handleSearchSubmit}
-                />
+                {
+                    (
+                        props.searchType == undefined ||
+                        props.searchType == "default"
+                    ) &&
+                    <Input
+                        value={globalFilter}
+                        onChange={e => setGlobalFilter(e.target.value)}
+                        label={"Cari"}
+                        placeholder={props.searchPlaceholder ?? "Search"}
+                        className={styles.input}
+                    />
+                }
+                {
+                    props.searchType == "smart" &&
+                    <SmartSearchInput
+                        suggestions={props.filterKeys}
+                        onSubmit={handleSearchSubmit}
+                    />
+                }
                 <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
-                    <FaPlus />
+                    <FaPlus/>
                     <span>Buat</span>
                 </Button>
             </div>
-            <div className="w-full flex-1 min-h-0 overflow-auto" style={{ height: '400px', overflowY: 'auto' }}>
-                <TanTable tanTable={tanTable} />
+            <div className="w-full flex-1 min-h-0 overflow-auto" style={{height: '400px', overflowY: 'auto'}}>
+                <TanTable tanTable={tanTable}/>
             </div>
             <div className="flex items-center mt-4 gap-x-8">
                 <div className={"ml-auto"}>
@@ -304,10 +319,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                         onClick={() => tanTable.previousPage()}
                         disabled={!tanTable.getCanPreviousPage()}
                     >
-                        <FaArrowLeft strokeWidth={2} className="h-4 w-4" />
+                        <FaArrowLeft strokeWidth={2} className="h-4 w-4"/>
                     </IconButton>
                     <Typography color="gray" className="font-normal">
-                        Page <strong className="text-gray-900">{tanTable.getState().pagination.pageIndex + 1}</strong> of{" "}
+                        Page <strong
+                        className="text-gray-900">{tanTable.getState().pagination.pageIndex + 1}</strong> of{" "}
                         <strong className="text-gray-900">{tanTable.getPageCount()}</strong>
                     </Typography>
                     <IconButton
@@ -316,7 +332,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                         onClick={() => tanTable.nextPage()}
                         disabled={!tanTable.getCanNextPage()}
                     >
-                        <FaArrowRight strokeWidth={2} className="h-4 w-4" />
+                        <FaArrowRight strokeWidth={2} className="h-4 w-4"/>
                     </IconButton>
                 </div>
             </div>
@@ -378,7 +394,7 @@ export const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
     const itemRank = rankItem(row.getValue(columnId), value);
 
     // Store the itemRank info
-    addMeta({ itemRank });
+    addMeta({itemRank});
 
     // Return if the item should be filtered in/out
     return itemRank.passed;
