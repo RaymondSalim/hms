@@ -8,7 +8,18 @@ import {AiOutlineLoading} from "react-icons/ai";
 import {getAllPayments} from "@/app/_db/payment";
 import PaymentsContent from "@/app/(internal)/(dashboard_layout)/payments/content";
 
-export default function PaymentPage() {
+export type PaymentPageQueryParams = {
+  action?: "search",
+  id?: string,
+  booking_id?: string,
+  tenant?: string,
+  status?: string
+}
+
+export default function PaymentPage(props: {
+  params?: any,
+  searchParams?: PaymentPageQueryParams
+}) {
   const headerContext = useContext(HeaderContext);
 
   useEffect(() => {
@@ -37,7 +48,10 @@ export default function PaymentPage() {
       {
         isSuccess &&
         // @ts-ignore
-          <PaymentsContent payments={payments}/>
+          <PaymentsContent
+              queryParams={props.searchParams}
+              payments={payments}
+          />
       }
     </>
   );

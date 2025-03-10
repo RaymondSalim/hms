@@ -272,6 +272,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                                             {
                                                 pathname: "/bookings",
                                                 query: {
+                                                    action: "create",
                                                     location_id: props.locationID,
                                                     room_type_id: rt.id
                                                 }

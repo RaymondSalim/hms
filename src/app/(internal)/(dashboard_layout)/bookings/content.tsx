@@ -140,19 +140,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             <TableContent<BookingsIncludeAll>
                 name={"Pemesanan"}
                 initialContents={bookingsState}
-                // @ts-expect-error room mapping error
-                queryParams={
-                    newQueryParams ?
-                        {
-                            initialActiveContent: {
-                                rooms: {
-                                    location_id: newQueryParams.locationID,
-                                    room_type_id: newQueryParams.roomTypeID,
-                                }
-                            },
-                            clearQueryParams: removeQueryParams
-                        } : undefined
-                }
                 columns={columns}
                 form={
                     // @ts-ignore
@@ -222,6 +209,17 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                 }}
                 filterKeys={filterKeys}
                 searchType="smart"
+                queryParams={
+                    (queryParams?.action == undefined || queryParams?.action == "search") ?
+                        {
+                            action: "search",
+                            values: queryParams,
+                        } : undefined
+                    /*{
+                        action: "create",
+                        initialActiveContent: {...queryParams} as unknown as typeof bills[0]
+                    }*/
+                }
             />
     );
 }

@@ -12,11 +12,12 @@ export type SmartSearchFilter = {
 }
 
 export interface SmartSearchInputProps {
+    initialValues?: string[]
     suggestions: SelectOption<string>[];
     onSubmit: (filter?: SmartSearchFilter[], global?: string) => void;
 }
 
-export default function SmartSearchInput({suggestions, onSubmit}: SmartSearchInputProps) {
+export default function SmartSearchInput({suggestions, onSubmit, initialValues}: SmartSearchInputProps) {
     const [inputValue, setInputValue] = useState<string>("");
     const [open, setOpen] = useState(false);
     const [pills, setPills] = useState<SmartSearchFilter[]>([]);
@@ -32,6 +33,10 @@ export default function SmartSearchInput({suggestions, onSubmit}: SmartSearchInp
         label: `Cari dengan ${s.label}`,
         requireInput: true
     })));
+
+    useEffect(() => {
+        initialValues?.forEach(v => handleStringInput(v));
+    }, []);
 
     useEffect(() => {
         if (open) {
@@ -70,31 +75,7 @@ export default function SmartSearchInput({suggestions, onSubmit}: SmartSearchInp
                     handleSubmit();
                 }
 
-                // Check if input matches column filter format (e.g., "Name: John Doe")
-                const separatorIndex = trimmedValue.indexOf(":");
-                if (separatorIndex !== -1) {
-                    const key = trimmedValue.substring(0, separatorIndex).trim();
-                    const value = trimmedValue.substring(separatorIndex + 1).trim();
-
-                    const matchedFilter = formattedSuggestions.find(
-                        s => s.value.toLowerCase() === key.toLowerCase()
-                    );
-
-                    if (matchedFilter && value.length > 0) {
-                        // Create a pill for column-specific filtering
-                        setPills([
-                            ...pills,
-                            {
-                                column: matchedFilter.original_label,
-                                key: matchedFilter.value,
-                                value
-                            }
-                        ]);
-                        setInputValue("");
-                    } else {
-                        setGlobalFilter(trimmedValue);
-                    }
-                }
+                handleStringInput(trimmedValue);
                 break;
             }
 
@@ -104,6 +85,34 @@ export default function SmartSearchInput({suggestions, onSubmit}: SmartSearchInp
                     setPills(p => p.slice(0, -1));
                 }
                 break;
+            }
+        }
+    };
+
+    const handleStringInput = (text: string) => {
+        // Check if input matches column filter format (e.g., "Name: John Doe")
+        const separatorIndex = text.indexOf(":");
+        if (separatorIndex !== -1) {
+            const key = text.substring(0, separatorIndex).trim();
+            const value = text.substring(separatorIndex + 1).trim();
+
+            const matchedFilter = formattedSuggestions.find(
+                s => s.value.toLowerCase() === key.toLowerCase()
+            );
+
+            if (matchedFilter && value.length > 0) {
+                // Create a pill for column-specific filtering
+                setPills([
+                    ...pills,
+                    {
+                        column: matchedFilter.original_label,
+                        key: matchedFilter.value,
+                        value
+                    }
+                ]);
+                setInputValue("");
+            } else {
+                setGlobalFilter(text);
             }
         }
     };

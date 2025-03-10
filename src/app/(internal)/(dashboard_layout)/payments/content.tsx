@@ -11,17 +11,19 @@ import {PaymentIncludeAll} from "@/app/_db/payment";
 import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
 import {Prisma} from "@prisma/client";
 import {SelectOption} from "@/app/_components/input/select";
+import {PaymentPageQueryParams} from "@/app/(internal)/(dashboard_layout)/payments/page";
 
 
 export interface PaymentsContentProps {
   payments: PaymentIncludeAll[]
+  queryParams?: PaymentPageQueryParams
 }
 
 const colorMapping: Map<string, string> = new Map([
   ["default", "text-black"]
 ]);
 
-export default function PaymentsContent({payments}: PaymentsContentProps) {
+export default function PaymentsContent({payments, queryParams}: PaymentsContentProps) {
   const headerContext = useContext(HeaderContext);
   const [dataState, setDataState] = useState<typeof payments>(payments);
 
@@ -120,6 +122,17 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
         }}
         searchType={"smart"}
         filterKeys={filterKeys}
+        queryParams={
+          (queryParams?.action == undefined || queryParams?.action == "search") ?
+              {
+                action: "search",
+                values: queryParams,
+              } : undefined
+          /*{
+              action: "create",
+              initialActiveContent: {...queryParams} as unknown as typeof bills[0]
+          }*/
+        }
       />
   );
 }

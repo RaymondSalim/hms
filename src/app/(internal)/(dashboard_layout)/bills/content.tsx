@@ -19,13 +19,15 @@ import {useMutation, UseMutationResult} from "@tanstack/react-query";
 import {MdEmail} from "react-icons/md";
 import {toast} from "react-toastify";
 import {SelectOption} from "@/app/_components/input/select";
+import {BillPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bills/page";
 
 
 export interface BillsContentProps {
     bills: BillIncludeAll[]
+    queryParams?: BillPageQueryParams
 }
 
-export default function BillsContent({bills}: BillsContentProps) {
+export default function BillsContent({bills, queryParams}: BillsContentProps) {
     const headerContext = useContext(HeaderContext);
     let [dataState, setDataState] = useState<typeof bills>(bills);
     let [showDialog, setShowDialog] = useState(false);
@@ -57,7 +59,7 @@ export default function BillsContent({bills}: BillsContentProps) {
             enableColumnFilter: true,
         }),
         columnHelper.accessor(row => row.bookings?.rooms?.room_number, {
-            id: "room_id",
+            id: "room_number",
             header: "Nomor Kamar",
             enableColumnFilter: true,
         }),
@@ -176,6 +178,17 @@ export default function BillsContent({bills}: BillsContentProps) {
             }
             searchType={"smart"}
             filterKeys={filterKeys}
+            queryParams={
+                (queryParams?.action == undefined || queryParams?.action == "search") ?
+                    {
+                        action: "search",
+                        values: queryParams,
+                    } : undefined
+                    /*{
+                        action: "create",
+                        initialActiveContent: {...queryParams} as unknown as typeof bills[0]
+                    }*/
+            }
         />
     );
 }

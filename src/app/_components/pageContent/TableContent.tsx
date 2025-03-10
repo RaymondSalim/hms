@@ -30,6 +30,7 @@ import {rankItem} from '@tanstack/match-sorter-utils';
 import {FilterFn} from '@tanstack/table-core';
 import SmartSearchInput, {SmartSearchFilter} from "@/app/_components/input/smartSearchInput";
 import {SelectOption} from "@/app/_components/input/select";
+import {objectToStringArray} from "@/app/_lib/util";
 
 export interface TableFormProps<T> {
     contentData?: T
@@ -55,9 +56,17 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
     initialContents: T[],
     initialSearchValue?: string,
     queryParams?: {
-        initialActiveContent: T,
-        clearQueryParams: () => void,
-    }
+        clearQueryParams?: () => void,
+    } & (
+        {
+            action: "search" | undefined,
+            values: any
+
+        } | {
+            action: "create",
+            initialActiveContent: T,
+        }
+    )
 
     upsert: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
     delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
@@ -88,7 +97,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
-    const [activeContent, setActiveContent] = useState<T | undefined>(props.queryParams?.initialActiveContent);
+    const [activeContent, setActiveContent] = useState<T | undefined>();
     const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [fromQuery, setFromQuery] = useState(false);
@@ -243,7 +252,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         if (!dialogOpen) {
             setActiveContent(undefined);
             setUpsertMutationResponse(undefined);
-            props.queryParams?.clearQueryParams();
+            props.queryParams?.clearQueryParams?.();
             setFromQuery(false);
         }
     }, [dialogOpen]);
@@ -253,14 +262,28 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     }, [props.initialContents]);
 
     useEffect(() => {
-        if (props.queryParams?.initialActiveContent) {
-            setActiveContent({
-                ...props.queryParams?.initialActiveContent,
-            });
-            setFromQuery(true);
-            setDialogOpen(true);
+        if (props.queryParams?.action == "create") {
+            if (props.queryParams.initialActiveContent) {
+                setActiveContent({
+                    ...props.queryParams.initialActiveContent,
+                });
+                setFromQuery(true);
+                setDialogOpen(true);
+            }
         }
     }, [props.queryParams]);
+
+    const smartSearchInputInitialValues =
+        props.queryParams ?
+            (
+                (
+                    props.queryParams.action == undefined ||
+                    props.queryParams.action == "search"
+                ) ? (
+                    props.queryParams.values ? objectToStringArray(props.queryParams.values) : undefined
+                ) : undefined
+            )
+            : undefined;
 
     return (
         <div className={"p-8 flex-1 flex flex-col min-h-0 overflow-hidden"}>
@@ -281,6 +304,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 {
                     props.searchType == "smart" &&
                     <SmartSearchInput
+                        initialValues={smartSearchInputInitialValues}
                         suggestions={props.filterKeys}
                         onSubmit={handleSearchSubmit}
                     />
