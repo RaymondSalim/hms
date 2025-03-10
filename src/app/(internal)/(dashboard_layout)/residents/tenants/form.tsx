@@ -4,7 +4,7 @@ import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useState} from "react";
 import {Button, Checkbox, Input, Textarea, Typography} from "@material-tailwind/react";
 import {TenantWithRooms} from "@/app/_db/tenant";
-import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
+import {PhoneInput} from "@/app/_components/input/phoneInput";
 import {ZodFormattedError} from "zod";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {toast} from "react-toastify";

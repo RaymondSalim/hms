@@ -8,37 +8,51 @@ import {AiOutlineLoading} from "react-icons/ai";
 import BillsContent from "@/app/(internal)/(dashboard_layout)/bills/content";
 import {getAllBillsIncludeAll,} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 
-export default function BillPage() {
-  const headerContext = useContext(HeaderContext);
+export type BillPageQueryParams = {
+    action?: "create" | "search",
+    id?: string
+    booking_id?: string
+    room_number?: string
+}
 
-  useEffect(() => {
-    headerContext.setTitle("Semua Tagihan");
-    headerContext.setShowLocationPicker(true);
-    headerContext.setPaths([
-      <Link key={"payments"} href={"/bills"}>Pembayaran</Link>,
-    ]);
-  }, []);
+export default function BillPage(props: {
+    params?: any,
+    searchParams?: BillPageQueryParams
+}) {
+    const headerContext = useContext(HeaderContext);
 
-  const {
-    data: bills,
-    isLoading,
-    isSuccess
-  } = useQuery({
-    queryKey: ['bills', 'location_id', headerContext.locationID],
-    queryFn: () => getAllBillsIncludeAll(undefined, headerContext.locationID)
-  });
+    useEffect(() => {
+        headerContext.setTitle("Semua Tagihan");
+        headerContext.setShowLocationPicker(true);
+        headerContext.setPaths([
+            <Link key={"payments"} href={"/bills"}>Pembayaran</Link>,
+        ]);
+        console.log(props.searchParams);
+    }, []);
 
-  return (
-    <>
-      {
-        isLoading &&
-          <span className={"mx-auto h-8 w-8"}><AiOutlineLoading className="animate-spin"/></span>
-      }
-      {
-        isSuccess &&
-          // @ts-expect-error
-          <BillsContent bills={bills}/>
-      }
-    </>
-  );
+    const {
+        data: bills,
+        isLoading,
+        isSuccess
+    } = useQuery({
+        queryKey: ['bills', 'location_id', headerContext.locationID],
+        queryFn: () => getAllBillsIncludeAll(undefined, headerContext.locationID)
+    });
+
+    return (
+        <>
+            {
+                isLoading &&
+                <span className={"mx-auto h-8 w-8"}><AiOutlineLoading className="animate-spin"/></span>
+            }
+            {
+                isSuccess &&
+                <BillsContent
+                    // @ts-expect-error
+                    bills={bills}
+                    queryParams={props.searchParams}
+                />
+            }
+        </>
+    );
 }

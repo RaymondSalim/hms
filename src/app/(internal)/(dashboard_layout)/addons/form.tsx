@@ -14,7 +14,7 @@ import {
     Typography
 } from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
-import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
+import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {AddOnPricing} from "@prisma/client";
 import {ZodFormattedError} from "zod";

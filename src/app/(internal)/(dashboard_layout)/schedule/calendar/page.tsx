@@ -369,9 +369,9 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
                     </div>
                     <Link
                         href={{
-                            href: "/bookings",
+                            pathname: "/bookings",
                             query: {
-                                "booking-id": bookingData.id.toString()
+                                "id": bookingData.id.toString()
                             }
                         }}
                         className={"text-blue-600 dark:text-blue-500 hover:underline"}
