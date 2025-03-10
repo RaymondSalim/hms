@@ -221,6 +221,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                     ]
                 }}
                 filterKeys={filterKeys}
+                searchType="smart"
             />
     );
 }

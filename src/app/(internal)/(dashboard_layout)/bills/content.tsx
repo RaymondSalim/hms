@@ -18,6 +18,7 @@ import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useMutation, UseMutationResult} from "@tanstack/react-query";
 import {MdEmail} from "react-icons/md";
 import {toast} from "react-toastify";
+import {SelectOption} from "@/app/_components/input/select";
 
 
 export interface BillsContentProps {
@@ -45,13 +46,20 @@ export default function BillsContent({bills}: BillsContentProps) {
     const columnHelper = createColumnHelper<typeof bills[0]>();
     const columns = [
         columnHelper.accessor(row => row.id, {
+            id: "id",
             header: "ID",
+            enableColumnFilter: true,
+            size: 20,
         }),
         columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id, {
+            id: "booking_id",
             header: "ID Pemesanan",
+            enableColumnFilter: true,
         }),
         columnHelper.accessor(row => row.bookings?.rooms?.room_number, {
-            header: "Kamar"
+            id: "room_id",
+            header: "Nomor Kamar",
+            enableColumnFilter: true,
         }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
@@ -102,6 +110,15 @@ export default function BillsContent({bills}: BillsContentProps) {
             })
         );
     }
+
+    const filterKeys: SelectOption<string>[] = columns
+        .filter(c => (
+            c.enableColumnFilter && c.header && c.id
+        ))
+        .map(c => ({
+            label: c.header!.toString(),
+            value: c.id!,
+        }));
 
     return (
         <TableContent<typeof bills[0]>
@@ -157,6 +174,8 @@ export default function BillsContent({bills}: BillsContentProps) {
                     {dialogContent}
                 </Dialog>
             }
+            searchType={"smart"}
+            filterKeys={filterKeys}
         />
     );
 }
