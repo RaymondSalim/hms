@@ -5,10 +5,10 @@ import {Guest} from "@prisma/client";
 import React, {useEffect, useState} from "react";
 import {Button, Input, Typography} from "@material-tailwind/react";
 import {GuestIncludeAll} from "@/app/_db/guest";
-import {PhoneInput} from "@/app/_components/input/phone/phoneInput";
+import {PhoneInput} from "@/app/_components/input/phoneInput";
 import {useQuery} from "@tanstack/react-query";
 import {ZodFormattedError} from "zod";
-import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
+import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {formatToDateTime} from "@/app/_lib/util";
 

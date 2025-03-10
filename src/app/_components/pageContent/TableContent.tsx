@@ -3,6 +3,7 @@
 import {
     CellContext,
     ColumnDef,
+    ColumnFiltersState,
     createColumnHelper,
     getCoreRowModel,
     getFilteredRowModel,
@@ -27,6 +28,9 @@ import {GenericActionsType} from "@/app/_lib/actions";
 import {toast} from "react-toastify";
 import {rankItem} from '@tanstack/match-sorter-utils';
 import {FilterFn} from '@tanstack/table-core';
+import SmartSearchInput, {SmartSearchFilter} from "@/app/_components/input/smartSearchInput";
+import {SelectOption} from "@/app/_components/input/select";
+import {objectToStringArray} from "@/app/_lib/util";
 
 export interface TableFormProps<T> {
     contentData?: T
@@ -47,14 +51,22 @@ interface CustomMutationOptions<
     ) => Promise<unknown> | unknown;
 }
 
-export interface TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> {
+export type TableContentProps<T extends { id: number | string }, _TReturn = GenericActionsType<T>> = {
     name: string,
     initialContents: T[],
     initialSearchValue?: string,
     queryParams?: {
-        initialActiveContent: T,
-        clearQueryParams: () => void,
-    }
+        clearQueryParams?: () => void,
+    } & (
+        {
+            action: "search" | undefined,
+            values: any
+
+        } | {
+            action: "create",
+            initialActiveContent: T,
+        }
+    )
 
     upsert: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
     delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
@@ -74,16 +86,23 @@ export interface TableContentProps<T extends { id: number | string }, _TReturn =
 
     customDialog?: ReactElement
     refetchFn?: (options?: RefetchOptions) => Promise<QueryObserverResult<T[]>>
+} & (
+    {
+        searchType: "smart",
+        filterKeys: SelectOption<string>[]
+    } | {
+    searchType: "default" | undefined
 }
+    )
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
-    const [searchValue, setSearchValue] = useState(props.initialSearchValue ?? "");
-    const [activeContent, setActiveContent] = useState<T | undefined>(props.queryParams?.initialActiveContent);
+    const [activeContent, setActiveContent] = useState<T | undefined>();
     const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
-
     const [fromQuery, setFromQuery] = useState(false);
+    const [globalFilter, setGlobalFilter] = useState<string>();
+    const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>();
 
     const upsertContentMutation = useMutation({
         ...props.upsert,
@@ -140,7 +159,6 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 setDeleteDialogOpen(false);
                 toast.success(`Penghapusan Berhasil!`);
             }
-            // TODO! Alert
         }
     });
 
@@ -188,25 +206,30 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         })
     ], [contentsState]);
 
+    const handleSearchSubmit = (filter?: SmartSearchFilter[], global?: string) => {
+        setColumnFilter(
+            filter?.map(f => ({id: f.key, value: f.value}))
+        );
+        setGlobalFilter(global);
+    };
+
     const tanTable = useReactTable({
         defaultColumn: {
             minSize: 0,
             size: 0,
+            filterFn: "includesString",
         },
         columns: columns,
         data: contentsState,
-        filterFns: {
-          fuzzy: fuzzyFilter
-        },
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         state: {
-            globalFilter: searchValue,
+            globalFilter: globalFilter,
+            columnFilters: columnFilter
         },
-        // @ts-expect-error custom filter fn definition
-        globalFilterFn: "fuzzy"
+        globalFilterFn: fuzzyFilter,
     });
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -229,7 +252,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         if (!dialogOpen) {
             setActiveContent(undefined);
             setUpsertMutationResponse(undefined);
-            props.queryParams?.clearQueryParams();
+            props.queryParams?.clearQueryParams?.();
             setFromQuery(false);
         }
     }, [dialogOpen]);
@@ -239,32 +262,60 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     }, [props.initialContents]);
 
     useEffect(() => {
-        if (props.queryParams?.initialActiveContent) {
-            setActiveContent({
-                ...props.queryParams?.initialActiveContent,
-            });
-            setFromQuery(true);
-            setDialogOpen(true);
+        if (props.queryParams?.action == "create") {
+            if (props.queryParams.initialActiveContent) {
+                setActiveContent({
+                    ...props.queryParams.initialActiveContent,
+                });
+                setFromQuery(true);
+                setDialogOpen(true);
+            }
         }
     }, [props.queryParams]);
+
+    const smartSearchInputInitialValues =
+        props.queryParams ?
+            (
+                (
+                    props.queryParams.action == undefined ||
+                    props.queryParams.action == "search"
+                ) ? (
+                    props.queryParams.values ? objectToStringArray(props.queryParams.values) : undefined
+                ) : undefined
+            )
+            : undefined;
 
     return (
         <div className={"p-8 flex-1 flex flex-col min-h-0 overflow-hidden"}>
             <div className={styles.searchBarAndCreate}>
-                <Input
-                    value={searchValue}
-                    onChange={e => setSearchValue(e.target.value)}
-                    label={"Search"}
-                    placeholder={props.searchPlaceholder ?? "Search"}
-                    className={styles.input}
-                />
+                {
+                    (
+                        props.searchType == undefined ||
+                        props.searchType == "default"
+                    ) &&
+                    <Input
+                        value={globalFilter}
+                        onChange={e => setGlobalFilter(e.target.value)}
+                        label={"Cari"}
+                        placeholder={props.searchPlaceholder ?? "Search"}
+                        className={styles.input}
+                    />
+                }
+                {
+                    props.searchType == "smart" &&
+                    <SmartSearchInput
+                        initialValues={smartSearchInputInitialValues}
+                        suggestions={props.filterKeys}
+                        onSubmit={handleSearchSubmit}
+                    />
+                }
                 <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
-                    <FaPlus />
+                    <FaPlus/>
                     <span>Buat</span>
                 </Button>
             </div>
-            <div className="w-full flex-1 min-h-0 overflow-auto" style={{ height: '400px', overflowY: 'auto' }}>
-                <TanTable tanTable={tanTable} />
+            <div className="w-full flex-1 min-h-0 overflow-auto" style={{height: '400px', overflowY: 'auto'}}>
+                <TanTable tanTable={tanTable}/>
             </div>
             <div className="flex items-center mt-4 gap-x-8">
                 <div className={"ml-auto"}>
@@ -292,10 +343,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                         onClick={() => tanTable.previousPage()}
                         disabled={!tanTable.getCanPreviousPage()}
                     >
-                        <FaArrowLeft strokeWidth={2} className="h-4 w-4" />
+                        <FaArrowLeft strokeWidth={2} className="h-4 w-4"/>
                     </IconButton>
                     <Typography color="gray" className="font-normal">
-                        Page <strong className="text-gray-900">{tanTable.getState().pagination.pageIndex + 1}</strong> of{" "}
+                        Page <strong
+                        className="text-gray-900">{tanTable.getState().pagination.pageIndex + 1}</strong> of{" "}
                         <strong className="text-gray-900">{tanTable.getPageCount()}</strong>
                     </Typography>
                     <IconButton
@@ -304,7 +356,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                         onClick={() => tanTable.nextPage()}
                         disabled={!tanTable.getCanNextPage()}
                     >
-                        <FaArrowRight strokeWidth={2} className="h-4 w-4" />
+                        <FaArrowRight strokeWidth={2} className="h-4 w-4"/>
                     </IconButton>
                 </div>
             </div>
@@ -362,11 +414,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     );
 }
 
-const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+export const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
     const itemRank = rankItem(row.getValue(columnId), value);
 
     // Store the itemRank info
-    addMeta({ itemRank });
+    addMeta({itemRank});
 
     // Return if the item should be filtered in/out
     return itemRank.passed;

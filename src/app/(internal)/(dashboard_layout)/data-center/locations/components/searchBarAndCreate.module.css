@@ -1,8 +1,12 @@
 .searchBarAndCreate {
     @apply
+    w-full
     flex
     gap-x-4
     mb-4
+    p-0.5
+    py-1
+    overflow-hidden
 }
 
 .input {

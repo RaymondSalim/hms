@@ -207,3 +207,9 @@ export function preparePieChartData(transactions: Transaction[]): ChartData<"pie
     ]
   };
 }
+
+export function objectToStringArray<T extends Record<string, any>>(obj: T): string[] {
+  return Object.entries(obj)
+      .filter(([_, value]) => value !== undefined && value !== null) // Ignore undefined/null values
+      .map(([key, value]) => `${key}:${String(value)}`);
+}

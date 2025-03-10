@@ -5,7 +5,7 @@ import React, {useEffect, useMemo, useState} from "react";
 import {Button, Checkbox, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getRooms, getRoomTypes} from "@/app/_db/room";
-import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
+import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
 import {Duration, Prisma} from "@prisma/client";

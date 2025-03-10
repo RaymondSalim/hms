@@ -7,18 +7,25 @@ import {useQuery} from "@tanstack/react-query";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {AiOutlineLoading} from "react-icons/ai";
 import BookingsContent from "@/app/(internal)/(dashboard_layout)/bookings/content";
-import {useSearchParams} from "next/navigation";
 
 export type BookingPageQueryParams = {
-  roomTypeID?: number
-  locationID?: number
+  action: "create",
+  room_type_id?: number
+  location_id?: number
+} | {
+  action: "search";
+  id?: string,
+  room_number?: string,
+  tenant?: string,
+  status?: string
 }
 
-export default function BookingPage() {
+export default function BookingPage(props: {
+  params?: any,
+  searchParams?: BookingPageQueryParams,
+}) {
   const headerContext = useContext(HeaderContext);
   const [locationID, setLocationID] = useState(headerContext.locationID);
-  const [queryParams, setQueryParams] = useState<BookingPageQueryParams>();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     headerContext.setTitle("Semua Pemesanan");
@@ -26,25 +33,6 @@ export default function BookingPage() {
     headerContext.setPaths([
       <Link key={"bookings"} href={"/bookings"}>Pemesanan</Link>,
     ]);
-
-    let bpqp: BookingPageQueryParams = {};
-    let shouldUpdate = false;
-
-    let lID = searchParams.get("location_id");
-    if (lID && Number(lID) > 0) {
-      bpqp.locationID = Number(lID);
-      setLocationID(bpqp.locationID);
-      shouldUpdate = true;
-    }
-
-    let rtID = searchParams.get("room_type_id");
-    if (rtID && Number(rtID) > 0) {
-      bpqp.roomTypeID = Number(rtID);
-      shouldUpdate = true;
-    }
-    if (shouldUpdate) {
-      setQueryParams(bpqp);
-    }
   }, []);
 
   const {
@@ -65,7 +53,7 @@ export default function BookingPage() {
       {
         isSuccess &&
           <BookingsContent
-              queryParams={queryParams}
+              queryParams={props.searchParams}
               // @ts-expect-error bookings mismatch
               bookings={bookings}
           />

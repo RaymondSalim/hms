@@ -11,7 +11,7 @@ import {
     RoomsWithTypeAndLocation,
     RoomTypeDurationWithDuration
 } from "@/app/_db/room";
-import {SelectComponent, SelectOption} from "@/app/_components/input/select/select";
+import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
 import {Prisma} from "@prisma/client";

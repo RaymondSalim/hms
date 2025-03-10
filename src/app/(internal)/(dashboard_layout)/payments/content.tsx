@@ -10,32 +10,41 @@ import {PaymentForm} from "@/app/(internal)/(dashboard_layout)/payments/form";
 import {PaymentIncludeAll} from "@/app/_db/payment";
 import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
 import {Prisma} from "@prisma/client";
+import {SelectOption} from "@/app/_components/input/select";
+import {PaymentPageQueryParams} from "@/app/(internal)/(dashboard_layout)/payments/page";
 
 
 export interface PaymentsContentProps {
   payments: PaymentIncludeAll[]
+  queryParams?: PaymentPageQueryParams
 }
 
 const colorMapping: Map<string, string> = new Map([
   ["default", "text-black"]
 ]);
 
-export default function PaymentsContent({payments}: PaymentsContentProps) {
+export default function PaymentsContent({payments, queryParams}: PaymentsContentProps) {
   const headerContext = useContext(HeaderContext);
   const [dataState, setDataState] = useState<typeof payments>(payments);
 
   const columnHelper = createColumnHelper<typeof payments[0]>();
   const columns = [
     columnHelper.accessor(row => row.id, {
+      id: 'id',
       header: "ID",
-      size: 20
+      size: 20,
+      enableColumnFilter: true,
     }),
     columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
+      id: 'booking_id',
       header: "ID Pemesanan",
-      size: 20
+      size: 20,
+      enableColumnFilter: true,
     }),
     columnHelper.accessor(row => `${row.bookings.tenants?.name} | ${row.bookings.tenants?.phone}`, {
+      id: 'tenant',
       header: "Penyewa",
+      enableColumnFilter: true,
       cell: props => {
         const data = props.row.original.bookings.tenants;
         return ( // TODO! Make link
@@ -50,7 +59,9 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
       },
     }),
     columnHelper.accessor(row => row.paymentstatuses?.status, {
+      id: "status",
       header: "Status",
+      enableColumnFilter: true,
       cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
     }),
     columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
@@ -80,6 +91,15 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
     );
   }
 
+  const filterKeys: SelectOption<string>[] = columns
+      .filter(c => (
+          c.enableColumnFilter && c.header && c.id
+      ))
+      .map(c => ({
+        label: c.header!.toString(),
+        value: c.id!,
+      }));
+
   return (
       <TableContent<typeof payments[0]>
         name={"Pembayaran"}
@@ -100,6 +120,19 @@ export default function PaymentsContent({payments}: PaymentsContentProps) {
           // @ts-expect-error
           mutationFn: deletePaymentAction,
         }}
+        searchType={"smart"}
+        filterKeys={filterKeys}
+        queryParams={
+          (queryParams?.action == undefined || queryParams?.action == "search") ?
+              {
+                action: "search",
+                values: queryParams,
+              } : undefined
+          /*{
+              action: "create",
+              initialActiveContent: {...queryParams} as unknown as typeof bills[0]
+          }*/
+        }
       />
   );
 }
