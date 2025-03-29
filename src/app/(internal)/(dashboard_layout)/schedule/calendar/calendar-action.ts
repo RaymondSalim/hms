@@ -16,7 +16,8 @@ export type CalenderEvent = Partial<Omit<Event, "id">> & Partial<EventApi> & {
         main?: CalenderEventTypes,
         sub?: any
     },
-    originalData?: any
+    originalData?: any,
+    extendedProps?: Record<string, any>
 }
 
 export async function getCalendarEvents(locationID?: number, dateRange?: CalenderEventRange): Promise<Partial<CalenderEvent>[]> {
@@ -99,18 +100,37 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
                         gte: startDate,
                         lt: endDate,
                     }
+                },
+                {
+                    recurring: true,
+                    start: {
+                        lte: endDate,
+                    }
                 }
             ],
         },
     });
 
     eventItems.forEach(e => {
-        // @ts-expect-error null-undefined
-        events.push({
+        const eventData = {
             ...e,
             id: e.id.toString(),
-            originalData: e
-        });
+            originalData: e,
+            extendedProps: e.extendedProps ? (typeof e.extendedProps === 'string' ? JSON.parse(e.extendedProps) : e.extendedProps) : undefined
+        };
+
+        // If it's a recurring event, add the recurrence properties
+        if (e.recurring && e.extendedProps?.recurrence) {
+            Object.assign(eventData, {
+                daysOfWeek: e.extendedProps.recurrence.daysOfWeek,
+                startRecur: e.extendedProps.recurrence.startRecur,
+                endRecur: e.extendedProps.recurrence.endRecur,
+                groupId: e.extendedProps.recurrence.groupId || `recurring_${e.id}`,
+                duration: e.extendedProps.recurrence.duration
+            });
+        }
+
+        events.push(eventData);
     });
 
     return events;

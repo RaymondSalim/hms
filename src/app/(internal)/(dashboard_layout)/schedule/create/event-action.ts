@@ -18,6 +18,11 @@ export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>):
 
     let res;
 
+    // If it's a recurring event, ensure we have a groupId
+    if (data.recurring && data.extendedProps?.recurrence) {
+        data.extendedProps.recurrence.groupId = data.extendedProps.recurrence.groupId || `recurring_${Date.now()}`;
+    }
+
     let newData: OmitTimestamp<PartialBy<Event, "id">> = {
         id: data.id,
         title: data.title,
@@ -29,8 +34,9 @@ export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>):
         borderColor: data.borderColor ?? null,
         textColor: data.textColor ?? null,
         recurring: data.recurring ?? false,
-        extendedProps: data.extendedProps ? JSON.parse(data.extendedProps as string) as Prisma.JsonValue : null
+        extendedProps: data.extendedProps ? data.extendedProps as Prisma.JsonObject : null
     };
+
 
     try {
         if (data?.id) {

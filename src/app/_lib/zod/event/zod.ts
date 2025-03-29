@@ -1,5 +1,12 @@
-import {boolean, date, number, object, string} from "zod";
-import {jsonString} from "@/app/_lib/zod/base/zod";
+import {any, array, boolean, date, number, object, string} from "zod";
+
+const recurrenceSchema = object({
+    daysOfWeek: array(number().min(0).max(6)).optional(),
+    startRecur: date().optional(),
+    endRecur: date().optional(),
+    groupId: string().optional(),
+    duration: string().optional()
+});
 
 export const eventSchema = object({
     title: string({required_error: "Judul harus diisi"}).min(1, "Judul harus diisi"),
@@ -11,7 +18,9 @@ export const eventSchema = object({
     borderColor: string().min(1).nullish(),
     textColor: string().min(1).nullish(),
     recurring: boolean().nullish(),
-    extendedProps: jsonString({}, true)
+    extendedProps: object({
+        recurrence: recurrenceSchema.optional()
+    }).catchall(any())
 });
 
 export const eventSchemaWithOptionalID = eventSchema.extend({

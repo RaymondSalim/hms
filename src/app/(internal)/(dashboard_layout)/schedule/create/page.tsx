@@ -47,6 +47,8 @@ const eventColors: Map<string, string> = new Map([
     ["Tomato", "#d50000"]
 ]);
 
+// IMPORTANT: Fullcalendar is set to use 'local' timezone. Therefore, any date/time picker set here should also be set to local
+
 // TODO! Add Event Type
 export default function CreateEventPage() {
     const headerContext = useContext(HeaderContext);
@@ -54,16 +56,25 @@ export default function CreateEventPage() {
 
     const searchParams = useSearchParams();
     const [queryParams, setQueryParams] = useState<EventPageQueryParam>();
-    const [eventData, setEventData] = useState<Partial<Event>>({
-        allDay: false
-    });
-    const [isUpdate, setIsUpdate] = useState(false);
-    const [popoverOpen, setIsPopoverOpen] = useState<{
-        start: boolean, end: boolean
-    }>({
+    const [isPopoverOpen, setIsPopoverOpen] = useState({
         start: false,
         end: false,
+        startRecur: false,
+        endRecur: false
     });
+    const [eventData, setEventData] = useState<OmitIDTypeAndTimestamp<Event>>({
+        title: "",
+        description: null,
+        start: undefined,
+        end: undefined,
+        allDay: false,
+        backgroundColor: null,
+        borderColor: null,
+        textColor: null,
+        recurring: false,
+        extendedProps: null
+    });
+    const [isUpdate, setIsUpdate] = useState(false);
 
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<Event> | undefined>();
     const [mutationResponse, setMutationResponse] = useState<GenericActionsType<Event>>();
@@ -218,7 +229,7 @@ export default function CreateEventPage() {
                                     <div className={"flex gap-x-4"}>
                                         <Popover
                                             key="start_date"
-                                            open={popoverOpen.start}
+                                            open={isPopoverOpen.start}
                                             handler={() => setIsPopoverOpen(p => ({
                                                 ...p,
                                                 start: !p.start
@@ -310,7 +321,7 @@ export default function CreateEventPage() {
                                     <div className={"flex gap-x-4"}>
                                         <Popover
                                             key={"end_date"}
-                                            open={popoverOpen.end}
+                                            open={isPopoverOpen.end}
                                             handler={() => setIsPopoverOpen(p => ({
                                                 ...p,
                                                 end: !p.start
@@ -444,6 +455,175 @@ export default function CreateEventPage() {
                                     <Typography color="red">{fieldErrors?.borderColor._errors}</Typography>
                                 }
                             </div>
+                            <div className="flex items-center gap-x-2">
+                                <Checkbox
+                                    label={
+                                        <Typography color="blue-gray" className="font-medium">
+                                            Jadwal Berulang
+                                        </Typography>
+                                    }
+                                    checked={eventData.recurring}
+                                    onChange={(e) => {
+                                        setEventData({
+                                            ...eventData,
+                                            recurring: e.target.checked,
+                                            extendedProps: e.target.checked ? {
+                                                recurrence: {
+                                                    daysOfWeek: [],
+                                                    startRecur: eventData.start,
+                                                    endRecur: undefined,
+                                                    groupId: undefined,
+                                                }
+                                            } : null
+                                        });
+                                    }}
+                                    containerProps={{
+                                        className: "-ml-3",
+                                    }}
+                                />
+                            </div>
+
+                            {eventData.recurring && eventData.extendedProps?.recurrence && (
+                                <div className="space-y-4 pl-6 border-l-2 border-gray-200">
+                                    <div className="space-y-2">
+                                        <Typography variant="h6" color="blue-gray">
+                                            Ulang pada
+                                        </Typography>
+                                        <div className="flex gap-x-2">
+                                            {['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map((day, index) => (
+                                                <Button
+                                                    key={day}
+                                                    size="sm"
+                                                    variant={eventData.extendedProps?.recurrence?.daysOfWeek?.includes(index) ? "filled" : "outlined"}
+                                                    onClick={() => {
+                                                        const days = eventData.extendedProps?.recurrence?.daysOfWeek || [];
+                                                        const newDays = days.includes(index)
+                                                            ? days.filter(d => d !== index)
+                                                            : [...days, index];
+                                                        setEventData({
+                                                            ...eventData,
+                                                            extendedProps: {
+                                                                ...eventData.extendedProps,
+                                                                recurrence: {
+                                                                    ...eventData.extendedProps?.recurrence,
+                                                                    daysOfWeek: newDays
+                                                                }
+                                                            }
+                                                        });
+                                                    }}
+                                                >
+                                                    {day}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Typography variant="h6" color="blue-gray">Mulai Pada</Typography>
+                                        <Popover
+                                            open={isPopoverOpen.startRecur}
+                                            handler={() => setIsPopoverOpen(p => ({...p, startRecur: !p.startRecur}))}
+                                            placement="bottom-start"
+                                        >
+                                            <PopoverHandler>
+                                                <Input
+                                                    icon={<FaRegCalendar/>}
+                                                    variant="outlined"
+                                                    size="lg"
+                                                    onChange={() => null}
+                                                    value={eventData.extendedProps?.recurrence?.startRecur ? formatToDateTime(new Date(eventData.extendedProps.recurrence.startRecur), false) : ""}
+                                                    className="relative !border-t-blue-gray-200 focus:!border-t-gray-900"
+                                                    labelProps={{
+                                                        className: "before:content-none after:content-none",
+                                                    }}
+                                                />
+                                            </PopoverHandler>
+                                            <PopoverContent className={"z-[99999]"}>
+                                                <DayPicker
+                                                    captionLayout="dropdown"
+                                                    mode="single"
+                                                    fixedWeeks={true}
+                                                    selected={eventData.extendedProps?.recurrence?.startRecur ? new Date(eventData.extendedProps.recurrence.startRecur) : undefined}
+                                                    onSelect={(d) => {
+                                                        setIsPopoverOpen(p => ({...p, startRecur: false}));
+                                                        if (d) {
+                                                            setEventData({
+                                                                ...eventData,
+                                                                extendedProps: {
+                                                                    ...eventData.extendedProps,
+                                                                    recurrence: {
+                                                                        ...eventData.extendedProps?.recurrence,
+                                                                        startRecur: d
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    }}
+                                                    showOutsideDays
+                                                    classNames={{
+                                                        disabled: "rdp-disabled cursor-not-allowed",
+                                                    }}
+                                                    startMonth={eventData.start}
+                                                    endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Typography variant="h6" color="blue-gray">Selesai Pada</Typography>
+                                        <Popover
+                                            open={isPopoverOpen.endRecur}
+                                            handler={() => setIsPopoverOpen(p => ({...p, endRecur: !p.endRecur}))}
+                                            placement="bottom-start"
+                                        >
+                                            <PopoverHandler>
+                                                <Input
+                                                    icon={<FaRegCalendar/>}
+                                                    variant="outlined"
+                                                    size="lg"
+                                                    onChange={() => null}
+                                                    value={eventData.extendedProps?.recurrence?.endRecur ? formatToDateTime(new Date(eventData.extendedProps.recurrence.endRecur), false) : ""}
+                                                    className="relative !border-t-blue-gray-200 focus:!border-t-gray-900"
+                                                    labelProps={{
+                                                        className: "before:content-none after:content-none",
+                                                    }}
+                                                />
+                                            </PopoverHandler>
+                                            <PopoverContent className={"z-[99999]"}>
+                                                <DayPicker
+                                                    captionLayout="dropdown"
+                                                    mode="single"
+                                                    fixedWeeks={true}
+                                                    selected={eventData.extendedProps?.recurrence?.endRecur ? new Date(eventData.extendedProps.recurrence.endRecur) : undefined}
+                                                    onSelect={(d) => {
+                                                        setIsPopoverOpen(p => ({...p, endRecur: false}));
+                                                        if (d) {
+                                                            setEventData({
+                                                                ...eventData,
+                                                                extendedProps: {
+                                                                    ...eventData.extendedProps,
+                                                                    recurrence: {
+                                                                        ...eventData.extendedProps?.recurrence,
+                                                                        endRecur: d
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    }}
+                                                    showOutsideDays
+                                                    classNames={{
+                                                        disabled: "rdp-disabled cursor-not-allowed",
+                                                    }}
+                                                    startMonth={eventData.extendedProps?.recurrence?.startRecur || eventData.start}
+                                                    endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </div>
+                            )}
+
                             {
                                 mutationResponse?.failure &&
                                 <Typography variant="h6" color="red" className="-mb-4">
