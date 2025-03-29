@@ -16,7 +16,8 @@ export type CalenderEvent = Partial<Omit<Event, "id">> & Partial<EventApi> & {
         main?: CalenderEventTypes,
         sub?: any
     },
-    originalData?: any
+    originalData?: any,
+    extendedProps?: Record<string, any>
 }
 
 export async function getCalendarEvents(locationID?: number, dateRange?: CalenderEventRange): Promise<Partial<CalenderEvent>[]> {
@@ -99,18 +100,40 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
                         gte: startDate,
                         lt: endDate,
                     }
+                },
+                {
+                    recurring: true,
+                    start: {
+                        lte: endDate,
+                    }
                 }
             ],
         },
     });
 
     eventItems.forEach(e => {
-        // @ts-expect-error null-undefined
-        events.push({
+        const eventData = {
             ...e,
             id: e.id.toString(),
-            originalData: e
-        });
+            originalData: e,
+            backgroundColor: e.backgroundColor || undefined,
+            borderColor: e.borderColor || undefined,
+            textColor: e.textColor || undefined,
+            extendedProps: e.extendedProps ? (typeof e.extendedProps === 'string' ? JSON.parse(e.extendedProps) : e.extendedProps) : undefined
+        };
+
+        // If it's a recurring event, add the recurrence properties
+        if (e.recurring && eventData.extendedProps?.recurrence) {
+            Object.assign(eventData, {
+                daysOfWeek: eventData.extendedProps.recurrence.daysOfWeek,
+                startRecur: eventData.extendedProps.recurrence.startRecur,
+                endRecur: eventData.extendedProps.recurrence.endRecur,
+                groupId: eventData.extendedProps.recurrence.groupId || `recurring_${e.id}`,
+                duration: eventData.extendedProps.recurrence.duration
+            });
+        }
+
+        events.push(eventData);
     });
 
     return events;

@@ -382,6 +382,7 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
         }
         default: {
             const eventData = originalData as Event;
+            const recurrence = eventData.recurring ? (typeof eventData.extendedProps === 'string' ? JSON.parse(eventData.extendedProps) : eventData.extendedProps)?.recurrence : undefined;
             tooltipContent = (
                 <>
                     <div className="flex gap-x-2 items-center">
@@ -403,6 +404,30 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
                             }`}
                         </Typography>
                     </div>
+
+                    {eventData.recurring && recurrence && (
+                        <div className="mb-4">
+                            <Typography variant="h6" className="text-gray-800 mb-2">
+                                Pengulangan
+                            </Typography>
+                            <div className="space-y-2">
+                                <Typography className="text-gray-700">
+                                    <strong>Hari:</strong> {recurrence.daysOfWeek?.map((day: number) => {
+                                        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                                        return days[day];
+                                    }).join(', ')}
+                                </Typography>
+                                <Typography className="text-gray-700">
+                                    <strong>Mulai:</strong> {formatToDateTime(new Date(recurrence.startRecur), false)}
+                                </Typography>
+                                {recurrence.endRecur && (
+                                    <Typography className="text-gray-700">
+                                        <strong>Selesai:</strong> {formatToDateTime(new Date(recurrence.endRecur), false)}
+                                    </Typography>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {eventData.description && (
                         <div className="mb-4">
