@@ -18,13 +18,15 @@ import {
     Typography
 } from "@material-tailwind/react";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
-import {Event} from "@prisma/client";
+import {Event, Prisma} from "@prisma/client";
+import type {z} from "zod";
 import {ZodFormattedError} from "zod";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {upsertEventAction} from "@/app/(internal)/(dashboard_layout)/schedule/create/event-action";
 import {getEventByID} from "@/app/_db/event";
 import {formatToDateTime} from "@/app/_lib/util";
 import {DayPicker} from "react-day-picker";
+import {eventSchema} from "@/app/_lib/zod/event/zod";
 
 import {FaRegCalendar, FaRegClock} from "react-icons/fa6";
 import "react-day-picker/style.css";
@@ -50,6 +52,20 @@ const eventColors: Map<string, string> = new Map([
 // IMPORTANT: Fullcalendar is set to use 'local' timezone. Therefore, any date/time picker set here should also be set to local
 
 // TODO! Add Event Type
+interface RecurrenceData {
+    daysOfWeek?: number[];
+    startRecur?: string;
+    endRecur?: string;
+    groupId?: string;
+    duration?: string;
+}
+
+interface ExtendedProps {
+    recurrence?: RecurrenceData;
+}
+
+type EventData = z.infer<typeof eventSchema>;
+
 export default function CreateEventPage() {
     const headerContext = useContext(HeaderContext);
     const router = useRouter();
@@ -62,17 +78,25 @@ export default function CreateEventPage() {
         startRecur: false,
         endRecur: false
     });
-    const [eventData, setEventData] = useState<OmitIDTypeAndTimestamp<Event>>({
+    const [eventData, setEventData] = useState<EventData>({
         title: "",
-        description: null,
-        start: undefined,
+        description: "",
+        start: new Date(),
         end: undefined,
         allDay: false,
-        backgroundColor: null,
-        borderColor: null,
-        textColor: null,
+        backgroundColor: undefined,
+        borderColor: undefined,
+        textColor: undefined,
         recurring: false,
-        extendedProps: null
+        extendedProps: {
+            recurrence: {
+                daysOfWeek: [],
+                startRecur: undefined,
+                endRecur: undefined,
+                groupId: undefined,
+                duration: undefined
+            }
+        }
     });
     const [isUpdate, setIsUpdate] = useState(false);
 
@@ -470,10 +494,10 @@ export default function CreateEventPage() {
                                             extendedProps: e.target.checked ? {
                                                 recurrence: {
                                                     daysOfWeek: [],
-                                                    startRecur: eventData.start,
+                                                    startRecur: eventData.start?.toISOString(),
                                                     endRecur: undefined,
                                                     groupId: undefined,
-                                                }
+                                                } as Prisma.JsonObject
                                             } : null
                                         });
                                     }}
@@ -483,38 +507,41 @@ export default function CreateEventPage() {
                                 />
                             </div>
 
-                            {eventData.recurring && eventData.extendedProps?.recurrence && (
+                            {eventData.recurring && eventData.extendedProps?.recurrence != null && (
                                 <div className="space-y-4 pl-6 border-l-2 border-gray-200">
                                     <div className="space-y-2">
                                         <Typography variant="h6" color="blue-gray">
-                                            Ulang pada
+                                            Pengulangan
                                         </Typography>
                                         <div className="flex gap-x-2">
-                                            {['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map((day, index) => (
-                                                <Button
-                                                    key={day}
-                                                    size="sm"
-                                                    variant={eventData.extendedProps?.recurrence?.daysOfWeek?.includes(index) ? "filled" : "outlined"}
-                                                    onClick={() => {
-                                                        const days = eventData.extendedProps?.recurrence?.daysOfWeek || [];
-                                                        const newDays = days.includes(index)
-                                                            ? days.filter(d => d !== index)
-                                                            : [...days, index];
-                                                        setEventData({
-                                                            ...eventData,
-                                                            extendedProps: {
-                                                                ...eventData.extendedProps,
-                                                                recurrence: {
-                                                                    ...eventData.extendedProps?.recurrence,
-                                                                    daysOfWeek: newDays
+                                            {['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map((day, index) => {
+                                                const extendedProps = eventData.extendedProps as ExtendedProps;
+                                                return (
+                                                    <Button
+                                                        key={day}
+                                                        size="sm"
+                                                        variant={extendedProps?.recurrence?.daysOfWeek?.includes(index) ? "filled" : "outlined"}
+                                                        onClick={() => {
+                                                            const days = extendedProps?.recurrence?.daysOfWeek || [];
+                                                            const newDays = days.includes(index)
+                                                                ? days.filter(d => d !== index)
+                                                                : [...days, index];
+                                                            setEventData({
+                                                                ...eventData,
+                                                                extendedProps: {
+                                                                    ...extendedProps,
+                                                                    recurrence: {
+                                                                        ...extendedProps?.recurrence,
+                                                                        daysOfWeek: newDays
+                                                                    }
                                                                 }
-                                                            }
-                                                        });
-                                                    }}
-                                                >
-                                                    {day}
-                                                </Button>
-                                            ))}
+                                                            });
+                                                        }}
+                                                    >
+                                                        {day}
+                                                    </Button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 
@@ -531,7 +558,7 @@ export default function CreateEventPage() {
                                                     variant="outlined"
                                                     size="lg"
                                                     onChange={() => null}
-                                                    value={eventData.extendedProps?.recurrence?.startRecur ? formatToDateTime(new Date(eventData.extendedProps.recurrence.startRecur), false) : ""}
+                                                    value={(eventData.extendedProps as ExtendedProps)?.recurrence?.startRecur ? formatToDateTime(new Date((eventData.extendedProps as ExtendedProps).recurrence!.startRecur!), false) : ""}
                                                     className="relative !border-t-blue-gray-200 focus:!border-t-gray-900"
                                                     labelProps={{
                                                         className: "before:content-none after:content-none",
@@ -543,17 +570,18 @@ export default function CreateEventPage() {
                                                     captionLayout="dropdown"
                                                     mode="single"
                                                     fixedWeeks={true}
-                                                    selected={eventData.extendedProps?.recurrence?.startRecur ? new Date(eventData.extendedProps.recurrence.startRecur) : undefined}
-                                                    onSelect={(d) => {
+                                                    selected={(eventData.extendedProps as ExtendedProps)?.recurrence?.startRecur ? new Date((eventData.extendedProps as ExtendedProps).recurrence!.startRecur!) : undefined}
+                                                    onSelect={(d: Date | undefined) => {
                                                         setIsPopoverOpen(p => ({...p, startRecur: false}));
                                                         if (d) {
+                                                            const extendedProps = eventData.extendedProps as ExtendedProps;
                                                             setEventData({
                                                                 ...eventData,
                                                                 extendedProps: {
-                                                                    ...eventData.extendedProps,
+                                                                    ...extendedProps,
                                                                     recurrence: {
-                                                                        ...eventData.extendedProps?.recurrence,
-                                                                        startRecur: d
+                                                                        ...extendedProps?.recurrence,
+                                                                        startRecur: d.toISOString()
                                                                     }
                                                                 }
                                                             });
@@ -583,7 +611,7 @@ export default function CreateEventPage() {
                                                     variant="outlined"
                                                     size="lg"
                                                     onChange={() => null}
-                                                    value={eventData.extendedProps?.recurrence?.endRecur ? formatToDateTime(new Date(eventData.extendedProps.recurrence.endRecur), false) : ""}
+                                                    value={(eventData.extendedProps as ExtendedProps)?.recurrence?.endRecur ? formatToDateTime(new Date((eventData.extendedProps as ExtendedProps).recurrence!.endRecur!), false) : ""}
                                                     className="relative !border-t-blue-gray-200 focus:!border-t-gray-900"
                                                     labelProps={{
                                                         className: "before:content-none after:content-none",
@@ -595,17 +623,18 @@ export default function CreateEventPage() {
                                                     captionLayout="dropdown"
                                                     mode="single"
                                                     fixedWeeks={true}
-                                                    selected={eventData.extendedProps?.recurrence?.endRecur ? new Date(eventData.extendedProps.recurrence.endRecur) : undefined}
-                                                    onSelect={(d) => {
+                                                    selected={(eventData.extendedProps as ExtendedProps)?.recurrence?.endRecur ? new Date((eventData.extendedProps as ExtendedProps).recurrence!.endRecur!) : undefined}
+                                                    onSelect={(d: Date | undefined) => {
                                                         setIsPopoverOpen(p => ({...p, endRecur: false}));
                                                         if (d) {
+                                                            const extendedProps = eventData.extendedProps as ExtendedProps;
                                                             setEventData({
                                                                 ...eventData,
                                                                 extendedProps: {
-                                                                    ...eventData.extendedProps,
+                                                                    ...extendedProps,
                                                                     recurrence: {
-                                                                        ...eventData.extendedProps?.recurrence,
-                                                                        endRecur: d
+                                                                        ...extendedProps?.recurrence,
+                                                                        endRecur: d.toISOString()
                                                                     }
                                                                 }
                                                             });
@@ -615,7 +644,7 @@ export default function CreateEventPage() {
                                                     classNames={{
                                                         disabled: "rdp-disabled cursor-not-allowed",
                                                     }}
-                                                    startMonth={eventData.extendedProps?.recurrence?.startRecur || eventData.start}
+                                                    startMonth={eventData.start}
                                                     endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
                                                 />
                                             </PopoverContent>
