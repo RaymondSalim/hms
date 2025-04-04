@@ -9,7 +9,8 @@ import Link from "next/link";
 import {
     checkInOutAction,
     deleteBookingAction,
-    upsertBookingAction
+    upsertBookingAction,
+    UpsertBookingPayload
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/(dashboard_layout)/bookings/form";
 import {Button} from "@material-tailwind/react";
@@ -21,6 +22,7 @@ import {usePathname, useRouter} from "next/navigation";
 import {BookingPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bookings/page";
 import {Prisma} from "@prisma/client";
 import {SelectOption} from "@/app/_components/input/select";
+import {MdContentCopy} from "react-icons/md";
 
 
 export interface BookingsContentProps {
@@ -137,89 +139,124 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         }));
 
     return (
-            <TableContent<BookingsIncludeAll>
-                name={"Pemesanan"}
-                initialContents={bookingsState}
-                columns={columns}
-                form={
-                    // @ts-ignore
-                    <BookingForm/>
-                }
-                searchPlaceholder={"TODO!"} // TODO!
-                upsert={{
-                    // @ts-ignore
-                    mutationFn: upsertBookingAction,
-                }}
+        <TableContent<BookingsIncludeAll>
+            name={"Pemesanan"}
+            initialContents={bookingsState}
+            queryParams={
+                newQueryParams ? {
+                    action: "search",
+                    values: newQueryParams,
+                    clearQueryParams: removeQueryParams
+                } : undefined
+            }
+            columns={columns}
+            form={
+                // @ts-expect-error missing props definition
+                <BookingForm/>
+            }
+            searchPlaceholder={"Cari"} // TODO!
+            filterKeys={filterKeys}
+            searchType="smart"
+            upsert={{
+                // @ts-ignore
+                mutationFn: upsertBookingAction,
+            }}
+            delete={{
+                // @ts-ignore
+                mutationFn: deleteBookingAction,
+            }}
+            additionalActions={{
+                position: "before",
+                actions: [
+                    {
+                        generateButton: (rowData) => {
+                            const checkInExists = rowData.checkInOutLogs?.find(l => l.event_type == CheckInOutType.CHECK_IN);
 
-                delete={{
-                    // @ts-ignore
-                    mutationFn: deleteBookingAction,
-                }}
-                additionalActions={{
-                    position: "before",
-                    actions: [
-                        {
-                            generateButton: (rowData) => {
-                                const checkInExists = rowData.checkInOutLogs?.find(l => l.event_type == CheckInOutType.CHECK_IN);
-
-                                return (
-                                    <Button
-                                        key={`${rowData.id}_in`}
-                                        size={"sm"}
-                                        color="blue"
-                                        className="flex items-center gap-2 w-fit"
-                                        onClick={() => checkIncCheckOutMutation.mutate({
-                                            booking_id: rowData.id,
-                                            action: CheckInOutType.CHECK_IN
-                                        })}
-                                        disabled={!!checkInExists}
-                                    >
-                                        <TbDoorEnter className={"text-white h-5 w-5"}/>
-                                        <span className={"text-white whitespace-nowrap"}>Check In</span>
-                                    </Button>
-                                );
-                            },
+                            return (
+                                <Button
+                                    key={`${rowData.id}_in`}
+                                    size={"sm"}
+                                    color="blue"
+                                    className="flex items-center gap-2 w-fit"
+                                    onClick={() => checkIncCheckOutMutation.mutate({
+                                        booking_id: rowData.id,
+                                        action: CheckInOutType.CHECK_IN
+                                    })}
+                                    disabled={!!checkInExists}
+                                >
+                                    <TbDoorEnter className={"text-white h-5 w-5"}/>
+                                    <span className={"text-white whitespace-nowrap"}>Check In</span>
+                                </Button>
+                            );
                         },
-                        {
-                            generateButton: (rowData) => {
-                                const checkInExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_IN);
-                                const checkOutExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_OUT);
+                    },
+                    {
+                        generateButton: (rowData) => {
+                            const checkInExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_IN);
+                            const checkOutExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_OUT);
 
-                                let disabled = !checkInExists || (checkInExists && checkOutExists);
+                            let disabled = !checkInExists || (checkInExists && checkOutExists);
 
-                                return (
-                                    <Button
-                                        key={`${rowData.id}_out`}
-                                        size={"sm"}
-                                        color="red"
-                                        className="flex items-center gap-2 w-fit"
-                                        onClick={() => checkIncCheckOutMutation.mutate({
-                                            booking_id: rowData.id,
-                                            action: CheckInOutType.CHECK_OUT
-                                        })}
-                                        disabled={disabled}
-                                    >
-                                        <TbDoorExit className={"text-white h-5 w-5"}/>
-                                        <span className={"text-white whitespace-nowrap"}>Check Out</span>
-                                    </Button>
-                                );
-                            },
-                        }
-                    ]
-                }}
-                filterKeys={filterKeys}
-                searchType="smart"
-                queryParams={
-                    (queryParams?.action == undefined || queryParams?.action == "search") ?
-                        {
-                            action: "search",
-                            values: queryParams,
-                        } : undefined
-                    /*{
-                        action: "create",
-                        initialActiveContent: {...queryParams} as unknown as typeof bills[0]
-                    }*/
-                }
-            />
+                            return (
+                                <Button
+                                    key={`${rowData.id}_out`}
+                                    size={"sm"}
+                                    color="red"
+                                    className="flex items-center gap-2 w-fit"
+                                    onClick={() => checkIncCheckOutMutation.mutate({
+                                        booking_id: rowData.id,
+                                        action: CheckInOutType.CHECK_OUT
+                                    })}
+                                    disabled={disabled}
+                                >
+                                    <TbDoorExit className={"text-white h-5 w-5"}/>
+                                    <span className={"text-white whitespace-nowrap"}>Check Out</span>
+                                </Button>
+                            );
+                        },
+                    },
+                    {
+                        generateButton: (rowData, setActiveContent, setDialogOpen) => (
+                            <MdContentCopy
+                                className="h-5 w-5 cursor-pointer hover:text-green-500"
+                                onClick={() => {
+                                    const {
+                                        id,
+                                        rooms: rowRooms,
+                                        durations,
+                                        bookingstatuses,
+                                        tenants,
+                                        checkInOutLogs,
+                                        end_date,
+                                        createdAt,
+                                        updatedAt,
+                                        ...rest
+                                    } = rowData;
+                                    const duplicatedBooking: Partial<UpsertBookingPayload> = {
+                                        ...rest,
+                                        // @ts-expect-error invalid type
+                                        rooms: rowRooms?.location_id ? {
+                                            location_id: rowRooms.location_id
+                                        } : null,
+                                        // @ts-expect-error id type undefined error
+                                        addOns: rowData.addOns?.map(addon => ({
+                                            ...addon,
+                                            id: undefined,
+                                            booking_id: undefined,
+                                            createdAt: undefined,
+                                            updatedAt: undefined
+                                        })) ?? [],
+                                    };
+                                    setActiveContent({
+                                        ...duplicatedBooking,
+                                    } as BookingsIncludeAll);
+                                    setDialogOpen(true);
+                                }}
+                            />
+                        )
+                    },
+                ]
+            }}
+        />
     );
 }
