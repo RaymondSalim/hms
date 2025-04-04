@@ -15,7 +15,7 @@ export function LocationForm({location, setDialogOpen, mutation}: LocationFormPr
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{location ? "Perubahan" : "Pembuatan"} Lokasi</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{(location && location.id) ? "Perubahan" : "Pembuatan"} Lokasi</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <Typography variant="h6" color="blue-gray" className="-mb-4">
@@ -51,7 +51,7 @@ export function LocationForm({location, setDialogOpen, mutation}: LocationFormPr
           </Button>
           <Button onClick={() => mutation.mutate(locationData)} color={"blue"} className="mt-6"
                   loading={mutation.isPending}>
-            {location ? "Ubah" : "Buat"}
+            {(location && location.id) ? "Ubah" : "Buat"}
           </Button>
         </div>
 
