@@ -269,7 +269,7 @@ export function BookingForm(props: BookingFormProps) {
 
     return (
         <div className={"w-full px-8 py-4"}>
-            <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Perubahan" : "Pembuatan"} Booking</h1>
+            <h1 className={"text-xl font-semibold text-black"}>{(props.contentData && props.contentData.id) && !props.fromQuery ? "Perubahan" : "Pembuatan"} Booking</h1>
             <form className={"mt-4"}>
                 <div className="mb-1 flex flex-col gap-6">
                     <MotionConfig
@@ -897,7 +897,7 @@ export function BookingForm(props: BookingFormProps) {
                             onClick={() => props.mutation.mutate(bookingData)}
                             color={"blue"} className="mt-6"
                             loading={props.mutation.isPending}>
-                        {props.contentData && !props.fromQuery ? "Ubah" : "Buat"}
+                        {(props.contentData && props.contentData.id) && !props.fromQuery ? "Ubah" : "Buat"}
                     </Button>
                 </div>
             </form>
