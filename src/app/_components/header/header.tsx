@@ -19,22 +19,28 @@ export default function Header({children}: PropsWithChildren) {
   }, [pathName]);
 
   return (
-    <div className={"p-8 pb-0"}>
+    <div className={styles.headerContainer}>
       <div className={styles.breadcrumbsLocationContainer}>
         <Breadcrumbs className={styles.breadcrumbs}>
-          <Link href={"/"} className={"opacity-60"}>
-            <IoHome/>
+          <Link href={"/"} className={styles.homeLink}>
+            <IoHome className={styles.homeIcon} />
           </Link>
           {headerContext.paths.map((value, index, array) => value)}
         </Breadcrumbs>
-        {
-          headerContext.showLocationPicker &&
-          /*@ts-ignore*/
-            <LocationPicker setLocationID={headerContext.setLocationID} locationID={headerContext.locationID}/>
-        }
+        {headerContext.showLocationPicker && (
+          <div className={styles.locationPickerContainer}>
+            <LocationPicker 
+              // @ts-expect-error mismatch type
+              setLocationID={headerContext.setLocationID} 
+              locationID={headerContext.locationID}
+            />
+          </div>
+        )}
       </div>
-      <div className={styles.headerTitleContainer}>
-        <span className={styles.header}>{headerContext.title}</span>
+      <div className={styles.titleContainer}>
+        <h1 className={styles.title}>
+          {headerContext.title}
+        </h1>
       </div>
     </div>
   );

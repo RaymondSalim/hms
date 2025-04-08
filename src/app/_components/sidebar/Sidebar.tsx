@@ -1,3 +1,5 @@
+"use client";
+
 import {FaBed, FaCalendar, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUserFriends} from 'react-icons/fa';
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
@@ -5,14 +7,16 @@ import {Session} from 'next-auth';
 import {FaFileInvoiceDollar, FaKey, FaReceipt} from "react-icons/fa6";
 import {getCompanyInfo} from "@/app/_db/settings";
 import {IoIosAddCircleOutline} from "react-icons/io";
+import {PiGreaterThan} from "react-icons/pi";
+import {useState} from "react";
+import {motion} from 'framer-motion';
 
 export interface SidebarProps {
     session: Session | null
+    companyInfo: Awaited<ReturnType<typeof getCompanyInfo>>
 }
 
-export default async function Sidebar({session}: SidebarProps) {
-    const companyInfo = await getCompanyInfo();
-
+export default function Sidebar({session, companyInfo}: SidebarProps) {
     const menuItems = [
         {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt/>},
         {
@@ -59,7 +63,7 @@ export default async function Sidebar({session}: SidebarProps) {
         },
         // {name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus/>},
         {name: 'Pemesanan', path: '/bookings', icon: <FaBed/>},
-        {name: 'Layanan Tambahan', path: '/addons', icon: <IoIosAddCircleOutline />},
+        {name: 'Layanan Tambahan', path: '/addons', icon: <IoIosAddCircleOutline/>},
         {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},
         {name: 'Tagihan', path: '/bills', icon: <FaReceipt/>},
         {
@@ -80,16 +84,25 @@ export default async function Sidebar({session}: SidebarProps) {
             children: [
                 {name: 'Pengguna Situs', path: '/settings/users'},
                 {name: 'Pengaturan Email', path: '/settings/email-settings'},
-
             ]
         },
     ];
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
+    const toggleCollapsed = () => setIsCollapsed(a => !a);
 
     return (
-        <div className={`${styles.sidebar}`}>
+        <motion.nav
+            animate={{
+                width: isCollapsed ? '1.5rem' : 'auto',
+                // minWidth: isCollapsed ? 0 : undefined,
+            }}
+            className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}
+        >
             <div className={styles.sidebarContent}>
                 <div className={styles.sidebarHeader}>
-                    <img className={"max-h-16 !w-auto"} src={ companyInfo.companyImage ?? ""} alt={companyInfo.companyName ?? ""} />
+                    <img src={companyInfo.companyImage ?? ""} alt={companyInfo.companyName ?? ""}
+                         className={styles.companyLogo}/>
                 </div>
                 <ul className={styles.sidebarMenu}>
                     {menuItems.map((item, index) => (
@@ -97,10 +110,16 @@ export default async function Sidebar({session}: SidebarProps) {
                     ))}
                 </ul>
                 <div className={styles.sidebarFooter}>
-                    <InteractiveUserDropdown user={session?.user}/>
+                    <InteractiveUserDropdown user={session?.user ?? null}/>
                 </div>
             </div>
-        </div>
+            <div
+                className={`${styles.toggleBtn} ${isCollapsed ? 'rotate-0' : 'rotate-180'}`}
+                onClick={toggleCollapsed}
+            >
+                <PiGreaterThan/>
+            </div>
+        </motion.nav>
     );
 }
 

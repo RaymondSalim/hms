@@ -1,6 +1,14 @@
+.layout {
+    @apply flex h-full;
+}
+
+.main {
+    @apply h-full overflow-y-auto flex-1 transition-all duration-300 ease-in-out;
+}
+
 .content {
-    overflow-y: auto;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    @apply
+    h-full flex-1 overflow-y-auto
+    flex flex-col
+    ;
 }

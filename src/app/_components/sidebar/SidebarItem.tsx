@@ -67,6 +67,15 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const userAvatarRef = useRef<HTMLDivElement>(null);
 
+    const getUserNameInitials = (name: string) => {
+        if (!name) return "";
+
+        const parts = name.trim().split(/\s+/);
+        const initials = parts.slice(0, 2).map(part => part.charAt(0).toUpperCase());
+
+        return initials.join("");
+    };
+
     const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
         if (!event.relatedTarget || !dropdownRef.current?.contains(event.relatedTarget as Node)) {
             if (event.relatedTarget !== userAvatarRef.current) {
@@ -93,8 +102,7 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
                 tabIndex={0}
             >
                 <div className={`${styles.userAvatar} group-hover/footerUser:border-opacity-100`}>
-                    {/*TODO! Image*/}
-                    <span>US</span>
+                    <span>{getUserNameInitials(user.name)}</span>
                 </div>
                 <FaChevronDown className={`${styles.userDropdownIcon} group-hover/footerUser:opacity-100`}/>
             </div>
