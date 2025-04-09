@@ -117,7 +117,7 @@ export function AddonForm(props: AddonFormProps) {
 
     return (
         <div className={"w-full px-8 py-4"}>
-            <h1 className={"text-xl font-semibold text-black"}>{props.contentData && !props.fromQuery ? "Perubahan" : "Pembuatan"} Layanan
+            <h1 className={"text-xl font-semibold text-black"}>{(props.contentData && props.contentData.id) && !props.fromQuery ? "Perubahan" : "Pembuatan"} Layanan
                 Tambahan</h1>
             <form className={"mt-4"}>
                 <div className="mb-1 flex flex-col gap-6">
@@ -322,7 +322,7 @@ export function AddonForm(props: AddonFormProps) {
                             onClick={() => props.mutation.mutate(addonData)}
                             color={"blue"} className="mt-6"
                             loading={props.mutation.isPending}>
-                        {props.contentData && !props.fromQuery ? "Ubah" : "Buat"}
+                        {(props.contentData && props.contentData.id) && !props.fromQuery ? "Ubah" : "Buat"}
                     </Button>
                 </div>
             </form>

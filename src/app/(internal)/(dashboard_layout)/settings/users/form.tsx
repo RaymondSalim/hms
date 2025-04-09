@@ -27,7 +27,7 @@ export function UserForm(props: UserFormProps) {
 
   return (
     <div className={"w-full px-8 py-4"}>
-      <h1 className={"text-xl font-semibold text-black"}>{props.contentData ? "Perubahan" : "Pembuatan"} User</h1>
+      <h1 className={"text-xl font-semibold text-black"}>{(props.contentData && props.contentData.id) ? "Perubahan" : "Pembuatan"} User</h1>
       <form className={"mt-4"}>
         <div className="mb-1 flex flex-col gap-6">
           <div>
@@ -141,7 +141,7 @@ export function UserForm(props: UserFormProps) {
           </Button>
           <Button onClick={() => props.mutation.mutate(userData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
-            {props.contentData ? "Ubah" : "Buat"}
+            {(props.contentData && props.contentData.id) ? "Ubah" : "Buat"}
           </Button>
         </div>
 

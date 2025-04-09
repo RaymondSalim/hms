@@ -79,7 +79,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
     additionalActions?: {
         position?: "before" | "after";
         actions: {
-            generateButton: (rowData: T) => ReactElement,
+            generateButton: (rowData: T, setActiveContent: Dispatch<SetStateAction<T | undefined>>, setDialogOpen: Dispatch<SetStateAction<boolean>>) => ReactElement,
             mutationParam?: Object
         }[]
     }
@@ -103,6 +103,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     const [fromQuery, setFromQuery] = useState(false);
     const [globalFilter, setGlobalFilter] = useState<string>();
     const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const upsertContentMutation = useMutation({
         ...props.upsert,
@@ -172,17 +175,17 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             cell: cellProps => {
                 if (props.shouldShowRowAction?.(cellProps) ?? true) {
                     const buttons = (
-                        <div className={"flex gap-x-2"}>
+                        <div className={"flex gap-x-2 items-center"}>
                             {
                                 props.additionalActions?.actions.map((a, index) => {
-                                    return a.generateButton(cellProps.row.original);
+                                    return a.generateButton(cellProps.row.original, setActiveContent, setDialogOpen);
                                 })
                             }
                         </div>
                     );
 
                     return (
-                        <div className={"flex gap-x-2"}>
+                        <div className={"flex gap-x-2 items-center"}>
                             {
                                 props.additionalActions?.position == "before" && buttons
                             }
@@ -231,9 +234,6 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         },
         globalFilterFn: fuzzyFilter,
     });
-
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     // Reset pagination when initial contents change
     useEffect(() => {
