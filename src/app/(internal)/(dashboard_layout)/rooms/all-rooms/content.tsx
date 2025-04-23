@@ -1,13 +1,13 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {RoomsWithTypeAndLocation} from "@/app/_db/room";
 import {RoomForm} from "@/app/(internal)/(dashboard_layout)/rooms/all-rooms/form";
 import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/(dashboard_layout)/rooms/room-actions";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getSortedDurations} from "@/app/_db/duration";
@@ -22,7 +22,7 @@ export interface RoomsContentProps {
 const detailsHeader = ["Duration", "Price"];
 
 export default function RoomsContent({rooms}: RoomsContentProps) {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
   const [activeData, setActiveData] = useState<RoomsWithTypeAndLocation | undefined>(undefined);
   const [showDialog, setShowDialog] = useState(false);
 

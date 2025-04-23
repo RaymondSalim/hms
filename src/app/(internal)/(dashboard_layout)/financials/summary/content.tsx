@@ -1,9 +1,9 @@
 "use client";
 
 import {convertGroupedTransactionsToTotals, formatToDateTime, formatToIDR, preparePieChartData} from "@/app/_lib/util";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {getGroupedIncomeExpense, getRecentTransactions} from "@/app/_db/dashboard";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {Period} from "@/app/_enum/financial";
 import {useQuery} from "@tanstack/react-query";
 import {Button, Card, CardBody, CardFooter, Typography} from "@material-tailwind/react";
@@ -17,7 +17,7 @@ import {AiOutlineLoading} from "react-icons/ai";
 ChartJS.register(ArcElement, Colors);
 
 export default function FinancialSummaryPage() {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
 
     const [selectedPeriod, setSelectedPeriod] = useState<Period>(Period.ONE_YEAR);
 

@@ -2,13 +2,12 @@
 
 import {getUpcomingEvents} from "@/app/_db/dashboard";
 import styles from "./styles/events.module.css";
-import {useContext} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
 import {Chip} from "@material-tailwind/react";
 
 export default function Events() {
-  const dashboardContext = useContext(HeaderContext);
+  const dashboardContext = useHeader();
   const result = useQuery({
     queryKey: ['dashboard.events', dashboardContext.locationID],
     queryFn: () => getUpcomingEvents(dashboardContext.locationID)

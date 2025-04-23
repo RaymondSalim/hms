@@ -1,10 +1,10 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {
     checkInOutAction,
@@ -35,7 +35,7 @@ const colorMapping: Map<string, string> = new Map([
 ]);
 
 export default function BookingsContent({bookings, queryParams}: BookingsContentProps) {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
 
     const [newQueryParams, setNewQueryParams] = useState<typeof queryParams>(queryParams);
     const [bookingsState, setBookingsState] = useState<BookingsIncludeAll[]>(bookings);

@@ -1,8 +1,8 @@
 "use client";
 
 import styles from "./styles/bills.module.css";
-import React, {useContext, useMemo, useState} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import React, {useMemo, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
 import {getBills} from "@/app/_db/dashboard";
 import {createColumnHelper, getCoreRowModel, useReactTable} from "@tanstack/react-table";
@@ -12,7 +12,7 @@ import TanTable from "@/app/_components/tanTable/tanTable";
 import {getSortedDurations} from "@/app/_db/duration";
 
 export default function Bills() {
-  const dashboardContext = useContext(HeaderContext);
+  const dashboardContext = useHeader();
   const [durationID, setDurationID] = useState<number | undefined>(undefined);
 
   const {data: durationData, isSuccess: durationIsSuccess} = useQuery({

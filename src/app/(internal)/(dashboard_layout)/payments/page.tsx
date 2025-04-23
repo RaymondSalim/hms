@@ -1,7 +1,7 @@
 "use client";
 
-import {HeaderContext} from "@/app/_context/HeaderContext";
-import React, {useContext, useEffect} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
+import React, {useEffect} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -20,7 +20,7 @@ export default function PaymentPage(props: {
   params?: any,
   searchParams?: PaymentPageQueryParams
 }) {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
 
   useEffect(() => {
     headerContext.setTitle("Pembayaran");

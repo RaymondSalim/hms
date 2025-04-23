@@ -1,7 +1,7 @@
 "use client";
 
-import React, {useContext, useEffect, useState} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import React, {useEffect, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -67,7 +67,7 @@ interface ExtendedProps {
 type EventData = z.infer<typeof eventSchema>;
 
 export default function CreateEventPage() {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
     const router = useRouter();
 
     const searchParams = useSearchParams();

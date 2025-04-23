@@ -1,7 +1,7 @@
 "use client";
 
-import {HeaderContext} from "@/app/_context/HeaderContext";
-import React, {MouseEventHandler, ReactElement, useContext, useEffect, useRef, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
+import React, {MouseEventHandler, ReactElement, useEffect, useRef, useState} from "react";
 import Link from "next/link";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {
@@ -40,7 +40,7 @@ import {Booking, Event, Tenant} from "@prisma/client";
 import {MdOutlineClose} from "react-icons/md";
 
 export default function CalendarPage() {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
     useEffect(() => {
         headerContext.setTitle("Kalender");
         headerContext.setShowLocationPicker(true);

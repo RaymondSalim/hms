@@ -1,7 +1,7 @@
 "use client";
 
-import {HeaderContext} from "@/app/_context/HeaderContext";
-import React, {useContext, useEffect} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
+import React, {useEffect} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -10,7 +10,7 @@ import {TransactionType} from "@prisma/client";
 import ExpensesContent from "@/app/(internal)/(dashboard_layout)/financials/expenses/content";
 
 export default function ExpensePage() {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
 
   useEffect(() => {
     headerContext.setTitle("Semua Pengeluaran");

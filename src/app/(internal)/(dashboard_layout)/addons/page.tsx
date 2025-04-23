@@ -1,7 +1,7 @@
 "use client";
 
-import {HeaderContext} from "@/app/_context/HeaderContext";
-import React, {useContext, useEffect, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
+import React, {useEffect, useState} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -15,7 +15,7 @@ export type AddonPageQueryParams = {
 }
 
 export default function AddonPage() {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
   const [locationID, setLocationID] = useState(headerContext.locationID);
   const [queryParams, setQueryParams] = useState<AddonPageQueryParams>();
   const searchParams = useSearchParams();
