@@ -8,8 +8,9 @@ import {FaFileInvoiceDollar, FaKey, FaReceipt} from "react-icons/fa6";
 import {getCompanyInfo} from "@/app/_db/settings";
 import {IoIosAddCircleOutline} from "react-icons/io";
 import {PiGreaterThan} from "react-icons/pi";
-import {useState} from "react";
 import {motion} from 'framer-motion';
+import {useHeader} from "@/app/_context/HeaderContext";
+
 
 export interface SidebarProps {
     session: Session | null
@@ -17,6 +18,8 @@ export interface SidebarProps {
 }
 
 export default function Sidebar({session, companyInfo}: SidebarProps) {
+    const { isSidebarOpen, setIsSidebarOpen } = useHeader();
+
     const menuItems = [
         {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt/>},
         {
@@ -87,39 +90,48 @@ export default function Sidebar({session, companyInfo}: SidebarProps) {
             ]
         },
     ];
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
-    const toggleCollapsed = () => setIsCollapsed(a => !a);
-
+    const toggleCollapsed = () => setIsSidebarOpen(a => !a);
+    const sidebar = {
+        width: isSidebarOpen ? "var(--sidebar-width)" : "var(--sidebar-collasped-width)",
+    };
     return (
-        <motion.nav
-            animate={{
-                width: isCollapsed ? '1.5rem' : 'auto',
-                // minWidth: isCollapsed ? 0 : undefined,
-            }}
-            className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}
-        >
-            <div className={styles.sidebarContent}>
-                <div className={styles.sidebarHeader}>
-                    <img src={companyInfo.companyImage ?? ""} alt={companyInfo.companyName ?? ""}
-                         className={styles.companyLogo}/>
-                </div>
-                <ul className={styles.sidebarMenu}>
-                    {menuItems.map((item, index) => (
-                        <SidebarItem key={index} {...item} />
-                    ))}
-                </ul>
-                <div className={styles.sidebarFooter}>
-                    <InteractiveUserDropdown user={session?.user ?? null}/>
-                </div>
-            </div>
-            <div
-                className={`${styles.toggleBtn} ${isCollapsed ? 'rotate-0' : 'rotate-180'}`}
-                onClick={toggleCollapsed}
+        <>
+            <motion.div
+                initial={{
+                    translateX: "-100%"
+                }}
+                animate={{
+                    translateX: isSidebarOpen ? "0" : "-100%",
+                }}
+                className={`${styles.sidebarBackdrop}`}
+                onClick={() => setIsSidebarOpen(false)}
+            />
+            <motion.nav
+                initial={sidebar}
+                animate={sidebar}
+                className={`${styles.sidebar} ${isSidebarOpen ? '' : styles.collapsed}`}
             >
-                <PiGreaterThan/>
-            </div>
-        </motion.nav>
+                <div className={styles.sidebarContent}>
+                    <div className={styles.sidebarHeader}>
+                        <img src={companyInfo?.companyImage ?? ""} alt={companyInfo?.companyName ?? ""} className={styles.companyLogo}/>
+                    </div>
+                    <ul className={styles.sidebarMenu}>
+                        {menuItems.map((item, index) => (
+                            <SidebarItem key={index} {...item} />
+                        ))}
+                    </ul>
+                    <div className={styles.sidebarFooter}>
+                        <InteractiveUserDropdown user={session?.user ?? null}/>
+                    </div>
+                </div>
+                <div
+                    className={`${styles.toggleBtn} ${isSidebarOpen ? 'rotate-180' : 'rotate-0'}`}
+                    onClick={toggleCollapsed}
+                >
+                    <PiGreaterThan/>
+                </div>
+            </motion.nav>
+        </>
     );
 }
 

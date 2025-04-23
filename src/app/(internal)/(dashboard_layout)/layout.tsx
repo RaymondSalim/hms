@@ -6,8 +6,8 @@ import {redirect} from "next/navigation";
 import prisma from "@/app/_lib/primsa";
 import {SettingsKey} from "@/app/_enum/setting";
 import {auth} from "@/app/_lib/auth";
-import {getCompanyInfo} from "@/app/_db/settings";
 import Header from "@/app/_components/header/header";
+import {getCompanyInfo} from "@/app/_db/settings";
 
 export default async function Layout({
   children,
@@ -33,12 +33,10 @@ export default async function Layout({
   return (
     <HeaderProvider>
       <div className={styles.layout}>
-        <Sidebar session={session} companyInfo={companyInfo}/>
+        <Sidebar companyInfo={companyInfo} session={session} />
         <main className={styles.main}>
-          <div className={styles.content}>
-            <Header/>
-            {children}
-          </div>
+          <Header companyInfo={companyInfo}/>
+          <div className={styles.content}>{children}</div>
         </main>
       </div>
     </HeaderProvider>

@@ -1,5 +1,29 @@
 .layout {
-    @apply flex h-full;
+    @apply relative flex h-full overflow-x-hidden;
+}
+
+.sidebar {
+    @apply hidden md:flex md:w-64 lg:w-72 xl:w-80 h-full z-10 transition-all duration-300 ease-in-out;
+}
+
+.sidebar.collapsed {
+    @apply md:w-20;
+}
+
+.sidebar.mobile {
+    @apply flex fixed inset-0 z-50 w-64 transform -translate-x-full transition-transform duration-300 ease-in-out;
+}
+
+.sidebar.mobile.open {
+    @apply translate-x-0;
+}
+
+.sidebarBackdrop {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40 hidden;
+}
+
+.sidebarBackdrop.open {
+    @apply block;
 }
 
 .main {
@@ -7,8 +31,5 @@
 }
 
 .content {
-    @apply
-    h-full flex-1 overflow-y-auto
-    flex flex-col
-    ;
+    @apply flex-1 overflow-y-auto p-4 md:p-6;
 }
