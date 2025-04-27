@@ -14,25 +14,30 @@ interface SidebarItemProps {
     path: string;
     icon: React.ReactNode;
     children?: Array<{ name: string; path: string }>;
+    onItemClick?: () => void;
 }
 
-export function SidebarItem({name, path, icon, children}: SidebarItemProps) {
+export function SidebarItem({name, path, icon, children, onItemClick}: SidebarItemProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
     };
 
+    const handleClick = (e: React.MouseEvent) => {
+        if (children) {
+            e.preventDefault();
+            toggleDropdown();
+        } else {
+            onItemClick?.();
+        }
+    };
+
     return (
         <li className={`${styles.menuItem}`}>
             <div className={`group/itemHeader ${styles.itemHeader}`}>
                 <Link
-                    onClick={(e) => {
-                        if (children) {
-                            e.preventDefault();
-                            toggleDropdown();
-                        }
-                    }}
+                    onClick={handleClick}
                     href={path}
                     className={`${styles.item} group-hover/itemHeader:text-white`}
                 >
@@ -41,8 +46,8 @@ export function SidebarItem({name, path, icon, children}: SidebarItemProps) {
                 </Link>
                 {children && (
                     <span className={`${styles.dropdownIcon} ${isOpen ? styles.open : ''}`} onClick={toggleDropdown}>
-            <FaChevronDown/>
-          </span>
+                        <FaChevronDown/>
+                    </span>
                 )}
             </div>
             {children && (
@@ -50,7 +55,7 @@ export function SidebarItem({name, path, icon, children}: SidebarItemProps) {
                            className={styles.dropdownMenu}>
                     {children.map((child, index) => (
                         <li key={index} className={`group/childMenuItem ${styles.menuItem}`}>
-                            <Link href={child.path} className={`${styles.item} group-hover/childMenuItem:text-white`}>
+                            <Link href={child.path} className={`${styles.item} group-hover/childMenuItem:text-white`} onClick={onItemClick}>
                                 <span className={styles.text}>{child.name}</span>
                             </Link>
                         </li>

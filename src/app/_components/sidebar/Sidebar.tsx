@@ -10,6 +10,7 @@ import {IoIosAddCircleOutline} from "react-icons/io";
 import {PiGreaterThan} from "react-icons/pi";
 import {motion} from 'framer-motion';
 import {useHeader} from "@/app/_context/HeaderContext";
+import {useEffect, useState} from "react";
 
 
 export interface SidebarProps {
@@ -19,6 +20,24 @@ export interface SidebarProps {
 
 export default function Sidebar({session, companyInfo}: SidebarProps) {
     const { isSidebarOpen, setIsSidebarOpen } = useHeader();
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 720);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const handleItemClick = () => {
+        if (isMobile) {
+            setIsSidebarOpen(false);
+        }
+    };
 
     const menuItems = [
         {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt/>},
@@ -117,7 +136,7 @@ export default function Sidebar({session, companyInfo}: SidebarProps) {
                     </div>
                     <ul className={styles.sidebarMenu}>
                         {menuItems.map((item, index) => (
-                            <SidebarItem key={index} {...item} />
+                            <SidebarItem key={index} {...item} onItemClick={handleItemClick} />
                         ))}
                     </ul>
                     <div className={styles.sidebarFooter}>
