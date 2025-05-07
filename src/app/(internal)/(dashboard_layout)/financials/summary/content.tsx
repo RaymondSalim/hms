@@ -75,7 +75,7 @@ export default function FinancialSummaryPage() {
     }, [isTransactionsSuccess, groupedIncomeExpense]);
 
     return (
-        <div className="min-h-screen pb-8 px-8 -mt-8">
+        <div className="min-h-screen pb-8 md:px-8 md:-mt-8">
             <div className="container mx-auto">
                 <div className={"w-min ml-auto mb-4"}>
                     <div
@@ -85,7 +85,7 @@ export default function FinancialSummaryPage() {
                                 <span
                                     key={index}
                                     className={`whitespace-nowrap px-2 py-2 text-xs text-black font-semibold cursor-pointer transition-colors ease-in-out duration-300 overflow-clip ${
-                                        selectedPeriod === value ? "bg-white" : ""
+                                        selectedPeriod === value ? "bg-black text-white" : "bg-white"
                                     }`}
                                     onClick={() => setSelectedPeriod(value)}
                                 >
