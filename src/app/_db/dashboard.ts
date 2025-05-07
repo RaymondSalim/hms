@@ -379,7 +379,7 @@ function getLastDateOfWeek(date: Date): Date {
 
 function formatDateToString(date: Date): string {
     return new Intl.DateTimeFormat('id', {
-        dateStyle: "long",
+        dateStyle: "short",
         timeZone: 'Asia/Jakarta',
     }).format(date);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
-import React, {useContext, useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
@@ -14,7 +14,7 @@ import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {NonUndefined} from "@/app/_lib/types";
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
 import CurrencyInput from "@/app/_components/input/currencyInput";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {getTransactions} from "@/app/_db/transaction";
 
 interface ExpenseFormProps extends TableFormProps<Transaction> {
@@ -31,7 +31,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
         };
     }
 
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
 
     const [data, setData] = useState<DataType>(parsedData ?? {
         type: TransactionType.EXPENSE

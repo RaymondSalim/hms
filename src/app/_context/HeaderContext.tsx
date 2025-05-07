@@ -1,89 +1,69 @@
 "use client";
 
-import React, {createContext, ReactNode, useEffect, useState} from "react";
+import React, {createContext, Dispatch, useContext, useState} from "react";
 
-export interface HeaderContextProps {
-    locationID?: number,
-    title?: string,
-    show: boolean,
-    showLocationPicker: boolean,
-    paths: ReactNode[]
-
-    setLocationID: (locationID: number) => void,
-    setTitle: (title: string) => void,
-    setShow: (show: boolean) => void,
-    setShowLocationPicker: (show: boolean) => void,
-    setPaths: (setPaths: ReactNode[]) => void,
+interface HeaderContextType {
+    title: string;
+    setTitle: (title: string) => void;
+    paths: React.ReactNode[];
+    setPaths: (paths: React.ReactNode[]) => void;
+    show: boolean;
+    setShow: (show: boolean) => void;
+    showLocationPicker: boolean;
+    setShowLocationPicker: (show: boolean) => void;
+    locationID: number | undefined;
+    setLocationID: (id: number | undefined) => void;
+    isSidebarOpen: boolean;
+    setIsSidebarOpen: Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const HeaderContext = createContext<HeaderContextProps>({
-    locationID: 1,
+const HeaderContext = createContext<HeaderContextType>({
     title: "",
-    show: true,
-    showLocationPicker: true,
+    setTitle: () => {},
     paths: [],
-
-    setLocationID: locationID => {
-    },
-    setTitle: (title: string) => {
-    },
-    setShow: (show: boolean) => {
-    },
-    setShowLocationPicker: (show: boolean) => {
-    },
-    setPaths: (setPaths: ReactNode[]) => {
-    }
+    setPaths: () => {},
+    show: true,
+    setShow: () => {},
+    showLocationPicker: false,
+    setShowLocationPicker: () => {},
+    locationID: undefined,
+    setLocationID: () => {},
+    isSidebarOpen: false,
+    setIsSidebarOpen: () => {},
 });
 
-export const HeaderProvider: React.FC<{ children: React.ReactNode, props?: Partial<HeaderContextProps> }> = ({
-                                                                                                                 children,
-                                                                                                                 props
-                                                                                                             }) => {
-    const [locationID, setLocationID] = useState<number | undefined>();
+export function HeaderProvider({ children }: { children: React.ReactNode }) {
     const [title, setTitle] = useState("");
+    const [paths, setPaths] = useState<React.ReactNode[]>([]);
     const [show, setShow] = useState(true);
-    const [showLocationPicker, setShowLocationPicker] = useState(true);
-    const [paths, setPaths] = useState<ReactNode[]>([]);
-
-    // Load locationID from localStorage on mount
-    useEffect(() => {
-        const storedLocationID = localStorage.getItem('locationID');
-        if (storedLocationID) {
-            setLocationID(Number(storedLocationID));
-        }
-    }, []);
-
-    // Update localStorage whenever locationID changes
-    useEffect(() => {
-        if (locationID) {
-            localStorage.setItem('locationID', locationID.toString());
-        } else {
-            localStorage.removeItem('locationID');
-        }
-    }, [locationID]);
-
-    // Update the HTML title whenever the title state changes
-    useEffect(() => {
-        document.title = title + " | MICASA Suites" || "MICASA Suites"; // Fallback to a default title if empty
-    }, [title]);
+    const [showLocationPicker, setShowLocationPicker] = useState(false);
+    const [locationID, setLocationID] = useState<number | undefined>();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
         <HeaderContext.Provider
             value={{
-                locationID: props?.locationID ?? locationID,
-                setLocationID: props?.setLocationID ?? setLocationID,
-                title: props?.title ?? title,
-                setTitle: props?.setTitle ?? setTitle,
-                show: props?.show ?? show,
-                setShow: props?.setShow ?? setShow,
-                showLocationPicker: props?.showLocationPicker ?? showLocationPicker,
-                setShowLocationPicker: props?.setShowLocationPicker ?? setShowLocationPicker,
-                paths: props?.paths ?? paths,
-                setPaths: props?.setPaths ?? setPaths
-            }}>
+                title,
+                setTitle,
+                paths,
+                setPaths,
+                show,
+                setShow,
+                showLocationPicker,
+                setShowLocationPicker,
+                locationID,
+                setLocationID,
+                isSidebarOpen: isSidebarOpen,
+                setIsSidebarOpen: setIsSidebarOpen,
+            }}
+        >
             {children}
         </HeaderContext.Provider>
     );
-};
+}
+
+export function useHeader() {
+    return useContext(HeaderContext);
+}
 
 export default HeaderProvider;

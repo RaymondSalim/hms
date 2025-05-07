@@ -1,11 +1,11 @@
 "use client";
 
-import {PropsWithChildren, useContext, useEffect} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {PropsWithChildren, useEffect} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 
 export default function Layout({children}: PropsWithChildren) {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
 
   useEffect(() => {
     headerContext.setTitle("Dashboard");

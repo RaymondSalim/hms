@@ -1,10 +1,10 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {Prisma} from "@prisma/client";
 import {BillIncludeAll, BillIncludeBookingAndPayments} from "@/app/_db/bills";
 import {BillForm} from "@/app/(internal)/(dashboard_layout)/bills/form";
@@ -28,7 +28,7 @@ export interface BillsContentProps {
 }
 
 export default function BillsContent({bills, queryParams}: BillsContentProps) {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
     let [dataState, setDataState] = useState<typeof bills>(bills);
     let [showDialog, setShowDialog] = useState(false);
     let [dialogContent, setDialogContent] = useState(<></>);

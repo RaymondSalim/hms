@@ -1,10 +1,10 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {PaymentForm} from "@/app/(internal)/(dashboard_layout)/payments/form";
 import {PaymentIncludeAll} from "@/app/_db/payment";
@@ -24,7 +24,7 @@ const colorMapping: Map<string, string> = new Map([
 ]);
 
 export default function PaymentsContent({payments, queryParams}: PaymentsContentProps) {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
   const [dataState, setDataState] = useState<typeof payments>(payments);
 
   const columnHelper = createColumnHelper<typeof payments[0]>();

@@ -1,7 +1,7 @@
 "use client";
 
-import {HeaderContext} from "@/app/_context/HeaderContext";
-import React, {MouseEventHandler, ReactElement, useContext, useEffect, useRef, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
+import React, {MouseEventHandler, ReactElement, useEffect, useRef, useState} from "react";
 import Link from "next/link";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {
@@ -40,7 +40,7 @@ import {Booking, Event, Tenant} from "@prisma/client";
 import {MdOutlineClose} from "react-icons/md";
 
 export default function CalendarPage() {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
     useEffect(() => {
         headerContext.setTitle("Kalender");
         headerContext.setShowLocationPicker(true);
@@ -120,111 +120,114 @@ export default function CalendarPage() {
 
     return (
         <>
-            <div className={"p-8 relative"}>
+            <div className={"relative"}>
                 <div
                     id="tooltip-container"
                     className="hidden bg-white border rounded shadow-md p-3 text-sm z-10"
                 ></div>
-                <FullCalendar
-                    timeZone="local"
-                    initialDate={range?.startDate}
-                    datesSet={(date) => {
-                        setRange({
-                            startDate: date.startStr,
-                            endDate: date.endStr,
-                        });
-                    }}
-                    ref={(cal) => {
-                        calendarApi.current = cal?.getApi();
-                    }}
-                    plugins={[DayGrid, List, TimeGrid/*, ResourceTimeline*/]}
-                    locale={IDLocale}
-                    initialView={"dayGridMonth"}
-                    slotLabelFormat={{
-                        omitZeroMinute: false,
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        separator: ":"
-                    }}
-                    schedulerLicenseKey={'CC-Attribution-NonCommercial-NoDerivatives'}
-                    editable={true}
-                    selectable={true}
-                    weekends={true}
-                    // @ts-expect-error types
-                    events={calendarEvents}
-                    // events={[
-                    //     {
-                    //         start: ((): Date | string => {
-                    //             const today = new Date();
-                    //
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 1, 30));
-                    //         })(),
-                    //         end: ((): Date | string => {
-                    //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12));
-                    //         })(),
-                    //         title: "test 1",
-                    //         color: "#33b679"
-                    //     },
-                    //     {
-                    //         start: ((): Date | string => {
-                    //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-                    //         })(),
-                    //         end: ((): Date | string => {
-                    //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
-                    //         })(),
-                    //         title: "test 2",
-                    //         color: "blue"
-                    //     },
-                    //     {
-                    //         start: ((): Date | string => {
-                    //             const today = new Date();
-                    //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 16));
-                    //         })(),
-                    //         // end: ((): Date | string => {
-                    //         //     const today = new Date();
-                    //         //     return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
-                    //         // })(),
-                    //         allDay: true,
-                    //         title: "test 3 (allday)",
-                    //         color: "orange"
-                    //     },
-                    //     // {
-                    //     //     start: ((): Date | string => {
-                    //     //         const today = new Date();
-                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-                    //     //     })(),
-                    //     //     end: ((): Date | string => {
-                    //     //         const today = new Date();
-                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
-                    //     //     })(),
-                    //     //     title: "test 3",
-                    //     //     color: "blue"
-                    //     // },
-                    //     // {
-                    //     //     start: ((): Date | string => {
-                    //     //         const today = new Date();
-                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-                    //     //     })(),
-                    //     //     end: ((): Date | string => {
-                    //     //         const today = new Date();
-                    //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
-                    //     //     })(),
-                    //     //     title: "test 4",
-                    //     //     color: "blue"
-                    //     // },
-                    // ]}
-                    headerToolbar={{
-                        left: "",
-                        center: "title",
-                        right: ""
-                    }}
-                    eventClick={handleEventClick}
-                />
-                <div className={"absolute left-8 top-8"}>
-                    <ButtonGroup>
+                <div className={"pt-12 md:pt-0"}>
+                    <FullCalendar
+                        timeZone="local"
+                        initialDate={range?.startDate}
+                        datesSet={(date) => {
+                            setRange({
+                                startDate: date.startStr,
+                                endDate: date.endStr,
+                            });
+                        }}
+                        ref={(cal) => {
+                            calendarApi.current = cal?.getApi();
+                        }}
+                        plugins={[DayGrid, List, TimeGrid/*, ResourceTimeline*/]}
+                        locale={IDLocale}
+                        initialView={"dayGridMonth"}
+                        slotLabelFormat={{
+                            omitZeroMinute: false,
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            separator: ":"
+                        }}
+                        schedulerLicenseKey={'CC-Attribution-NonCommercial-NoDerivatives'}
+                        editable={true}
+                        selectable={true}
+                        weekends={true}
+                        // @ts-expect-error types
+                        events={calendarEvents}
+                        // events={[
+                        //     {
+                        //         start: ((): Date | string => {
+                        //             const today = new Date();
+                        //
+                        //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 1, 30));
+                        //         })(),
+                        //         end: ((): Date | string => {
+                        //             const today = new Date();
+                        //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12));
+                        //         })(),
+                        //         title: "test 1",
+                        //         color: "#33b679"
+                        //     },
+                        //     {
+                        //         start: ((): Date | string => {
+                        //             const today = new Date();
+                        //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                        //         })(),
+                        //         end: ((): Date | string => {
+                        //             const today = new Date();
+                        //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
+                        //         })(),
+                        //         title: "test 2",
+                        //         color: "blue"
+                        //     },
+                        //     {
+                        //         start: ((): Date | string => {
+                        //             const today = new Date();
+                        //             return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 16));
+                        //         })(),
+                        //         // end: ((): Date | string => {
+                        //         //     const today = new Date();
+                        //         //     return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
+                        //         // })(),
+                        //         allDay: true,
+                        //         title: "test 3 (allday)",
+                        //         color: "orange"
+                        //     },
+                        //     // {
+                        //     //     start: ((): Date | string => {
+                        //     //         const today = new Date();
+                        //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                        //     //     })(),
+                        //     //     end: ((): Date | string => {
+                        //     //         const today = new Date();
+                        //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
+                        //     //     })(),
+                        //     //     title: "test 3",
+                        //     //     color: "blue"
+                        //     // },
+                        //     // {
+                        //     //     start: ((): Date | string => {
+                        //     //         const today = new Date();
+                        //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                        //     //     })(),
+                        //     //     end: ((): Date | string => {
+                        //     //         const today = new Date();
+                        //     //         return new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23));
+                        //     //     })(),
+                        //     //     title: "test 4",
+                        //     //     color: "blue"
+                        //     // },
+                        // ]}
+                        headerToolbar={{
+                            left: "",
+                            center: "title",
+                            right: ""
+                        }}
+                        eventClick={handleEventClick}
+                        expandRows={true}
+                    />
+                </div>
+                <div className={"absolute left-0 top-0"}>
+                    <ButtonGroup className={"h-[44px]"}>
                         <Button disabled={isLoading} onClick={() => {
                             calendarApi?.current?.prev();
                         }}>
@@ -242,7 +245,7 @@ export default function CalendarPage() {
                         </Button>
                     </ButtonGroup>
                 </div>
-                <div className={"absolute right-8 top-8"}>
+                <div className={"absolute right-0 top-0 h-[44px]"}>
                     <Menu>
                         <MenuHandler>
                             <Button color={"black"}

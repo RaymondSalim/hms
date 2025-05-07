@@ -1,15 +1,15 @@
 "use client";
 
-import React, {useContext, useEffect} from "react";
+import React, {useEffect} from "react";
 import {getGuests} from "@/app/_db/guest";
 import GuestsContent from "@/app/(internal)/(dashboard_layout)/residents/guests/content";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
 
 export default function GuestsPage() {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
 
   useEffect(() => {
     headerContext.setTitle("Tamu");

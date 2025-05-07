@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import {useSearchParams} from "next/navigation";
 import {Button, Card, CardBody, CardFooter, Dialog, Typography} from "@material-tailwind/react";
+import {SelectOption} from "@/app/_components/input/select";
 
 
 export interface TenantsContentProps {
@@ -61,6 +62,15 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
   ];
 
   const query = useSearchParams();
+
+  const filterKeys: SelectOption<string>[] = columns
+      .filter(c => (
+          c.enableColumnFilter && c.header && c.id
+      ))
+      .map(c => ({
+        label: c.header!.toString(),
+        value: c.id!,
+      }));
 
   return (
       <TableContent<typeof tenants[0]>

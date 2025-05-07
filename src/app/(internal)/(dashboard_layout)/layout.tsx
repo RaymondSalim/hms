@@ -1,39 +1,44 @@
-import Sidebar from "@/app/_components/sidebar/Sidebar";
-import styles from "@/app/(internal)/(dashboard_layout)/styles/layout.module.css";
-import React from "react";
 import {HeaderProvider} from "@/app/_context/HeaderContext";
-import Header from "@/app/_components/header/header";
-import {auth} from "@/app/_lib/auth";
+import Sidebar from "@/app/_components/sidebar/Sidebar";
+import styles from "./styles/layout.module.css";
+import React from "react";
 import {redirect} from "next/navigation";
 import prisma from "@/app/_lib/primsa";
 import {SettingsKey} from "@/app/_enum/setting";
+import {auth} from "@/app/_lib/auth";
+import Header from "@/app/_components/header/header";
+import {getCompanyInfo} from "@/app/_db/settings";
 
-export default async function Layout({children}: { children?: React.ReactNode }) {
-    const session = await auth();
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
 
-    if (!session) redirect("/login");
+  if (!session) redirect("/login");
 
-    let appSetup = await prisma.setting.findFirst({
-        where: {
-            setting_key: SettingsKey.APP_SETUP
-        }
-    });
-
-    if (appSetup == null || appSetup.setting_value == "false") {
-        redirect("/first-time-setup",);
+  let appSetup = await prisma.setting.findFirst({
+    where: {
+      setting_key: SettingsKey.APP_SETUP
     }
+  });
 
-    return (
-        <HeaderProvider>
-            <>
-                <nav>
-                    <Sidebar session={session}/>
-                </nav>
-                <main className={styles.content}>
-                    <Header/>
-                    {children}
-                </main>
-            </>
-        </HeaderProvider>
-    );
+  if (appSetup == null || appSetup.setting_value == "false") {
+    redirect("/first-time-setup");
+  }
+
+  const companyInfo = await getCompanyInfo();
+
+  return (
+    <HeaderProvider>
+      <div className={styles.layout}>
+        <Sidebar companyInfo={companyInfo} session={session} />
+        <main className={styles.main}>
+          <Header companyInfo={companyInfo}/>
+          <div className={styles.content}>{children}</div>
+        </main>
+      </div>
+    </HeaderProvider>
+  );
 }

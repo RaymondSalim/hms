@@ -1,8 +1,9 @@
 .dashboardContainer {
     @apply
-    p-8
     text-header
     select-none
+    w-full
+    overflow-x-hidden
     ;
 }
 
@@ -25,36 +26,46 @@
     text-2xl font-semibold;
 }
 
-.content,
-.overviewContent {
+.content {
     @apply
-    grid grid-cols-2
+    grid md:grid-cols-2
     gap-8
+    w-full
+    grid-flow-dense
+    auto-rows-min
 }
 
 .overviewContent {
     @apply
-    *:rounded-2xl
-    *:bg-white
-    *:shadow-md
-    *:min-h-0
-    *:h-fit
+    grid md:grid-cols-2
+    gap-8
+    w-full
+    mb-8
 }
 
+/* Common card styles for all dashboard cards */
+.overviewContent > *,
 .content > * {
     @apply
-    flex flex-col
-    gap-y-8
-    *:rounded-2xl
-    *:bg-white
-    *:shadow-md
-    *:min-h-0
-    *:h-fit
+    rounded-2xl
+    bg-white
+    shadow-md
+    min-h-0
+    h-fit
+    w-full
+    max-w-full
+    overflow-x-auto
 }
 
-.overviewContent {
+.overviewContent > * {
     @apply
-    mb-8
-    *:col-span-full
+    col-span-full
+}
+
+.content > div {
+    @apply
+    flex flex-col
+    gap-y-4
+    md:gap-y-8
 }
 

@@ -286,7 +286,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             : undefined;
 
     return (
-        <div className={"p-8 flex-1 flex flex-col min-h-0 overflow-hidden"}>
+        <div className={"flex-1 flex flex-col min-h-0 overflow-hidden"}>
             <div className={styles.searchBarAndCreate}>
                 {
                     (
@@ -299,6 +299,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                         label={"Cari"}
                         placeholder={props.searchPlaceholder ?? "Search"}
                         className={styles.input}
+                        containerProps={{
+                            className: "!min-w-0"
+                        }}
                     />
                 }
                 {
@@ -317,8 +320,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             <div className="w-full flex-1 min-h-0 overflow-auto" style={{height: '400px', overflowY: 'auto'}}>
                 <TanTable tanTable={tanTable}/>
             </div>
-            <div className="flex items-center mt-4 gap-x-8">
-                <div className={"ml-auto"}>
+            <div className="flex flex-col md:flex-row items-center mt-4 gap-x-8 gap-y-8">
+                <div className={"w-full md:w-auto md:ml-auto"}>
                     <Select
                         onChange={(value) => {
                             tanTable.setPageSize(Number(value));
@@ -336,7 +339,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                         ))}
                     </Select>
                 </div>
-                <div className={"flex flex-row gap-x-8"}>
+                <div className={"w-full md:w-auto flex flex-row justify-between gap-x-8"}>
                     <IconButton
                         size="sm"
                         variant="outlined"

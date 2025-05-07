@@ -7,7 +7,7 @@ import {FaPlus} from "react-icons/fa6";
 export default function SearchBarAndCreate() {
   return (
     <div className={styles.searchBarAndCreate}>
-      <Input label={"Search"} placeholder={"Search by address or name"}/>
+      <Input className={"!min-w-0"} label={"Search"} placeholder={"Search by address or name"}/>
       <Button color={"blue"} className={styles.btn}>
         <FaPlus/>
         <span>Buat</span>

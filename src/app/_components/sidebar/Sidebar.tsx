@@ -1,3 +1,5 @@
+"use client";
+
 import {FaBed, FaCalendar, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUserFriends} from 'react-icons/fa';
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
@@ -5,13 +7,37 @@ import {Session} from 'next-auth';
 import {FaFileInvoiceDollar, FaKey, FaReceipt} from "react-icons/fa6";
 import {getCompanyInfo} from "@/app/_db/settings";
 import {IoIosAddCircleOutline} from "react-icons/io";
+import {PiGreaterThan} from "react-icons/pi";
+import {motion} from 'framer-motion';
+import {useHeader} from "@/app/_context/HeaderContext";
+import {useEffect, useState} from "react";
+
 
 export interface SidebarProps {
     session: Session | null
+    companyInfo: Awaited<ReturnType<typeof getCompanyInfo>>
 }
 
-export default async function Sidebar({session}: SidebarProps) {
-    const companyInfo = await getCompanyInfo();
+export default function Sidebar({session, companyInfo}: SidebarProps) {
+    const { isSidebarOpen, setIsSidebarOpen } = useHeader();
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 720);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const handleItemClick = () => {
+        if (isMobile) {
+            setIsSidebarOpen(false);
+        }
+    };
 
     const menuItems = [
         {name: 'Dashboard', path: '/dashboard', icon: <FaTachometerAlt/>},
@@ -59,7 +85,7 @@ export default async function Sidebar({session}: SidebarProps) {
         },
         // {name: 'Pendaftaran', path: '/registration', icon: <FaUserPlus/>},
         {name: 'Pemesanan', path: '/bookings', icon: <FaBed/>},
-        {name: 'Layanan Tambahan', path: '/addons', icon: <IoIosAddCircleOutline />},
+        {name: 'Layanan Tambahan', path: '/addons', icon: <IoIosAddCircleOutline/>},
         {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},
         {name: 'Tagihan', path: '/bills', icon: <FaReceipt/>},
         {
@@ -80,27 +106,51 @@ export default async function Sidebar({session}: SidebarProps) {
             children: [
                 {name: 'Pengguna Situs', path: '/settings/users'},
                 {name: 'Pengaturan Email', path: '/settings/email-settings'},
-
             ]
         },
     ];
-
+    const toggleCollapsed = () => setIsSidebarOpen(a => !a);
+    const sidebar = {
+        width: isSidebarOpen ? "var(--sidebar-width)" : "var(--sidebar-collasped-width)",
+    };
     return (
-        <div className={`${styles.sidebar}`}>
-            <div className={styles.sidebarContent}>
-                <div className={styles.sidebarHeader}>
-                    <img className={"max-h-16 !w-auto"} src={ companyInfo.companyImage ?? ""} alt={companyInfo.companyName ?? ""} />
+        <>
+            <motion.div
+                initial={{
+                    translateX: "-100%"
+                }}
+                animate={{
+                    translateX: isSidebarOpen ? "0" : "-100%",
+                }}
+                className={`${styles.sidebarBackdrop}`}
+                onClick={() => setIsSidebarOpen(false)}
+            />
+            <motion.nav
+                initial={sidebar}
+                animate={sidebar}
+                className={`${styles.sidebar} ${isSidebarOpen ? '' : styles.collapsed}`}
+            >
+                <div className={styles.sidebarContent}>
+                    <div className={styles.sidebarHeader}>
+                        <img src={companyInfo?.companyImage ?? ""} alt={companyInfo?.companyName ?? ""} className={styles.companyLogo}/>
+                    </div>
+                    <ul className={styles.sidebarMenu}>
+                        {menuItems.map((item, index) => (
+                            <SidebarItem key={index} {...item} onItemClick={handleItemClick} />
+                        ))}
+                    </ul>
+                    <div className={styles.sidebarFooter}>
+                        <InteractiveUserDropdown user={session?.user ?? null}/>
+                    </div>
                 </div>
-                <ul className={styles.sidebarMenu}>
-                    {menuItems.map((item, index) => (
-                        <SidebarItem key={index} {...item} />
-                    ))}
-                </ul>
-                <div className={styles.sidebarFooter}>
-                    <InteractiveUserDropdown user={session?.user}/>
+                <div
+                    className={`${styles.toggleBtn} ${isSidebarOpen ? 'rotate-180' : 'rotate-0'}`}
+                    onClick={toggleCollapsed}
+                >
+                    <PiGreaterThan/>
                 </div>
-            </div>
-        </div>
+            </motion.nav>
+        </>
     );
 }
 
