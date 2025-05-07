@@ -8,7 +8,6 @@ import {
     CardHeader,
     Checkbox,
     Chip,
-    IconButton,
     Input,
     Menu,
     MenuHandler,
@@ -95,7 +94,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
 
     return (
         <>
-            <div className="p-8 flex gap-x-4">
+            <div className="flex flex-wrap md:flex-nowrap gap-4">
                 <Menu
                     dismiss={{
                         itemPress: false,
@@ -103,7 +102,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                 >
                     <MenuHandler>
                         <Button
-                            className={"mr-auto border-[#b0bec5] flex items-center gap-3"}
+                            className={"basis-1/2 md:basis-auto md:flex-grow-0 !px-2 !md:px-4 flex-1 border-[#b0bec5] flex items-center justify-center gap-3"}
                             variant={"outlined"}
                         >
                             Tipe Kamar
@@ -182,7 +181,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                                 return undefined;
                             })()}
                             containerProps={{
-                                className: "!w-auto !min-w-[225px]"
+                                className: "basis-1/2 md:basis-auto md:ml-auto !w-auto !md:min-w-[225px] !h-auto min-h-10"
                             }}
                             className={`relative !border-t-blue-gray-200 focus:!border-t-gray-900`}
                             labelProps={{
@@ -210,9 +209,10 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             }}/>
                     </PopoverContent>
                 </Popover>
-                <IconButton className={"border-[#b0bec5]"} variant={"outlined"}>
+                <Button className={"basis-full md:basis-auto border-[#b0bec5] text-[#b0bec5] flex justify-center items-center gap-4"} variant={"outlined"}>
                     <CiSearch/>
-                </IconButton>
+                    <span className={"md:hidden"}>Cari</span>
+                </Button>
             </div>
             <div className="mt-8">
                 {(roomTypes.length == 0 || filteredRoomTypeIDs.size == 0) ?

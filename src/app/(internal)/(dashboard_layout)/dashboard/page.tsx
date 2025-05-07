@@ -15,14 +15,10 @@ export default async function DashboardPage() {
           <Overview/>
         </div>
         <div className={styles.content}>
-          <div>
-            <Events/>
-            <Payments/>
-          </div>
-          <div>
-            <FinancialGraph/>
-            <Bills/>
-          </div>
+          <Events/>
+          <Payments/>
+          <FinancialGraph/>
+          <Bills/>
         </div>
       </div>
     </>
