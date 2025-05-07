@@ -1,7 +1,7 @@
 "use client";
 
-import React, {useContext, useMemo, useState} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import React, {useMemo, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
 import {getPaymentData} from "@/app/_db/dashboard";
 
@@ -16,7 +16,7 @@ import {getPaymentStatusAction} from "@/app/(internal)/(dashboard_layout)/paymen
 const fallbackData: never[] = [];
 
 export default function Payments() {
-  const dashboardContext = useContext(HeaderContext);
+  const dashboardContext = useHeader();
   const [status, setStatus] = useState<number | undefined>(undefined);
 
   const {data: paymentStatuses, isSuccess: statusIsSuccess} = useQuery({

@@ -1,12 +1,12 @@
 "use client";
 
-import {useContext, useEffect} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useEffect} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import FinancialSummaryPage from "@/app/(internal)/(dashboard_layout)/financials/summary/content";
 
 export default function Page() {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
 
   useEffect(() => {
     headerContext.setTitle("Ringakasan Keungan");

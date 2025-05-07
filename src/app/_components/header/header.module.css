@@ -5,23 +5,38 @@
     text-header;
 }
 
-.headerTitleContainer {
+.headerContainer {
+    @apply p-4 md:p-6 lg:p-8 !pb-0;
 }
 
 .breadcrumbsLocationContainer {
-    @apply
-    flex
-    flex-row
-    gap-x-4
-    justify-between
-    items-center
-    mb-8
+    @apply flex flex-col md:flex-row gap-4 md:gap-6 justify-between items-start md:items-center;
 }
 
 .breadcrumbs {
+    @apply bg-transparent px-0 w-full;
+}
+
+.homeLink {
+    @apply opacity-60;
+}
+
+.homeIcon {
+    @apply w-5 h-5;
+}
+
+.locationPickerContainer {
+    @apply md:w-auto;
+}
+
+.titleContainer {
     @apply
-    bg-transparent
-    !px-0
-    !w-full
+    pt-8
+    px-6 md:px-12
+    bg-white
+}
+
+.title {
+    @apply text-3xl md:text-4xl font-semibold text-gray-800;
 }
 

@@ -4,3 +4,15 @@
     display: flex;
     background: #f5f6fa;
 }
+
+.html {
+    @apply h-full;
+}
+
+.body {
+    @apply h-full bg-gray-50;
+}
+
+.container {
+    @apply h-dvh;
+}

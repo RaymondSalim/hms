@@ -147,18 +147,20 @@ export default function SmartSearchInput({suggestions, onSubmit, initialValues}:
                         ))}
                     </div>
 
-                    {/* Search Input */}
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={inputValue}
-                        onFocus={() => setOpen(true)}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="min-w-1/2 flex-grow text-black focus:outline-none"
-                        placeholder="Search..."
-                    />
-                    <IoSearch className={"flex-shrink-0 text-gray-600"}/>
+                    {/* Search Input Container */}
+                    <div className={`${pills.length > 0 ? "min-w-1/2" : "-ml-2 min-w-0"} flex items-center flex-1 gap-x-2 min-w-0`}>
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={inputValue}
+                            onFocus={() => setOpen(true)}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            className={`flex-grow text-black focus:outline-none max-w-full min-w-0`}
+                            placeholder="Search..."
+                        />
+                        <IoSearch className="flex-shrink-0 text-gray-600"/>
+                    </div>
                 </div>
             </MenuHandler>
 

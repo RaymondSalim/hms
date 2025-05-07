@@ -5,12 +5,13 @@ import {Button, Menu, MenuHandler, MenuItem, MenuList} from "@material-tailwind/
 import {Location as LocationModel} from "@prisma/client";
 import styles from "./locationPicker.module.css";
 import {useQuery} from "@tanstack/react-query";
-import {FaCheck, FaChevronDown} from "react-icons/fa6";
+import {FaCheck, FaChevronDown, FaLocationDot} from "react-icons/fa6";
 import {useState} from "react";
 
 export interface LocationPickerProps {
     locationID?: number,
     setLocationID: (locationID?: number) => void,
+    type: "compact" | "full"
 }
 
 export default function LocationPicker(props: LocationPickerProps) {
@@ -33,7 +34,12 @@ export default function LocationPicker(props: LocationPickerProps) {
                 <Menu open={openMenu} handler={setOpenMenu} placement="bottom-end">
                     <MenuHandler>
                         <Button type="button" variant="text" className={styles.button}>
-                            <Location location={activeLocation}/>
+                            {
+                                props.type == "full" && <Location location={activeLocation}/>
+                            }
+                            {
+                                props.type == "compact" && <FaLocationDot />
+                            }
                             <FaChevronDown
                                 strokeWidth={2.5}
                                 className={`h-3.5 w-3.5 transition-transform ${

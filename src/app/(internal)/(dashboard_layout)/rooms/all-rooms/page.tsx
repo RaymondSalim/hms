@@ -1,7 +1,7 @@
 "use client";
 
-import React, {useContext, useEffect} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import React, {useEffect} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -9,7 +9,7 @@ import {getRooms} from "@/app/_db/room";
 import RoomsContent from "@/app/(internal)/(dashboard_layout)/rooms/all-rooms/content";
 
 export default function RoomsPage() {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
 
   useEffect(() => {
     headerContext.setTitle("Semua Kamar");

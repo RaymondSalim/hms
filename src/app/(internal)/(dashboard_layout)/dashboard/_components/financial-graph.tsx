@@ -2,14 +2,14 @@
 
 import {useQuery} from "@tanstack/react-query";
 import {getGroupedIncomeExpense} from "@/app/_db/dashboard";
-import {useContext, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {Period} from "@/app/_enum/financial";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import IncomeExpenseGraph, {IncomeExpenseGraphProps} from "@/app/_components/financials/income-expense-graph";
 import {convertGroupedTransactionsToTotals} from "@/app/_lib/util";
 
 export default function FinancialGraph() {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
     const [selectedPeriod, setSelectedPeriod] = useState<Period>(Period.ONE_YEAR);
     const [transactions, setTransactions] = useState<IncomeExpenseGraphProps['data'] | undefined>(undefined);
 

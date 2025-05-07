@@ -1,10 +1,10 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {Prisma, Transaction} from "@prisma/client";
 import {BillIncludeAll} from "@/app/_db/bills";
 import Link from "next/link";
@@ -23,7 +23,7 @@ export interface ExpensesContentProps {
 }
 
 export default function ExpensesContent({expenses, refetchFn}: ExpensesContentProps) {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
     let [dataState, setDataState] = useState<typeof expenses>(expenses);
     let [showDialog, setShowDialog] = useState(false);
     let [dialogContent, setDialogContent] = useState(<></>);

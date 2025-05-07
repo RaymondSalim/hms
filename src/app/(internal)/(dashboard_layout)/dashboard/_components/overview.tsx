@@ -2,13 +2,12 @@
 
 import styles from "./styles/overview.module.css";
 import {getOverviewData} from "@/app/_db/dashboard";
-import {useContext} from "react";
 import {AiOutlineLoading} from "react-icons/ai";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
 
 export default function Overview() {
-  const dashboardContext = useContext(HeaderContext);
+  const dashboardContext = useHeader();
   const {data, isLoading, isSuccess} = useQuery({
     queryKey: ['dashboard.overview', dashboardContext.locationID],
     queryFn: () => getOverviewData(dashboardContext.locationID)

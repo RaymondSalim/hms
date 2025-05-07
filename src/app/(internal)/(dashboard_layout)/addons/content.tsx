@@ -1,10 +1,10 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useContext, useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {delay} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {Button, Card, CardBody, CardFooter, Dialog, Typography} from "@material-tailwind/react";
 import {usePathname, useRouter} from "next/navigation";
@@ -23,7 +23,7 @@ export interface AddonContentProps {
 }
 
 export default function AddonContent({addons, queryParams}: AddonContentProps) {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
 
     let [dialogContent, setDialogContent] = useState(<></>);
     let [showDialog, setShowDialog] = useState(false);

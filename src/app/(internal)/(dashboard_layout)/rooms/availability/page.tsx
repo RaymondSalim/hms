@@ -1,7 +1,7 @@
 "use client";
 
-import React, {useContext, useEffect, useState} from "react";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import React, {useEffect, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -11,7 +11,7 @@ import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings
 import {DateRange} from "react-day-picker";
 
 export default function RoomsPage() {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
 
     useEffect(() => {
         headerContext.setTitle("Ketersediaan Kamar");
@@ -51,7 +51,6 @@ export default function RoomsPage() {
             {
                 isSuccess &&
                 <RoomAvailabilityContent
-                    // @ts-expect-error ignore incorrect type
                     roomTypes={roomTypeData}
                     // @ts-expect-error ignore type incorrect
                     bookings={bookings}

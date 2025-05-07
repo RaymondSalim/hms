@@ -245,18 +245,17 @@ export async function getRoomTypes(locationID?: number) {
                     }
                 }
             } : undefined,
-        include: locationID != undefined ?
-            {
+        include: {
                 _count: {
                     select: {
-                        rooms: {
+                        rooms: locationID != undefined ? {
                             where: {
                                 location_id: locationID
                             }
-                        }
+                        } : true
                     },
                 }
-            } : undefined,
+            },
     });
 }
 

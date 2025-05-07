@@ -1,7 +1,7 @@
 "use client";
 
-import {HeaderContext} from "@/app/_context/HeaderContext";
-import React, {useContext, useEffect, useState} from "react";
+import {useHeader} from "@/app/_context/HeaderContext";
+import React, {useEffect, useState} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
@@ -24,7 +24,7 @@ export default function BookingPage(props: {
   params?: any,
   searchParams?: BookingPageQueryParams,
 }) {
-  const headerContext = useContext(HeaderContext);
+  const headerContext = useHeader();
   const [locationID, setLocationID] = useState(headerContext.locationID);
 
   useEffect(() => {

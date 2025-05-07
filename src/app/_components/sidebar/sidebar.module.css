@@ -1,40 +1,54 @@
 .sidebar {
     @apply
-    relative
-    w-64 h-screen
-    bg-[#151719]
-    text-white
-    flex flex-col items-center
+    fixed left-0 top-0 z-[70]
+    md:relative md:w-auto h-screen bg-[#151719] text-white flex flex-col
+    w-[80dvw]
     ;
+
+    --sidebar-width: 80dvw;
+    --sidebar-collasped-width: 0;
+
+    @media (min-width: 720px) {
+        --sidebar-collasped-width: 1.5rem;
+        --sidebar-width: auto;
+    }
+}
+
+.sidebar.collapsed > .sidebarContent {
+    @apply opacity-0;
+}
+
+.sidebarBackdrop {
+    @apply md:hidden fixed inset-0 bg-black bg-opacity-50 z-[60] transition-opacity duration-300 ease-in-out;
 }
 
 .sidebarContent {
-    @apply
-    flex flex-col flex-grow
-    max-h-full
-    py-5
-    ;
+    @apply flex flex-col flex-grow max-h-full w-full py-5 gap-y-4;
 }
 
 .sidebarContent > * {
     @apply
     px-5
-}
+        }
 
 .sidebarHeader {
-    @apply relative flex justify-center items-center mb-5 h-16;
+    @apply px-5 flex items-center justify-center;
 }
 
-.sidebarHeader h2 {
-    @apply text-xl font-bold;
+.companyLogo {
+    @apply max-h-16 w-auto;
+}
+
+.collapseButton {
+    @apply p-2 rounded-md hover:bg-[#ebeef0] hover:bg-opacity-10 text-white opacity-60 hover:opacity-100 transition-all;
 }
 
 .sidebarMenu {
-    @apply
-    px-0
-    flex-1
-    overflow-y-auto
-    list-none;
+    @apply px-5 flex-1 overflow-y-auto list-none;
+}
+
+.userDropdownContainer {
+    @apply relative;
 }
 
 .menuItem {
@@ -42,28 +56,15 @@
 }
 
 .itemHeader {
-    @apply
-    px-5
-    flex justify-between items-center
-    hover:bg-[#ebeef0] hover:bg-opacity-10
-    hover:text-white
-    ;
+    @apply px-5 flex justify-between items-center hover:bg-[#ebeef0] hover:bg-opacity-10 hover:text-white;
 }
 
 .item {
-    @apply
-    flex flex-grow items-center
-    min-h-12
-    text-[#80868e]
-    ;
+    @apply flex flex-grow items-center min-h-12 text-[#80868e];
 }
 
 .icon {
-    @apply
-    mr-2
-    aspect-square
-    w-[16px]
-    ;
+    @apply mr-2 aspect-square w-4;
 }
 
 .text {
@@ -71,37 +72,23 @@
 }
 
 .dropdownIcon {
-    @apply
-    text-gray-500
-    hover:text-white
-    cursor-pointer
-    h-3
-    aspect-square
-
-    transition-all
-    -rotate-90
-    ;
+    @apply text-gray-500 hover:text-white cursor-pointer h-3 aspect-square transition-all;
 }
 
 .dropdownIcon.open {
-    @apply
-    rotate-0
+    @apply rotate-0;
+}
+
+.dropdownIcon.closed {
+    @apply -rotate-90;
 }
 
 .dropdownMenu {
-    @apply
-    overflow-hidden
-
-    list-none
-    ;
+    @apply overflow-hidden list-none;
 }
 
 .dropdownMenu .menuItem {
-    @apply
-    mb-1
-    pl-16
-    hover:bg-[#ebeef0] hover:bg-opacity-10
-    ;
+    @apply mb-1 pl-16 hover:bg-[#ebeef0] hover:bg-opacity-10;
 }
 
 .active .itemHeader .item {
@@ -197,7 +184,13 @@
 }
 
 .logoutBtn > svg {
-    @apply
-    h-5 w-5
-    opacity-60 hover:opacity-100;
+    @apply h-5 w-5 opacity-60 hover:opacity-100;
+}
+
+.toggleBtn {
+    @apply hidden md:block cursor-pointer transition-transform bg-white absolute top-8 right-0 transform translate-x-1/2 rounded-full min-h-fit min-w-fit border-black border-2 flex items-center justify-center p-1;
+}
+
+.toggleBtn > svg {
+    @apply h-5 w-5 text-gray-700;
 }

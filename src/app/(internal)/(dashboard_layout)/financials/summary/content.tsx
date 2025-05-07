@@ -1,9 +1,9 @@
 "use client";
 
 import {convertGroupedTransactionsToTotals, formatToDateTime, formatToIDR, preparePieChartData} from "@/app/_lib/util";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {getGroupedIncomeExpense, getRecentTransactions} from "@/app/_db/dashboard";
-import {HeaderContext} from "@/app/_context/HeaderContext";
+import {useHeader} from "@/app/_context/HeaderContext";
 import {Period} from "@/app/_enum/financial";
 import {useQuery} from "@tanstack/react-query";
 import {Button, Card, CardBody, CardFooter, Typography} from "@material-tailwind/react";
@@ -17,7 +17,7 @@ import {AiOutlineLoading} from "react-icons/ai";
 ChartJS.register(ArcElement, Colors);
 
 export default function FinancialSummaryPage() {
-    const headerContext = useContext(HeaderContext);
+    const headerContext = useHeader();
 
     const [selectedPeriod, setSelectedPeriod] = useState<Period>(Period.ONE_YEAR);
 
@@ -75,7 +75,7 @@ export default function FinancialSummaryPage() {
     }, [isTransactionsSuccess, groupedIncomeExpense]);
 
     return (
-        <div className="min-h-screen pb-8 px-8 -mt-8">
+        <div className="min-h-screen pb-8 md:px-8 md:-mt-8">
             <div className="container mx-auto">
                 <div className={"w-min ml-auto mb-4"}>
                     <div
@@ -85,7 +85,7 @@ export default function FinancialSummaryPage() {
                                 <span
                                     key={index}
                                     className={`whitespace-nowrap px-2 py-2 text-xs text-black font-semibold cursor-pointer transition-colors ease-in-out duration-300 overflow-clip ${
-                                        selectedPeriod === value ? "bg-white" : ""
+                                        selectedPeriod === value ? "bg-black text-white" : "bg-white"
                                     }`}
                                     onClick={() => setSelectedPeriod(value)}
                                 >
