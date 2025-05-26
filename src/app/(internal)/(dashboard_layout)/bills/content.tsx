@@ -14,13 +14,22 @@ import {
     upsertBillAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import Link from "next/link";
-import {Button, Dialog, Typography} from "@material-tailwind/react";
+import {Button, Dialog, Typography, Chip} from "@material-tailwind/react";
 import {useMutation, UseMutationResult} from "@tanstack/react-query";
 import {MdEmail} from "react-icons/md";
 import {toast} from "react-toastify";
 import {SelectOption} from "@/app/_components/input/select";
 import {BillPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bills/page";
 
+// Add payment status type
+type PaymentStatus = "paid" | "unpaid" | "partial";
+
+// Add payment status filter type
+type PaymentStatusFilter = "all" | "paid" | "unpaid";
+
+// Add type for chip props
+type ChipColor = "green" | "amber" | "red";
+type ChipVariant = "gradient";
 
 export interface BillsContentProps {
     bills: BillIncludeAll[]
@@ -32,6 +41,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
     let [dataState, setDataState] = useState<typeof bills>(bills);
     let [showDialog, setShowDialog] = useState(false);
     let [dialogContent, setDialogContent] = useState(<></>);
+    let [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatusFilter>("all");
 
     const sendBillEmailMutation = useMutation({
         mutationFn: sendBillEmailAction,
@@ -82,6 +92,54 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
         }, {
             header: "Jumlah Terbayar",
         }),
+        columnHelper.accessor(row => {
+            const totalAmount = row.bill_item
+                .map(bi => bi.amount)
+                .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0))
+                .toNumber();
+            
+            const totalPaid = row.paymentBills
+                ?.map(pb => new Prisma.Decimal(pb.amount).toNumber())
+                .reduce((sum, curr) => sum + curr, 0) ?? 0;
+
+            if (totalPaid >= totalAmount) return "paid";
+            if (totalPaid > 0) return "partial";
+            return "unpaid";
+        }, {
+            id: "payment_status",
+            header: "Status Pembayaran",
+            cell: props => {
+                const status = props.getValue();
+                const chipProps = {
+                    paid: {
+                        value: "Lunas",
+                        color: "green" as ChipColor,
+                        variant: "gradient" as ChipVariant
+                    },
+                    partial: {
+                        value: "Sebagian",
+                        color: "amber" as ChipColor,
+                        variant: "gradient" as ChipVariant
+                    },
+                    unpaid: {
+                        value: "Belum Lunas",
+                        color: "red" as ChipColor,
+                        variant: "gradient" as ChipVariant
+                    }
+                }[status];
+
+                return (
+                    <Chip
+                        value={chipProps.value}
+                        color={chipProps.color}
+                        variant={chipProps.variant}
+                        size="sm"
+                        className="font-medium w-fit"
+                    />
+                );
+            },
+            enableColumnFilter: true,
+        }),
         columnHelper.display({
             header: "Rincian Tagihan",
             cell: props => (
@@ -122,74 +180,113 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             value: c.id!,
         }));
 
-    return (
-        <TableContent<typeof bills[0]>
-            name={"Pemesanan"}
-            initialContents={dataState}
-            columns={columns}
-            form={
-                // @ts-expect-error
-                <BillForm/>
-            }
-            searchPlaceholder={"TODO!"} // TODO!
-            // TODO! Data should refresh on CRUD
-            upsert={{
-                // @ts-expect-error
-                mutationFn: upsertBillAction,
-            }}
+    // Add payment status filter options
+    const paymentStatusOptions: SelectOption<PaymentStatusFilter>[] = [
+        { label: "Semua", value: "all" },
+        { label: "Lunas", value: "paid" },
+        { label: "Belum Lunas", value: "unpaid" },
+    ];
 
-            delete={{
-                // @ts-expect-error
-                mutationFn: deleteBillAction,
-            }}
-            additionalActions={{
-                position: "before",
-                actions: [
-                    {
-                        generateButton: (rowData) => {
-                            return (
-                                <MdEmail
-                                    key={`${rowData.id}_email`}
-                                    className="h-5 w-5 cursor-pointer hover:text-blue-500"
-                                    onClick={() => {
-                                        setDialogContent(
-                                            <EmailConfirmationDialog
-                                                activeData={rowData}
-                                                sendBillEmailMutation={sendBillEmailMutation}
-                                                setShowDialog={setShowDialog}
-                                            />
-                                        );
-                                        setShowDialog(true);
-                                    }}/>
-                            );
-                        }
-                    }
-                ]
-            }}
-            customDialog={
-                <Dialog
-                    open={showDialog}
-                    size={"lg"}
-                    handler={() => setShowDialog(prev => !prev)}
-                    className={"p-8"}
+    // Filter bills based on payment status
+    const filteredBills = dataState.filter(bill => {
+        if (paymentStatusFilter === "all") return true;
+        
+        const totalAmount = Math.round(bill.bill_item
+            .map(bi => bi.amount)
+            .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0))
+            .toNumber());
+        
+        const totalPaid = Math.round(bill.paymentBills
+            ?.map(pb => new Prisma.Decimal(pb.amount).toNumber())
+            .reduce((sum, curr) => sum + curr, 0) ?? 0);
+
+        if (paymentStatusFilter === "paid") return totalPaid >= totalAmount;
+        return totalPaid < totalAmount;
+    });
+
+    return (
+        <div className="space-y-4">
+            <div className="flex justify-end">
+                <select
+                    value={paymentStatusFilter}
+                    onChange={(e) => setPaymentStatusFilter(e.target.value as PaymentStatusFilter)}
+                    className="border rounded p-2"
                 >
-                    {dialogContent}
-                </Dialog>
-            }
-            searchType={"smart"}
-            filterKeys={filterKeys}
-            queryParams={
-                (queryParams?.action == undefined || queryParams?.action == "search") ?
-                    {
-                        action: "search",
-                        values: queryParams,
-                    } : undefined
-                    /*{
-                        action: "create",
-                        initialActiveContent: {...queryParams} as unknown as typeof bills[0]
-                    }*/
-            }
-        />
+                    {paymentStatusOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <TableContent<typeof bills[0]>
+                name={"Pemesanan"}
+                initialContents={filteredBills}
+                columns={columns}
+                form={
+                    // @ts-expect-error
+                    <BillForm/>
+                }
+                searchPlaceholder={"TODO!"} // TODO!
+                // TODO! Data should refresh on CRUD
+                upsert={{
+                    // @ts-expect-error
+                    mutationFn: upsertBillAction,
+                }}
+
+                delete={{
+                    // @ts-expect-error
+                    mutationFn: deleteBillAction,
+                }}
+                additionalActions={{
+                    position: "before",
+                    actions: [
+                        {
+                            generateButton: (rowData) => {
+                                return (
+                                    <MdEmail
+                                        key={`${rowData.id}_email`}
+                                        className="h-5 w-5 cursor-pointer hover:text-blue-500"
+                                        onClick={() => {
+                                            setDialogContent(
+                                                <EmailConfirmationDialog
+                                                    activeData={rowData}
+                                                    sendBillEmailMutation={sendBillEmailMutation}
+                                                    setShowDialog={setShowDialog}
+                                                />
+                                            );
+                                            setShowDialog(true);
+                                        }}/>
+                                );
+                            }
+                        }
+                    ]
+                }}
+                customDialog={
+                    <Dialog
+                        open={showDialog}
+                        size={"lg"}
+                        handler={() => setShowDialog(prev => !prev)}
+                        className={"p-8"}
+                    >
+                        {dialogContent}
+                    </Dialog>
+                }
+                searchType={"smart"}
+                filterKeys={filterKeys}
+                queryParams={
+                    (queryParams?.action == undefined || queryParams?.action == "search") ?
+                        {
+                            action: "search",
+                            values: queryParams,
+                        } : undefined
+                        /*{
+                            action: "create",
+                            initialActiveContent: {...queryParams} as unknown as typeof bills[0]
+                        }*/
+                }
+            />
+        </div>
     );
 }
 
