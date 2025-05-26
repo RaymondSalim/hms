@@ -2,7 +2,7 @@
 
 import {locationObject, locationObjectWithID, locationObjectWithOptionalID} from "@/app/_lib/zod/locations/zod";
 import {number, object, typeToFlattenedError} from "zod";
-import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
+import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
 import {Location} from "@prisma/client";
 import {createLocation, deleteLocation, updateLocationByID, upsertLocation} from "@/app/_db/location";
 
@@ -71,7 +71,7 @@ export async function updateLocationAction(prevState: LocationActionsType, formD
   }
 }
 
-export async function upsertLocationAction(locationData: Partial<Location>): Promise<LocationActionsType> {
+export async function upsertLocationAction(locationData: OmitTimestamp<Location>): Promise<LocationActionsType> {
   const {success, error, data} = locationObjectWithOptionalID.safeParse(locationData);
 
   if (!success) {
