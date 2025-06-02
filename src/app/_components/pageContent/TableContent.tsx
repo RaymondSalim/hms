@@ -232,6 +232,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             globalFilter: globalFilter,
             columnFilters: columnFilter
         },
+        onColumnFiltersChange: setColumnFilter,
+        onGlobalFilterChange: setGlobalFilter,
         globalFilterFn: fuzzyFilter,
     });
 

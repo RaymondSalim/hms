@@ -27,7 +27,6 @@ export default function BillPage(props: {
         headerContext.setPaths([
             <Link key={"payments"} href={"/bills"}>Pembayaran</Link>,
         ]);
-        console.log(props.searchParams);
     }, []);
 
     const {
