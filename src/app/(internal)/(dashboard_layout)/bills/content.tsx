@@ -2,7 +2,7 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React, {useState} from "react";
-import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
+import {formatToDateTime, formatToIDR, formatToMonthYear} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Prisma} from "@prisma/client";
@@ -14,13 +14,17 @@ import {
     upsertBillAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import Link from "next/link";
-import {Button, Dialog, Typography} from "@material-tailwind/react";
+import {Button, Chip, Dialog, Typography} from "@material-tailwind/react";
 import {useMutation, UseMutationResult} from "@tanstack/react-query";
 import {MdEmail} from "react-icons/md";
 import {toast} from "react-toastify";
 import {SelectOption} from "@/app/_components/input/select";
 import {BillPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bills/page";
 
+
+// Add type for chip props
+type ChipColor = "green" | "amber" | "red";
+type ChipVariant = "gradient";
 
 export interface BillsContentProps {
     bills: BillIncludeAll[]
@@ -52,20 +56,33 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             header: "ID",
             enableColumnFilter: true,
             size: 20,
+            meta: {
+                filterType: "text"
+            }
         }),
         columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id, {
             id: "booking_id",
             header: "ID Pemesanan",
             enableColumnFilter: true,
+            meta: {
+                filterType: "text"
+            }
         }),
         columnHelper.accessor(row => row.bookings?.rooms?.room_number, {
             id: "room_number",
             header: "Nomor Kamar",
             enableColumnFilter: true,
+            meta: {
+                filterType: "text"
+            }
         }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
-            minSize: 275
+            minSize: 275,
+            enableColumnFilter: true,
+            meta: {
+                filterType: "text"
+            }
         }),
         columnHelper.accessor(row => formatToIDR(
             row.bill_item
@@ -73,6 +90,10 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0)
                 ).toNumber()), {
             header: "Jumlah",
+            enableColumnFilter: true,
+            meta: {
+                filterType: "number"
+            }
         }),
         columnHelper.accessor(row => {
             if (row.paymentBills) {
@@ -81,6 +102,69 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             return formatToIDR(0);
         }, {
             header: "Jumlah Terbayar",
+            enableColumnFilter: true,
+            meta: {
+                filterType: "number"
+            }
+        }),
+        columnHelper.accessor(row => {
+            const totalAmount = row.bill_item
+                .map(bi => bi.amount)
+                .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0))
+                .toNumber()
+                .toFixed(0);
+
+            const totalPaid = row.paymentBills
+                ?.map(pb => new Prisma.Decimal(pb.amount).toNumber())
+                .reduce((sum, curr) => sum + curr, 0)
+                .toFixed(0) ?? 0;
+
+            if (Number(totalPaid) >= Number(totalAmount)) return "paid";
+            if (Number(totalPaid) > 0) return "partial";
+            return "unpaid";
+        }, {
+            id: "payment_status",
+            header: "Status Pembayaran",
+            enableColumnFilter: true,
+            meta: {
+                filterType: "select",
+                filterOptions: [
+                    { label: "All", value: "" },
+                    { label: "Lunas", value: "paid" },
+                    { label: "Sebagian", value: "partial" },
+                    { label: "Belum Lunas", value: "unpaid" }
+                ]
+            },
+            cell: props => {
+                const status = props.getValue();
+                const chipProps = {
+                    paid: {
+                        value: "Lunas",
+                        color: "green" as ChipColor,
+                        variant: "gradient" as ChipVariant
+                    },
+                    partial: {
+                        value: "Sebagian",
+                        color: "amber" as ChipColor,
+                        variant: "gradient" as ChipVariant
+                    },
+                    unpaid: {
+                        value: "Belum Lunas",
+                        color: "red" as ChipColor,
+                        variant: "gradient" as ChipVariant
+                    }
+                }[status];
+
+                return (
+                    <Chip
+                        value={chipProps.value}
+                        color={chipProps.color}
+                        variant={chipProps.variant}
+                        size="sm"
+                        className="font-medium w-fit"
+                    />
+                );
+            },
         }),
         columnHelper.display({
             header: "Rincian Tagihan",
@@ -102,6 +186,12 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 </Link>
             ),
         }),
+        columnHelper.accessor(row => formatToMonthYear(row.due_date), {
+            id: "due_date",
+            header: () => null,
+            cell: () => null,
+            enableColumnFilter: false,
+        }),
     ];
 
     if (!headerContext.locationID) {
@@ -114,82 +204,81 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
     }
 
     const filterKeys: SelectOption<string>[] = columns
-        .filter(c => (
-            c.enableColumnFilter && c.header && c.id
-        ))
-        .map(c => ({
-            label: c.header!.toString(),
-            value: c.id!,
+        .filter(col => col.enableColumnFilter && col.id)
+        .map(col => ({
+            label: col.header as string,
+            value: col.id as string
         }));
 
     return (
-        <TableContent<typeof bills[0]>
-            name={"Pemesanan"}
-            initialContents={dataState}
-            columns={columns}
-            form={
-                // @ts-expect-error
-                <BillForm/>
-            }
-            searchPlaceholder={"TODO!"} // TODO!
-            // TODO! Data should refresh on CRUD
-            upsert={{
-                // @ts-expect-error
-                mutationFn: upsertBillAction,
-            }}
-
-            delete={{
-                // @ts-expect-error
-                mutationFn: deleteBillAction,
-            }}
-            additionalActions={{
-                position: "before",
-                actions: [
-                    {
-                        generateButton: (rowData) => {
-                            return (
-                                <MdEmail
-                                    key={`${rowData.id}_email`}
-                                    className="h-5 w-5 cursor-pointer hover:text-blue-500"
-                                    onClick={() => {
-                                        setDialogContent(
-                                            <EmailConfirmationDialog
-                                                activeData={rowData}
-                                                sendBillEmailMutation={sendBillEmailMutation}
-                                                setShowDialog={setShowDialog}
-                                            />
-                                        );
-                                        setShowDialog(true);
-                                    }}/>
-                            );
+        <>
+            <TableContent<typeof bills[0]>
+                name={"Pemesanan"}
+                initialContents={dataState}
+                columns={columns}
+                groupByOptions={[
+                    {value: 'booking_id', label: 'Kelompokkan per Pemesanan'},
+                    {value: 'due_date', label: 'Kelompokkan per Bulan'}
+                ]}
+                form={
+                    // @ts-expect-error
+                    <BillForm/>
+                }
+                searchPlaceholder={"TODO!"} // TODO!
+                // TODO! Data should refresh on CRUD
+                upsert={{
+                    // @ts-expect-error
+                    mutationFn: upsertBillAction,
+                }}
+                delete={{
+                    // @ts-expect-error
+                    mutationFn: deleteBillAction,
+                }}
+                additionalActions={{
+                    position: "before",
+                    actions: [
+                        {
+                            generateButton: (rowData) => {
+                                return (
+                                    <MdEmail
+                                        key={`${rowData.id}_email`}
+                                        className="h-5 w-5 cursor-pointer hover:text-blue-500"
+                                        onClick={() => {
+                                            setDialogContent(
+                                                <EmailConfirmationDialog
+                                                    activeData={rowData}
+                                                    sendBillEmailMutation={sendBillEmailMutation}
+                                                    setShowDialog={setShowDialog}
+                                                />
+                                            );
+                                            setShowDialog(true);
+                                        }}/>
+                                );
+                            }
                         }
-                    }
-                ]
-            }}
-            customDialog={
-                <Dialog
-                    open={showDialog}
-                    size={"lg"}
-                    handler={() => setShowDialog(prev => !prev)}
-                    className={"p-8"}
-                >
-                    {dialogContent}
-                </Dialog>
-            }
-            searchType={"smart"}
-            filterKeys={filterKeys}
-            queryParams={
-                (queryParams?.action == undefined || queryParams?.action == "search") ?
-                    {
-                        action: "search",
-                        values: queryParams,
-                    } : undefined
-                    /*{
-                        action: "create",
-                        initialActiveContent: {...queryParams} as unknown as typeof bills[0]
-                    }*/
-            }
-        />
+                    ]
+                }}
+                customDialog={
+                    <Dialog
+                        open={showDialog}
+                        size={"lg"}
+                        handler={() => setShowDialog(prev => !prev)}
+                        className={"p-8"}
+                    >
+                        {dialogContent}
+                    </Dialog>
+                }
+                searchType={"smart"}
+                filterKeys={filterKeys}
+                queryParams={
+                    (queryParams?.action == undefined || queryParams?.action == "search") ?
+                        {
+                            action: "search",
+                            values: queryParams,
+                        } : undefined
+                }
+            />
+        </>
     );
 }
 
