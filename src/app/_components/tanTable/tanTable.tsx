@@ -170,7 +170,7 @@ export default function TanTable({tanTable}: TanTableProps) {
                                                     />
                                                 </div>
                                             </PopoverHandler>
-                                            <PopoverContent className="w-80 z-50">
+                                            <PopoverContent className="w-80 z-[100]">
                                                 <div className="mb-4">
                                                     <Input
                                                         type="text"
