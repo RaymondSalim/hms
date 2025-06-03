@@ -119,7 +119,7 @@ export default function TanTable({tanTable}: TanTableProps) {
             {tanTable.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id}>
                     {/* Expander header if grouping is enabled */}
-                    {isGrouping && <th className={styles.th} style={{width: 32}}></th>}
+                    {isGrouping && <th className={styles.th} style={{width: 24}}></th>}
                     {headerGroup.headers.map(header => (
                         <th
                             key={header.id}

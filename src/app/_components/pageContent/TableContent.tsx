@@ -75,6 +75,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
 
     columns: ColumnDef<T, any>[],
     groupBy?: string[],
+    groupByOptions?: { value: string, label: string }[],
 
     searchPlaceholder?: string,
     form: ReactElement<TableFormProps<T>>
@@ -308,7 +309,32 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             : undefined;
 
     return (
-        <div className={"flex-1 flex flex-col min-h-0 h-full overflow-hidden"}>
+        <div className={"flex-1 flex flex-col gap-y-2 min-h-0 h-full overflow-hidden"}>
+            <div className="flex align-middle gap-2">
+                {props.groupByOptions && (
+                    <>
+                        <Button
+                            variant={grouping.length === 0 ? 'filled' : 'outlined'}
+                            size="sm"
+                            className="min-w-[100px] rounded-full"
+                            onClick={() => setGrouping([])}
+                        >
+                            Tanpa Pengelompokan
+                        </Button>
+                        {props.groupByOptions.map(option => (
+                            <Button
+                                key={option.value}
+                                variant={grouping.includes(option.value) ? 'filled' : 'outlined'}
+                                size="sm"
+                                className="min-w-[100px] rounded-full"
+                                onClick={() => setGrouping([option.value])}
+                            >
+                                {option.label}
+                            </Button>
+                        ))}
+                    </>
+                )}
+            </div>
             <div className={styles.searchBarAndCreate}>
                 {
                     (
@@ -328,17 +354,17 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 }
                 {
                     props.searchType == "smart" &&
-                    <SmartSearchInput
+                        <SmartSearchInput
                         initialValues={smartSearchInputInitialValues}
                         suggestions={props.filterKeys}
-                        onSubmit={handleSearchSubmit}
-                    />
+                            onSubmit={handleSearchSubmit}
+                        />
                 }
                 <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
                     <FaPlus/>
                     <span>Buat</span>
-                </Button>
-            </div>
+                    </Button>
+                </div>
             <div className="w-full flex-1 min-h-0 overflow-auto" style={{height: '400px', overflowY: 'auto'}}>
                 <TanTable tanTable={tanTable}/>
             </div>
