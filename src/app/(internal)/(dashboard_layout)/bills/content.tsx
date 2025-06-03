@@ -14,18 +14,13 @@ import {
     upsertBillAction
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import Link from "next/link";
-import {Button, Dialog, Typography, Chip} from "@material-tailwind/react";
+import {Button, Chip, Dialog, Typography} from "@material-tailwind/react";
 import {useMutation, UseMutationResult} from "@tanstack/react-query";
 import {MdEmail} from "react-icons/md";
 import {toast} from "react-toastify";
 import {SelectOption} from "@/app/_components/input/select";
 import {BillPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bills/page";
 
-// Add payment status type
-type PaymentStatus = "paid" | "unpaid" | "partial";
-
-// Add payment status filter type
-type PaymentStatusFilter = "all" | "paid" | "unpaid";
 
 // Add type for chip props
 type ChipColor = "green" | "amber" | "red";
@@ -118,7 +113,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0))
                 .toNumber()
                 .toFixed(0);
-            
+
             const totalPaid = row.paymentBills
                 ?.map(pb => new Prisma.Decimal(pb.amount).toNumber())
                 .reduce((sum, curr) => sum + curr, 0)
@@ -216,6 +211,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             name={"Pemesanan"}
             initialContents={dataState}
             columns={columns}
+            groupBy={["booking_id"]}
             form={
                 // @ts-expect-error
                 <BillForm/>
