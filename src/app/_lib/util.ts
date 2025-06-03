@@ -26,6 +26,10 @@ export function formatToDateTime(d: Date, showTime = true, showSeconds = true): 
   }).format(d);
 }
 
+export function formatToMonthYear(d: Date): string {
+  return new Intl.DateTimeFormat('id', { month: 'long', year: 'numeric' }).format(d);
+}
+
 export type IntersectionToUnion<T> = (T extends any ? (arg: T) => void : never) extends (arg: infer U) => void ? U : never;
 
 export function addToDate(date: Date, dayCount: number, monthCount: number) {
