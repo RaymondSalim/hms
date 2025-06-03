@@ -2,7 +2,7 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React, {useState} from "react";
-import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
+import {formatToDateTime, formatToIDR, formatToMonthYear} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Prisma} from "@prisma/client";
@@ -36,6 +36,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
     let [dataState, setDataState] = useState<typeof bills>(bills);
     let [showDialog, setShowDialog] = useState(false);
     let [dialogContent, setDialogContent] = useState(<></>);
+    let [grouping, setGrouping] = useState<'none' | 'booking_id' | 'due_date'>('none');
 
     const sendBillEmailMutation = useMutation({
         mutationFn: sendBillEmailAction,
@@ -186,6 +187,12 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 </Link>
             ),
         }),
+        columnHelper.accessor(row => formatToMonthYear(row.due_date), {
+            id: "due_date",
+            header: () => null,
+            cell: () => null,
+            enableColumnFilter: false,
+        }),
     ];
 
     if (!headerContext.locationID) {
@@ -198,83 +205,104 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
     }
 
     const filterKeys: SelectOption<string>[] = columns
-        .filter(c => (
-            c.enableColumnFilter && c.header && c.id
-        ))
-        .map(c => ({
-            label: c.header!.toString(),
-            value: c.id!,
+        .filter(col => col.enableColumnFilter && col.id)
+        .map(col => ({
+            label: col.header as string,
+            value: col.id as string
         }));
 
     return (
-        <TableContent<typeof bills[0]>
-            name={"Pemesanan"}
-            initialContents={dataState}
-            columns={columns}
-            groupBy={["booking_id"]}
-            form={
-                // @ts-expect-error
-                <BillForm/>
-            }
-            searchPlaceholder={"TODO!"} // TODO!
-            // TODO! Data should refresh on CRUD
-            upsert={{
-                // @ts-expect-error
-                mutationFn: upsertBillAction,
-            }}
-
-            delete={{
-                // @ts-expect-error
-                mutationFn: deleteBillAction,
-            }}
-            additionalActions={{
-                position: "before",
-                actions: [
-                    {
-                        generateButton: (rowData) => {
-                            return (
-                                <MdEmail
-                                    key={`${rowData.id}_email`}
-                                    className="h-5 w-5 cursor-pointer hover:text-blue-500"
-                                    onClick={() => {
-                                        setDialogContent(
-                                            <EmailConfirmationDialog
-                                                activeData={rowData}
-                                                sendBillEmailMutation={sendBillEmailMutation}
-                                                setShowDialog={setShowDialog}
-                                            />
-                                        );
-                                        setShowDialog(true);
-                                    }}/>
-                            );
-                        }
-                    }
-                ]
-            }}
-            customDialog={
-                <Dialog
-                    open={showDialog}
-                    size={"lg"}
-                    handler={() => setShowDialog(prev => !prev)}
-                    className={"p-8"}
+        <>
+            <div className="flex gap-2 mb-4">
+                <Button
+                    variant={grouping === 'none' ? 'filled' : 'outlined'}
+                    size="sm"
+                    className="min-w-[100px] rounded-full"
+                    onClick={() => setGrouping('none')}
                 >
-                    {dialogContent}
-                </Dialog>
-            }
-            searchType={"smart"}
-            filterKeys={filterKeys}
-            queryParams={
-                (queryParams?.action == undefined || queryParams?.action == "search") ?
-                    {
-                        action: "search",
-                        values: queryParams,
-                    } : undefined
-                    /*{
-                        action: "create",
-                        initialActiveContent: {...queryParams} as unknown as typeof bills[0]
-                    }*/
-            }
-        />
+                    Tanpa Pengelompokan
+                </Button>
+                <Button
+                    variant={grouping === 'booking_id' ? 'filled' : 'outlined'}
+                    size="sm"
+                    className="min-w-[100px] rounded-full"
+                    onClick={() => setGrouping('booking_id')}
+                >
+                    Kelompokkan per Pemesanan
+                </Button>
+                <Button
+                    variant={grouping === 'due_date' ? 'filled' : 'outlined'}
+                    size="sm"
+                    className="min-w-[100px] rounded-full"
+                    onClick={() => setGrouping('due_date')}
+                >
+                    Kelompokkan per Bulan
+                </Button>
+            </div>
+            <TableContent<typeof bills[0]>
+                name={"Pemesanan"}
+                initialContents={dataState}
+                columns={columns}
+                groupBy={grouping === 'none' ? [] : [grouping]}
+                form={
+                    // @ts-expect-error
+                    <BillForm/>
+                }
+                searchPlaceholder={"TODO!"} // TODO!
+                // TODO! Data should refresh on CRUD
+                upsert={{
+                    // @ts-expect-error
+                    mutationFn: upsertBillAction,
+                }}
+                delete={{
+                    // @ts-expect-error
+                    mutationFn: deleteBillAction,
+                }}
+                additionalActions={{
+                    position: "before",
+                    actions: [
+                        {
+                            generateButton: (rowData) => {
+                                return (
+                                    <MdEmail
+                                        key={`${rowData.id}_email`}
+                                        className="h-5 w-5 cursor-pointer hover:text-blue-500"
+                                        onClick={() => {
+                                            setDialogContent(
+                                                <EmailConfirmationDialog
+                                                    activeData={rowData}
+                                                    sendBillEmailMutation={sendBillEmailMutation}
+                                                    setShowDialog={setShowDialog}
+                                                />
+                                            );
+                                            setShowDialog(true);
+                                        }}/>
+                                );
+                            }
+                        }
+                    ]
+                }}
+                customDialog={
+                    <Dialog
+                        open={showDialog}
+                        size={"lg"}
+                        handler={() => setShowDialog(prev => !prev)}
+                        className={"p-8"}
+                    >
+                        {dialogContent}
+                    </Dialog>
+                }
+                searchType={"smart"}
+                filterKeys={filterKeys}
+                queryParams={
+                    (queryParams?.action == undefined || queryParams?.action == "search") ?
+                        {
+                            action: "search",
+                            values: queryParams,
+                        } : undefined
+                }
+            />
+        </>
     );
 }
 
