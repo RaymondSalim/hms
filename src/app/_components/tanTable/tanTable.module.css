@@ -39,8 +39,8 @@
 .td {
     @apply
     p-4
-    last-of-type:border-b
-    last-of-type:border-blue-gray-50
+    border-b
+    border-blue-gray-50
 }
 
 .td > div {
