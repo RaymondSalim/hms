@@ -6,7 +6,9 @@ import {
     ColumnFiltersState,
     createColumnHelper,
     getCoreRowModel,
+    getExpandedRowModel,
     getFilteredRowModel,
+    getGroupedRowModel,
     getPaginationRowModel,
     getSortedRowModel,
     useReactTable
@@ -72,6 +74,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
     delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
 
     columns: ColumnDef<T, any>[],
+    groupBy?: string[],
 
     searchPlaceholder?: string,
     form: ReactElement<TableFormProps<T>>
@@ -103,6 +106,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     const [fromQuery, setFromQuery] = useState(false);
     const [globalFilter, setGlobalFilter] = useState<string>();
     const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>();
+    const [grouping, setGrouping] = useState<string[]>(props.groupBy ?? []);
+    const [expanded, setExpanded] = useState({});
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -228,12 +233,27 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
+        getGroupedRowModel: getGroupedRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
         state: {
             globalFilter: globalFilter,
-            columnFilters: columnFilter
+            columnFilters: columnFilter,
+            grouping,
+            expanded,
         },
-        onColumnFiltersChange: setColumnFilter,
+        onColumnFiltersChange: (updaterOrValue) => {
+            if (typeof updaterOrValue === 'function') {
+                setColumnFilter((prev) => {
+                    const result = updaterOrValue(prev ?? []);
+                    return result ?? [];
+                });
+            } else {
+                setColumnFilter(updaterOrValue ?? []);
+            }
+        },
         onGlobalFilterChange: setGlobalFilter,
+        onGroupingChange: setGrouping,
+        onExpandedChange: setExpanded,
         globalFilterFn: fuzzyFilter,
     });
 
