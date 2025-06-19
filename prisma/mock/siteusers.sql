@@ -1,0 +1,2 @@
+insert into public.siteusers (id, name, email, emailVerified, password, image, role_id, createdAt, updatedAt, shouldReset)
+values  ('cm46u1a4n0001xve26t7wik69', 'User 1', 'email@email.com', null, '$2b$10$NGulAQEa7D0IuIxQ6bKe2OcOM0yyEcC7ayl6jph2Yj9SJFxlfylaC', null, 1, '2024-12-02 09:33:04.775', '2024-12-02 09:33:04.775', false);

@@ -1,0 +1,2 @@
+insert into public.locations (id, name, address, createdAt, updatedAt)
+values  (4, 'Micasa Suites', 'Jl. Puskesmas No.35-22, RT.11/RW.7, Duri Kosambi, Kecamatan Cengkareng, Kota Jakarta Barat, Daerah Khusus Ibukota Jakarta 11750', '2024-10-31 14:09:16.334', '2024-10-31 14:09:16.334');
