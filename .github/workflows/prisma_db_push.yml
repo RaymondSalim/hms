@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  deployment_status:
 
 jobs:
   db-push:
@@ -35,3 +36,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma validate
+
+      - name: Reset database with mock data
+        if: github.event_name == 'deployment_status' && github.event.deployment_status.environment == 'Preview' && github.event.deployment_status.state == 'success'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npx prisma migrate reset --force --skip-generate --skip-seed
+          node prisma/mock.js
