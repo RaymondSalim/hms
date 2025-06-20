@@ -29,7 +29,7 @@ jobs:
       - name: Prisma DB Push
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }} # Use the DATABASE_URL secret from GitHub Actions
-        run: npx prisma db push
+        run: npx prisma db push --accept-data-loss
 
       # Verify the schema was pushed successfully
       - name: Verify Prisma DB Push
