@@ -16,12 +16,13 @@ import {toast} from "react-toastify";
 
 
 export interface RoomsContentProps {
-  rooms: RoomsWithTypeAndLocation[]
+  rooms: RoomsWithTypeAndLocation[],
+  queryParams?: any // Accept queryParams for filtering
 }
 
 const detailsHeader = ["Duration", "Price"];
 
-export default function RoomsContent({rooms}: RoomsContentProps) {
+export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
   const headerContext = useHeader();
   const [activeData, setActiveData] = useState<RoomsWithTypeAndLocation | undefined>(undefined);
   const [showDialog, setShowDialog] = useState(false);
@@ -34,16 +35,20 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
   const columnHelper = createColumnHelper<RoomsWithTypeAndLocation>();
   const columns = [
     columnHelper.accessor(row => row.id, {
+      id: "id",
       header: "ID",
       size: 20
     }),
     columnHelper.accessor(row => row.room_number, {
+      id: "room_number",
       header: "Nomor Kamar"
     }),
     columnHelper.accessor(row => row.roomtypes?.type, {
+      id: "type",
       header: "Tipe Kamar"
     }),
     columnHelper.accessor(row => row.roomstatuses?.status, {
+      id: "status",
       header: "Status",
     }),
     columnHelper.display({
@@ -64,22 +69,36 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
   if (!headerContext.locationID) {
     // @ts-ignore
     columns.splice(1, 0, columnHelper.accessor(row => row.locations?.name, {
+        id: "location",
         header: "Lokasi",
         size: 20
       })
     );
   }
 
+  // Define filterKeys for smart search
+  const filterKeys = columns
+    .filter(c => (
+      c.enableColumnFilter !== false && c.header && c.id
+    ))
+    .map(c => ({
+      label: c.header!.toString(),
+      value: c.id!,
+    }));
+
   return (
       <TableContent<RoomsWithTypeAndLocation>
         name={"Kamar"}
         initialContents={rooms}
+        queryParams={queryParams ? { action: "search", values: queryParams } : undefined}
         columns={columns}
         form={
           // @ts-ignore
           <RoomForm/>
         }
         searchPlaceholder={"Cari berdasarkan nama atau alamat email"}
+        searchType="smart"
+        filterKeys={filterKeys}
         upsert={{
           mutationFn: upsertRoomAction,
           customOnSuccess: (data, variables, context, setMutationResponse, setContentsState, setDialogOpen) => {
