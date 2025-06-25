@@ -12,22 +12,22 @@ export default function Overview() {
     queryKey: ['dashboard.overview', dashboardContext.locationID],
     queryFn: () => getOverviewData(dashboardContext.locationID)
   });
-
+  // TODO! Parse the data instead of just using length.
   const items = [
     {
       head: "This Week's",
       topic: "Check-in",
-      data: data?.check_in
+      data: data?.check_in.length
     },
     {
       head: "This Week's",
       topic: "Check-out",
-      data: data?.check_out
+      data: data?.check_out.length
     },
     {
       head: "Total",
       topic: "Available Room",
-      data: data?.available
+      data: data?.available.length
     },
     {
       head: "Total",
