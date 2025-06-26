@@ -31,7 +31,7 @@ export async function getOverviewData(locationID?: number) {
                 },
                 start_date: {
                     gte: firstDateOfWeek,
-                    lt: lastDateOfWeek,
+                    lte: lastDateOfWeek,
                 }
             },
             select: {
@@ -52,7 +52,7 @@ export async function getOverviewData(locationID?: number) {
                 },
                 end_date: {
                     gte: firstDateOfWeek,
-                    lt: lastDateOfWeek,
+                    lte: lastDateOfWeek,
                 }
             },
             select: {
