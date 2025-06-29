@@ -22,10 +22,19 @@ import {UpsertBookingPayload} from "@/app/(internal)/(dashboard_layout)/bookings
 import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
 import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 
+/**
+ * Type definition for bills that include payment information and sum of paid amounts
+ */
 export type BillIncludePaymentAndSum = BillIncludePayment & {
     sumPaidAmount: Prisma.Decimal
 };
 
+/**
+ * Retrieves unpaid bills for a booking, ordered by due date
+ * @param booking_id - The booking ID to get unpaid bills for
+ * @param args - Additional Prisma query arguments
+ * @returns Object containing total due amount and array of unpaid bills
+ */
 export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma.BillFindManyArgs): Promise<{
     total?: number,
     bills: BillIncludeAll[]
@@ -69,6 +78,13 @@ export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma
     };
 }
 
+/**
+ * Simulates how a payment amount would be allocated across unpaid bills
+ * @param balance - The payment amount to allocate
+ * @param filteredBills - Array of bills with payment information
+ * @param payment_id - Optional payment ID for the simulation
+ * @returns Simulation result with old and new state
+ */
 export async function simulateUnpaidBillPaymentAction(balance: number, filteredBills: BillIncludePaymentAndSum[], payment_id?: number) {
     const originalBalance = balance;
 
@@ -127,6 +143,52 @@ export async function simulateUnpaidBillPaymentAction(balance: number, filteredB
     };
 }
 
+/**
+ * Simulates payment allocation while excluding a specific payment from calculations
+ * Used when editing a payment to show correct allocation without double-counting
+ * @param balance - The payment amount to allocate
+ * @param booking_id - The booking ID to get bills for
+ * @param excludePaymentId - The payment ID to exclude from calculations
+ * @returns Simulation result with old and new state
+ */
+export async function simulateUnpaidBillPaymentActionWithExcludePayment(balance: number, booking_id: number, excludePaymentId: number) {
+    // Get all bills with payments (not just unpaid ones)
+    const bills = await getBillsWithPayments(booking_id, {
+        orderBy: {
+            due_date: "asc"
+        },
+        include: {
+            bill_item: true,
+            paymentBills: true
+        }
+    });
+
+    // For each bill, recalculate sumPaidAmount excluding the specified payment
+    const billsWithRecalculatedPayments = bills
+        .map(b => {
+            const currBillAmount = b.bill_item.reduce(
+                (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+            );
+            const filteredPaymentBills = b.paymentBills.filter(pb => pb.payment_id !== excludePaymentId);
+            const paidAmount = filteredPaymentBills.reduce((acc, pb) => acc.add(pb.amount), new Prisma.Decimal(0));
+            return {
+                ...b,
+                paymentBills: filteredPaymentBills, // Filter the paymentBills array itself
+                amount: currBillAmount,
+                sumPaidAmount: paidAmount
+            };
+        });
+
+    // Run the simulation as usual - let it handle which bills get allocated to
+    return simulateUnpaidBillPaymentAction(balance, billsWithRecalculatedPayments, excludePaymentId);
+}
+
+/**
+ * Generates payment-bill mappings from a list of payments and bills
+ * @param payments - Array of payments to allocate
+ * @param bills - Array of bills to allocate payments to
+ * @returns Array of payment-bill mappings
+ */
 export async function generatePaymentBillMappingFromPaymentsAndBills(payments: OmitTimestamp<Payment>[], bills: OmitTimestamp<BillIncludeBillItem>[]): Promise<OmitIDTypeAndTimestamp<PaymentBill>[]> {
     const paymentBills: OmitIDTypeAndTimestamp<PaymentBill>[] = [];
 
@@ -179,6 +241,14 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
     return paymentBills;
 }
 
+/**
+ * Creates payment-bill records for a given payment amount and bills
+ * @param balance - The payment amount to allocate
+ * @param bills - Array of bills with payment information
+ * @param payment_id - The payment ID to create records for
+ * @param trx - Optional transaction client
+ * @returns Object containing remaining balance and created records
+ */
 export async function createPaymentBillsAction(balance: number, bills: BillIncludePaymentAndSum[], payment_id: number, trx?: Prisma.TransactionClient) {
     const db = trx ?? prisma;
 
@@ -195,6 +265,14 @@ export async function createPaymentBillsAction(balance: number, bills: BillInclu
     };
 }
 
+/**
+ * Retrieves all bills with full booking information for a location
+ * @param id - Optional bill ID filter
+ * @param locationID - Location ID to filter bills by
+ * @param limit - Maximum number of bills to return
+ * @param offset - Number of bills to skip
+ * @returns Array of bills with full booking information
+ */
 export async function getAllBillsIncludeAll(id?: number, locationID?: number, limit?: number, offset?: number) {
     return getAllBillsWithBooking(
         id,
@@ -225,6 +303,14 @@ export async function getAllBillsIncludeAll(id?: number, locationID?: number, li
     );
 }
 
+/**
+ * Retrieves all bills with booking and payment information for a location
+ * @param id - Optional bill ID filter
+ * @param locationID - Location ID to filter bills by
+ * @param limit - Maximum number of bills to return
+ * @param offset - Number of bills to skip
+ * @returns Array of bills with booking and payment information
+ */
 export async function getAllBillsWithBookingAndPaymentsAction(id?: number, locationID?: number, limit?: number, offset?: number) {
     return getAllBillsWithBooking(
         id,
@@ -254,6 +340,11 @@ export async function getAllBillsWithBookingAndPaymentsAction(id?: number, locat
     );
 }
 
+/**
+ * Creates or updates a bill
+ * @param billData - Bill data to create or update
+ * @returns Success response with bill data or error information
+ */
 export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, "id">) {
     const {success, data, error} = billSchemaWithOptionalID.safeParse(billData);
 
@@ -304,6 +395,11 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
     }
 }
 
+/**
+ * Deletes a bill by ID
+ * @param id - The bill ID to delete
+ * @returns Success response with deleted bill data or error information
+ */
 export async function deleteBillAction(id: number) {
     const {success, error, data} = object({id: number().positive()}).safeParse({
         id: id
@@ -333,6 +429,13 @@ export async function deleteBillAction(id: number) {
     }
 }
 
+/**
+ * Synchronizes payment-bill records for a booking based on payment dates
+ * Recalculates all payment allocations for the booking
+ * @param bookingID - The booking ID to sync payments for
+ * @param trx - Transaction client
+ * @param newPayments - Optional array of new payments to include in sync
+ */
 export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.TransactionClient, newPayments?: Payment[]) {
     let bills = await prisma.bill.findMany({
         where: {
@@ -373,6 +476,13 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
     });
 }
 
+/**
+ * Retrieves upcoming unpaid bills with user information for a specific date range
+ * @param targetDate - The target date to get bills for
+ * @param limit - Maximum number of bills to return
+ * @param offset - Number of bills to skip
+ * @returns Object containing bills and total count
+ */
 export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, limit?: number, offset?: number) {
     let where = {
         due_date: {
@@ -403,6 +513,11 @@ export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, li
     };
 }
 
+/**
+ * Sends a bill reminder email to the tenant
+ * @param billID - The bill ID to send reminder for
+ * @returns Success or failure response
+ */
 export async function sendBillEmailAction(billID: number) {
     let billData = await prisma.bill.findFirst({
         where: {
@@ -456,6 +571,12 @@ export async function sendBillEmailAction(billID: number) {
 
 }
 
+/**
+ * Generates bill items from booking add-ons
+ * @param bookingAddons - Array of booking add-ons
+ * @param booking - Booking information with end date
+ * @returns Map of bill items grouped by month
+ */
 export async function generateBillItemsFromBookingAddons(
     bookingAddons: BookingAddOn[],
     booking: Pick<Booking, "end_date">
@@ -533,97 +654,72 @@ export async function generateBillItemsFromBookingAddons(
                         ? (applicablePricing.interval_end - applicablePricing.interval_start)
                         : 0) + 1;
                 let fullPaymentEndDate = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + fullPaymentDurationMonth,
-                    currentStart.getDate() - 1
+                    fullPaymentStart.getFullYear(),
+                    fullPaymentStart.getMonth() + fullPaymentDurationMonth,
+                    0
                 );
-                fullPaymentAmount = applicablePricing.price;
+
+                if (fullPaymentEndDate > addonEndDate) {
+                    fullPaymentEndDate = addonEndDate;
+                }
+
+                const fullPaymentDailyRate = Number(applicablePricing.price) / fullPaymentDurationMonth / 30;
+                const fullPaymentDays = Math.ceil(
+                    (fullPaymentEndDate.getTime() - fullPaymentStart.getTime()) / (1000 * 60 * 60 * 24)
+                );
+                fullPaymentAmount = fullPaymentDailyRate * fullPaymentDays;
 
                 const monthKey = `${fullPaymentStart.getFullYear()}-${fullPaymentStart.getMonth()}`;
+                const monthItems = billItemsByMonth.get(monthKey)!;
 
-                if (!billItemsByMonth.has(monthKey)) {
-                    billItemsByMonth.set(monthKey, []);
-                }
-
-                billItemsByMonth.get(monthKey)!.push({
-                    addonID: bookingAddon.addon_id,
-                    description: `Biaya Layanan Tambahan (${addon.name}) (${fullPaymentStart.toLocaleString(
-                        'default',
-                        {month: 'long'}
-                    )} ${fullPaymentStart.getDate()} - ${fullPaymentEndDate.toLocaleString('default', {
-                        month: 'long',
-                    })} ${fullPaymentEndDate.getDate()})`,
-                    amount: new Prisma.Decimal(fullPaymentAmount),
+                monthItems.push({
+                    amount: new Prisma.Decimal(Math.round(fullPaymentAmount)),
+                    description: `Biaya Layanan Tambahan (${addon.name}) (${fullPaymentStart.toLocaleString('default', {month: 'long'})} ${fullPaymentStart.getDate()}-${fullPaymentEndDate.getDate()})`,
+                    type: BillType.GENERATED,
+                    effectiveEndDate: fullPaymentEndDate,
+                    addonID: addon.id,
+                    isBacktracked: false
                 });
-                currentStart = new Date(
-                    fullPaymentEndDate.getFullYear(),
-                    fullPaymentEndDate.getMonth(),
-                    fullPaymentEndDate.getDate() + 1
-                );
+
+                currentStart = new Date(fullPaymentEndDate.getTime() + 24 * 60 * 60 * 1000);
+                fullPaymentStart = null;
+                fullPaymentAmount = 0;
             } else {
-                const currentEnd = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + 1,
-                    0
+                const currentEnd = new Date(currentStart.getFullYear(), currentStart.getMonth() + 1, 0);
+                const actualEnd = currentEnd > addonEndDate ? addonEndDate : currentEnd;
+
+                const dailyRate = Number(applicablePricing.price) / 30;
+                const days = Math.ceil(
+                    (actualEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24)
                 );
-
-                if (currentEnd > addonEndDate) {
-                    currentEnd.setDate(addonEndDate.getDate());
-                }
-
-                const daysInMonth = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + 1,
-                    0
-                ).getDate();
-                const daysUsed = currentEnd.getDate() - currentStart.getDate() + 1;
-                const proratedPrice =
-                    (applicablePricing.price / daysInMonth) * daysUsed;
+                const amount = dailyRate * days;
 
                 const monthKey = `${currentStart.getFullYear()}-${currentStart.getMonth()}`;
+                const monthItems = billItemsByMonth.get(monthKey)!;
 
-                if (!billItemsByMonth.has(monthKey)) {
-                    billItemsByMonth.set(monthKey, []);
-                }
-
-                billItemsByMonth.get(monthKey)!.push({
-                    addonID: bookingAddon.addon_id,
-                    description: `Biaya Layanan Tambahan (${addon.name}) (${currentStart.toLocaleString(
-                        'default',
-                        {month: 'long'}
-                    )} ${currentStart.getDate()} - ${currentStart.toLocaleString(
-                        'default',
-                        {month: 'long'}
-                    )} ${currentEnd.getDate()})`,
-                    amount: new Prisma.Decimal(proratedPrice),
-                    effectiveEndDate: currentEnd,
+                monthItems.push({
+                    amount: new Prisma.Decimal(Math.round(amount)),
+                    description: `Biaya Layanan Tambahan (${addon.name}) (${currentStart.toLocaleString('default', {month: 'long'})} ${currentStart.getDate()}-${actualEnd.getDate()})`,
+                    type: BillType.GENERATED,
+                    effectiveEndDate: actualEnd,
+                    addonID: addon.id,
+                    isBacktracked: false
                 });
 
-                currentStart = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + 1,
-                    1
-                );
+                currentStart = new Date(actualEnd.getTime() + 24 * 60 * 60 * 1000);
             }
         }
-    }
 
-    // Adjust items outside the booking's effective end date
-    const mapEntries = Array.from(billItemsByMonth.entries());
-    for (let entryIndex = mapEntries.length - 1; entryIndex >= 0; entryIndex--) {
-        const [month, monthItems] = mapEntries[entryIndex];
+        // Merge items in the same month with the same addon
+        const entries = Array.from(billItemsByMonth.entries());
+        for (const [month, monthItems] of entries) {
+            const prevMonthItems: typeof monthItems = [];
 
-        for (let i = 0; i < monthItems.length; i++) {
-            const item = monthItems[i];
-
-            if (item.effectiveEndDate && item.effectiveEndDate > booking.end_date) {
-                const [prevMonth, prevMonthItems] = mapEntries[entryIndex - 1];
-                const previousItem = prevMonthItems.find(items => {
-                    return item.addonID == items.addonID;
-                });
+            for (let i = 0; i < monthItems.length; i++) {
+                const item = monthItems[i];
+                const previousItem = prevMonthItems.find((prev: any) => prev.addonID === item.addonID);
 
                 if (previousItem) {
-                    previousItem.isBacktracked = true;
                     previousItem.amount = new Prisma.Decimal(
                         parseFloat(previousItem.amount.toString()) + parseFloat(item.amount.toString())
                     );
@@ -647,16 +743,18 @@ export async function generateBillItemsFromBookingAddons(
                         }
                     }
                 } else {
-                    item.effectiveEndDate = new Date(item.effectiveEndDate.getFullYear(), item.effectiveEndDate.getMonth() - 1, 1);
+                    if (item.effectiveEndDate) {
+                        item.effectiveEndDate = new Date(item.effectiveEndDate.getFullYear(), item.effectiveEndDate.getMonth() - 1, 1);
+                    }
                     prevMonthItems.push(item);
                 }
                 monthItems.splice(i, 1); // Remove the adjusted item
                 i--;
             }
-        }
 
-        if (monthItems.length == 0) {
-            billItemsByMonth.delete(month);
+            if (monthItems.length == 0) {
+                billItemsByMonth.delete(month);
+            }
         }
     }
 
@@ -668,6 +766,12 @@ export async function generateBillItemsFromBookingAddons(
     );
 }
 
+/**
+ * Generates bills and bill items for a booking based on fee and duration
+ * @param data - Booking data containing fee, start date, and optional second resident fee
+ * @param duration - Duration information with month count
+ * @returns Object containing bills with bill items, individual bill items, and end date
+ */
 export async function generateBookingBillandBillItems(
     data: PartialBy<Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">, "second_resident_fee">,
     duration: Pick<Duration, "month_count">

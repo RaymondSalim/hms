@@ -2,7 +2,7 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
+import {Button, Input, Popover, PopoverContent, PopoverHandler, Radio, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
@@ -19,7 +19,8 @@ import {NonUndefined} from "@/app/_lib/types";
 import {
     BillIncludePaymentAndSum,
     getUnpaidBillsDueAction,
-    simulateUnpaidBillPaymentAction
+    simulateUnpaidBillPaymentAction,
+    simulateUnpaidBillPaymentActionWithExcludePayment
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {Prisma} from "@prisma/client";
 import {toast} from "react-toastify";
@@ -42,26 +43,70 @@ type BillAndPayment = BillIncludePaymentAndSum & {
 };
 
 export function PaymentForm(props: PaymentForm) {
-    let parsedData: typeof props.contentData;
-    if (props.contentData) {
-        parsedData = {
-            ...props.contentData,
-            amount: new Prisma.Decimal(props.contentData.amount),
-        };
-    }
+    const parsedData = useMemo(() => {
+        if (props.contentData) {
+            return {
+                ...props.contentData,
+                amount: new Prisma.Decimal(props.contentData.amount),
+            };
+        }
+        return undefined;
+    }, [props.contentData]);
 
-    const [data, setData] = useState<DataType>(parsedData ?? {});
+    const [data, setData] = useState<DataType>({});
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
-    const [locationID, setLocationID] = useState<number | undefined>(parsedData?.bookings.rooms?.location_id ?? undefined);
+    const [locationID, setLocationID] = useState<number | undefined>(undefined);
     const [popoverOpen, setIsPopoverOpen] = useState(false);
 
     const today = new Date();
 
-    const [initialData, setInitialData] = useState<Partial<DataType>>(parsedData ?? {});
+    const [initialData, setInitialData] = useState<Partial<DataType>>({});
+    const [initialAllocationMode, setInitialAllocationMode] = useState<'auto' | 'manual'>('auto');
+    const [initialManualAllocations, setInitialManualAllocations] = useState<Record<number, number>>({});
+
+    const [allocationMode, setAllocationMode] = useState<'auto' | 'manual'>('auto');
+    const [manualAllocations, setManualAllocations] = useState<Record<number, number>>({});
+
+    // Initialize data when parsedData changes
+    useEffect(() => {
+        if (parsedData) {
+            setData(parsedData);
+            setLocationID(parsedData.bookings?.rooms?.location_id ?? undefined);
+            setInitialData(parsedData);
+        }
+    }, [parsedData]);
+
     // Function to compare initial and current booking data
-    const hasChanges = (initialData: Partial<DataType>, currentData: Partial<DataType>) => {
-        return JSON.stringify(initialData) !== JSON.stringify(currentData);
-    };
+    const hasChanges = useMemo(() => {
+        const dataChanged =
+            initialData?.booking_id !== data?.booking_id ||
+            initialData?.payment_date?.getTime() !== data?.payment_date?.getTime() ||
+            initialData?.status_id !== data?.status_id ||
+            initialData?.amount?.toNumber() !== data?.amount?.toNumber();
+        const allocationModeChanged = initialAllocationMode !== allocationMode;
+        const manualAllocationsChanged = JSON.stringify(initialManualAllocations) !== JSON.stringify(manualAllocations);
+
+        return dataChanged || allocationModeChanged || manualAllocationsChanged;
+    }, [
+        initialData?.booking_id,
+        initialData?.payment_date,
+        initialData?.status_id,
+        initialData?.amount?.toNumber(),
+        data?.booking_id,
+        data?.payment_date,
+        data?.status_id,
+        data?.amount?.toNumber(),
+        initialAllocationMode,
+        allocationMode,
+        initialManualAllocations,
+        manualAllocations
+    ]);
+
+    // Set initial allocation states when component mounts
+    useEffect(() => {
+        setInitialAllocationMode(allocationMode);
+        setInitialManualAllocations(manualAllocations);
+    }, []); // Only run once on mount
 
     // Location Data
     const {data: locationData, isSuccess: locationDataSuccess} = useQuery({
@@ -125,30 +170,42 @@ export function PaymentForm(props: PaymentForm) {
             };
 
             unpaidBillsData.bills = unpaidBillsData.bills.map(ub => {
-                // @ts-expect-error TS2339
-                ub.amount = ub.bill_item.reduce(
+                const amount = ub.bill_item.reduce(
                     (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
                 );
-                // @ts-expect-error TS2339
-                sum.amount = sum.amount?.add(ub.amount) ?? new Prisma.Decimal(ub.amount);
+                sum.amount = sum.amount?.add(amount) ?? new Prisma.Decimal(amount);
                 sum.sumPaidAmount = sum.sumPaidAmount?.add(ub.sumPaidAmount) ?? new Prisma.Decimal(ub.sumPaidAmount);
-                return ub;
+                return {
+                    ...ub,
+                    amount // ensure amount is set
+                };
             });
 
             setTotalData(s => ({
                 ...s,
                 amount: sum.amount,
                 sumPaidAmount: sum.sumPaidAmount,
+                paymentAmount: data.amount,
+                outstandingAmount: sum.amount?.minus(sum.sumPaidAmount ?? 0).minus(data.amount ?? 0)
             }));
         }
-    }, [unpaidBillsDataSuccess, unpaidBillsData]);
+    }, [unpaidBillsDataSuccess, unpaidBillsData, data.amount?.toNumber()]);
 
     // Simulation Data
+    const isEditMode = Boolean(parsedData && parsedData.id);
+    const paymentIdToExclude = parsedData?.id;
     const {data: simulationData, isSuccess: simulationDataSuccess, isLoading: simulationDataIsLoading} = useQuery({
-        queryKey: ['payment.simulation', 'balance', data.amount, 'booking_id', data.booking_id],
+        queryKey: ['payment.simulation', 'balance', data.amount?.toNumber(), 'booking_id', data.booking_id, isEditMode ? paymentIdToExclude : undefined],
         enabled: Boolean(data.amount && data.booking_id && data.payment_date && unpaidBillsDataSuccess),
-        // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
-        queryFn: () => simulateUnpaidBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills)
+        queryFn: async () => {
+            if (isEditMode && paymentIdToExclude) {
+                // Exclude the current payment from the simulation
+                return simulateUnpaidBillPaymentActionWithExcludePayment(data.amount!.toNumber(), data.booking_id!, paymentIdToExclude);
+            } else {
+                // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
+                return simulateUnpaidBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills);
+            }
+        }
     });
 
     const [totalData, setTotalData] = useState<Partial<BillAndPayment & { amount: Prisma.Decimal }>>({});
@@ -175,24 +232,10 @@ export function PaymentForm(props: PaymentForm) {
         }
     }, [image]);
 
-    // Use effect to set initialBookingData when the component mounts
-    useEffect(() => {
-        setInitialData(parsedData ?? {});
-    }, [parsedData]);
 
     useEffect(() => {
         setFieldErrors(props.mutationResponse?.errors);
     }, [props.mutationResponse?.errors]);
-
-    useEffect(() => {
-        if (data.amount) {
-            setTotalData(s => ({
-                ...s,
-                paymentAmount: data.amount,
-                outstandingAmount: s.amount?.minus(s.sumPaidAmount ?? 0).minus(data.amount!)
-            }));
-        }
-    }, [data.amount]);
 
     const isFormComplete = useMemo(() => {
         return !!data?.booking_id &&
@@ -200,11 +243,30 @@ export function PaymentForm(props: PaymentForm) {
             !!data?.status_id &&
             !!data?.amount &&
             !!data?.payment_date;
-    }, [data]);
+    }, [data?.booking_id, data?.payment_date, data?.status_id, data?.amount?.toNumber()]);
 
-    let amountError =
-        !!fieldErrors?.amount ||
-        data.amount?.greaterThan(unpaidBillsData?.total ?? Infinity);
+    // Add a check for any over-allocated bill in manual mode
+    const anyOverAllocated = useMemo(() => {
+        if (allocationMode !== 'manual') return false;
+
+        // Use simulation data if available (for edit mode), otherwise use unpaid bills data
+        const billsToCheck = simulationDataSuccess ? simulationData?.old.bills : unpaidBillsData?.bills;
+
+        return billsToCheck?.some(ub => {
+            const due = Number((ub as any).amount) - Number(ub.sumPaidAmount);
+            const allocated = Number(manualAllocations[ub.id]) || 0;
+            return allocated > due;
+        }) ?? false;
+    }, [allocationMode, simulationDataSuccess, simulationData?.old.bills, unpaidBillsData?.bills, manualAllocations]);
+
+    useEffect(() => {
+        console.group(!isFormComplete || !hasChanges || (allocationMode === 'manual' && (Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0) !== Number(data.amount) || anyOverAllocated)));
+        console.log("isFormComplete: ", isFormComplete);
+        console.log("hasChanges: ", hasChanges);
+        console.log("allManual: ", (allocationMode === 'manual' && (Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0) !== Number(data.amount))));
+        console.log("anyOverAllocated: ", anyOverAllocated);
+        console.groupEnd();
+    }, [isFormComplete, hasChanges, allocationMode, anyOverAllocated, manualAllocations]);
 
     return (
         <div className={"w-full px-8 py-4"}>
@@ -215,8 +277,8 @@ export function PaymentForm(props: PaymentForm) {
                         key={"payment_form"}
                         transition={{duration: 0.5}}
                     >
-                        <AnimatePresence>
-                            <div>
+                        <AnimatePresence key={"payment_form_animate_presence"}>
+                            <div key={"location"}>
                                 <label htmlFor="location">
                                     <Typography variant="h6" color="blue-gray">
                                         Lokasi
@@ -232,7 +294,7 @@ export function PaymentForm(props: PaymentForm) {
                                     isError={false}
                                 />
                             </div>
-                            <div>
+                            <div key={"status_id"}>
                                 <label htmlFor="status_id">
                                     <Typography variant="h6" color="blue-gray">
                                         Status
@@ -310,6 +372,28 @@ export function PaymentForm(props: PaymentForm) {
                                             }}
                                         />
                                     }
+                                </motion.div>
+                            }
+                            {
+                                data?.booking_id && unpaidBillsDataSuccess &&
+                                <motion.div
+                                    key={"allocation_mode"}
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <div className="mt-4">
+                                        <Typography variant="h6" color="blue-gray">Metode Alokasi
+                                            Pembayaran</Typography>
+                                        <div className="flex gap-4 mt-2">
+                                            <Radio id="auto" name="allocationMode" label="Otomatis"
+                                                   checked={allocationMode === 'auto'}
+                                                   onChange={() => setAllocationMode('auto')}/>
+                                            <Radio id="manual" name="allocationMode" label="Manual"
+                                                   checked={allocationMode === 'manual'}
+                                                   onChange={() => setAllocationMode('manual')}/>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             }
                             {
@@ -418,22 +502,19 @@ export function PaymentForm(props: PaymentForm) {
                                         <span className={"mx-auto h-8 w-8"}><AiOutlineLoading className="animate-spin"/></span>
                                     }
                                     {
-                                        unpaidBillsDataSuccess &&
+                                        allocationMode === 'auto' && simulationDataSuccess &&
                                         <div className={"flex flex-col"}>
-                                            {unpaidBillsData?.bills.map((ub, index, arr) => {
+                                            {simulationData?.old.bills.map((ub, index, arr) => {
                                                 const newData = simulationData?.new.payments.find(p => p.bill_id == ub.id);
-                                                // @ts-expect-error TS2339
-                                                const due = Number(ub.amount) - Number(ub.sumPaidAmount);
+                                                const due = Number((ub as any).amount) - Number(ub.sumPaidAmount);
                                                 return (
                                                     <div key={ub.id}
                                                          className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 grid-rows-2 items-center">
-                                <span
-                                    className="col-start-1 col-span-full row-start-1 row-span-1 text-gray-800 text-lg font-semibold">Tagihan #{ub.id} (Jatuh Tempo {formatToDateTime(ub.due_date, false)})</span>
-                                                        {/* Existing Information Column */}
+                                                        <span
+                                                            className="col-start-1 col-span-full row-start-1 row-span-1 text-gray-800 text-lg font-semibold">Tagihan #{ub.id} (Jatuh Tempo {formatToDateTime(ub.due_date, false)})</span>
                                                         <div className="flex flex-col text-sm col-span-3 row-start-2">
                                                             <p className="text-gray-700">Jumlah: <span
-                                                                // @ts-expect-error TS2339
-                                                                className="font-bold">{formatToIDR(Number(ub.amount))}</span>
+                                                                className="font-bold">{formatToIDR(Number((ub as any).amount))}</span>
                                                             </p>
                                                             <p className="text-gray-700">Terbayar: <span
                                                                 className="font-bold">{formatToIDR(Number(ub.sumPaidAmount))}</span>
@@ -442,46 +523,29 @@ export function PaymentForm(props: PaymentForm) {
                                                                 className="font-bold text-red-600">{formatToIDR(due)}</span>
                                                             </p>
                                                         </div>
-
-                                                        {
-                                                            simulationDataSuccess ?
-                                                                <>
-                                                                    {/* Separator */}
-                                                                    <div
-                                                                        className="flex justify-center items-center row-start-2 text-gray-400">
-                                                                        {/*{index === Math.floor(arr.length / 2) ? '>' : <>&nbsp;</>}*/}
-                                                                        <Typography variant={"h4"}>&gt;</Typography>
-                                                                    </div>
-
-                                                                    {/* New Information Column */}
-                                                                    <div
-                                                                        className="flex flex-col text-sm self-end row-start-2 col-span-3">
-                                                                        <p className="text-gray-700">Pembayaran
-                                                                            Sekarang: <span
-                                                                                className="font-bold">{formatToIDR(Number(newData?.amount) || 0)}</span>
-                                                                        </p>
-                                                                        <p className="text-gray-700">Jumlah Belum
-                                                                            Dibayar: <span
-                                                                                className="font-bold text-red-600">{formatToIDR((due - (Number(newData?.amount) || 0)))}</span>
-                                                                        </p>
-                                                                    </div>
-                                                                </> :
-                                                                <>
-                                                                    <div></div>
-                                                                    <div></div>
-                                                                </>
-                                                        }
+                                                        <div
+                                                            className="flex justify-center items-center row-start-2 text-gray-400">
+                                                            <Typography variant={"h4"}>&gt;</Typography>
+                                                        </div>
+                                                        <div
+                                                            className="flex flex-col text-sm self-end row-start-2 col-span-3">
+                                                            <p className="text-gray-700">Pembayaran
+                                                                Sekarang: <span
+                                                                    className="font-bold">{formatToIDR(Number(newData?.amount) || 0)}</span>
+                                                            </p>
+                                                            <p className="text-gray-700">Jumlah Belum
+                                                                Dibayar: <span
+                                                                    className="font-bold text-red-600">{formatToIDR((due - (Number(newData?.amount) || 0)))}</span>
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
-                                            {/*Total Data Display*/}
                                             <div
                                                 className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 grid-rows-2 items-center">
-                                                {/* Existing Information Column */}
                                                 <span
                                                     className="col-start-1 col-span-full row-start-1 row-span-1 text-gray-800 text-lg font-semibold">Total Tagihan</span>
                                                 <div className="flex flex-col text-sm col-span-3 row-start-2">
-
                                                     <p className="text-gray-700">Jumlah: <span
                                                         className="font-bold">{formatToIDR(Number(totalData.amount))}</span>
                                                     </p>
@@ -492,14 +556,10 @@ export function PaymentForm(props: PaymentForm) {
                                                         className="font-bold text-red-600">{formatToIDR(Number(totalData.amount) - Number(totalData.sumPaidAmount))}</span>
                                                     </p>
                                                 </div>
-
-                                                {/* Separator */}
                                                 <div
                                                     className="flex justify-center items-center text-gray-400 row-start-2">
                                                     <Typography variant={"h4"}>&gt;</Typography>
                                                 </div>
-
-                                                {/* New Information Column */}
                                                 <div className="flex flex-col text-sm self-end col-span-3 row-start-2">
                                                     <p className="text-gray-700">Pembayaran Sekarang: <span
                                                         className="font-bold">{formatToIDR(Number(totalData.paymentAmount))}</span>
@@ -508,6 +568,73 @@ export function PaymentForm(props: PaymentForm) {
                                                         className="font-bold text-red-600">{formatToIDR(Number(totalData.outstandingAmount))}</span>
                                                     </p>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    {
+                                        allocationMode === 'manual' && simulationDataSuccess &&
+                                        <div className={"flex flex-col"}>
+                                            {simulationData?.old.bills.map((ub, index, arr) => {
+                                                const due = Number((ub as any).amount) - Number(ub.sumPaidAmount);
+                                                const allocated = Number(manualAllocations[ub.id]) || 0;
+                                                const overAllocated = allocated > due;
+                                                return (
+                                                    <div key={ub.id}
+                                                         className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 grid gap-x-4 grid-cols-7 grid-rows-2 items-center">
+                                                        <span
+                                                            className="col-start-1 col-span-full row-start-1 row-span-1 text-gray-800 text-lg font-semibold">Tagihan #{ub.id} (Jatuh Tempo {formatToDateTime(ub.due_date, false)})</span>
+                                                        <div className="flex flex-col text-sm col-span-3 row-start-2">
+                                                            <p className="text-gray-700">Jumlah: <span
+                                                                className="font-bold">{formatToIDR(Number((ub as any).amount))}</span>
+                                                            </p>
+                                                            <p className="text-gray-700">Terbayar: <span
+                                                                className="font-bold">{formatToIDR(Number(ub.sumPaidAmount))}</span>
+                                                            </p>
+                                                            <p className="text-gray-700">Belum Dibayar: <span
+                                                                className="font-bold text-red-600">{formatToIDR(due)}</span>
+                                                            </p>
+                                                        </div>
+                                                        <div
+                                                            className="flex justify-center items-center row-start-2 text-gray-400">
+                                                            <Typography variant={"h4"}>&gt;</Typography>
+                                                        </div>
+                                                        <div
+                                                            className="flex flex-col text-sm self-end row-start-2 col-span-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <span
+                                                                    className="text-gray-700">Pembayaran Sekarang:</span>
+                                                                <CurrencyInput
+                                                                    value={manualAllocations[ub.id] ?? ''}
+                                                                    setValue={val => {
+                                                                        setManualAllocations(prev => ({
+                                                                            ...prev,
+                                                                            [ub.id]: val ?? 0
+                                                                        }));
+                                                                    }}
+                                                                    error={overAllocated}
+                                                                    className={`w-32 ${overAllocated ? '!border-t-red-500' : ''}`}
+                                                                />
+                                                            </div>
+                                                            {overAllocated && (
+                                                                <Typography color="red" variant="small">Nilai melebihi
+                                                                    sisa tagihan!</Typography>
+                                                            )}
+                                                            <p className="text-gray-700">Jumlah Belum Dibayar: <span
+                                                                className="font-bold text-red-600">{formatToIDR(due - allocated)}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            <div className="mt-2">
+                                                <Typography variant="small">Total Dialokasikan: <span
+                                                    className="font-bold">{formatToIDR(Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0))}</span></Typography>
+                                                <Typography variant="small">Jumlah Pembayaran: <span
+                                                    className="font-bold">{formatToIDR(Number(data.amount) || 0)}</span></Typography>
+                                                {Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0) !== Number(data.amount) && (
+                                                    <Typography color="red">Total alokasi harus sama dengan jumlah
+                                                        pembayaran!</Typography>
+                                                )}
                                             </div>
                                         </div>
                                     }
@@ -557,11 +684,27 @@ export function PaymentForm(props: PaymentForm) {
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
-                    <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
-                            onClick={() => props.mutation.mutate(data)}
-                            color={"blue"} className="mt-6"
-                            loading={props.mutation.isPending}>
-                        {(parsedData && parsedData.id) ? "Ubah" : "Buat"}
+                    <Button
+                        disabled={
+                            !isFormComplete ||
+                            !hasChanges ||
+                            (
+                                allocationMode === 'manual' &&
+                                (
+                                    Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0) !==
+                                    Number(data.amount) ||
+                                    anyOverAllocated
+                                )
+                            )
+                        }
+                        onClick={() => props.mutation.mutate({
+                            ...(data as any), // type assertion to allow extra fields
+                            allocationMode,
+                            manualAllocations: allocationMode === 'manual' ? Object.fromEntries(Object.entries(manualAllocations).filter(([_, v]) => Number(v) > 0)) : undefined
+                        })}
+                        color={"blue"} className="mt-6"
+                        loading={props.mutation.isPending}>
+                        {isEditMode ? "Ubah" : "Buat"}
                     </Button>
                 </div>
             </form>

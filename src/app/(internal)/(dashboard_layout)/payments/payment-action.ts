@@ -14,7 +14,7 @@ import {
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {DeleteObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
-export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment>) {
+export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & { allocationMode?: 'auto' | 'manual', manualAllocations?: Record<number, number> }) {
     const {success, data, error} = paymentSchema.safeParse(reqData);
 
     if (!success) {
@@ -61,9 +61,11 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
         };
     }
 
+    let allocationMode = reqData.allocationMode || 'auto';
+    let manualAllocations = reqData.manualAllocations;
+
     let trxRes = await prisma.$transaction(async (tx) => {
-        let finalBalance = 0;
-        let res;
+        let res: any;
 
         try {
             let dbData: OmitIDTypeAndTimestamp<Payment> = {
@@ -71,36 +73,72 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
                 booking_id: booking.id,
                 payment_date: data?.payment_date,
                 payment_proof: s3Key,
-                status_id: data?.status_id
+                status_id: data?.status_id,
+                migrated_to_deferred_revenue: false
             };
 
             if (data?.id) {
                 res = await updatePaymentWithTransaction(data.id!, dbData, tx);
+                
+                // Handle allocation for updates
+                if (allocationMode === 'manual' && manualAllocations) {
+                    // Delete existing payment-bill records for this payment
+                    await tx.paymentBill.deleteMany({
+                        where: { payment_id: data.id }
+                    });
+                    
+                    // Create new paymentBill records as per manualAllocations
+                    const paymentBills = Object.entries(manualAllocations)
+                        .filter(([_, amount]) => Number(amount) > 0)
+                        .map(([bill_id, amount]) => ({
+                            payment_id: res.id,
+                            bill_id: Number(bill_id),
+                            amount: new Prisma.Decimal(amount)
+                        }));
+                    // Validate total does not exceed payment amount
+                    const totalAllocated = paymentBills.reduce((sum, pb) => sum.add(pb.amount), new Prisma.Decimal(0));
+                    if (!totalAllocated.eq(data.amount)) {
+                        throw new Error('Total manual allocation must equal payment amount');
+                    }
+                    await tx.paymentBill.createMany({ data: paymentBills });
+                } else {
+                    // Auto allocation: sync bills with payment dates
+                    await syncBillsWithPaymentDate(booking.id, tx, [res]);
+                }
             } else {
                 res = await createPaymentWithBills(dbData, tx);
-                const unpaidBills = await getUnpaidBillsDueAction(booking.id);
-                // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
-                const simulation = await simulateUnpaidBillPaymentAction(data.amount, unpaidBills.bills, res.id);
-                const {balance: newBalance} = simulation.new;
-
-                finalBalance = newBalance;
+                
+                if (allocationMode === 'manual' && manualAllocations) {
+                    // Manual allocation: create paymentBill records as per manualAllocations
+                    const paymentBills = Object.entries(manualAllocations)
+                        .filter(([_, amount]) => Number(amount) > 0)
+                        .map(([bill_id, amount]) => ({
+                            payment_id: res.id,
+                            bill_id: Number(bill_id),
+                            amount: new Prisma.Decimal(amount)
+                        }));
+                    // Validate total does not exceed payment amount
+                    const totalAllocated = paymentBills.reduce((sum, pb) => sum.add(pb.amount), new Prisma.Decimal(0));
+                    if (!totalAllocated.eq(data.amount)) {
+                        throw new Error('Total manual allocation must equal payment amount');
+                    }
+                    await tx.paymentBill.createMany({ data: paymentBills });
+                } else {
+                    // Auto allocation (current logic)
+                    const unpaidBills = await getUnpaidBillsDueAction(booking.id);
+                    // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
+                    const simulation = await simulateUnpaidBillPaymentAction(data.amount, unpaidBills.bills, res.id);
+                    const { payments: paymentBills } = simulation.new;
+                    await tx.paymentBill.createMany({ data: paymentBills });
+                    // Don't sync for new payments - we already created the records
+                }
             }
-
-            await syncBillsWithPaymentDate(booking.id, tx, [res]);
 
         } catch (error) {
             console.warn("error creating/updating payment with error: ", error);
             return {
                 success: false,
-                error: "Internal Server Error"
-            };
-        }
-
-        if (finalBalance != 0) {
-            console.warn(`error creating/updating payment due to balance not zero: ${finalBalance}`);
-            return {
-                success: false,
-                error: "Pembayaran melebihi saldo yang harus dibayarkan"
+                error: error instanceof Error ? error.message : "Internal Server Error"
             };
         }
 
