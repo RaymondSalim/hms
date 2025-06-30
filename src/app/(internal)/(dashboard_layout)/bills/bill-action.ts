@@ -455,8 +455,8 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
     allPayments = allPayments.concat(newPayments ?? []);
     // Remove dups
     allPayments = allPayments.filter((item, index, self) =>
-            index === self.findIndex((t) => (
-                t.id === item.id
+            item != undefined && index === self.findIndex((t) => (
+                t?.id === item.id
             ))
     );
 
