@@ -117,7 +117,7 @@ export default function FinancialSummaryPage() {
                     <Card className="bg-blue-100 shadow-md p-4 rounded">
                         <CardBody>
                             <Typography variant="h6" className="font-semibold">
-                                Net Income
+                                Pendapatan Bersih
                             </Typography>
                             <Typography variant="h4">{netIncome ? formatToIDR(netIncome) : "-"}</Typography>
                         </CardBody>
