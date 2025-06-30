@@ -90,6 +90,12 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
 
     customDialog?: ReactElement
     refetchFn?: (options?: RefetchOptions) => Promise<QueryObserverResult<T[]>>
+
+    filterByOptions?: {
+        columnId: string,
+        options: { value: string, label: string }[],
+        allLabel?: string
+    },
 } & (
     {
         searchType: "smart",
@@ -308,6 +314,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             )
             : undefined;
 
+    const filterColumn = props.filterByOptions ? tanTable.getColumn(props.filterByOptions.columnId) : undefined;
+
     return (
         <div className={"flex-1 flex flex-col gap-y-2 min-h-0 h-full overflow-hidden"}>
             <div className="flex align-middle gap-2">
@@ -333,6 +341,30 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                             </Button>
                         ))}
                     </>
+                )}
+                {/* FilterByOptions chips */}
+                {props.filterByOptions && filterColumn && (
+                    <div className="flex gap-2 ml-4">
+                        <Button
+                            variant={!filterColumn.getFilterValue() ? 'filled' : 'outlined'}
+                            size="sm"
+                            className="min-w-[100px] rounded-full"
+                            onClick={() => { filterColumn.setFilterValue(undefined); }}
+                        >
+                            {props.filterByOptions.allLabel || 'Semua'}
+                        </Button>
+                        {props.filterByOptions.options.map(opt => (
+                            <Button
+                                key={opt.value}
+                                variant={filterColumn.getFilterValue() === opt.value ? 'filled' : 'outlined'}
+                                size="sm"
+                                className="min-w-[100px] rounded-full"
+                                onClick={() => { filterColumn.setFilterValue(opt.value); }}
+                            >
+                                {opt.label}
+                            </Button>
+                        ))}
+                    </div>
                 )}
             </div>
             <div className={styles.searchBarAndCreate}>
