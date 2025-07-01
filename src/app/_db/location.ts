@@ -1,8 +1,17 @@
 "use server";
 
-import {Location} from "@prisma/client";
+import {Location, Prisma} from "@prisma/client";
 import {OmitIDTypeAndTimestamp, OmitTimestamp, PartialBy} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
+import LocationInclude = Prisma.LocationInclude;
+
+const includeCount: LocationInclude = {
+  _count: true,
+};
+
+export type LocationIncludeCount = Prisma.LocationGetPayload<{
+  include: typeof includeCount
+}>;
 
 export async function getLocations(id?: number, limit?: number, offset?: number) {
   return prisma.location.findMany({
@@ -65,12 +74,13 @@ export async function getLocationById(id: number) {
   });
 }
 
-export async function getAllLocations(limit?: number, offset?: number) {
+export async function getAllLocations(limit?: number, offset?: number, include?: LocationInclude) {
   return prisma.location.findMany({
     skip: offset,
     take: limit,
     orderBy: {
       id: 'asc'
-    }
+    },
+    include: include
   });
 }
