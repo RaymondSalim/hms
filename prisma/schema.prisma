@@ -539,3 +539,20 @@ model BookingAddOn {
   booking Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   addOn   AddOn   @relation(fields: [addon_id], references: [id], onDelete: Restrict)
 }
+
+model MaintenanceTask {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String?
+  status      String   @default("PENDING")
+  due_date    DateTime?
+  room_id     Int?
+  location_id Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  rooms     Room?    @relation(fields: [room_id], references: [id], onUpdate: NoAction, onDelete: SetNull)
+  locations Location @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+
+  @@map("maintenance_tasks")
+}
