@@ -7,8 +7,8 @@ import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {TenantWithRoomsAndSecondResident} from "@/app/_db/tenant";
 import {TenantForm} from "@/app/(internal)/(dashboard_layout)/residents/tenants/form";
 import {
-  deleteTenantAction,
-  upsertTenantAction
+    deleteTenantAction,
+    upsertTenantAction
 } from "@/app/(internal)/(dashboard_layout)/residents/tenants/tenant-action";
 import Link from "next/link";
 import {useSearchParams} from "next/navigation";
@@ -76,6 +76,9 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
         columnHelper.accessor(row => row.status, {
             id: 'status',
             cell: undefined,
+            meta: {
+                hidden: true,
+            }
         })
     ];
 

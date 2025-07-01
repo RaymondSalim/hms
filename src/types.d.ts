@@ -33,3 +33,10 @@ declare module "@auth/core/types" {
     user?: CustomUser
   }
 }
+
+declare module '@tanstack/react-table' {
+  // Add a `hidden?` flag to every column's meta
+  interface ColumnMeta<TData extends unknown, TValue> {
+    hidden?: boolean;
+  }
+}

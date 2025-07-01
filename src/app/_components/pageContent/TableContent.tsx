@@ -105,6 +105,19 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
 }
     )
 
+
+const useAutoHidden = (cols: ColumnDef<any>[]) => {
+    return useMemo<Record<string, boolean>>(() => {
+        return cols.reduce<Record<string, boolean>>((vis, col) => {
+            const id = col.id!
+            if (col.meta?.hidden) {
+                vis[id] = false
+            }
+            return vis
+        }, {})
+    }, [cols])
+}
+
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
     const [activeContent, setActiveContent] = useState<T | undefined>();
@@ -242,6 +255,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         getPaginationRowModel: getPaginationRowModel(),
         getGroupedRowModel: getGroupedRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
+        initialState: {
+            columnVisibility: useAutoHidden(columns),
+        },
         state: {
             globalFilter: globalFilter,
             columnFilters: columnFilter,
