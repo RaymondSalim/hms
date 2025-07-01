@@ -8,7 +8,21 @@ import {AiOutlineLoading} from "react-icons/ai";
 import {getRooms} from "@/app/_db/room";
 import RoomsContent from "@/app/(internal)/(dashboard_layout)/rooms/all-rooms/content";
 
-export default function RoomsPage() {
+// Add a type for query params, similar to BookingPage
+export type RoomsPageQueryParams = {
+  action?: "search" | "create",
+  id?: string,
+  room_number?: string,
+  type?: string,
+  status?: string,
+  location_id?: number
+};
+
+// Accept searchParams in props
+export default function RoomsPage(props: {
+  params?: any,
+  searchParams?: RoomsPageQueryParams,
+}) {
   const headerContext = useHeader();
 
   useEffect(() => {
@@ -33,7 +47,7 @@ export default function RoomsPage() {
       }
       {
         isSuccess &&
-          <RoomsContent rooms={rooms}/>
+          <RoomsContent rooms={rooms} queryParams={props.searchParams} />
       }
     </>
   );

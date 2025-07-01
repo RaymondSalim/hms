@@ -1,7 +1,7 @@
 "use server";
 
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
-import {format} from "date-fns";
+import {endOfWeek, format, startOfWeek} from "date-fns";
 import prisma from "@/app/_lib/primsa";
 import {Period} from "@/app/_enum/financial";
 import {getDatesInRange} from "@/app/_lib/util";
@@ -19,58 +19,84 @@ export interface SimplifiedIncomeExpense {
 }
 
 export async function getOverviewData(locationID?: number) {
-    const firstDateOfWeek = getFirstDateOfWeek(new Date());
-    const lastDateOfWeek = getLastDateOfWeek(new Date());
+    const today = new Date();
+    const firstDateOfWeek = startOfWeek(today, {weekStartsOn: 1}); // Monday
+    const lastDateOfWeek = endOfWeek(today, {weekStartsOn: 1});
 
-    const checkIn = prisma.booking.count({
-        where: {
-            rooms: {
-                location_id: locationID
+    const [checkIn, checkOut, availableRooms, roomCount] = await prisma.$transaction([
+        prisma.booking.findMany({
+            where: {
+                rooms: {
+                    location_id: locationID
+                },
+                start_date: {
+                    gte: firstDateOfWeek,
+                    lte: lastDateOfWeek,
+                }
             },
-            start_date: {
-                gte: firstDateOfWeek,
-                lt: lastDateOfWeek,
+            select: {
+                id: true,
+                rooms: {
+                    select: {
+                        room_number: true,
+                    },
+                },
+                start_date: true,
+                end_date: true,
             }
-        }
-    });
-
-    const locationClause = locationID ? Prisma.sql`r.location_id = ${locationID}` : Prisma.sql`TRUE`;
-    const bookingsCountRaw = prisma.$queryRaw<{ count: number }[]>`
-        SELECT COUNT(*)::integer AS COUNT
-        FROM "bookings" b
-                 LEFT JOIN durations d ON b.duration_id = d.id
-                 LEFT JOIN rooms r ON b.room_id = r.id
-        WHERE ${locationClause}
-          AND (
-            b.start_date + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
-            ) BETWEEN ${firstDateOfWeek} AND ${lastDateOfWeek}
-    `;
-    // const bookingsCount: Promise<number> = bookingsCountRaw.then(e => new Promise(resolve => setTimeout(() => resolve(e[0].count), 10000)));
-    const bookingsCount = bookingsCountRaw.then(e => e[0].count);
-
-    const availableCount = prisma.room.count({
-        where: {
-            roomstatuses: {
-                id: 1,
+        }),
+        prisma.booking.findMany({
+            where: {
+                rooms: {
+                    location_id: locationID
+                },
+                end_date: {
+                    gte: firstDateOfWeek,
+                    lte: lastDateOfWeek,
+                }
             },
-            location_id: locationID,
-        }
-    });
-
-    const occupiedCount = prisma.room.count({
-        where: {
-            roomstatuses: {
-                id: 2,
+            select: {
+                id: true,
+                rooms: {
+                    select: {
+                        room_number: true,
+                    },
+                },
+                start_date: true,
+                end_date: true,
+            }
+        }),
+        prisma.room.findMany({
+            where: {
+                location_id: locationID,
+                bookings: {
+                    none: {
+                        start_date: {
+                            lte: lastDateOfWeek,  // booking starts before week ends
+                        },
+                        end_date: {
+                            gte: firstDateOfWeek, // booking ends after week starts
+                        },
+                    },
+                },
             },
-            location_id: locationID,
-        }
-    });
+            select: {
+                id: true,
+                room_number: true,
+            }
+        }),
+        prisma.room.count({
+            where: {
+                location_id: locationID,
+            }
+        })
+    ]);
 
     return {
         check_in: checkIn,
-        check_out: bookingsCount,
-        available: availableCount,
-        occupied: occupiedCount,
+        check_out: checkOut,
+        available: availableRooms,
+        occupied: roomCount - availableRooms.length,
         date_range: {
             start: formatDateToString(firstDateOfWeek),
             end: formatDateToString(lastDateOfWeek)
@@ -315,66 +341,47 @@ async function getCheckInWithExtras(now: Date, sevenDaysAhead: Date, locationID?
 }
 
 async function getCheckOutWithExtras(now: Date, sevenDaysAhead: Date, locationID?: number) {
-    const locationClause = locationID ? Prisma.sql`r.location_id = ${locationID}` : Prisma.sql`TRUE`;
-    const result = prisma.$queryRaw`
-        SELECT b.id,
-               b.fee,
-               r.id                                      AS room_id,
-               r.room_number,
-               rt.type                                   AS room_type,
-               t.id                                      AS tenant_id,
-               t.name                                    AS tenant_name,
-               d.duration,
-               b.start_date + INTERVAL '1 MONTH' *
-                              COALESCE(d.month_count, 0) AS checkout_date
-        FROM "bookings" b
-                 LEFT JOIN durations d ON b.duration_id = d.id
-                 LEFT JOIN rooms r ON b.room_id = r.id
-                 LEFT JOIN tenants t ON b.tenant_id = t.id
-                 LEFT JOIN roomtypes rt ON r.room_type_id = rt.id
-        WHERE ${locationClause}
-          AND (
-            b.start_date + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
-            ) BETWEEN ${now} AND ${sevenDaysAhead}
-    `;
-
-    return result.then(res => (res as any[]).map(r => {
-        return {
-            id: r.id,
-            fee: r.fee,
-            checkout_date: r.checkout_date,
+    return prisma.booking.findMany({
+        where: {
             rooms: {
-                id: r.room_id,
-                room_number: r.room_number,
-                roomtypes: {
-                    type: r.room_type,
-                }
+                location_id: locationID,
+            },
+            end_date: {
+                gte: now,
+                lt: sevenDaysAhead,
+            },
+        },
+        select: {
+            id: true,
+            fee: true,
+            end_date: true,
+            rooms: {
+                select: {
+                    id: true,
+                    room_number: true,
+                    roomtypes: {
+                        select: {
+                            type: true
+                        }
+                    },
+                },
             },
             tenants: {
-                id: r.tenant_id,
-                name: r.tenant_name,
+                select: {
+                    id: true,
+                    name: true,
+                },
             },
             durations: {
-                duration: r.duration,
-            }
-        };
-    }));
-}
-
-function getFirstDateOfWeek(date: Date): Date {
-    const inputDate = new Date(date);
-    const day = inputDate.getDay();
-    const diff = (day === 0 ? 6 : day - 1); // Adjusting for the week starting on Monday
-    inputDate.setDate(inputDate.getDate() - diff);
-    return inputDate;
-}
-
-function getLastDateOfWeek(date: Date): Date {
-    const inputDate = new Date(date);
-    const day = inputDate.getDay();
-    const diff = (day === 0 ? -1 : 6 - (day - 1)); // Adjusting for the week ending on Sunday
-    inputDate.setDate(inputDate.getDate() + diff);
-    return inputDate;
+                select: {
+                    duration: true
+                }
+            },
+        },
+    }).then(results => results.map(r => ({
+        ...r,
+        checkout_date: r.end_date, // For compatibility with the mapping logic
+    })));
 }
 
 function formatDateToString(date: Date): string {
