@@ -23,18 +23,16 @@ model Booking {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  addOns           BookingAddOn[]
-  bills            Bill[]
-  durations        Duration?         @relation(fields: [duration_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  rooms            Room?             @relation(fields: [room_id], references: [id], onUpdate: NoAction)
-  bookingstatuses  BookingStatus?    @relation(fields: [status_id], references: [id], onUpdate: NoAction)
-  tenants          Tenant?           @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
-  checkInOutLogs   CheckInOutLog[]
-  deferred_revenue deferred_revenue?
-  guests           Guest[]
-  payments         Payment[]
-  penalties        Penalty[]
-  revenue_entries  revenue_entries[]
+  addOns          BookingAddOn[]
+  bills           Bill[]
+  durations       Duration?       @relation(fields: [duration_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  rooms           Room?           @relation(fields: [room_id], references: [id], onUpdate: NoAction)
+  bookingstatuses BookingStatus?  @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  tenants         Tenant?         @relation(fields: [tenant_id], references: [id], onUpdate: NoAction)
+  checkInOutLogs  CheckInOutLog[]
+  guests          Guest[]
+  payments        Payment[]
+  penalties       Penalty[]
 
   @@map("bookings")
 }
@@ -177,12 +175,11 @@ model Payment {
   payment_proof String?  @db.VarChar(255)
   status_id     Int?
 
-  createdAt                    DateTime       @default(now())
-  updatedAt                    DateTime       @default(now()) @updatedAt
-  migrated_to_deferred_revenue Boolean        @default(false)
-  paymentBills                 PaymentBill[]
-  bookings                     Booking        @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  paymentstatuses              PaymentStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @default(now()) @updatedAt
+  paymentBills    PaymentBill[]
+  bookings        Booking        @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  paymentstatuses PaymentStatus? @relation(fields: [status_id], references: [id], onUpdate: NoAction)
 
   @@map("payments")
 }
@@ -535,33 +532,6 @@ model BookingAddOn {
   updatedAt DateTime @updatedAt
   addOn     AddOn    @relation(fields: [addon_id], references: [id])
   booking   Booking  @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-}
-
-model deferred_revenue {
-  id         Int     @id @default(autoincrement())
-  booking_id Int     @unique
-  balance    Decimal @db.Decimal(12, 2)
-
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @default(now())
-  bookings        Booking           @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  revenue_entries revenue_entries[]
-}
-
-model revenue_entries {
-  id              Int      @id @default(autoincrement())
-  booking_id      Int
-  deferred_id     Int
-  recognitionDate DateTime @db.Date
-  amount          Decimal  @db.Decimal(12, 2)
-
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @default(now())
-  bookings         Booking          @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  deferred_revenue deferred_revenue @relation(fields: [deferred_id], references: [id], onDelete: Cascade)
-
-  @@index([booking_id])
-  @@index([recognitionDate])
 }
 
 enum TransactionType {
