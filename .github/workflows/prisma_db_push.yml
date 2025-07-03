@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  deployment_status:
 
 jobs:
   db-push:
@@ -28,10 +29,18 @@ jobs:
       - name: Prisma DB Push
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }} # Use the DATABASE_URL secret from GitHub Actions
-        run: npx prisma db push
+        run: npx prisma db push --accept-data-loss
 
       # Verify the schema was pushed successfully
       - name: Verify Prisma DB Push
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma validate
+
+      - name: Reset database with mock data
+        if: github.event_name == 'deployment_status' && github.event.deployment_status.environment == 'Preview' && github.event.deployment_status.state == 'success'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npx prisma migrate reset --force --skip-generate --skip-seed
+          node prisma/mock.js
