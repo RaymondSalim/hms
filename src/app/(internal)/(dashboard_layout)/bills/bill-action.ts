@@ -773,7 +773,7 @@ export async function sendBillEmailAction(billID: number) {
 //     }
 //     return billItemsByBillId;
 // }
-//
+
 // /**
 //  * Generates bill items for booking add-ons and maps them to bills by due date
 //  * @param bookingAddons - Array of booking add-ons
@@ -923,6 +923,13 @@ export async function sendBillEmailAction(billID: number) {
 //     return billItemsByBillId;
 // }
 //
+
+/**
+ * Generates bill items for booking add-ons and maps them to bills by due date
+ * @param bookingAddons - Array of booking add-ons
+ * @param bills - Array of bills with id and due_date
+ * @returns Object mapping bill_id to array of bill items
+ */
 export async function generateBookingAddonsBillItems(
     bookingAddons: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[],
     bills: { id: number, due_date: Date }[]
