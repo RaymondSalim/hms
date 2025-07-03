@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, test} from "@jest/globals";
 import {prismaMock} from "./singleton_prisma";
 import {
-    generateBillItemsFromBookingAddons,
+    generateBookingAddonsBillItems,
     generateBookingBillandBillItems,
     generatePaymentBillMappingFromPaymentsAndBills,
     getUnpaidBillsDueAction,
@@ -922,7 +922,7 @@ describe('BillAction', () => {
     });
 });
 
-describe('generateBillItemsFromBookingAddons', () => {
+describe('generateBookingAddonsBillItems', () => {
     const booking: Pick<Booking, "id" | "end_date"> = {
         id: 123,
         end_date: new Date(2050, 0, 1),
@@ -962,8 +962,17 @@ describe('generateBillItemsFromBookingAddons', () => {
         });
     });
 
+    function makeBillsForMonths(months: [number, number][]): { id: number; due_date: Date }[] {
+        // months: array of [year, month] (month is 0-based)
+        let id = 1;
+        return months.map(([y, m]: [number, number]) => ({
+            id: id++,
+            due_date: new Date(y, m, new Date(y, m + 1, 0).getDate()),
+        }));
+    }
+
     it('Scenario 1: Sewa 3 bulan, mulai tgl 1 Jan, selesai 31 Mar', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
@@ -972,25 +981,22 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, booking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
+        // Bills for Jan, Feb, Mar
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Full payment: should be attached to the bill for the month of the add-on's start date (January)
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
+                amount: new Prisma.Decimal(300000),
+            }),
         ]);
+        expect(billItems[bills[1].id]).toBeUndefined();
+        expect(billItems[bills[2].id]).toBeUndefined();
     });
 
     it('Scenario 2: Sewa 3 bulan, mulai tgl 15 Jan, selesai 14 Apr', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
@@ -999,25 +1005,22 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, booking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
+        // Bills for Jan, Feb, Mar
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Full payment: should be attached to the bill for the month of the add-on's start date (January)
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
+                amount: new Prisma.Decimal(300000),
+            }),
         ]);
+        expect(billItems[bills[1].id]).toBeUndefined();
+        expect(billItems[bills[2].id]).toBeUndefined();
     });
 
     it('Scenario 3: Sewa 5 bulan, mulai tgl 1 Jan, selesai 31 May', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
@@ -1026,43 +1029,34 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, booking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
-            [
-                '2023-3',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(120000),
-                    },
-                ],
-            ],
-            [
-                '2023-4',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(120000),
-                    },
-                ],
-            ],
+        // Bills for Jan, Feb, Mar, Apr, May
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2], [2023, 3], [2023, 4]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Full payment for first 3 months (Jan-Mar) attached to Jan, then partials for Apr and May
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
+                amount: new Prisma.Decimal(300000),
+            }),
         ]);
+        expect(billItems[bills[3].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
+                amount: new Prisma.Decimal(120000),
+            }),
+        ]);
+        expect(billItems[bills[4].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
+                amount: new Prisma.Decimal(120000),
+            }),
+        ]);
+        expect(billItems[bills[1].id]).toBeUndefined()
+        expect(billItems[bills[2].id]).toBeUndefined()
     });
 
     it('Scenario 4: Sewa 5 bulan, mulai tgl 15 Jan, selesai 14 June', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
@@ -1071,52 +1065,33 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, booking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
-            [
-                '2023-3',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (April 15 - April 30)',
-                        amount: new Prisma.Decimal(64000),
-                    },
-                ],
-            ],
-            [
-                '2023-4',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(120000),
-                    },
-                ],
-            ],
-            [
-                '2023-5',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (June 1 - June 14)',
-                        amount: new Prisma.Decimal(56000),
-                    },
-                ],
-            ],
+        // Bills for Jan, Feb, Mar, Apr, May, Jun
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2], [2023, 3], [2023, 4]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
+                amount: new Prisma.Decimal(300000),
+            })
         ]);
+        expect(billItems[bills[3].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (April 15 - April 30)',
+                amount: new Prisma.Decimal(64000),
+            })
+        ]);
+        expect(billItems[bills[4].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (May 1 - June 14)',
+                amount: new Prisma.Decimal(176000),
+            })
+        ]);
+        expect(billItems[bills[1].id]).toBeUndefined();
+        expect(billItems[bills[2].id]).toBeUndefined();
     });
 
     it('Scenario 5: Sewa 5 bulan, mulai tgl 15 Jan, selesai 14 June, tenant kontrak sampai 31 May', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
@@ -1125,48 +1100,34 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        const customBooking = {
-            id: 123,
-            end_date: new Date(2023, 4, 31),
-        };
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, customBooking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
-            [
-                '2023-3',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (April 15 - April 30)',
-                        amount: new Prisma.Decimal(64000),
-                    },
-                ],
-            ],
-            [
-                '2023-4',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (May 1 - June 14)',
-                        amount: new Prisma.Decimal(176000),
-                    },
-                ],
-            ],
+        // Bills for Jan, Feb, Mar, Apr, May, Jun
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2], [2023, 3], [2023, 4]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Full payment for Jan-Apr attached to Apr, then partial for May (May 1 - June 14)
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
+                amount: new Prisma.Decimal(300000),
+            })
         ]);
+        expect(billItems[bills[3].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (April 15 - April 30)',
+                amount: new Prisma.Decimal(64000),
+            })
+        ]);
+        expect(billItems[bills[4].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (May 1 - June 14)',
+                amount: new Prisma.Decimal(176000),
+            })
+        ]);
+        expect(billItems[bills[1].id]).toBeUndefined();
+        expect(billItems[bills[2].id]).toBeUndefined();
     });
 
     it('Scenario 6: Sewa 3 bulan, mulai tgl 15 Jan, selesai 14 Apr, tenant kontrak sampai 31 Jan', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
@@ -1175,30 +1136,20 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        const customBooking = {
-            id: 123,
-            end_date: new Date(2023, 0, 31),
-        };
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, customBooking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
+        // Bills for Jan only (custom booking end_date: Jan 31)
+        const bills = makeBillsForMonths([[2023, 0]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Full payment: should be attached to Jan
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 15 - April 14)',
+                amount: new Prisma.Decimal(300000),
+            })
         ]);
     });
 
     it('Scenario 7: Sewa 3 bulan, mulai tgl 1 Jan, selesai 31 Mar, tenant kontrak sampai 31 Jan', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
@@ -1207,35 +1158,25 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        const customBooking = {
-            id: 123,
-            end_date: new Date(2023, 0, 31),
-        };
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, customBooking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
+        // Bills for Jan only (custom booking end_date: Jan 31)
+        const bills = makeBillsForMonths([[2023, 0]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Full payment: should be attached to Jan
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
+                amount: new Prisma.Decimal(300000),
+            })
         ]);
     });
 
     it('Scenario 8: Two addons with different date ranges', async () => {
-        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+        const bookingAddons = [
             {
                 addon_id: 'addon-1',
                 booking_id: booking.id,
                 start_date: new Date(2023, 0, 1),
-                end_date: new Date(2023, 2, 28),
+                end_date: new Date(2023, 2, 31),
                 input: null,
             },
             {
@@ -1246,56 +1187,40 @@ describe('generateBillItemsFromBookingAddons', () => {
                 input: null,
             },
         ];
-
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, booking);
-
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
-            [
-                '2023-1',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
-            [
-                '2023-2',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
-            [
-                '2023-3',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
-            [
-                '2023-4',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
+        // Bills for Jan, Feb, Mar, Apr, May
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2], [2023, 3], [2023, 4]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Internet full payment for Jan-Mar attached to Mar
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
+                amount: new Prisma.Decimal(300000),
+            })
+        ]);
+        // Cleaning partials for Feb-May
+        expect(billItems[bills[1].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
+                amount: new Prisma.Decimal(50000),
+            })
+        ]);
+        expect(billItems[bills[2].id]).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
+                amount: new Prisma.Decimal(50000),
+            }),
+        ]));
+        expect(billItems[bills[3].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
+                amount: new Prisma.Decimal(50000),
+            })
+        ]);
+        expect(billItems[bills[4].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
+                amount: new Prisma.Decimal(50000),
+            })
         ]);
     });
 
@@ -1317,72 +1242,56 @@ describe('generateBillItemsFromBookingAddons', () => {
             },
         ];
 
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, booking);
+        // Bills for Jan, Feb, Mar, Apr, May
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2], [2023, 3], [2023, 4]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
 
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
-            [
-                '2023-1',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
-            [
-                '2023-2',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
-            [
-                '2023-3',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(120000),
-                    },
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
-            [
-                '2023-4',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(120000),
-                    },
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
-                        amount: new Prisma.Decimal(50000),
-                    },
-                ],
-            ],
+        // Jan: Internet full payment
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
+                amount: new Prisma.Decimal(300000),
+            })
+        ]);
+        // Feb: Cleaning
+        expect(billItems[bills[1].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
+                amount: new Prisma.Decimal(50000),
+            })
+        ]);
+        // Mar: Cleaning
+        expect(billItems[bills[2].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
+                amount: new Prisma.Decimal(50000),
+            })
+        ]);
+        // Apr: Internet (partial) + Cleaning
+        expect(billItems[bills[3].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
+                amount: new Prisma.Decimal(120000),
+            }),
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
+                amount: new Prisma.Decimal(50000),
+            })
+        ]);
+        // May: Internet (partial) + Cleaning
+        expect(billItems[bills[4].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (May 1 - May 31)',
+                amount: new Prisma.Decimal(120000),
+            }),
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (May 1 - May 31)',
+                amount: new Prisma.Decimal(50000),
+            })
         ]);
     });
 
     it('Scenario 10: Two addons with overlapping date ranges, tenant checks out early', async () => {
-        const customBooking = {
-            id: 123,
-            end_date: new Date(2023, 1, 28),
-        };
-
         const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
             {
                 addon_id: 'addon-1',
@@ -1400,33 +1309,67 @@ describe('generateBillItemsFromBookingAddons', () => {
             },
         ];
 
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, customBooking);
+        // Bills for Jan, Feb
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
 
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                '2023-0',
-                [
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
-                        amount: new Prisma.Decimal(300000),
-                    },
-                ],
-            ],
-            [
-                '2023-1',
-                [
+        // Jan: Internet full payment
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
+                amount: new Prisma.Decimal(300000),
+            })
+        ]);
+        // Feb: Cleaning (should be for Feb, Mar, Apr)
+        expect(billItems[bills[1].id]).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - April 30)',
+                amount: new Prisma.Decimal(150000),
+            }),
 
-                    {
-                        description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - April 30)',
-                        amount: new Prisma.Decimal(150000),
-                    },
-                    {
-                        description: 'Biaya Layanan Tambahan (Internet) (April 1 - April 30)',
-                        amount: new Prisma.Decimal(120000),
-                    },
-                ],
-            ],
+        ]));
+    });
+
+    it('Cleaning Addon, start mid month', async () => {
+        const bookingAddons: OmitIDTypeAndTimestamp<BookingAddOn>[] = [
+            {
+                addon_id: 'addon-2',
+                booking_id: booking.id,
+                start_date: new Date(2023, 0, 15),
+                end_date: new Date(2023, 3, 30),
+                input: null,
+            },
+        ];
+
+        // Bills for Jan, Feb
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2], [2023, 3]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+
+        // Jan: Cleaning Pro Rated
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (January 15 - January 31)',
+                amount: new Prisma.Decimal(27500),
+            })
+        ]);
+        // Feb: Cleaning
+        expect(billItems[bills[1].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (February 1 - February 28)',
+                amount: new Prisma.Decimal(50000),
+            })
+        ]);
+        expect(billItems[bills[2].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (March 1 - March 31)',
+                amount: new Prisma.Decimal(50000),
+            })
+        ]);
+        expect(billItems[bills[3].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Cleaning) (April 1 - April 30)',
+                amount: new Prisma.Decimal(50000),
+            })
         ]);
     });
 
@@ -1492,49 +1435,221 @@ describe('generateBillItemsFromBookingAddons', () => {
         // @ts-expect-error mockResolvedValue error
         prismaMock.addOn.findFirstOrThrow.mockResolvedValue(addon);
 
-        // @ts-expect-error booking addon type
-        const billItems = await generateBillItemsFromBookingAddons(bookingAddons, booking);
+        // Bills for Mar, Jun, Jul, Aug
+        const bills = makeBillsForMonths([[2025, 2], [2025, 5], [2025, 6], [2025, 7]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
 
-        expect(Array.from(billItems.entries())).toEqual([
-            [
-                "2025-2",
-                [
-                    {
-                        description: "Biaya Layanan Tambahan (Kulkas) (March 1 - May 31)",
-                        amount: new Prisma.Decimal(300000)
-                    }
-                ]
-            ],
-            [
-                "2025-5",
-                [
-                    {
-                        description: "Biaya Layanan Tambahan (Kulkas) (June 1 - June 30)",
-                        amount: new Prisma.Decimal(120000)
-                    }
-                ]
-            ],
-            [
-                "2025-6",
-                [
-                    {
-                        description: "Biaya Layanan Tambahan (Kulkas) (July 1 - July 31)",
-                        amount: new Prisma.Decimal(120000)
-                    }
-                ]
-            ],
-            [
-                "2025-7",
-                [
-                    {
-                        description: "Biaya Layanan Tambahan (Kulkas) (August 1 - August 31)",
-                        amount: new Prisma.Decimal(120000)
-                    }
-                ]
-            ]
+        // Mar: full payment
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: "Biaya Layanan Tambahan (Kulkas) (March 1 - May 31)",
+                amount: new Prisma.Decimal(300000)
+            })
+        ]);
+        // Jun: monthly
+        expect(billItems[bills[1].id]).toEqual([
+            expect.objectContaining({
+                description: "Biaya Layanan Tambahan (Kulkas) (June 1 - June 30)",
+                amount: new Prisma.Decimal(120000)
+            })
+        ]);
+        // Jul: monthly
+        expect(billItems[bills[2].id]).toEqual([
+            expect.objectContaining({
+                description: "Biaya Layanan Tambahan (Kulkas) (July 1 - July 31)",
+                amount: new Prisma.Decimal(120000)
+            })
+        ]);
+        // Aug: monthly
+        expect(billItems[bills[3].id]).toEqual([
+            expect.objectContaining({
+                description: "Biaya Layanan Tambahan (Kulkas) (August 1 - August 31)",
+                amount: new Prisma.Decimal(120000)
+            })
         ]);
     });
+
+    it('Real Scenario 2: Add-on starts and ends mid-month, with both full payment and monthly pricing', async () => {
+        const bookingAddons = [
+            {
+                addon_id: 'addon-5',
+                booking_id: booking.id,
+                start_date: new Date(2023, 0, 10), // Jan 10
+                end_date: new Date(2023, 2, 20),   // Mar 20
+                input: null,
+            },
+        ];
+        // Pricing: full payment for first 2 months, then monthly
+        const customAddon = {
+            id: 'addon-5',
+            name: 'Internet',
+            pricing: [
+                { interval_start: 0, interval_end: 1, price: 200000, is_full_payment: true },
+                { interval_start: 2, interval_end: null, price: 90000 },
+            ],
+        };
+        // @ts-expect-error mockImplementation error
+        prismaMock.addOn.findFirstOrThrow.mockImplementation(({ where }: { where: { id: string } }) => {
+            if (where.id === 'addon-5') return Promise.resolve(customAddon);
+            return Promise.reject(new Error('AddOn not found'));
+        });
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Jan: full payment for Jan 10 - Feb 28
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 10 - March 9)',
+                amount: new Prisma.Decimal(200000),
+            })
+        ]);
+        // Mar: monthly for Mar 1 - Mar 20
+        expect(billItems[bills[2].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (March 10 - March 20)',
+                amount: new Prisma.Decimal(32000),
+            })
+        ]);
+        expect(billItems[bills[1].id]).toBeUndefined();
+    });
+
+    it('Real Scenario 3: Add-on starts before first bill and ends after last bill', async () => {
+        const bookingAddons = [
+            {
+                addon_id: 'addon-5',
+                booking_id: booking.id,
+                start_date: new Date(2022, 11, 15), // Dec 15, 2022
+                end_date: new Date(2023, 3, 10),    // Apr 10, 2023
+                input: null,
+            },
+        ];
+        const customAddon = {
+            id: 'addon-5',
+            name: 'Internet',
+            pricing: [
+                { interval_start: 0, interval_end: null, price: 100000 },
+            ],
+        };
+        // @ts-expect-error mockImplementation error
+        prismaMock.addOn.findFirstOrThrow.mockImplementation(({ where }: { where: { id: string } }) => {
+            if (where.id === 'addon-5') return Promise.resolve(customAddon);
+            return Promise.reject(new Error('AddOn not found'));
+        });
+        // Only bills for Jan, Feb, Mar
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2]]);
+        // Should throw because add-on start is before first bill
+        await expect(generateBookingAddonsBillItems(bookingAddons, bills)).rejects.toThrow();
+    });
+
+    it('Real Scenario 4: Add-on with pricing interval change mid-way, booking ends in middle of second interval', async () => {
+        const bookingAddons = [
+            {
+                addon_id: 'addon-1',
+                booking_id: booking.id,
+                start_date: new Date(2023, 0, 1), // Jan 1
+                end_date: new Date(2023, 2, 15),  // Mar 15
+                input: null,
+            },
+        ];
+        const customAddon = {
+            id: 'addon-1',
+            name: 'Internet',
+            pricing: [
+                { interval_start: 0, interval_end: 0, price: 150000, is_full_payment: false },
+                { interval_start: 1, interval_end: null, price: 80000 },
+            ],
+        };
+        // @ts-expect-error mockImplementation error
+        prismaMock.addOn.findFirstOrThrow.mockImplementation(({ where }: { where: { id: string } }) => {
+            if (where.id === 'addon-1') return Promise.resolve(customAddon);
+            return Promise.reject(new Error('AddOn not found'));
+        });
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // Jan: full payment for Jan 1-31
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - January 31)',
+                amount: new Prisma.Decimal(150000),
+            })
+        ]);
+        // Feb: monthly for Feb 1-28
+        expect(billItems[bills[1].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (February 1 - February 28)',
+                amount: new Prisma.Decimal(80000),
+            })
+        ]);
+        // Mar: partial for Mar 1-15
+        expect(billItems[bills[2].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (March 1 - March 15)',
+                amount: new Prisma.Decimal(38800),
+            })
+        ]);
+    });
+
+    it('Real Scenario 5: Add-on with only one bill available, but covers multiple months', async () => {
+        const bookingAddons = [
+            {
+                addon_id: 'addon-1',
+                booking_id: booking.id,
+                start_date: new Date(2023, 0, 1), // Jan 1
+                end_date: new Date(2023, 2, 31),  // Mar 31
+                input: null,
+            },
+        ];
+        const customAddon = {
+            id: 'addon-1',
+            name: 'Internet',
+            pricing: [
+                { interval_start: 0, interval_end: null, price: 120000 },
+            ],
+        };
+        // @ts-expect-error mockImplementation error
+        prismaMock.addOn.findFirstOrThrow.mockImplementation(({ where }: { where: { id: string } }) => {
+            if (where.id === 'addon-1') return Promise.resolve(customAddon);
+            return Promise.reject(new Error('AddOn not found'));
+        });
+        // Only one bill for Jan
+        const bills = makeBillsForMonths([[2023, 0]]);
+        const billItems = await generateBookingAddonsBillItems(bookingAddons, bills);
+        // All merged into Jan bill
+        expect(billItems[bills[0].id]).toEqual([
+            expect.objectContaining({
+                description: 'Biaya Layanan Tambahan (Internet) (January 1 - March 31)',
+                amount: new Prisma.Decimal(120000 * 3),
+            })
+        ]);
+    });
+
+    it('Real Scenario 6: Add-on with a gap in pricing intervals (should throw)', async () => {
+        const bookingAddons = [
+            {
+                addon_id: 'addon-1',
+                booking_id: booking.id,
+                start_date: new Date(2023, 0, 1), // Jan 1
+                end_date: new Date(2023, 2, 28),  // Mar 28
+                input: null,
+            },
+        ];
+        const customAddon = {
+            id: 'addon-1',
+            name: 'Internet',
+            pricing: [
+                { interval_start: 0, interval_end: 0, price: 100000 },
+                { interval_start: 2, interval_end: null, price: 90000 },
+            ],
+        };
+        // @ts-expect-error mockImplementation error
+        prismaMock.addOn.findFirstOrThrow.mockImplementation(({ where }: { where: { id: string } }) => {
+            if (where.id === 'addon-1') return Promise.resolve(customAddon);
+            return Promise.reject(new Error('AddOn not found'));
+        });
+        const bills = makeBillsForMonths([[2023, 0], [2023, 1], [2023, 2]]);
+        await expect(generateBookingAddonsBillItems(bookingAddons, bills)).rejects.toThrow();
+    });
 });
+
 
 describe("generateRoomBillAndBillItems", () => {
     it("should generate bills and bill items for a full month starting on the 1st", async () => {
@@ -1874,7 +1989,7 @@ describe("generateRoomBillAndBillItems", () => {
             },
             {
                 description: expect.stringContaining("Tagihan untuk Bulan April"),
-                due_date: new Date(2024, 3, 30), // April 33, 2024
+                due_date: new Date(2024, 3, 30), // April 30, 2024
                 bill_item: {
                     createMany: {
                         data: [

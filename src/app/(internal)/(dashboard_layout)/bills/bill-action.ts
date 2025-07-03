@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
-import {Bill, BillType, Booking, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
+import {AddOn, Bill, BillType, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
     BillIncludeAll,
     billIncludeAll,
@@ -571,199 +571,550 @@ export async function sendBillEmailAction(billID: number) {
 
 }
 
-/**
- * Generates bill items from booking add-ons
- * @param bookingAddons - Array of booking add-ons
- * @param booking - Booking information with end date
- * @returns Map of bill items grouped by month
- */
-export async function generateBillItemsFromBookingAddons(
-    bookingAddons: BookingAddOn[],
-    booking: Pick<Booking, "end_date">
-): Promise<Map<string, PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[]>> {
-    const billItemsByMonth: Map<string, PartialBy<(Prisma.BillItemUncheckedCreateInput & {
-        effectiveEndDate?: Date
-        addonID: string
-        isBacktracked?: boolean
-    }), "bill_id">[]> = new Map();
+// /**
+//  * New implementation of generateBookingAddonsBillItems using TDD outline
+//  */
+// export async function generateBookingAddonsBillItems(
+//     bookingAddons: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[],
+//     bills: { id: number, due_date: Date }[]
+// ): Promise<{ [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] }> {
+//     function findBillIdForDate(date: Date): number | undefined {
+//         const y = date.getFullYear();
+//         const m = date.getMonth();
+//         const bill = bills.find(b => b.due_date.getFullYear() === y && b.due_date.getMonth() === m);
+//         return bill?.id;
+//     }
+//
+//     const billItemsByBillId: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } = {};
+//
+//     for (const bookingAddon of bookingAddons) {
+//         const addon = await prisma.addOn.findFirstOrThrow({
+//             where: {id: bookingAddon.addon_id},
+//             include: {pricing: true},
+//         });
+//         const pricing = addon.pricing.slice().sort((a, b) => a.interval_start - b.interval_start);
+//         if (!pricing.length) throw new Error(`No pricing for AddOn ${bookingAddon.addon_id}`);
+//         for (let i = 1; i < pricing.length; ++i) {
+//             const prev = pricing[i - 1];
+//             const curr = pricing[i];
+//             if ((prev.interval_end == null) || (curr.interval_start !== prev.interval_end + 1)) {
+//                 throw new Error(`Gap in pricing intervals for AddOn ${bookingAddon.addon_id}`);
+//             }
+//         }
+//         const addonStart = new Date(bookingAddon.start_date);
+//         const addonEnd = new Date(bookingAddon.end_date);
+//         if (
+//             bills.length === 0 ||
+//             addonStart.getFullYear() < bills[0].due_date.getFullYear() ||
+//             (addonStart.getFullYear() === bills[0].due_date.getFullYear() && addonStart.getMonth() < bills[0].due_date.getMonth())
+//         ) {
+//             throw new Error(`AddOn start date (${addonStart.toISOString()}) is before the first bill's month (${bills[0]?.due_date?.toISOString?.()})`);
+//         }
+//         let current = new Date(addonStart);
+//         let monthOffset = 0;
+//         const lastBill = bills[bills.length - 1];
+//         const lastBillMonth = lastBill.due_date.getMonth();
+//         const lastBillYear = lastBill.due_date.getFullYear();
+//         while (current <= addonEnd) {
+//             const p = pricing.find(
+//                 (pr) => pr.interval_start <= monthOffset && (pr.interval_end == null || pr.interval_end >= monthOffset)
+//             );
+//             if (!p) throw new Error(`No pricing found for AddOn ${bookingAddon.addon_id} at month offset ${monthOffset}`);
+//             let intervalStart = new Date(current);
+//             let intervalEnd: Date;
+//             if (p.interval_end != null) {
+//                 // Calculate the last day of the last month in the interval, relative to current
+//                 const intervalEndMonth = current.getMonth() + (p.interval_end - p.interval_start);
+//                 const intervalEndYear = current.getFullYear() + Math.floor((current.getMonth() + (p.interval_end - p.interval_start)) / 12);
+//                 const lastDay = new Date(intervalEndYear, intervalEndMonth + 1, 0).getDate();
+//                 intervalEnd = new Date(intervalEndYear, intervalEndMonth, lastDay);
+//             } else {
+//                 intervalEnd = new Date(addonEnd);
+//             }
+//             if (intervalEnd > addonEnd) intervalEnd = new Date(addonEnd);
+//             if (
+//                 current.getFullYear() > lastBillYear ||
+//                 (current.getFullYear() === lastBillYear && current.getMonth() > lastBillMonth)
+//             ) {
+//                 break;
+//             }
+//             let isBacktrack = false;
+//             let backtrackEndDate = null;
+//             if (
+//                 (addonEnd.getFullYear() > lastBillYear ||
+//                     (addonEnd.getFullYear() === lastBillYear && addonEnd.getMonth() > lastBillMonth)) &&
+//                 (current.getFullYear() === lastBillYear && current.getMonth() === lastBillMonth)
+//             ) {
+//                 isBacktrack = true;
+//                 backtrackEndDate = new Date(addonEnd);
+//             }
+//             if (p.is_full_payment) {
+//                 // For full payment, calculate interval end as the minimum of:
+//                 // - the add-on end date
+//                 // - the date that is (interval length in months after the current start date, minus one day)
+//                 let descEnd: Date;
+//                 if (p.interval_end != null) {
+//                     // Calculate the interval length in months
+//                     const intervalLength = (p.interval_end - p.interval_start) + 1;
+//                     // Add intervalLength months to the current date, then subtract one day
+//                     let intervalEnd = new Date(current);
+//                     intervalEnd.setMonth(intervalEnd.getMonth() + intervalLength);
+//                     intervalEnd.setDate(intervalEnd.getDate() - 1);
+//                     // If subtracting a day goes to previous month, fix it
+//                     if (intervalEnd.getDate() === 0) {
+//                         intervalEnd.setMonth(intervalEnd.getMonth(), 0);
+//                     }
+//                     descEnd = intervalEnd > addonEnd ? addonEnd : intervalEnd;
+//                 } else {
+//                     descEnd = addonEnd;
+//                 }
+//                 if (isBacktrack) descEnd = backtrackEndDate!;
+//                 let billId: number | undefined;
+//                 let description: string;
+//                 if (isBacktrack) {
+//                     billId = lastBill.id;
+//                     description = `Biaya Layanan Tambahan (${addon.name}) (${intervalStart.toLocaleString('default', {month: 'long'})} ${intervalStart.getDate()} - ${descEnd.toLocaleString('default', {month: 'long'})} ${descEnd.getDate()})`;
+//                 } else {
+//                     // Always assign to the bill for the month of the add-on's start date
+//                     billId = findBillIdForDate(addonStart);
+//                     description = `Biaya Layanan Tambahan (${addon.name}) (${intervalStart.toLocaleString('default', {month: 'long'})} ${intervalStart.getDate()} - ${descEnd.toLocaleString('default', {month: 'long'})} ${descEnd.getDate()})`;
+//                 }
+//                 if (billId) {
+//                     if (!billItemsByBillId[billId]) billItemsByBillId[billId] = [];
+//                     billItemsByBillId[billId].push({
+//                         amount: new Prisma.Decimal(Math.round(Number(p.price))),
+//                         description,
+//                     });
+//                 }
+//                 // If the description's end date is the add-on's end date, stop after this bill item
+//                 if (descEnd.getTime() === addonEnd.getTime()) {
+//                     break;
+//                 }
+//                 // Move current to the day after descEnd for the next interval
+//                 current = new Date(descEnd);
+//                 current.setDate(current.getDate() + 1);
+//                 monthOffset = (current.getFullYear() - addonStart.getFullYear()) * 12 + current.getMonth() - addonStart.getMonth();
+//                 // If the next interval's start date is after the last bill's month, merge the remaining period into the last bill
+//                 if (
+//                     (current.getFullYear() > lastBillYear ||
+//                         (current.getFullYear() === lastBillYear && current.getMonth() > lastBillMonth)) &&
+//                     current <= addonEnd
+//                 ) {
+//                     let billId = lastBill.id;
+//                     let mergeStart = new Date(current);
+//                     let mergeEnd = new Date(addonEnd);
+//                     let totalAmount = 0;
+//                     let tempStart = new Date(mergeStart);
+//                     while (tempStart <= mergeEnd) {
+//                         let tempEnd = new Date(tempStart.getFullYear(), tempStart.getMonth() + 1, 0);
+//                         if (tempEnd > mergeEnd) tempEnd = new Date(mergeEnd);
+//                         const daysInMonth = new Date(tempStart.getFullYear(), tempStart.getMonth() + 1, 0).getDate();
+//                         const daysUsed = tempEnd.getDate() - tempStart.getDate() + 1;
+//                         totalAmount += (Number(p.price) / daysInMonth) * daysUsed;
+//                         tempStart = new Date(tempEnd.getFullYear(), tempEnd.getMonth(), tempEnd.getDate() + 1);
+//                     }
+//                     let amount = Math.round(totalAmount);
+//                     let description = `Biaya Layanan Tambahan (${addon.name}) (${mergeStart.toLocaleString('default', {month: 'long'})} ${mergeStart.getDate()} - ${mergeEnd.toLocaleString('default', {month: 'long'})} ${mergeEnd.getDate()})`;
+//                     if (!billItemsByBillId[billId]) billItemsByBillId[billId] = [];
+//                     billItemsByBillId[billId].push({
+//                         amount: new Prisma.Decimal(amount),
+//                         description,
+//                     });
+//                     break;
+//                 }
+//                 continue;
+//             } else {
+//                 if (isBacktrack) {
+//                     let billId = lastBill.id;
+//                     let mergeStart = new Date(current);
+//                     let mergeEnd = new Date(addonEnd);
+//                     let totalAmount = 0;
+//                     let tempStart = new Date(mergeStart);
+//                     while (tempStart <= mergeEnd) {
+//                         let tempEnd = new Date(tempStart.getFullYear(), tempStart.getMonth() + 1, 0);
+//                         if (tempEnd > mergeEnd) tempEnd = new Date(mergeEnd);
+//                         const daysInMonth = new Date(tempStart.getFullYear(), tempStart.getMonth() + 1, 0).getDate();
+//                         const daysUsed = tempEnd.getDate() - tempStart.getDate() + 1;
+//                         totalAmount += (Number(p.price) / daysInMonth) * daysUsed;
+//                         tempStart = new Date(tempEnd.getFullYear(), tempEnd.getMonth(), tempEnd.getDate() + 1);
+//                     }
+//                     let amount = Math.round(totalAmount);
+//                     let description = `Biaya Layanan Tambahan (${addon.name}) (${mergeStart.toLocaleString('default', {month: 'long'})} ${mergeStart.getDate()} - ${mergeEnd.toLocaleString('default', {month: 'long'})} ${mergeEnd.getDate()})`;
+//                     if (!billItemsByBillId[billId]) billItemsByBillId[billId] = [];
+//                     billItemsByBillId[billId].push({
+//                         amount: new Prisma.Decimal(amount),
+//                         description,
+//                     });
+//                     break;
+//                 } else {
+//                     let monthStart = new Date(current);
+//                     while (monthStart <= intervalEnd) {
+//                         let monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+//                         if (monthEnd > intervalEnd) monthEnd = new Date(intervalEnd);
+//                         let billId = findBillIdForDate(monthStart);
+//                         const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+//                         const daysUsed = monthEnd.getDate() - monthStart.getDate() + 1;
+//                         let amount = Math.round((Number(p.price) / daysInMonth) * daysUsed);
+//                         let description = `Biaya Layanan Tambahan (${addon.name}) (${monthStart.toLocaleString('default', {month: 'long'})} ${monthStart.getDate()} - ${monthEnd.toLocaleString('default', {month: 'long'})} ${monthEnd.getDate()})`;
+//                         if (billId) {
+//                             if (!billItemsByBillId[billId]) billItemsByBillId[billId] = [];
+//                             billItemsByBillId[billId].push({
+//                                 amount: new Prisma.Decimal(amount),
+//                                 description,
+//                             });
+//                         }
+//                         monthStart = new Date(monthEnd.getFullYear(), monthEnd.getMonth(), monthEnd.getDate() + 1);
+//                     }
+//                 }
+//                 current = new Date(intervalEnd.getFullYear(), intervalEnd.getMonth(), intervalEnd.getDate() + 1);
+//                 monthOffset = (current.getFullYear() - addonStart.getFullYear()) * 12 + current.getMonth() - addonStart.getMonth();
+//             }
+//         }
+//     }
+//     return billItemsByBillId;
+// }
+//
+// /**
+//  * Generates bill items for booking add-ons and maps them to bills by due date
+//  * @param bookingAddons - Array of booking add-ons
+//  * @param bills - Array of bills with id and due_date
+//  * @returns Object mapping bill_id to array of bill items
+//  */
+// export async function generateBookingAddonsBillItems_2(
+//     bookingAddons: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[],
+//     bills: { id: number, due_date: Date }[]
+// ): Promise<{ [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] }> {
+//     // Helper: find bill for a given date
+//     function findBillIdForDate(date: Date): number | undefined {
+//         const y = date.getFullYear();
+//         const m = date.getMonth();
+//         const bill = bills.find(b => b.due_date.getFullYear() === y && b.due_date.getMonth() === m);
+//         return bill?.id;
+//     }
+//
+//     const billItemsByBillId: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } = {};
+//
+//     for (const bookingAddon of bookingAddons) {
+//         const addon = await prisma.addOn.findFirstOrThrow({
+//             where: {id: bookingAddon.addon_id},
+//             include: {pricing: true},
+//         });
+//         const addonPricing = addon.pricing.sort((a, b) => a.interval_start - b.interval_start);
+//         if (!addonPricing || addonPricing.length === 0) {
+//             throw new Error(`No pricing available for AddOn with ID ${bookingAddon.addon_id}`);
+//         }
+//         const addonStartDate = new Date(bookingAddon.start_date);
+//         const addonEndDate = new Date(bookingAddon.end_date);
+//         // Throw if add-on start is before the first bill's month
+//         if (
+//             bills.length === 0 ||
+//             addonStartDate.getFullYear() < bills[0].due_date.getFullYear() ||
+//             (addonStartDate.getFullYear() === bills[0].due_date.getFullYear() && addonStartDate.getMonth() < bills[0].due_date.getMonth())
+//         ) {
+//             throw new Error(`AddOn start date (${addonStartDate.toISOString()}) is before the first bill's month (${bills[0]?.due_date?.toISOString?.()})`);
+//         }
+//         let currentStart = new Date(addonStartDate);
+//         let lastBill = bills[bills.length - 1];
+//         let lastBillMonth = lastBill.due_date.getMonth();
+//         let lastBillYear = lastBill.due_date.getFullYear();
+//         while (currentStart <= addonEndDate) {
+//             const monthOffset = (currentStart.getFullYear() - addonStartDate.getFullYear()) * 12 + currentStart.getMonth() - addonStartDate.getMonth();
+//             const applicablePricing = addonPricing.find(
+//                 (pricing) =>
+//                     pricing.interval_start <= monthOffset &&
+//                     (pricing.interval_end == null || pricing.interval_end >= monthOffset)
+//             );
+//             if (!applicablePricing) {
+//                 throw new Error(`No pricing found for AddOn ${bookingAddon.addon_id}`);
+//             }
+//             // If currentStart is after the last bill's month, break (shouldn't happen)
+//             if (
+//                 currentStart.getFullYear() > lastBillYear ||
+//                 (currentStart.getFullYear() === lastBillYear && currentStart.getMonth() > lastBillMonth)
+//             ) {
+//                 break;
+//             }
+//             // If the add-on's end date is after the last bill's month, merge the remaining period into the last bill
+//             let isBacktrack = false;
+//             let backtrackEndDate = null;
+//             if (
+//                 (addonEndDate.getFullYear() > lastBillYear ||
+//                     (addonEndDate.getFullYear() === lastBillYear && addonEndDate.getMonth() > lastBillMonth)) &&
+//                 (currentStart.getFullYear() === lastBillYear && currentStart.getMonth() === lastBillMonth)
+//             ) {
+//                 isBacktrack = true;
+//                 backtrackEndDate = new Date(addonEndDate);
+//             }
+//             if (applicablePricing.is_full_payment) {
+//                 // Calculate the correct end date for the full payment interval
+//                 let fullPaymentDurationMonth = (applicablePricing.interval_end != null ? (applicablePricing.interval_end - applicablePricing.interval_start) : 0) + 1;
+//                 // The end of this pricing interval (should be the last day of the interval_end month)
+//                 let pricingIntervalEnd = applicablePricing.interval_end != null
+//                     ? new Date(addonStartDate.getFullYear(), addonStartDate.getMonth() + applicablePricing.interval_end + 1, 0)
+//                     : new Date(addonEndDate);
+//                 // The end date for this bill item is the minimum of:
+//                 // - pricingIntervalEnd
+//                 // - add-on end date
+//                 let fullPaymentEndDate = pricingIntervalEnd > addonEndDate ? new Date(addonEndDate) : pricingIntervalEnd;
+//                 let amount = Math.round(Number(applicablePricing.price));
+//                 let description = `Biaya Layanan Tambahan (${addon.name}) (${currentStart.toLocaleString('default', {month: 'long'})} ${currentStart.getDate()} - ${fullPaymentEndDate.toLocaleString('default', {month: 'long'})} ${fullPaymentEndDate.getDate()})`;
+//                 let billId;
+//                 if (isBacktrack) {
+//                     // Merge the remaining period into the last bill
+//                     billId = lastBill.id;
+//                     description = `Biaya Layanan Tambahan (${addon.name}) (${currentStart.toLocaleString('default', {month: 'long'})} ${currentStart.getDate()} - ${backtrackEndDate!.toLocaleString('default', {month: 'long'})} ${backtrackEndDate!.getDate()})`;
+//                 } else {
+//                     billId = findBillIdForDate(currentStart);
+//                 }
+//                 if (billId) {
+//                     if (!billItemsByBillId[billId]) billItemsByBillId[billId] = [];
+//                     billItemsByBillId[billId].push({
+//                         amount: new Prisma.Decimal(amount),
+//                         description,
+//                     });
+//                 }
+//                 currentStart = new Date(fullPaymentEndDate.getFullYear(), fullPaymentEndDate.getMonth(), fullPaymentEndDate.getDate() + 1);
+//                 if (currentStart > fullPaymentEndDate) break;
+//             } else {
+//                 let periodStart = new Date(currentStart);
+//                 let periodEnd = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0);
+//                 if (periodEnd > addonEndDate) periodEnd = new Date(addonEndDate);
+//                 let billId;
+//                 let description;
+//                 let amount;
+//                 if (isBacktrack) {
+//                     // Merge the remaining period into the last bill
+//                     billId = lastBill.id;
+//                     periodEnd = new Date(addonEndDate);
+//                     // Sum the full monthly prices for each month in the merged period
+//                     let totalAmount = 0;
+//                     let tempStart = new Date(periodStart);
+//                     while (tempStart <= periodEnd) {
+//                         let tempEnd = new Date(tempStart.getFullYear(), tempStart.getMonth() + 1, 0);
+//                         if (tempEnd > periodEnd) tempEnd = new Date(periodEnd);
+//                         const daysInMonth = new Date(tempStart.getFullYear(), tempStart.getMonth() + 1, 0).getDate();
+//                         const daysUsed = tempEnd.getDate() - tempStart.getDate() + 1;
+//                         totalAmount += (Number(applicablePricing.price) / daysInMonth) * daysUsed;
+//                         tempStart = new Date(tempEnd.getFullYear(), tempEnd.getMonth(), tempEnd.getDate() + 1);
+//                     }
+//                     amount = Math.round(totalAmount);
+//                     description = `Biaya Layanan Tambahan (${addon.name}) (${periodStart.toLocaleString('default', {month: 'long'})} ${periodStart.getDate()} - ${periodEnd.toLocaleString('default', {month: 'long'})} ${periodEnd.getDate()})`;
+//                 } else {
+//                     billId = findBillIdForDate(periodStart);
+//                     const daysInMonth = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0).getDate();
+//                     const daysUsed = periodEnd.getDate() - periodStart.getDate() + 1;
+//                     amount = Math.round((Number(applicablePricing.price) / daysInMonth) * daysUsed);
+//                     description = `Biaya Layanan Tambahan (${addon.name}) (${periodStart.toLocaleString('default', {month: 'long'})} ${periodStart.getDate()} - ${periodEnd.toLocaleString('default', {month: 'long'})} ${periodEnd.getDate()})`;
+//                 }
+//                 if (billId) {
+//                     if (!billItemsByBillId[billId]) billItemsByBillId[billId] = [];
+//                     billItemsByBillId[billId].push({
+//                         amount: new Prisma.Decimal(amount),
+//                         description,
+//                     });
+//                 }
+//                 if (isBacktrack) {
+//                     break;
+//                 }
+//                 currentStart = new Date(periodEnd.getFullYear(), periodEnd.getMonth(), periodEnd.getDate() + 1);
+//             }
+//         }
+//     }
+//     return billItemsByBillId;
+// }
+//
+export async function generateBookingAddonsBillItems(
+    bookingAddons: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[],
+    bills: { id: number, due_date: Date }[]
+): Promise<{ [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] }> {
+    const billItemsByBillId: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } = {};
 
-    for (const bookingAddon of bookingAddons) {
-        const addon = await prisma.addOn.findFirstOrThrow({
-            where: {id: bookingAddon.addon_id},
-            include: {pricing: true},
+    function findBillIdByDate(d: Date): number | undefined {
+        const bill = bills.find(b => {
+            return b.due_date.getMonth() == d.getMonth() && b.due_date.getFullYear() == d.getFullYear();
         });
 
-        const addonPricing = addon.pricing.sort((a, b) => a.interval_start - b.interval_start);
-        if (!addonPricing || addonPricing.length === 0) {
-            throw new Error(`No pricing available for AddOn with ID ${bookingAddon.addon_id}`);
+        return bill?.id;
+    }
+
+    function findClosestBillIdByDate(d: Date): number | undefined {
+        if (bills.length === 0) return undefined;
+        // Sort bills by due_date ascending
+        const sorted = bills.slice().sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
+        for (const bill of sorted) {
+            if (bill.due_date >= d) {
+                return bill.id;
+            }
         }
+        // If all bills are before the date, return the last bill's id
+        return sorted[sorted.length - 1].id;
+    }
+
+    type BillItemWithDates = BillItemUncheckedCreateInput & {
+        _startDate: Date,
+        _endDate: Date,
+        _shouldBacktrack: boolean
+    }
+
+    type BillItemWithPartialDates = PartialBy<BillItemWithDates, "_endDate" | "_startDate" | "_shouldBacktrack">
+
+    function generateDescription(addon: AddOn, billItem: BillItemWithDates) {
+        return `Biaya Layanan Tambahan (${addon.name}) (${billItem._startDate.toLocaleString('default', {month: 'long', day: 'numeric'})} - ${billItem._endDate.toLocaleString('default', {month: 'long', day: 'numeric'})})`
+    }
+
+    let allBillItems: BillItemWithPartialDates[] = [];
+
+    for (let bookingAddon of bookingAddons) {
+        const currentBillItems: BillItemWithDates[] = [];
+        const addon = await prisma.addOn.findFirstOrThrow({
+            where: {
+                id: bookingAddon.addon_id
+            },
+            include: {
+                pricing: true
+            }
+        });
+
+        const sortedPricing = addon.pricing
+            .sort((a, b) => a.interval_start - b.interval_start);
 
         const addonStartDate = new Date(bookingAddon.start_date);
         const addonEndDate = new Date(bookingAddon.end_date);
 
-        const totalMonths = Math.ceil(
-            (addonEndDate.getFullYear() - addonStartDate.getFullYear()) * 12 +
-            addonEndDate.getMonth() -
-            addonStartDate.getMonth() +
-            1
-        );
+        let currentStartDate = addonStartDate;
+        let currentEndDate;
 
-        // Initialize empty arrays for each month
-        for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
-            const monthKey = `${addonStartDate.getFullYear()}-${addonStartDate.getMonth() + monthIndex}`;
+        let monthCount = 0;
 
-            if (!billItemsByMonth.has(monthKey)) {
-                billItemsByMonth.set(monthKey, []);
+        let shouldProrate = false;
+
+        // Logic to create all the bills
+        while (currentStartDate < addonEndDate) {
+            let shouldBacktrack = false;
+            let billId = findBillIdByDate(currentStartDate);
+            if (currentBillItems.length > 0 && billId == undefined) {
+                billId = findClosestBillIdByDate(currentStartDate);
+                shouldBacktrack = currentBillItems.map(bi => bi.bill_id).includes(billId ?? -1);
             }
-        }
-
-        let currentStart = addonStartDate;
-        let fullPaymentStart: Date | null = null;
-        let fullPaymentAmount = 0;
-
-        while (currentStart <= addonEndDate) {
-            const applicablePricing = addonPricing.find(
-                (pricing) =>
-                    pricing.interval_start <=
-                    Math.ceil(
-                        (currentStart.getFullYear() - addonStartDate.getFullYear()) * 12 +
-                        currentStart.getMonth() -
-                        addonStartDate.getMonth() // no +1 as addonPricing is 0-indexed
-                    ) &&
-                    (!pricing.interval_end ||
-                        pricing.interval_end >=
-                        Math.ceil(
-                            (currentStart.getFullYear() - addonStartDate.getFullYear()) * 12 +
-                            currentStart.getMonth() -
-                            addonStartDate.getMonth() // no +1 as addonPricing is 0-indexed
-                        ))
-            );
-
-            if (!applicablePricing) {
-                throw new Error(`No pricing found for AddOn ${bookingAddon.addon_id}`);
+            if (billId == undefined) {
+                throw new Error("No matching bill found")
             }
 
-            const isFullPayment = !!applicablePricing.is_full_payment;
-            if (isFullPayment) {
-                if (!fullPaymentStart) {
-                    fullPaymentStart = currentStart;
-                }
-
-                let fullPaymentDurationMonth = (
-                    applicablePricing.interval_end
-                        ? (applicablePricing.interval_end - applicablePricing.interval_start)
-                        : 0) + 1;
-                let fullPaymentEndDate = new Date(
-                    fullPaymentStart.getFullYear(),
-                    fullPaymentStart.getMonth() + fullPaymentDurationMonth,
-                    0
-                );
-
-                if (fullPaymentEndDate > addonEndDate) {
-                    fullPaymentEndDate = addonEndDate;
-                }
-
-                const fullPaymentDailyRate = Number(applicablePricing.price) / fullPaymentDurationMonth / 30;
-                const fullPaymentDays = Math.ceil(
-                    (fullPaymentEndDate.getTime() - fullPaymentStart.getTime()) / (1000 * 60 * 60 * 24)
-                );
-                fullPaymentAmount = fullPaymentDailyRate * fullPaymentDays;
-
-                const monthKey = `${fullPaymentStart.getFullYear()}-${fullPaymentStart.getMonth()}`;
-                const monthItems = billItemsByMonth.get(monthKey)!;
-
-                monthItems.push({
-                    amount: new Prisma.Decimal(Math.round(fullPaymentAmount)),
-                    description: `Biaya Layanan Tambahan (${addon.name}) (${fullPaymentStart.toLocaleString('default', {month: 'long'})} ${fullPaymentStart.getDate()}-${fullPaymentEndDate.getDate()})`,
-                    type: BillType.GENERATED,
-                    effectiveEndDate: fullPaymentEndDate,
-                    addonID: addon.id,
-                    isBacktracked: false
+            const pricing = sortedPricing
+                .find(p => {
+                    if (p.interval_end != undefined) {
+                        return p.interval_start >= monthCount && p.interval_end >= monthCount;
+                    } else {
+                        return p.interval_start <= monthCount;
+                    }
                 });
 
-                currentStart = new Date(fullPaymentEndDate.getTime() + 24 * 60 * 60 * 1000);
-                fullPaymentStart = null;
-                fullPaymentAmount = 0;
+            if (!pricing) {
+                throw new Error("Pricing not found");
+            }
+
+            if (pricing.interval_end) {
+                let currentDuration = pricing.interval_end - pricing.interval_start + 1;
+                currentEndDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + currentDuration, currentStartDate.getDate() - 1);
+
+                if (currentEndDate > addonEndDate) {
+                    currentEndDate = addonEndDate;
+                }
+
+                const billItem: BillItemWithDates = {
+                    bill_id: billId,
+                    amount: new Prisma.Decimal(Math.round(Number(pricing.price))),
+                    description: "TODO!", // TODO!
+                    _startDate: currentStartDate,
+                    _endDate: currentEndDate,
+                    _shouldBacktrack: shouldBacktrack
+                }
+                currentBillItems.push(billItem);
+
+                currentStartDate = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth(), currentEndDate.getDate() + 1);
+                if (currentStartDate.getDate() != 1) shouldProrate = true;
+                monthCount += currentDuration
             } else {
-                const currentEnd = new Date(currentStart.getFullYear(), currentStart.getMonth() + 1, 0);
-                const actualEnd = currentEnd > addonEndDate ? addonEndDate : currentEnd;
+                if (currentStartDate.getDate() != 1) shouldProrate = true;
+                if (shouldProrate) {
+                    currentEndDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + 1, 0);
+                    shouldProrate = false;
+                } else {
+                    currentEndDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + 1, currentStartDate.getDate() - 1);
+                }
 
-                const dailyRate = Number(applicablePricing.price) / 30;
-                const days = Math.ceil(
-                    (actualEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24)
-                );
-                const amount = dailyRate * days;
+                if (currentEndDate > addonEndDate) {
+                    currentEndDate = addonEndDate;
+                }
 
-                const monthKey = `${currentStart.getFullYear()}-${currentStart.getMonth()}`;
-                const monthItems = billItemsByMonth.get(monthKey)!;
+                const currentMonthStart = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth(), 1);
+                const currentMonthEnd = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + 1, 0);
+                const daysInMonth = currentMonthEnd.getDate() - currentMonthStart.getDate() + 1;
+                const daysActive = currentEndDate.getDate() - currentStartDate.getDate() + 1;
+                const currentPrice = (pricing.price / daysInMonth * daysActive);
+                const roundedPrice = Math.ceil((currentPrice / 100)) * 100
 
-                monthItems.push({
-                    amount: new Prisma.Decimal(Math.round(amount)),
-                    description: `Biaya Layanan Tambahan (${addon.name}) (${currentStart.toLocaleString('default', {month: 'long'})} ${currentStart.getDate()}-${actualEnd.getDate()})`,
-                    type: BillType.GENERATED,
-                    effectiveEndDate: actualEnd,
-                    addonID: addon.id,
-                    isBacktracked: false
-                });
+                const billItem: BillItemWithDates = {
+                    bill_id: billId,
+                    amount: new Prisma.Decimal(roundedPrice),
+                    description: "TODO!", // TODO!
+                    _startDate: currentStartDate,
+                    _endDate: currentEndDate,
+                    _shouldBacktrack: shouldBacktrack,
+                }
+                currentBillItems.push(billItem);
 
-                currentStart = new Date(actualEnd.getTime() + 24 * 60 * 60 * 1000);
+                currentStartDate = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth(), currentEndDate.getDate() + 1);
+                if (currentStartDate.getDate() != 1) shouldProrate = true;
+                monthCount += 1
             }
         }
 
-        // Merge items in the same month with the same addon
-        const entries = Array.from(billItemsByMonth.entries());
-        for (const [month, monthItems] of entries) {
-            const prevMonthItems: typeof monthItems = [];
-
-            for (let i = 0; i < monthItems.length; i++) {
-                const item = monthItems[i];
-                const previousItem = prevMonthItems.find((prev: any) => prev.addonID === item.addonID);
-
-                if (previousItem) {
-                    previousItem.amount = new Prisma.Decimal(
-                        parseFloat(previousItem.amount.toString()) + parseFloat(item.amount.toString())
-                    );
-
-                    const previousDescriptionMatch = previousItem.description.match(
-                        /\((\w+)\) \((\w+)(\s+)(\d+)(\s*)-\s?(\D*)\s?(\d*)\)/
-                    );
-
-                    const currentDescriptionMatch = item.description.match(
-                        /\((\w+)(\s+)(\d+)(\s*)-\s?(\w*)\s?(\d*)\)/
-                    );
-
-                    if (previousDescriptionMatch && currentDescriptionMatch) {
-                        let [, addonName, startMonth, , startDate] = previousDescriptionMatch;
-                        let [, currentStartMonth, , currentStartDate, , currentEndMonth, currentEndDate] = currentDescriptionMatch;
-
-                        if (item.isBacktracked) {
-                            previousItem.description = `Biaya Layanan Tambahan (${addonName}) (${startMonth} ${startDate} - ${currentEndMonth} ${currentEndDate})`;
-                        } else {
-                            previousItem.description = `Biaya Layanan Tambahan (${addonName}) (${startMonth} ${startDate} - ${currentStartMonth} ${currentEndDate})`;
-                        }
-                    }
-                } else {
-                    if (item.effectiveEndDate) {
-                        item.effectiveEndDate = new Date(item.effectiveEndDate.getFullYear(), item.effectiveEndDate.getMonth() - 1, 1);
-                    }
-                    prevMonthItems.push(item);
-                }
-                monthItems.splice(i, 1); // Remove the adjusted item
-                i--;
+        // Logic to backtrack
+        // Find all bill items that have _shouldBacktrack=true and merge them into the last valid bill item for that bill_id
+        const backtrackItems = currentBillItems.filter(item => item._shouldBacktrack);
+        for (const backtrackItem of backtrackItems) {
+            // Find all items for this bill_id that are not backtrack
+            const sameBillItems = currentBillItems.filter(item => item.bill_id === backtrackItem.bill_id && !item._shouldBacktrack);
+            if (sameBillItems.length === 0) continue;
+            // Find the earliest start and latest end among the merged items
+            const lastItem = sameBillItems[sameBillItems.length - 1];
+            // Update the last valid bill item
+            lastItem.amount = new Prisma.Decimal(Number(lastItem.amount) + Number(backtrackItem.amount));
+            lastItem._endDate = backtrackItem._endDate;
             }
 
-            if (monthItems.length == 0) {
-                billItemsByMonth.delete(month);
+        // Remove all backtrack items from billItems
+        for (let i = currentBillItems.length - 1; i >= 0; i--) {
+            if (currentBillItems[i]._shouldBacktrack) {
+                currentBillItems.splice(i, 1);
             }
+        }
+
+        // Logic to create description, remove internal fields and concat
+        for (let i = currentBillItems.length - 1; i >= 0; i--) {
+            let curr: BillItemWithPartialDates = currentBillItems[i];
+            curr.description = generateDescription(addon, currentBillItems[i])
+            delete curr._endDate;
+            delete curr._startDate;
+            delete curr._shouldBacktrack;
+            allBillItems.push(curr);
         }
     }
 
-    return new Map(
-        Array.from(billItemsByMonth.entries()).map(([month, monthItems]) => [
-            month,
-            monthItems.map(({effectiveEndDate, addonID, isBacktracked, ...item}) => item) // Remove temporary field
-        ])
-    );
+    const groupedByBillId: typeof billItemsByBillId = allBillItems.reduce((acc: typeof billItemsByBillId, item) => {
+        const key = item.bill_id;
+        // if this bill_id hasn't been seen yet, initialize with an empty array
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        // push the current item onto its bill_id array
+        acc[key].push(item);
+        return acc;
+    }, {});
+
+    // return billItemsByBillId
+    return groupedByBillId;
 }
 
 /**
@@ -811,7 +1162,10 @@ export async function generateBookingBillandBillItems(
             billItems = billItems.concat(bi);
 
             bills.push({
-                description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', {
+                    month: 'long',
+                    year: 'numeric'
+                })}`,
                 due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours()),
                 bill_item: {
                     createMany: {
@@ -844,7 +1198,10 @@ export async function generateBookingBillandBillItems(
                 billItems = billItems.concat(bi);
 
                 bills.push({
-                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {
+                        month: 'long',
+                        year: 'numeric'
+                    })}`,
                     due_date: billEndDate,
                     bill_item: {
                         createMany: {
@@ -875,7 +1232,10 @@ export async function generateBookingBillandBillItems(
             billItems = billItems.concat(bi);
 
             bills.push({
-                description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', {
+                    month: 'long',
+                    year: 'numeric'
+                })}`,
                 due_date: lastMonthEndDate,
                 bill_item: {
                     createMany: {
@@ -908,7 +1268,10 @@ export async function generateBookingBillandBillItems(
                 billItems = billItems.concat(bi);
 
                 bills.push({
-                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {
+                        month: 'long',
+                        year: 'numeric'
+                    })}`,
                     due_date: billEndDate,
                     bill_item: {
                         createMany: {
