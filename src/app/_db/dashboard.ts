@@ -51,7 +51,7 @@ export async function getOverviewData(locationID?: number) {
     const availableCount = prisma.room.count({
         where: {
             roomstatuses: {
-                id: 1,
+                id: 2,
             },
             location_id: locationID,
         }
@@ -60,7 +60,7 @@ export async function getOverviewData(locationID?: number) {
     const occupiedCount = prisma.room.count({
         where: {
             roomstatuses: {
-                id: 2,
+                id: 1,
             },
             location_id: locationID,
         }
