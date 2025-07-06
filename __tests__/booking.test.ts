@@ -1,5 +1,16 @@
 import {prismaMock} from './singleton_prisma';
-import {AddOnPricing, Bill, BillItem, BillType, BookingAddOn, Duration, Payment, Prisma} from '@prisma/client';
+import {
+    AddOnPricing,
+    Bill,
+    BillItem,
+    BillType,
+    BookingAddOn,
+    Deposit,
+    DepositStatus,
+    Duration,
+    Payment,
+    Prisma
+} from '@prisma/client';
 import {
     BookingsIncludeAddons,
     createBooking,
@@ -9,6 +20,7 @@ import {
 } from "@/app/_db/bookings";
 import {describe, expect, it} from "@jest/globals";
 import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
+import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 
 describe('Booking Actions', () => {
     describe('createBooking', () => {
@@ -47,9 +59,13 @@ describe('Booking Actions', () => {
                 updatedAt: new Date()
             };
 
+            const mockDepositData: Partial<OmitIDTypeAndTimestamp<Deposit>> = {
+                amount: new Prisma.Decimal(500),
+                status: DepositStatus.UNPAID,
+            }
+
             const mockBookingData: Omit<BookingsIncludeAddons, "id" | "createdAt" | "updatedAt" | "end_date"> = {
                 fee: new Prisma.Decimal(1000),
-                deposit: new Prisma.Decimal(500),
                 addOns: [internetBookingAddon],
                 start_date: startDate,
                 tenant_id: 'tenant-1',
@@ -57,7 +73,9 @@ describe('Booking Actions', () => {
                 duration_id: 2,
                 status_id: 1,
                 custom_id: "#-1",
-                second_resident_fee: null
+                second_resident_fee: null,
+                // @ts-expect-error deposit not part of BookingsIncludeAddons
+                deposit: mockDepositData,
             };
             const mockDuration: Partial<Duration> = {id: 2, month_count: 3};
             const mockCreatedBooking = {id: 1, ...mockBookingData};
@@ -68,6 +86,19 @@ describe('Booking Actions', () => {
             prismaMock.booking.create.mockResolvedValue(mockCreatedBooking);
             // @ts-expect-error mockResolvedValue error
             prismaMock.addOn.findFirstOrThrow.mockResolvedValue(internetAddon);
+            // @ts-expect-error mockResolvedValue error
+            prismaMock.deposit.create.mockResolvedValue({
+                id: 1,
+                booking_id: 1,
+                amount: new Prisma.Decimal(500),
+                status: 'UNPAID',
+                received_at: new Date(),
+                refunded_at: null,
+                applied_at: null,
+                refunded_amount: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
             prismaMock.bill.create
                 // @ts-expect-error mockResolvedValue error
                 .mockResolvedValueOnce({
@@ -77,11 +108,6 @@ describe('Booking Actions', () => {
                             id: 5,
                             type: BillType.GENERATED,
                             amount: mockBookingData.fee
-                        },
-                        {
-                            id: 6,
-                            type: BillType.GENERATED,
-                            amount: mockBookingData.deposit
                         },
                     ]
                 })
@@ -181,9 +207,10 @@ describe('Booking Actions', () => {
                 data:
                     {
                         bill_id: 100,
-                        description: 'Deposit Kamar',
+                        description: 'Deposit',
                         amount: new Prisma.Decimal(500),
-                        type: BillType.GENERATED
+                        type: BillType.CREATED,
+                        related_id: expect.anything(),
                     },
             });
             expect(prismaMock.booking.findFirst).toHaveBeenCalledWith({
@@ -376,6 +403,19 @@ describe('Booking Actions', () => {
                     booking_id: mockBookingID
                 }
             ]);
+            // @ts-expect-error mockResolvedValue error
+            prismaMock.deposit.create.mockResolvedValue({
+                id: 1,
+                booking_id: mockBookingID,
+                amount: new Prisma.Decimal(1000),
+                status: 'UNPAID',
+                received_at: new Date(),
+                refunded_at: null,
+                applied_at: null,
+                refunded_amount: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
             // @ts-expect-error mockResolvedValue
             prismaMock.addOn.findFirstOrThrow.mockResolvedValue(internetAddon);
             const newBills: Partial<Bill & { bill_item: Partial<BillItem>[] }>[] = [
@@ -387,11 +427,6 @@ describe('Booking Actions', () => {
                             id: 5,
                             type: BillType.GENERATED,
                             amount: new Prisma.Decimal(mockBookingData.fee)
-                        },
-                        {
-                            id: 6,
-                            type: BillType.GENERATED,
-                            amount: new Prisma.Decimal(mockBookingData.deposit)
                         },
                         mockCreatedBillItem
                     ]
@@ -519,14 +554,15 @@ describe('Booking Actions', () => {
                 })
             }));
             expect(prismaMock.booking.update).toHaveBeenCalledTimes(1);
-            expect(prismaMock.billItem.create).toHaveBeenCalledWith({
+            expect(prismaMock.billItem.create).toHaveBeenCalledWith(expect.objectContaining({
                 data: expect.objectContaining({
                     bill_id: 100,
-                    description: "Deposit Kamar",
+                    description: 'Deposit Kamar',
                     amount: mockBookingData.deposit,
-                    type: BillType.GENERATED
+                    type: BillType.CREATED,
+                    related_id: expect.anything(),
                 })
-            });
+            }));
             expect(prismaMock.billItem.createMany).toHaveBeenNthCalledWith(1, {
                 data: expect.arrayContaining([
                     expect.objectContaining({
@@ -554,11 +590,11 @@ describe('Booking Actions', () => {
                         bill_id: 100,
                     }),
                     expect.objectContaining({
-                        amount: new Prisma.Decimal(1300),
+                        amount: new Prisma.Decimal(300),
                         bill_id: 100,
                     }),
                     expect.objectContaining({
-                        amount: new Prisma.Decimal(700),
+                        amount: new Prisma.Decimal(1700),
                         bill_id: 200,
                     })
                 ])

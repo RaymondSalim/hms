@@ -20,7 +20,6 @@ describe('Payment Actions', () => {
         start_date: new Date('2024-01-01'),
         end_date: new Date('2024-12-31'),
         fee: new Prisma.Decimal(1000000),
-        deposit: new Prisma.Decimal(500000),
         status_id: 1,
         duration_id: 1,
         createdAt: new Date(),
@@ -42,7 +41,6 @@ describe('Payment Actions', () => {
         payment_date: new Date('2024-01-15'),
         payment_proof: null,
         status_id: 1,
-        migrated_to_deferred_revenue: false,
         createdAt: new Date(),
         updatedAt: new Date(),
         bookings: {

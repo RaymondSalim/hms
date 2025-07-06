@@ -41,3 +41,27 @@ export async function deleteTransaction(id: number) {
     },
   });
 }
+
+export async function createDepositIncomeTransaction({
+  booking_id,
+  amount,
+  description,
+  date
+}: {
+  booking_id: number,
+  amount: Prisma.Decimal | number,
+  description?: string,
+  date?: Date
+}) {
+  return prisma.transaction.create({
+    data: {
+      amount: new Prisma.Decimal(amount),
+      description: description || 'Deposit recognized as income',
+      date: date || new Date(),
+      category: 'Deposit',
+      location_id: 1, // TODO: set correct location if available
+      type: 'INCOME',
+      related_id: { booking_id },
+    }
+  });
+}

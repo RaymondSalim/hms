@@ -2,9 +2,9 @@
 
 import prisma from "@/app/_lib/primsa";
 import {OmitIDTypeAndTimestamp, PartialBy} from "@/app/_db/db";
-import {BillItem, BillType, Duration, Prisma} from "@prisma/client";
+import {BillItem, BillType, DepositStatus, Duration, Prisma} from "@prisma/client";
 import {
-    generateBillItemsFromBookingAddons,
+    generateBookingAddonsBillItems,
     generateBookingBillandBillItems,
     generatePaymentBillMappingFromPaymentsAndBills
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
@@ -24,6 +24,7 @@ const includeAll: BookingInclude = {
     tenants: true,
     checkInOutLogs: true,
     addOns: true,
+    deposit: true,
 };
 
 export type BookingsIncludeAll = Prisma.BookingGetPayload<{
@@ -49,18 +50,12 @@ export async function getBookingStatuses() {
 }
 
 export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsIncludeAll>, duration: Duration) {
-    const {fee, addOns: bookingAddons, deposit} = data;
+    const {fee, addOns: bookingAddons, ...rest} = data;
 
     const {
         billsWithBillItems,
-        billItems,
         endDate
     } = await generateBookingBillandBillItems(data, duration);
-
-    let addonBillItems: Map<string, PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[]> | undefined;
-    if (bookingAddons) {
-        addonBillItems = await generateBillItemsFromBookingAddons(bookingAddons, data);
-    }
 
     return {
         success: await prisma.$transaction(async (prismaTrx) => {
@@ -70,7 +65,6 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                     start_date: data.start_date,
                     end_date: endDate,
                     second_resident_fee: data.second_resident_fee,
-                    deposit,
                     rooms: {
                         connect: {
                             id: data.room_id!
@@ -94,6 +88,20 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 },
             });
 
+            // Create Deposit record if deposit is provided
+            let depositRecord = null;
+            const depositValue = (data as any).deposit ?? (data as any).deposits;
+            if (depositValue) {
+                depositRecord = await prismaTrx.deposit.create({
+                    data: {
+                        booking_id: newBooking.id,
+                        amount: depositValue,
+                        status: DepositStatus.UNPAID
+                    }
+                });
+            }
+
+            // Create Bills and BillItems
             const newBills: BillIncludeBillItem[] = [];
             for (const bill of billsWithBillItems) {
                 newBills.push(
@@ -109,34 +117,17 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 );
             }
 
-            // Add Bill Item for deposit
-            if (deposit) {
+            // If deposit was created, attach a bill item to the first bill
+            if (depositRecord && newBills.length > 0) {
                 await prismaTrx.billItem.create({
                     data: {
                         bill_id: newBills[0].id,
-                        amount: deposit,
-                        description: "Deposit Kamar",
-                        type: BillType.GENERATED
+                        amount: depositRecord.amount,
+                        description: 'Deposit',
+                        related_id: { deposit_id: depositRecord.id },
+                        type: 'CREATED',
                     }
                 });
-            }
-
-            for (const bill of newBills) {
-                const addonKey = `${bill.due_date.getFullYear()}-${bill.due_date.getMonth()}`;
-
-                if (addonBillItems?.has(addonKey)) {
-                    const addonBills = addonBillItems.get(addonKey);
-
-                    if (addonBills) {
-                        await prismaTrx.billItem.createMany({
-                            data: addonBills.map(ab => ({
-                                ...ab,
-                                bill_id: bill.id,
-                                type: BillType.GENERATED
-                            }))
-                        });
-                    }
-                }
             }
 
             // Create associated BookingAddOns
@@ -144,6 +135,30 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 await prismaTrx.bookingAddOn.createMany({
                     data: bookingAddons.map(na => ({...na, booking_id: newBooking.id}))
                 });
+            }
+
+            // Now that we have real bill IDs, generate add-on bill items
+            let addonBillItems: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } | undefined;
+            if (bookingAddons) {
+                addonBillItems = await generateBookingAddonsBillItems(
+                    bookingAddons,
+                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date }))
+                );
+            }
+
+            // Create add-on bill items
+            if (addonBillItems) {
+                for (const bill of newBills) {
+                    if (addonBillItems[bill.id]) {
+                        await prismaTrx.billItem.createMany({
+                            data: addonBillItems[bill.id].map(ab => ({
+                                ...ab,
+                                bill_id: bill.id,
+                                type: BillType.GENERATED
+                            }))
+                        });
+                    }
+                }
             }
 
             return prismaTrx.booking.findFirst({
@@ -171,8 +186,6 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
         billItems,
         endDate
     } = await generateBookingBillandBillItems(data, duration);
-
-    const addonBillItems = await generateBillItemsFromBookingAddons(bookingAddons, data);
 
     const existingBills = await prisma.bill.findMany({
         where: {booking_id: id},
@@ -213,7 +226,6 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
             );
         }
     });
-
 
     return {
         success: await prisma.$transaction(async (prismaTrx) => {
@@ -273,27 +285,55 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                 );
             }
 
-            // Add Bill Item for deposit
-            if (otherData.deposit) {
+            // (Re-)create Deposit record if deposit is provided
+            let depositRecord = null;
+            if (data.deposit) {
+                const existingDeposit = await prisma.deposit.findFirst({ where: { booking_id: id } });
+                if (existingDeposit) {
+                    depositRecord = await prismaTrx.deposit.update({
+                        where: { id: existingDeposit.id },
+                        data: { amount: data.deposit.amount, status: data.deposit.status ?? DepositStatus.UNPAID },
+                    });
+                } else {
+                    depositRecord = await prismaTrx.deposit.create({
+                        data: { booking_id: id, amount: data.deposit.amount, status: DepositStatus.UNPAID }
+                    });
+                }
+            } else {
+                // If deposit is not provided, delete the deposit record
+                await prismaTrx.deposit.deleteMany({
+                    where: { booking_id: id }
+                });
+            }
+
+            // If deposit was created or updated, attach a bill item to the first bill
+            if (depositRecord && newBills.length > 0) {
                 await prismaTrx.billItem.create({
                     data: {
                         bill_id: newBills[0].id,
-                        amount: otherData.deposit,
-                        description: "Deposit Kamar",
-                        type: BillType.GENERATED
+                        amount: depositRecord.amount,
+                        description: 'Deposit Kamar',
+                        related_id: { deposit_id: depositRecord.id },
+                        type: 'CREATED',
                     }
                 });
             }
 
-            for (const bill of newBills) {
-                const addonKey = `${bill.due_date.getFullYear()}-${bill.due_date.getMonth()}`;
+            // Now that we have real bill IDs, generate add-on bill items
+            let addonBillItems: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } | undefined;
+            if (bookingAddons) {
+                addonBillItems = await generateBookingAddonsBillItems(
+                    bookingAddons,
+                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date }))
+                );
+            }
 
-                if (addonBillItems.has(addonKey)) {
-                    const addonBills = addonBillItems.get(addonKey);
-
-                    if (addonBills) {
+            // Create add-on bill items
+            if (addonBillItems) {
+                for (const bill of newBills) {
+                    if (addonBillItems[bill.id]) {
                         await prismaTrx.billItem.createMany({
-                            data: addonBills.map(ab => ({
+                            data: addonBillItems[bill.id].map(ab => ({
                                 ...ab,
                                 bill_id: bill.id,
                                 type: BillType.GENERATED
@@ -348,7 +388,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                     fee,
                     start_date: data.start_date,
                     end_date: endDate,
-                    deposit: data.deposit,
+                    // deposits: deposits,
                     second_resident_fee: data.second_resident_fee,
                     rooms: {
                         connect: {

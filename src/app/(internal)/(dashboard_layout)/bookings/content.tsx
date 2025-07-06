@@ -13,7 +13,7 @@ import {
     UpsertBookingPayload
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/(dashboard_layout)/bookings/form";
-import {Button} from "@material-tailwind/react";
+import {Button, Dialog, DialogBody, DialogFooter, DialogHeader, Typography} from "@material-tailwind/react";
 import {TbDoorEnter, TbDoorExit} from "react-icons/tb";
 import {useMutation} from "@tanstack/react-query";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
@@ -23,6 +23,7 @@ import {BookingPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bookin
 import {Prisma} from "@prisma/client";
 import {SelectOption} from "@/app/_components/input/select";
 import {MdContentCopy} from "react-icons/md";
+import {toast} from "react-toastify";
 
 
 export interface BookingsContentProps {
@@ -39,6 +40,69 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
 
     const [newQueryParams, setNewQueryParams] = useState<typeof queryParams>(queryParams);
     const [bookingsState, setBookingsState] = useState<BookingsIncludeAll[]>(bookings);
+    let [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+    let [confirmationDialogContent, setConfirmationDialogContent] = useState({title: "", body: ""});
+    let [onConfirm, setOnConfirm] = useState(() => () => {
+    });
+    let [onCancel, setOnCancel] = useState(() => () => {
+    });
+
+    const checkIncCheckOutMutation = useMutation({
+        mutationFn: checkInOutAction,
+        onSuccess: (data) => {
+            if (data.success) { // TODO! Alert
+                setBookingsState(prev => {
+                    let bookingIndex = prev.findIndex(b => b.id == data.success!.booking_id);
+                    if (bookingIndex >= 0) {
+                        prev[bookingIndex].checkInOutLogs.push(data.success!);
+                    }
+                    return [...prev];
+                });
+            }
+        }
+    });
+
+    const router = useRouter();
+    const pathname = usePathname();
+    const removeQueryParams = () => {
+        router.replace(`${pathname}`);
+        setNewQueryParams(undefined);
+    };
+
+    const handleUpsert = async (data: any) => {
+        try {
+            const result = await upsertBookingAction(data);
+            return result;
+        } catch (e: any) {
+            toast.error(e.message || "Gagal menyimpan perubahan.");
+            throw e;
+        }
+    };
+
+    const handleDelete = (data: any) => {
+        return new Promise((resolve, reject) => {
+            setConfirmationDialogContent({
+                title: "Konfirmasi Hapus",
+                body: "Menghapus pemesanan ini akan menyebabkan alokasi pembayaran yang ada dihitung ulang secara otomatis. Harap tinjau kembali alokasi pembayaran setelah menghapus."
+            });
+            setOnConfirm(() => async () => {
+                try {
+                    const result = await deleteBookingAction(data.id);
+                    resolve(result);
+                } catch (e: any) {
+                    toast.error(e.message || "Gagal menghapus pemesanan.");
+                    reject(e);
+                } finally {
+                    setShowConfirmationDialog(false);
+                }
+            });
+            setOnCancel(() => () => {
+                setShowConfirmationDialog(false);
+                reject("Cancelled");
+            });
+            setShowConfirmationDialog(true);
+        });
+    };
 
     const columnHelper = createColumnHelper<BookingsIncludeAll>();
     const columns = [
@@ -98,6 +162,15 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         }),
     ];
 
+    const filterKeys: SelectOption<string>[] = columns
+        .filter(c => (
+            c.enableColumnFilter && c.header && c.id
+        ))
+        .map(c => ({
+            label: c.header!.toString(),
+            value: c.id!,
+        }));
+
     if (!headerContext.locationID) {
         // @ts-ignore
         columns.splice(1, 0, columnHelper.accessor(row => row.rooms?.locations?.name, {
@@ -107,36 +180,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             })
         );
     }
-
-    const checkIncCheckOutMutation = useMutation({
-        mutationFn: checkInOutAction,
-        onSuccess: (data) => {
-            if (data.success) { // TODO! Alert
-                setBookingsState(prev => {
-                    let bookingIndex = prev.findIndex(b => b.id == data.success!.booking_id);
-                    if (bookingIndex >= 0) {
-                        prev[bookingIndex].checkInOutLogs.push(data.success!);
-                    }
-                    return [...prev];
-                });
-            }
-        }
-    });
-
-    const router = useRouter();
-    const pathname = usePathname();
-    const removeQueryParams = () => {
-        router.replace(`${pathname}`);
-        setNewQueryParams(undefined);
-    };
-    const filterKeys: SelectOption<string>[] = columns
-        .filter(c => (
-            c.enableColumnFilter && c.header && c.id
-        ))
-        .map(c => ({
-            label: c.header!.toString(),
-            value: c.id!,
-        }));
 
     return (
         <TableContent<BookingsIncludeAll>
@@ -159,11 +202,11 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             searchType="smart"
             upsert={{
                 // @ts-ignore
-                mutationFn: upsertBookingAction,
+                mutationFn: handleUpsert,
             }}
             delete={{
                 // @ts-ignore
-                mutationFn: deleteBookingAction,
+                mutationFn: handleDelete,
             }}
             additionalActions={{
                 position: "before",
@@ -247,9 +290,8 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                             updatedAt: undefined
                                         })) ?? [],
                                     };
-                                    setActiveContent({
-                                        ...duplicatedBooking,
-                                    } as BookingsIncludeAll);
+                                    // @ts-expect-error type
+                                    setActiveContent(duplicatedBooking);
                                     setDialogOpen(true);
                                 }}
                             />
@@ -257,6 +299,32 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                     },
                 ]
             }}
+            customDialog={
+                <Dialog
+                    key={"confirmation-dialog"}
+                    open={showConfirmationDialog}
+                    handler={() => setShowConfirmationDialog(prev => !prev)}
+                    className={"p-4"}
+                >
+                    <DialogHeader>{confirmationDialogContent.title}</DialogHeader>
+                    <DialogBody>
+                        <Typography>{confirmationDialogContent.body}</Typography>
+                    </DialogBody>
+                    <DialogFooter>
+                        <Button
+                            variant="text"
+                            color="red"
+                            onClick={onCancel}
+                            className="mr-1"
+                        >
+                            <span>Batal</span>
+                        </Button>
+                        <Button variant="gradient" color="green" onClick={onConfirm}>
+                            <span>Konfirmasi</span>
+                        </Button>
+                    </DialogFooter>
+                </Dialog>
+            }
         />
     );
 }

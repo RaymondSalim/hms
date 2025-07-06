@@ -2,7 +2,7 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
+import {Button, Checkbox, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
@@ -27,17 +27,18 @@ type DataType = Partial<NonUndefined<BillForm['contentData']>> & {
 };
 
 export function BillForm(props: BillForm) {
-    let parsedData: typeof props.contentData;
-    if (props.contentData) {
-        parsedData = {
-            ...props.contentData,
-        };
-    }
+    const parsedData = useMemo(() => {
+        if (!props.contentData) return undefined;
+        return {
+            ...props.contentData
+        }
+    }, [props.contentData])
 
     const [data, setData] = useState<DataType>(parsedData ?? {});
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
     const [locationID, setLocationID] = useState<number | undefined>(parsedData?.bookings?.rooms?.location_id ?? undefined);
     const [popoverOpen, setIsPopoverOpen] = useState(false);
+    const [understoodWarning, setUnderstoodWarning] = useState(false);
 
     const today = new Date();
 
@@ -82,7 +83,10 @@ export function BillForm(props: BillForm) {
 
     // Use effect to set initialBookingData when the component mounts
     useEffect(() => {
-        setInitialData(parsedData ?? {});
+        const newData = parsedData ?? {};
+        setInitialData(newData);
+        setData(newData);
+        setLocationID(parsedData?.bookings?.rooms?.location_id ?? undefined);
     }, [parsedData]);
 
     useEffect(() => {
@@ -93,6 +97,11 @@ export function BillForm(props: BillForm) {
         return !!data?.booking_id;
     }, [data]);
 
+    const isButtonDisabled = useMemo(() => {
+        const basicValidation = !isFormComplete || !hasChanges(initialData, data);
+        const warningValidation = parsedData?.id ? !understoodWarning : false; // Only require checkbox when editing
+        return basicValidation || warningValidation;
+    }, [isFormComplete, initialData, data, understoodWarning, parsedData?.id]);
 
     return (
         <div className={"w-full px-8 py-4"}>
@@ -206,6 +215,54 @@ export function BillForm(props: BillForm) {
                                     }
                                 </motion.div>
                             }
+                            {parsedData?.id && (
+                                <>
+                                    <motion.div
+                                        key={"warning_message"}
+                                        initial={{opacity: 0, height: 0}}
+                                        animate={{opacity: 1, height: "auto"}}
+                                        exit={{opacity: 0, height: 0}}
+                                        className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg"
+                                    >
+                                        <div className="flex items-start">
+                                            <div className="flex-shrink-0">
+                                                <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <div className="ml-3">
+                                                <Typography variant="h6" color="amber" className="font-medium text-amber-800">
+                                                    Peringatan Alokasi Pembayaran
+                                                </Typography>
+                                                <Typography variant="small" color="amber" className="mt-1 text-amber-700">
+                                                    Mengubah rincian tagihan dapat mempengaruhi alokasi pembayaran yang sudah ada.
+                                                    Harap periksa kembali alokasi pembayaran setelah menyimpan perubahan ini.
+                                                </Typography>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                    <motion.div
+                                        key={"warning_checkbox"}
+                                        initial={{opacity: 0, height: 0}}
+                                        animate={{opacity: 1, height: "auto"}}
+                                        exit={{opacity: 0, height: 0}}
+                                        className="mt-1"
+                                    >
+                                        <Checkbox
+                                            label={
+                                                <Typography color="amber" className="font-medium text-amber-800">
+                                                    Saya memahami bahwa perubahan ini dapat mempengaruhi alokasi pembayaran yang sudah ada
+                                                </Typography>
+                                            }
+                                            checked={understoodWarning}
+                                            onChange={(e) => setUnderstoodWarning(e.target.checked)}
+                                            containerProps={{
+                                                className: "-ml-3",
+                                            }}
+                                        />
+                                    </motion.div>
+                                </>
+                            )}
                             {
                                 props.mutationResponse?.failure &&
                                 <Typography variant="h6" color="red" className="-mb-4">
@@ -220,7 +277,7 @@ export function BillForm(props: BillForm) {
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
-                    <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
+                    <Button disabled={isButtonDisabled}
                             onClick={() => props.mutation.mutate(data)}
                             color={"blue"} className="mt-6"
                             loading={props.mutation.isPending}>

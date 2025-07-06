@@ -17,7 +17,6 @@ model Booking {
   fee                 Decimal  @db.Decimal(10, 2)
   tenant_id           String?
   end_date            DateTime @db.Date
-  deposit             Decimal? @db.Decimal(10, 2)
   second_resident_fee Decimal? @db.Decimal(10, 2)
 
   createdAt DateTime @default(now())
@@ -25,6 +24,7 @@ model Booking {
 
   addOns          BookingAddOn[]
   bills           Bill[]
+  deposit         Deposit?
   durations       Duration?       @relation(fields: [duration_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   rooms           Room?           @relation(fields: [room_id], references: [id], onUpdate: NoAction)
   bookingstatuses BookingStatus?  @relation(fields: [status_id], references: [id], onUpdate: NoAction)
@@ -534,6 +534,25 @@ model BookingAddOn {
   booking   Booking  @relation(fields: [booking_id], references: [id], onDelete: Cascade)
 }
 
+model Deposit {
+  id              Int           @id @default(autoincrement())
+  booking_id      Int
+  amount          Decimal       @db.Decimal(10, 2)
+  status          DepositStatus
+  received_at     DateTime      @default(now())
+  refunded_at     DateTime?
+  applied_at      DateTime?
+  refunded_amount Decimal?      @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  booking Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+
+  @@unique([booking_id])
+  @@map("deposits")
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
@@ -542,4 +561,12 @@ enum TransactionType {
 enum BillType {
   GENERATED
   CREATED
+}
+
+enum DepositStatus {
+  UNPAID
+  HELD
+  APPLIED
+  REFUNDED
+  PARTIALLY_REFUNDED
 }

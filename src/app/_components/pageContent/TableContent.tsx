@@ -460,6 +460,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 </div>
             </div>
             <Dialog
+                key={"tbc-form"}
                 open={dialogOpen}
                 size={"md"}
                 handler={() => setDialogOpen(prev => {
