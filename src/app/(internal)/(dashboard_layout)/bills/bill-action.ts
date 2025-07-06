@@ -437,14 +437,14 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
 
     let generatedPaymentBills = await generatePaymentBillMappingFromPaymentsAndBills(allPayments, bills);
 
-    let deleteRes = await trx.paymentBill.deleteMany({
+    await trx.paymentBill.deleteMany({
         where: {
             id: {
                 in: paymentBillsID,
             }
         }
     });
-    let createRes = await trx.paymentBill.createManyAndReturn({
+    await trx.paymentBill.createManyAndReturn({
         data: [
             ...generatedPaymentBills
         ]
@@ -588,7 +588,7 @@ export async function generateBookingAddonsBillItems(
     type BillItemWithPartialDates = PartialBy<BillItemWithDates, "_endDate" | "_startDate" | "_shouldBacktrack">
 
     function generateDescription(addon: AddOn, billItem: BillItemWithDates) {
-        return `Biaya Layanan Tambahan (${addon.name}) (${billItem._startDate.toLocaleString('default', {month: 'long', day: 'numeric'})} - ${billItem._endDate.toLocaleString('default', {month: 'long', day: 'numeric'})})`
+        return `Biaya Layanan Tambahan (${addon.name}) (${billItem._startDate.toLocaleString('default', {month: 'long', day: 'numeric'})} - ${billItem._endDate.toLocaleString('default', {month: 'long', day: 'numeric'})})`;
     }
 
     let allBillItems: BillItemWithPartialDates[] = [];
@@ -626,7 +626,7 @@ export async function generateBookingAddonsBillItems(
                 shouldBacktrack = currentBillItems.map(bi => bi.bill_id).includes(billId ?? -1);
             }
             if (billId == undefined) {
-                throw new Error("No matching bill found")
+                throw new Error("No matching bill found");
             }
 
             const pricing = sortedPricing
@@ -657,12 +657,12 @@ export async function generateBookingAddonsBillItems(
                     _startDate: currentStartDate,
                     _endDate: currentEndDate,
                     _shouldBacktrack: shouldBacktrack
-                }
+                };
                 currentBillItems.push(billItem);
 
                 currentStartDate = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth(), currentEndDate.getDate() + 1);
                 if (currentStartDate.getDate() != 1) shouldProrate = true;
-                monthCount += currentDuration
+                monthCount += currentDuration;
             } else {
                 if (currentStartDate.getDate() != 1) shouldProrate = true;
                 if (shouldProrate) {
@@ -681,7 +681,7 @@ export async function generateBookingAddonsBillItems(
                 const daysInMonth = currentMonthEnd.getDate() - currentMonthStart.getDate() + 1;
                 const daysActive = currentEndDate.getDate() - currentStartDate.getDate() + 1;
                 const currentPrice = (pricing.price / daysInMonth * daysActive);
-                const roundedPrice = Math.ceil((currentPrice / 100)) * 100
+                const roundedPrice = Math.ceil((currentPrice / 100)) * 100;
 
                 const billItem: BillItemWithDates = {
                     bill_id: billId,
@@ -690,12 +690,12 @@ export async function generateBookingAddonsBillItems(
                     _startDate: currentStartDate,
                     _endDate: currentEndDate,
                     _shouldBacktrack: shouldBacktrack,
-                }
+                };
                 currentBillItems.push(billItem);
 
                 currentStartDate = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth(), currentEndDate.getDate() + 1);
                 if (currentStartDate.getDate() != 1) shouldProrate = true;
-                monthCount += 1
+                monthCount += 1;
             }
         }
 
@@ -709,9 +709,9 @@ export async function generateBookingAddonsBillItems(
             // Find the earliest start and latest end among the merged items
             const lastItem = sameBillItems[sameBillItems.length - 1];
             // Update the last valid bill item
-            lastItem.amount = new Prisma.Decimal(Number(lastItem.amount) + Number(backtrackItem.amount));
+                        lastItem.amount = new Prisma.Decimal(Number(lastItem.amount) + Number(backtrackItem.amount));
             lastItem._endDate = backtrackItem._endDate;
-            }
+        }
 
         // Remove all backtrack items from billItems
         for (let i = currentBillItems.length - 1; i >= 0; i--) {
@@ -731,7 +731,8 @@ export async function generateBookingAddonsBillItems(
         }
     }
 
-    const groupedByBillId: typeof billItemsByBillId = allBillItems.reduce((acc: typeof billItemsByBillId, item) => {
+    // return billItemsByBillId
+    return allBillItems.reduce((acc: typeof billItemsByBillId, item) => {
         const key = item.bill_id;
         // if this bill_id hasn't been seen yet, initialize with an empty array
         if (!acc[key]) {
@@ -741,9 +742,6 @@ export async function generateBookingAddonsBillItems(
         acc[key].push(item);
         return acc;
     }, {});
-
-    // return billItemsByBillId
-    return groupedByBillId;
 }
 
 /**

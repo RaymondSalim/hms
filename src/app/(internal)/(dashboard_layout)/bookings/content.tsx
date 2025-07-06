@@ -13,17 +13,28 @@ import {
     UpsertBookingPayload
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/(dashboard_layout)/bookings/form";
-import {Button, Dialog, DialogBody, DialogFooter, DialogHeader, Typography} from "@material-tailwind/react";
+import {
+    Button,
+    Dialog,
+    DialogBody,
+    DialogFooter,
+    DialogHeader,
+    Input,
+    Option,
+    Select,
+    Typography
+} from "@material-tailwind/react";
 import {TbDoorEnter, TbDoorExit} from "react-icons/tb";
 import {useMutation} from "@tanstack/react-query";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {usePathname, useRouter} from "next/navigation";
 import {BookingPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bookings/page";
-import {Prisma} from "@prisma/client";
+import {DepositStatus, Prisma} from "@prisma/client";
 import {SelectOption} from "@/app/_components/input/select";
 import {MdContentCopy} from "react-icons/md";
 import {toast} from "react-toastify";
+import CurrencyInput from "@/app/_components/input/currencyInput";
 
 
 export interface BookingsContentProps {
@@ -47,10 +58,22 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     let [onCancel, setOnCancel] = useState(() => () => {
     });
 
+    // Check in/out confirmation dialog states
+    const [showCheckInOutDialog, setShowCheckInOutDialog] = useState(false);
+    const [checkInOutData, setCheckInOutData] = useState<{
+        booking_id: number;
+        action: CheckInOutType;
+        depositStatus?: DepositStatus;
+        refundedAmount?: number;
+    } | null>(null);
+    const [selectedDepositStatus, setSelectedDepositStatus] = useState<DepositStatus | undefined>();
+    const [refundedAmount, setRefundedAmount] = useState<number | undefined>(undefined);
+    const [eventDate, setEventDate] = useState<string>('');
+
     const checkIncCheckOutMutation = useMutation({
         mutationFn: checkInOutAction,
         onSuccess: (data) => {
-            if (data.success) { // TODO! Alert
+            if (data.success) {
                 setBookingsState(prev => {
                     let bookingIndex = prev.findIndex(b => b.id == data.success!.booking_id);
                     if (bookingIndex >= 0) {
@@ -58,7 +81,15 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                     }
                     return [...prev];
                 });
+                toast.success("Aksi berhasil dilakukan");
+                setShowCheckInOutDialog(false);
+                setCheckInOutData(null);
+                setSelectedDepositStatus(undefined);
+                setRefundedAmount(undefined);
             }
+        },
+        onError: (error: any) => {
+            toast.error(error.message || "Gagal melakukan aksi");
         }
     });
 
@@ -71,8 +102,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
 
     const handleUpsert = async (data: any) => {
         try {
-            const result = await upsertBookingAction(data);
-            return result;
+            return await upsertBookingAction(data);
         } catch (e: any) {
             toast.error(e.message || "Gagal menyimpan perubahan.");
             throw e;
@@ -102,6 +132,66 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             });
             setShowConfirmationDialog(true);
         });
+    };
+
+    const handleCheckInOut = (booking: BookingsIncludeAll, action: CheckInOutType) => {
+        setCheckInOutData({
+            booking_id: booking.id,
+            action: action
+        });
+
+        // Check if current date is within booking range
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const startDate = booking.start_date.toISOString().split('T')[0];
+        const endDate = booking.end_date.toISOString().split('T')[0];
+
+        // Set default date to today if within range, otherwise undefined
+        if (today >= startDate && today <= endDate) {
+            setEventDate(today);
+        } else {
+            setEventDate('');
+        }
+
+        setShowCheckInOutDialog(true);
+    };
+
+    const confirmCheckInOut = () => {
+        if (!checkInOutData) return;
+
+        // Validate that a date is selected
+        if (!eventDate) {
+            toast.error("Harap pilih tanggal untuk tindakan ini.");
+            return;
+        }
+
+        // Convert local date to UTC date
+        const localDate = new Date(eventDate);
+        const utcDate = new Date(localDate.getTime() - (localDate.getTimezoneOffset() * 60000));
+
+        const mutationData: any = {
+            booking_id: checkInOutData.booking_id,
+            action: checkInOutData.action,
+            eventDate: utcDate,
+        };
+
+        // Add deposit handling for checkout
+        if (checkInOutData.action === CheckInOutType.CHECK_OUT && selectedDepositStatus) {
+            mutationData.depositStatus = selectedDepositStatus;
+            if (refundedAmount && refundedAmount > 0) {
+                mutationData.refundedAmount = refundedAmount;
+            }
+        }
+
+        checkIncCheckOutMutation.mutate(mutationData);
+    };
+
+    const cancelCheckInOut = () => {
+        setShowCheckInOutDialog(false);
+        setCheckInOutData(null);
+        setSelectedDepositStatus(undefined);
+        setRefundedAmount(undefined);
+        setEventDate('');
     };
 
     const columnHelper = createColumnHelper<BookingsIncludeAll>();
@@ -221,10 +311,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                     size={"sm"}
                                     color="blue"
                                     className="flex items-center gap-2 w-fit"
-                                    onClick={() => checkIncCheckOutMutation.mutate({
-                                        booking_id: rowData.id,
-                                        action: CheckInOutType.CHECK_IN
-                                    })}
+                                    onClick={() => handleCheckInOut(rowData, CheckInOutType.CHECK_IN)}
                                     disabled={!!checkInExists}
                                 >
                                     <TbDoorEnter className={"text-white h-5 w-5"}/>
@@ -246,10 +333,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                     size={"sm"}
                                     color="red"
                                     className="flex items-center gap-2 w-fit"
-                                    onClick={() => checkIncCheckOutMutation.mutate({
-                                        booking_id: rowData.id,
-                                        action: CheckInOutType.CHECK_OUT
-                                    })}
+                                    onClick={() => handleCheckInOut(rowData, CheckInOutType.CHECK_OUT)}
                                     disabled={disabled}
                                 >
                                     <TbDoorExit className={"text-white h-5 w-5"}/>
@@ -300,30 +384,155 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                 ]
             }}
             customDialog={
-                <Dialog
-                    key={"confirmation-dialog"}
-                    open={showConfirmationDialog}
-                    handler={() => setShowConfirmationDialog(prev => !prev)}
-                    className={"p-4"}
-                >
-                    <DialogHeader>{confirmationDialogContent.title}</DialogHeader>
-                    <DialogBody>
-                        <Typography>{confirmationDialogContent.body}</Typography>
-                    </DialogBody>
-                    <DialogFooter>
-                        <Button
-                            variant="text"
-                            color="red"
-                            onClick={onCancel}
-                            className="mr-1"
-                        >
-                            <span>Batal</span>
-                        </Button>
-                        <Button variant="gradient" color="green" onClick={onConfirm}>
-                            <span>Konfirmasi</span>
-                        </Button>
-                    </DialogFooter>
-                </Dialog>
+                <>
+                    <Dialog
+                        key={"confirmation-dialog"}
+                        open={showConfirmationDialog}
+                        handler={() => setShowConfirmationDialog(prev => !prev)}
+                        className={"p-4"}
+                    >
+                        <DialogHeader>{confirmationDialogContent.title}</DialogHeader>
+                        <DialogBody>
+                            <Typography>{confirmationDialogContent.body}</Typography>
+                        </DialogBody>
+                        <DialogFooter>
+                            <Button
+                                variant="text"
+                                color="red"
+                                onClick={onCancel}
+                                className="mr-1"
+                            >
+                                <span>Batal</span>
+                            </Button>
+                            <Button variant="gradient" color="green" onClick={onConfirm}>
+                                <span>Konfirmasi</span>
+                            </Button>
+                        </DialogFooter>
+                    </Dialog>
+
+                    <Dialog
+                        key={"check-in-out-dialog"}
+                        open={showCheckInOutDialog}
+                        handler={() => setShowCheckInOutDialog(prev => !prev)}
+                        className={"p-4"}
+                        size="md"
+                    >
+                        <DialogHeader>
+                            {checkInOutData?.action === CheckInOutType.CHECK_IN ? "Konfirmasi Check In" : "Konfirmasi Check Out"}
+                        </DialogHeader>
+                        <DialogBody>
+                            <div className="space-y-4">
+                                <Typography>
+                                    {checkInOutData?.action === CheckInOutType.CHECK_IN
+                                        ? "Apakah Anda yakin ingin melakukan check in untuk pemesanan ini?"
+                                        : "Apakah Anda yakin ingin melakukan check out untuk pemesanan ini?"}
+                                </Typography>
+
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    <Typography variant="small" className="text-yellow-800 font-medium">
+                                        ⚠️ Peringatan: Tindakan ini tidak dapat dibatalkan setelah dikonfirmasi.
+                                    </Typography>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Typography variant="small" className="font-medium">
+                                        Tanggal:
+                                    </Typography>
+                                    <Input
+                                        type="date"
+                                        value={eventDate}
+                                        onChange={e => setEventDate(e.target.value)}
+                                        label="Tanggal"
+                                        min={bookingsState.find(b => b.id === checkInOutData?.booking_id)?.start_date?.toISOString().split('T')[0]}
+                                        max={bookingsState.find(b => b.id === checkInOutData?.booking_id)?.end_date?.toISOString().split('T')[0]}
+                                    />
+                                </div>
+
+                                {checkInOutData?.action === CheckInOutType.CHECK_OUT && (
+                                    <div className="space-y-4">
+                                        <div className="border-t pt-4">
+                                            <Typography variant="h6" className="mb-2">
+                                                Informasi Deposit
+                                            </Typography>
+                                            {bookingsState.find(b => b.id === checkInOutData.booking_id)?.deposit ? (
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between">
+                                                        <span>Jumlah Deposit:</span>
+                                                        <span className="font-semibold">
+                                                            {formatToIDR(new Prisma.Decimal(bookingsState.find(b => b.id === checkInOutData.booking_id)?.deposit?.amount || 0).toNumber())}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Status Saat Ini:</span>
+                                                        <span className="font-semibold">
+                                                            {bookingsState.find(b => b.id === checkInOutData.booking_id)?.deposit?.status}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <Typography variant="small" className="font-medium">
+                                                            Update Status Deposit:
+                                                        </Typography>
+                                                        <Select
+                                                            value={selectedDepositStatus || ""}
+                                                            onChange={(val) => setSelectedDepositStatus(val as DepositStatus)}
+                                                            label="Pilih Status Deposit"
+                                                        >
+                                                            <Option value="HELD">HELD</Option>
+                                                            <Option value="APPLIED">APPLIED</Option>
+                                                            <Option value="REFUNDED">REFUNDED</Option>
+                                                            <Option value="PARTIALLY_REFUNDED">PARTIALLY_REFUNDED</Option>
+                                                        </Select>
+                                                    </div>
+
+                                                    {(selectedDepositStatus === 'REFUNDED' || selectedDepositStatus === 'PARTIALLY_REFUNDED') && (
+                                                        <div className="space-y-2">
+                                                            <Typography variant="small" className="font-medium">
+                                                                Jumlah Pengembalian:
+                                                            </Typography>
+                                                            <CurrencyInput
+                                                                value={refundedAmount}
+                                                                setValue={setRefundedAmount}
+                                                                placeholder="Masukkan jumlah pengembalian"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <Typography variant="small" className="text-gray-600">
+                                                    Tidak ada deposit untuk pemesanan ini.
+                                                </Typography>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </DialogBody>
+                        <DialogFooter>
+                            <Button
+                                variant="text"
+                                color="red"
+                                onClick={cancelCheckInOut}
+                                className="mr-1"
+                                disabled={checkIncCheckOutMutation.isPending}
+                            >
+                                <span>Batal</span>
+                            </Button>
+                            <Button
+                                variant="gradient"
+                                color={checkInOutData?.action === CheckInOutType.CHECK_IN ? "blue" : "red"}
+                                onClick={confirmCheckInOut}
+                                disabled={checkIncCheckOutMutation.isPending}
+                            >
+                                <span>
+                                    {checkIncCheckOutMutation.isPending ? "Memproses..." :
+                                     checkInOutData?.action === CheckInOutType.CHECK_IN ? "Check In" : "Check Out"
+                                    }
+                                </span>
+                            </Button>
+                        </DialogFooter>
+                    </Dialog>
+                </>
             }
         />
     );

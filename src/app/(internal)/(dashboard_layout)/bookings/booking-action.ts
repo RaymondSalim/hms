@@ -152,11 +152,18 @@ export async function deleteBookingAction(id: number) {
 
 export async function checkInOutAction(data: {
     booking_id: number,
-    action: CheckInOutType
+    action: CheckInOutType,
+    depositStatus?: string,
+    refundedAmount?: number,
+    eventDate?: Date
 }): Promise<GenericActionsType<CheckInOutLog>> {
     const booking = await prisma.booking.findFirst({
         where: {
             id: data.booking_id
+        },
+        include: {
+            deposit: true,
+            rooms: true
         }
     });
 
@@ -166,16 +173,41 @@ export async function checkInOutAction(data: {
         };
     }
 
-    return {
-        success: await prisma.checkInOutLog.create({
+    return await prisma.$transaction(async (tx) => {
+        // Create the check in/out log
+        const checkInOutLog = await tx.checkInOutLog.create({
             data: {
                 tenant_id: booking.tenant_id!,
                 booking_id: data.booking_id,
-                event_date: new Date(),
+                event_date: data.eventDate ? new Date(data.eventDate) : new Date(),
                 event_type: data.action
             },
-        })
-    };
+        });
+
+        // Handle checkout-specific logic
+        if (data.action === CheckInOutType.CHECK_OUT) {
+            // Update deposit status if provided
+            if (data.depositStatus && booking.deposit) {
+                await tx.deposit.update({
+                    where: { id: booking.deposit.id },
+                    data: {
+                        status: data.depositStatus as any,
+                        refunded_amount: data.refundedAmount ? new Prisma.Decimal(data.refundedAmount) : null,
+                        refunded_at: data.refundedAmount ? new Date() : null,
+                        applied_at: data.depositStatus === 'APPLIED' ? new Date() : null
+                    }
+                });
+            }
+
+            // TODO: Update room status to available (this can be moved to a separate ticket)
+            // For now, we'll just log that checkout is complete
+            console.log(`Checkout completed for booking ${data.booking_id}. Room status update can be implemented in a separate ticket.`);
+        }
+
+        return {
+            success: checkInOutLog
+        };
+    });
 }
 
 export async function getBookingByIDAction<T extends Prisma.BookingInclude>(id: number, include?: T) {
