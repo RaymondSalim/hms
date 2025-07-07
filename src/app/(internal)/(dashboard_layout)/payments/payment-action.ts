@@ -5,7 +5,6 @@ import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {DepositStatus, Payment, Prisma, TransactionType} from "@prisma/client";
 import {number, object} from "zod";
 import {paymentSchema} from "@/app/_lib/zod/payment/zod";
-import {getBookingByIDAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import prisma from "@/app/_lib/primsa";
 import {
     getUnpaidBillsDueAction,
@@ -13,6 +12,7 @@ import {
     syncBillsWithPaymentDate
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {DeleteObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
+import {getBookingByID} from "@/app/_db/bookings";
 
 export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & { allocationMode?: 'auto' | 'manual', manualAllocations?: Record<number, number> }) {
     const {success, data, error} = paymentSchema.safeParse(reqData);
@@ -23,7 +23,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
         };
     }
 
-    const booking = await getBookingByIDAction(data?.booking_id, {
+    const booking = await getBookingByID(data?.booking_id, {
         bills: true
     });
 

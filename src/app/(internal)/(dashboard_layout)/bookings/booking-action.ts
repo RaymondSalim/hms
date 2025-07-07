@@ -1,12 +1,12 @@
 "use server";
 
 import {OmitTimestamp} from "@/app/_db/db";
-import {Bill, BillItem, CheckInOutLog, Prisma} from "@prisma/client";
+import {Bill, BillItem, CheckInOutLog} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
-import {BookingsIncludeAll, createBooking, getAllBookings, getBookingByID, updateBookingByID} from "@/app/_db/bookings";
+import {BookingsIncludeAll, createBooking, getAllBookings, updateBookingByID} from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
@@ -207,10 +207,6 @@ export async function checkInOutAction(data: {
             success: checkInOutLog
         };
     });
-}
-
-export async function getBookingByIDAction<T extends Prisma.BookingInclude>(id: number, include?: T) {
-    return getBookingByID(id, include);
 }
 
 export async function matchBillItemsToBills(
