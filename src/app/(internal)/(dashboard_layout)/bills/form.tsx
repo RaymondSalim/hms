@@ -31,8 +31,8 @@ export function BillForm(props: BillForm) {
         if (!props.contentData) return undefined;
         return {
             ...props.contentData
-        }
-    }, [props.contentData])
+        };
+    }, [props.contentData]);
 
     const [data, setData] = useState<DataType>(parsedData ?? {});
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);

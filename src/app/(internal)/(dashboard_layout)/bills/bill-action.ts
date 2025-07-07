@@ -723,7 +723,7 @@ export async function generateBookingAddonsBillItems(
         // Logic to create description, remove internal fields and concat
         for (let i = currentBillItems.length - 1; i >= 0; i--) {
             let curr: BillItemWithPartialDates = currentBillItems[i];
-            curr.description = generateDescription(addon, currentBillItems[i])
+            curr.description = generateDescription(addon, currentBillItems[i]);
             delete curr._endDate;
             delete curr._startDate;
             delete curr._shouldBacktrack;

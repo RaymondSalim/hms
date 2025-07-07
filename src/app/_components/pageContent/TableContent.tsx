@@ -109,13 +109,13 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
 const useAutoHidden = (cols: ColumnDef<any>[]) => {
     return useMemo<Record<string, boolean>>(() => {
         return cols.reduce<Record<string, boolean>>((vis, col) => {
-            const id = col.id!
+            const id = col.id!;
             if (col.meta?.hidden) {
-                vis[id] = false
+                vis[id] = false;
             }
-            return vis
-        }, {})
-    }, [cols])
+            return vis;
+        }, {});
+    }, [cols]);
 }
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
