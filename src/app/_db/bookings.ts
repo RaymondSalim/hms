@@ -95,7 +95,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                 depositRecord = await prismaTrx.deposit.create({
                     data: {
                         booking_id: newBooking.id,
-                        amount: depositValue,
+                        amount: new Prisma.Decimal(depositValue.amount),
                         status: DepositStatus.UNPAID
                     }
                 });
@@ -123,7 +123,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                     data: {
                         bill_id: newBills[0].id,
                         amount: depositRecord.amount,
-                        description: 'Deposit',
+                        description: 'Deposit Kamar',
                         related_id: { deposit_id: depositRecord.id },
                         type: 'CREATED',
                     }
@@ -314,7 +314,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                         amount: depositRecord.amount,
                         description: 'Deposit Kamar',
                         related_id: { deposit_id: depositRecord.id },
-                        type: 'CREATED',
+                        type: BillType.CREATED,
                     }
                 });
             }

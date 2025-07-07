@@ -14,7 +14,6 @@ CREATE TABLE "deposits" (
     "booking_id" INTEGER UNIQUE NOT NULL,
     "amount" DECIMAL(10,2) NOT NULL,
     "status" "DepositStatus" NOT NULL,
-    "received_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "refunded_at" TIMESTAMP(3),
     "applied_at" TIMESTAMP(3),
     "refunded_amount" DECIMAL(10,2),
@@ -37,7 +36,7 @@ WITH deposit_payments AS (
 WHERE b.deposit IS NOT NULL
 GROUP BY b.id
     )
-INSERT INTO "deposits" (booking_id, amount, status, received_at, refunded_amount)
+INSERT INTO "deposits" (booking_id, amount, status, refunded_amount)
 SELECT
     b.id AS booking_id,
     b.deposit AS amount,
@@ -47,7 +46,6 @@ SELECT
          WHEN dp.paid_amount IS NULL OR dp.paid_amount = 0 THEN 'UNPAID'
          ELSE 'HELD'
         END)::"DepositStatus" AS status,
-    COALESCE(dp.last_payment_date, b."createdAt") AS received_at,
     CASE
         WHEN dp.paid_amount IS NOT NULL AND dp.paid_amount < b.deposit AND dp.paid_amount > 0 THEN (b.deposit - dp.paid_amount)
         ELSE NULL

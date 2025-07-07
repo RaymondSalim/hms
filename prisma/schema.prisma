@@ -539,7 +539,6 @@ model Deposit {
   booking_id      Int
   amount          Decimal       @db.Decimal(10, 2)
   status          DepositStatus
-  received_at     DateTime      @default(now())
   refunded_at     DateTime?
   applied_at      DateTime?
   refunded_amount Decimal?      @db.Decimal(10, 2)

@@ -207,7 +207,7 @@ describe('Booking Actions', () => {
                 data:
                     {
                         bill_id: 100,
-                        description: 'Deposit',
+                        description: 'Deposit Kamar',
                         amount: new Prisma.Decimal(500),
                         type: BillType.CREATED,
                         related_id: expect.anything(),

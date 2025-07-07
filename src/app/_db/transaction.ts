@@ -46,21 +46,57 @@ export async function createDepositIncomeTransaction({
   booking_id,
   amount,
   description,
-  date
+  date,
+  location_id,
+  tx
 }: {
   booking_id: number,
   amount: Prisma.Decimal | number,
   description?: string,
-  date?: Date
+  date?: Date,
+  location_id?: number,
+  tx?: Prisma.TransactionClient
 }) {
-  return prisma.transaction.create({
+  const prismaClient = tx || prisma;
+  
+  return prismaClient.transaction.create({
     data: {
       amount: new Prisma.Decimal(amount),
-      description: description || 'Deposit recognized as income',
+      description: description || 'Deposit diterima sebagai pemasukan',
       date: date || new Date(),
       category: 'Deposit',
-      location_id: 1, // TODO: set correct location if available
+      location_id: location_id || 1,
       type: 'INCOME',
+      related_id: { booking_id },
+    }
+  });
+}
+
+export async function createDepositRefundExpenseTransaction({
+  booking_id,
+  amount,
+  description,
+  date,
+  location_id,
+  tx
+}: {
+  booking_id: number,
+  amount: Prisma.Decimal | number,
+  description?: string,
+  date?: Date,
+  location_id?: number,
+  tx?: Prisma.TransactionClient
+}) {
+  const prismaClient = tx || prisma;
+  
+  return prismaClient.transaction.create({
+    data: {
+      amount: new Prisma.Decimal(amount),
+      description: description || 'Deposit dibalikan',
+      date: date || new Date(),
+      category: 'Deposit',
+      location_id: location_id || 1,
+      type: 'EXPENSE',
       related_id: { booking_id },
     }
   });

@@ -15,7 +15,6 @@ describe('Deposit Logic', () => {
       booking_id: 1,
       amount: new Prisma.Decimal(1000),
       status: 'HELD',
-      received_at: new Date(),
       refunded_at: null,
       applied_at: null,
       refunded_amount: null,
@@ -36,12 +35,22 @@ describe('Deposit Logic', () => {
       booking_id: 2,
       amount: new Prisma.Decimal(500),
       status: 'HELD',
-      received_at: new Date(),
       refunded_at: null,
       applied_at: null,
       refunded_amount: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      booking: {
+        id: 2,
+        rooms: {
+          id: 1,
+          location_id: 1,
+          name: 'Room 1',
+          room_type_id: 1,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      }
     });
 
     // @ts-expect-error mockResolvedValue undefined
@@ -50,7 +59,6 @@ describe('Deposit Logic', () => {
       booking_id: 2,
       amount: new Prisma.Decimal(500),
       status: 'APPLIED',
-      received_at: new Date(),
       refunded_at: null,
       applied_at: new Date(),
       refunded_amount: null,
@@ -76,12 +84,22 @@ describe('Deposit Logic', () => {
       booking_id: 3,
       amount: new Prisma.Decimal(800),
       status: 'HELD',
-      received_at: new Date(),
       refunded_at: null,
       applied_at: null,
       refunded_amount: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      booking: {
+        id: 3,
+        rooms: {
+          id: 1,
+          location_id: 1,
+          name: 'Room 1',
+          room_type_id: 1,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      }
     });
 
     // @ts-expect-error mockResolvedValue undefined
@@ -90,7 +108,6 @@ describe('Deposit Logic', () => {
       booking_id: 3,
       amount: new Prisma.Decimal(800),
       status: 'PARTIALLY_REFUNDED',
-      received_at: new Date(),
       refunded_at: new Date(),
       applied_at: null,
       refunded_amount: new Prisma.Decimal(300),
@@ -117,12 +134,22 @@ describe('Deposit Logic', () => {
       booking_id: 4,
       amount: new Prisma.Decimal(900),
       status: 'HELD',
-      received_at: new Date(),
       refunded_at: null,
       applied_at: null,
       refunded_amount: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      booking: {
+        id: 4,
+        rooms: {
+          id: 1,
+          location_id: 1,
+          name: 'Room 1',
+          room_type_id: 1,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      }
     });
 
     prismaMock.deposit.update.mockResolvedValue({
@@ -130,7 +157,6 @@ describe('Deposit Logic', () => {
       booking_id: 4,
       amount: new Prisma.Decimal(900),
       status: 'REFUNDED',
-      received_at: new Date(),
       refunded_at: new Date(),
       applied_at: null,
       refunded_amount: new Prisma.Decimal(900),

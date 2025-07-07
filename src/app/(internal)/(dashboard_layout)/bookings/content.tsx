@@ -25,7 +25,7 @@ import {
     Typography
 } from "@material-tailwind/react";
 import {TbDoorEnter, TbDoorExit} from "react-icons/tb";
-import {useMutation} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {usePathname, useRouter} from "next/navigation";
@@ -35,6 +35,7 @@ import {SelectOption} from "@/app/_components/input/select";
 import {MdContentCopy} from "react-icons/md";
 import {toast} from "react-toastify";
 import CurrencyInput from "@/app/_components/input/currencyInput";
+import {getUnpaidBillsDueAction} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 
 
 export interface BookingsContentProps {
@@ -69,6 +70,13 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     const [selectedDepositStatus, setSelectedDepositStatus] = useState<DepositStatus | undefined>();
     const [refundedAmount, setRefundedAmount] = useState<number | undefined>(undefined);
     const [eventDate, setEventDate] = useState<string>('');
+
+    // Query for unpaid bills when checkout dialog is open
+    const {data: unpaidBillsData} = useQuery({
+        queryKey: ['unpaid-bills', checkInOutData?.booking_id],
+        queryFn: () => getUnpaidBillsDueAction(checkInOutData?.booking_id),
+        enabled: showCheckInOutDialog && checkInOutData?.action === CheckInOutType.CHECK_OUT && !!checkInOutData?.booking_id,
+    });
 
     const checkIncCheckOutMutation = useMutation({
         mutationFn: checkInOutAction,
@@ -433,6 +441,21 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                         ⚠️ Peringatan: Tindakan ini tidak dapat dibatalkan setelah dikonfirmasi.
                                     </Typography>
                                 </div>
+
+                                {/* Unpaid bills warning for checkout */}
+                                {checkInOutData?.action === CheckInOutType.CHECK_OUT && unpaidBillsData && unpaidBillsData.bills.length > 0 && (
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                        <Typography variant="small" className="text-red-800 font-medium mb-2">
+                                            ⚠️ Peringatan: Ada tagihan yang belum dibayar!
+                                        </Typography>
+                                        <Typography variant="small" className="text-red-700">
+                                            Total tagihan yang belum dibayar: {formatToIDR(unpaidBillsData.total || 0)}
+                                        </Typography>
+                                        <Typography variant="small" className="text-red-700">
+                                            Jumlah tagihan: {unpaidBillsData.bills.length} tagihan
+                                        </Typography>
+                                    </div>
+                                )}
 
                                 <div className="space-y-2">
                                     <Typography variant="small" className="font-medium">

@@ -10,6 +10,7 @@ import {BookingsIncludeAll, createBooking, getAllBookings, getBookingByID, updat
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
+import {updateDepositStatus} from "@/app/_db/deposit";
 
 export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
 
@@ -188,20 +189,18 @@ export async function checkInOutAction(data: {
         if (data.action === CheckInOutType.CHECK_OUT) {
             // Update deposit status if provided
             if (data.depositStatus && booking.deposit) {
-                await tx.deposit.update({
-                    where: { id: booking.deposit.id },
-                    data: {
-                        status: data.depositStatus as any,
-                        refunded_amount: data.refundedAmount ? new Prisma.Decimal(data.refundedAmount) : null,
-                        refunded_at: data.refundedAmount ? new Date() : null,
-                        applied_at: data.depositStatus === 'APPLIED' ? new Date() : null
-                    }
+                // Use updateDepositStatus to ensure proper transaction creation for refunds
+                await updateDepositStatus({
+                    depositId: booking.deposit.id,
+                    newStatus: data.depositStatus as any,
+                    refundedAmount: data.refundedAmount,
+                    tx: tx
                 });
             }
 
             // TODO: Update room status to available (this can be moved to a separate ticket)
             // For now, we'll just log that checkout is complete
-            console.log(`Checkout completed for booking ${data.booking_id}. Room status update can be implemented in a separate ticket.`);
+            // console.log(`Checkout completed for booking ${data.booking_id}. Room status update can be implemented in a separate ticket.`);
         }
 
         return {

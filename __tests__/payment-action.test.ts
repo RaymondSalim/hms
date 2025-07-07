@@ -79,7 +79,8 @@ describe('Payment Actions', () => {
                         booking_id: 1,
                         description: 'Test Bill 1',
                         due_date: new Date('2024-01-31'),
-                        bill_item: [{
+                        bill_item: [
+                            {
                             id: 1,
                             bill_id: 1,
                             amount: new Prisma.Decimal(1000000),
@@ -89,7 +90,19 @@ describe('Payment Actions', () => {
                             updatedAt: new Date(),
                             type: 'GENERATED' as any,
                             related_id: null
-                        }],
+                        },
+                            {
+                                id: 2,
+                                bill_id: 1,
+                                amount: new Prisma.Decimal(500000),
+                                description: 'Deposit Kamar',
+                                internal_description: null,
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                                type: 'GENERATED' as any,
+                                related_id: null
+                            }
+                        ],
                         paymentBills: [],
                         sumPaidAmount: new Prisma.Decimal(0)
                     },
@@ -144,6 +157,12 @@ describe('Payment Actions', () => {
             prismaMock.transaction.create.mockResolvedValue({});
             // @ts-expect-error
             prismaMock.paymentBill.createMany.mockResolvedValue({count: 2});
+            // @ts-expect-error
+            prismaMock.paymentBill.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.transaction.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.deposit.findFirst.mockResolvedValue(null);
 
             const result = await upsertPaymentAction(paymentData);
 
@@ -153,19 +172,13 @@ describe('Payment Actions', () => {
                     {
                         payment_id: 1,
                         bill_id: 1,
-                        amount: new Prisma.Decimal(1000000)
-                    },
-                    {
-                        payment_id: 1,
-                        bill_id: 2,
-                        amount: new Prisma.Decimal(500000)
+                        amount: new Prisma.Decimal(1500000)
                     }
                 ]
             });
             expect(prismaMock.booking.findFirst).toHaveBeenCalled();
             expect(prismaMock.bill.findMany).toHaveBeenCalled();
             expect(prismaMock.payment.create).toHaveBeenCalled();
-            expect(prismaMock.transaction.create).toHaveBeenCalled();
             expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
         });
 
@@ -189,6 +202,12 @@ describe('Payment Actions', () => {
             prismaMock.transaction.create.mockResolvedValue({});
             // @ts-expect-error
             prismaMock.paymentBill.createMany.mockResolvedValue({count: 3});
+            // @ts-expect-error
+            prismaMock.paymentBill.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.transaction.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.deposit.findFirst.mockResolvedValue(null);
 
             const result = await upsertPaymentAction(paymentData);
 
@@ -202,7 +221,6 @@ describe('Payment Actions', () => {
             });
             expect(prismaMock.booking.findFirst).toHaveBeenCalled();
             expect(prismaMock.payment.create).toHaveBeenCalled();
-            expect(prismaMock.transaction.create).toHaveBeenCalled();
             expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
         });
 
@@ -224,6 +242,12 @@ describe('Payment Actions', () => {
             prismaMock.payment.create.mockResolvedValue(mockPayment);
             // @ts-expect-error
             prismaMock.transaction.create.mockResolvedValue({});
+            // @ts-expect-error
+            prismaMock.paymentBill.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.transaction.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.deposit.findFirst.mockResolvedValue(null);
 
             const result = await upsertPaymentAction(paymentData);
 
@@ -231,7 +255,6 @@ describe('Payment Actions', () => {
             expect(result.failure).toContain('Total manual allocation must equal payment amount');
             expect(prismaMock.booking.findFirst).toHaveBeenCalled();
             expect(prismaMock.payment.create).toHaveBeenCalled();
-            expect(prismaMock.transaction.create).toHaveBeenCalled();
         });
 
         it('should return error for booking not found', async () => {
@@ -280,6 +303,12 @@ describe('Payment Actions', () => {
             // @ts-expect-error
             prismaMock.paymentBill.createManyAndReturn.mockResolvedValue({count: 0});
             // @ts-expect-error
+            prismaMock.paymentBill.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.transaction.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.deposit.findFirst.mockResolvedValue(null);
+            // @ts-expect-error
             prismaMock.bill.findMany.mockResolvedValue([{
                 id: 1,
                 booking_id: 1,
@@ -310,8 +339,6 @@ describe('Payment Actions', () => {
             expect(result.success).toBeDefined();
             expect(prismaMock.booking.findFirst).toHaveBeenCalled();
             expect(prismaMock.payment.update).toHaveBeenCalled();
-            expect(prismaMock.transaction.findFirst).toHaveBeenCalled();
-            expect(prismaMock.transaction.update).toHaveBeenCalled();
             expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalled();
             expect(prismaMock.paymentBill.createManyAndReturn).toHaveBeenCalled();
             expect(prismaMock.bill.findMany).toHaveBeenCalled();
@@ -342,6 +369,12 @@ describe('Payment Actions', () => {
             prismaMock.paymentBill.deleteMany.mockResolvedValue({count: 2});
             // @ts-expect-error
             prismaMock.paymentBill.createMany.mockResolvedValue({count: 2});
+            // @ts-expect-error
+            prismaMock.paymentBill.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.transaction.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.deposit.findFirst.mockResolvedValue(null);
 
             const result = await upsertPaymentAction(paymentData);
 
@@ -357,8 +390,6 @@ describe('Payment Actions', () => {
             });
             expect(prismaMock.booking.findFirst).toHaveBeenCalled();
             expect(prismaMock.payment.update).toHaveBeenCalled();
-            expect(prismaMock.transaction.findFirst).toHaveBeenCalled();
-            expect(prismaMock.transaction.update).toHaveBeenCalled();
             expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalled();
             expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
         });
@@ -373,9 +404,7 @@ describe('Payment Actions', () => {
             // @ts-expect-error
             prismaMock.payment.delete.mockResolvedValue(mockPayment);
             // @ts-expect-error
-            prismaMock.transaction.findFirst.mockResolvedValue({id: 1});
-            // @ts-expect-error
-            prismaMock.transaction.delete.mockResolvedValue({});
+            prismaMock.transaction.deleteMany.mockResolvedValue({count: 0});
 
             const result = await deletePaymentAction(paymentId);
 
@@ -383,13 +412,10 @@ describe('Payment Actions', () => {
             expect(prismaMock.payment.delete).toHaveBeenCalledWith({
                 where: {id: paymentId}
             });
-            expect(prismaMock.transaction.delete).toHaveBeenCalledWith({
-                where: {id: 1}
-            });
+            expect(prismaMock.transaction.deleteMany).toHaveBeenCalled();
             expect(prismaMock.payment.findFirst).toHaveBeenCalled();
             expect(prismaMock.payment.delete).toHaveBeenCalled();
-            expect(prismaMock.transaction.findFirst).toHaveBeenCalled();
-            expect(prismaMock.transaction.delete).toHaveBeenCalled();
+            expect(prismaMock.transaction.deleteMany).toHaveBeenCalled();
         });
 
         it('should return error for payment not found', async () => {
@@ -491,13 +517,18 @@ describe('Payment Actions', () => {
             prismaMock.transaction.create.mockResolvedValue({});
             // @ts-expect-error
             prismaMock.paymentBill.createMany.mockResolvedValue({count: 1});
+            // @ts-expect-error
+            prismaMock.paymentBill.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.transaction.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.deposit.findFirst.mockResolvedValue(null);
 
             const createResult = await upsertPaymentAction(createData);
             expect(createResult.success).toBeDefined();
             expect(prismaMock.payment.create).toHaveBeenCalled();
             expect(prismaMock.booking.findFirst).toHaveBeenCalled();
             expect(prismaMock.bill.findMany).toHaveBeenCalled();
-            expect(prismaMock.transaction.create).toHaveBeenCalled();
             expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
 
             // Step 2: Update payment with manual allocation
@@ -523,12 +554,16 @@ describe('Payment Actions', () => {
             prismaMock.paymentBill.deleteMany.mockResolvedValue({count: 2});
             // @ts-expect-error
             prismaMock.paymentBill.createMany.mockResolvedValue({count: 2});
+            // @ts-expect-error
+            prismaMock.paymentBill.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.transaction.findMany.mockResolvedValue([]);
+            // @ts-expect-error
+            prismaMock.deposit.findFirst.mockResolvedValue(null);
 
             const updateResult = await upsertPaymentAction(updateData);
             expect(updateResult.success).toBeDefined();
             expect(prismaMock.payment.update).toHaveBeenCalled();
-            expect(prismaMock.transaction.findFirst).toHaveBeenCalled();
-            expect(prismaMock.transaction.update).toHaveBeenCalled();
             expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalled();
             expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
 
@@ -538,16 +573,13 @@ describe('Payment Actions', () => {
             // @ts-expect-error
             prismaMock.payment.delete.mockResolvedValue(mockPayment);
             // @ts-expect-error
-            prismaMock.transaction.findFirst.mockResolvedValue({id: 1});
-            // @ts-expect-error
-            prismaMock.transaction.delete.mockResolvedValue({});
+            prismaMock.transaction.deleteMany.mockResolvedValue({count: 0});
 
             const deleteResult = await deletePaymentAction(1);
             expect(deleteResult.success).toBeDefined();
             expect(prismaMock.payment.delete).toHaveBeenCalled();
             expect(prismaMock.payment.findFirst).toHaveBeenCalled();
-            expect(prismaMock.transaction.findFirst).toHaveBeenCalled();
-            expect(prismaMock.transaction.delete).toHaveBeenCalled();
+            expect(prismaMock.transaction.deleteMany).toHaveBeenCalled();
         });
     });
 });

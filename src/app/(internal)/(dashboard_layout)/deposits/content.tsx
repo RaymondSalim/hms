@@ -9,7 +9,12 @@ import {formatToIDR} from "@/app/_lib/util";
 import {DepositForm} from "./form";
 import {toast} from "react-toastify";
 
-export default function DepositsContent({initialDeposits}: { initialDeposits: Deposit[] }) {
+// Extended type to include received date from transactions
+type DepositWithReceivedDate = Deposit & {
+    received_date?: Date;
+};
+
+export default function DepositsContent({initialDeposits}: { initialDeposits: DepositWithReceivedDate[] }) {
     const [statusChange, setStatusChange] = useState<{
         id: number;
         status: DepositStatus;
@@ -42,20 +47,20 @@ export default function DepositsContent({initialDeposits}: { initialDeposits: De
         }
     };
 
-    const columnHelper = createColumnHelper<Deposit>();
+    const columnHelper = createColumnHelper<DepositWithReceivedDate>();
     const columns = [
         columnHelper.accessor("id", {header: "ID"}),
         columnHelper.accessor("booking_id", {header: "ID Booking", cell: (v) => `#-${v.getValue()}`}),
         columnHelper.accessor((row) => formatToIDR(Number(row.amount)), {header: "Jumlah"}),
         columnHelper.accessor("status", {header: "Status"}),
         columnHelper.accessor((row) => formatToIDR(Number(row.refunded_amount)) ?? "", {header: "Jumlah Dikembalikan"}),
-        columnHelper.accessor((row) => row.received_at ? new Date(row.received_at).toLocaleString() : "", {header: "Diterima Pada"}),
+        columnHelper.accessor((row) => row.received_date ? new Date(row.received_date).toLocaleString() : "", {header: "Diterima Pada"}),
         columnHelper.accessor((row) => row.applied_at ? new Date(row.applied_at).toLocaleString() : "", {header: "Digunakan Pada"}),
         columnHelper.accessor((row) => row.refunded_at ? new Date(row.refunded_at).toLocaleString() : "", {header: "Dikembalikan Pada"}),
     ];
 
     return (
-        <TableContent<Deposit>
+        <TableContent<DepositWithReceivedDate>
             name={"Deposit"}
             initialContents={initialDeposits}
             columns={columns}
