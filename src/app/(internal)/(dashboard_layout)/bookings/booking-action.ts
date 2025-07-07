@@ -184,20 +184,6 @@ export async function checkInOutAction(data: {
             },
         });
 
-        // Handle check-in specific logic
-        if (data.action === CheckInOutType.CHECK_IN) {
-            // Update room status to booked when user checks in
-            if (booking.room_id) {
-                await tx.room.update({
-                    where: { id: booking.room_id },
-                    data: {
-                        status_id: 1 // 1 = Booked
-                    }
-                });
-                console.log(`Room ${booking.room_id} marked as booked after check-in for booking ${data.booking_id}`);
-            }
-        }
-
         // Handle checkout-specific logic
         if (data.action === CheckInOutType.CHECK_OUT) {
             // Update deposit status if provided
@@ -213,16 +199,7 @@ export async function checkInOutAction(data: {
                 });
             }
 
-            // Update room status to available when user checks out
-            if (booking.room_id) {
-                await tx.room.update({
-                    where: { id: booking.room_id },
-                    data: {
-                        status_id: 2 // 2 = Available
-                    }
-                });
-                console.log(`Room ${booking.room_id} marked as available after checkout for booking ${data.booking_id}`);
-            }
+            console.log(`Checkout completed for booking ${data.booking_id}. Room is now available for new bookings.`);
         }
 
         return {

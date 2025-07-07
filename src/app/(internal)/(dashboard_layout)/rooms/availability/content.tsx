@@ -26,6 +26,7 @@ import {RiErrorWarningLine} from "react-icons/ri";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {FaChevronDown} from "react-icons/fa6";
 import Link from "next/link";
+import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 
 export interface RoomAvailabilityProps {
     roomTypes: RoomTypeWithRoomCount[]
@@ -41,20 +42,47 @@ type RoomTypeWithRoomCountAndAvailability = RoomTypeWithRoomCount & {
 
 export function calculateRoomAvailability(
     roomTypes: RoomTypeWithRoomCount[],
-    bookings?: BookingsIncludeAll[]
+    bookings?: BookingsIncludeAll[],
+    dateRange?: DateRange
 ): RoomTypeWithRoomCountAndAvailability[] {
     return roomTypes.map((rt) => {
         const totalRooms = rt._count.rooms;
 
-        // Calculate the number of rooms booked for the current room type
-        const roomsBooked = bookings?.reduce((count, booking) => {
-            if (booking.rooms?.room_type_id === rt.id) {
+        // Calculate the number of rooms actually occupied for the current room type
+        const roomsOccupied = bookings?.reduce((count, booking) => {
+            // Check if this booking is for the current room type
+            if (booking.rooms?.room_type_id !== rt.id) {
+                return count;
+            }
+
+            // Check if the guest has checked out early
+            const hasCheckedOut = booking.checkInOutLogs?.some(
+                (log) => log.event_type === CheckInOutType.CHECK_OUT
+            );
+
+            // If guest has checked out, the room is available
+            if (hasCheckedOut) {
+                return count;
+            }
+
+            // If no date range specified, count all active bookings (that haven't checked out)
+            if (!dateRange || !dateRange.from || !dateRange.to) {
                 return count + 1;
             }
-            return count;
+
+            // Check if booking overlaps with the requested date range
+            const bookingStart = new Date(booking.start_date);
+            const bookingEnd = new Date(booking.end_date);
+            const rangeStart = new Date(dateRange.from);
+            const rangeEnd = new Date(dateRange.to);
+
+            // Booking overlaps if it starts before range ends AND ends after range starts
+            const overlaps = bookingStart <= rangeEnd && bookingEnd >= rangeStart;
+
+            return overlaps ? count + 1 : count;
         }, 0) || 0;
 
-        const roomLeft = totalRooms - roomsBooked;
+        const roomLeft = totalRooms - roomsOccupied;
 
         return {
             ...rt,
@@ -87,10 +115,10 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
     useEffect(() => {
         if (props.bookings) {
             setRoomTypes(
-                calculateRoomAvailability(props.roomTypes, props.bookings)
+                calculateRoomAvailability(props.roomTypes, props.bookings, dates)
             );
         }
-    }, [props]);
+    }, [props, dates]);
 
     return (
         <>

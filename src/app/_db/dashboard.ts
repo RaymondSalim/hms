@@ -48,29 +48,55 @@ export async function getOverviewData(locationID?: number) {
     // const bookingsCount: Promise<number> = bookingsCountRaw.then(e => new Promise(resolve => setTimeout(() => resolve(e[0].count), 10000)));
     const bookingsCount = bookingsCountRaw.then(e => e[0].count);
 
-    const availableCount = prisma.room.count({
+    // Get all rooms for the location
+    const totalRooms = prisma.room.count({
         where: {
-            roomstatuses: {
-                id: 2,
-            },
             location_id: locationID,
         }
     });
 
-    const occupiedCount = prisma.room.count({
-        where: {
-            roomstatuses: {
-                id: 1,
-            },
-            location_id: locationID,
-        }
-    });
+    // Get currently occupied rooms (bookings that are active today and haven't checked out)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const occupiedRoomsQuery = locationID ? Prisma.sql`
+        SELECT COUNT(DISTINCT r.id)::integer AS count
+        FROM rooms r
+        INNER JOIN bookings b ON r.id = b.room_id
+        WHERE r.location_id = ${locationID}
+          AND b.start_date <= ${today}
+          AND b.end_date >= ${today}
+          AND NOT EXISTS (
+              SELECT 1 FROM checkinoutlogs col 
+              WHERE col.booking_id = b.id 
+              AND col.event_type = 'CHECK_OUT'
+          )
+    ` : Prisma.sql`
+        SELECT COUNT(DISTINCT r.id)::integer AS count
+        FROM rooms r
+        INNER JOIN bookings b ON r.id = b.room_id
+        WHERE b.start_date <= ${today}
+          AND b.end_date >= ${today}
+          AND NOT EXISTS (
+              SELECT 1 FROM checkinoutlogs col 
+              WHERE col.booking_id = b.id 
+              AND col.event_type = 'CHECK_OUT'
+          )
+    `;
+
+    const occupiedRoomsCount = prisma.$queryRaw<{ count: number }[]>(occupiedRoomsQuery).then((e: { count: number }[]) => e[0].count);
+
+    // Available rooms = Total rooms - Occupied rooms
+    const [total, occupied] = await Promise.all([totalRooms, occupiedRoomsCount]);
+    const available = total - occupied;
 
     return {
         check_in: checkIn,
         check_out: bookingsCount,
-        available: availableCount,
-        occupied: occupiedCount,
+        available: available,
+        occupied: occupied,
         date_range: {
             start: formatDateToString(firstDateOfWeek),
             end: formatDateToString(lastDateOfWeek)
