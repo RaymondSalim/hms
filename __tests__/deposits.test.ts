@@ -152,6 +152,7 @@ describe('Deposit Logic', () => {
       }
     });
 
+    // @ts-expect-error mockResolvedValue undefined
     prismaMock.deposit.update.mockResolvedValue({
       id: 4,
       booking_id: 4,
