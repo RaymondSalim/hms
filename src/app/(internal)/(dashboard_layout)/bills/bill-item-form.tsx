@@ -39,7 +39,11 @@ export function BillItemForm({
         internal_description: billItem?.internal_description || "",
     });
 
-    const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<any> | undefined>(mutationResponse?.errors);
+    const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<{
+        description?: string;
+        amount?: number;
+        internal_description?: string;
+    }> | undefined>(mutationResponse?.errors);
 
     useEffect(() => {
         setFieldErrors(mutationResponse?.errors);
@@ -71,16 +75,16 @@ export function BillItemForm({
                     placeholder="Masukkan deskripsi rincian tagihan"
                     value={data.description}
                     onChange={(e) => setData(prev => ({ ...prev, description: e.target.value }))}
-                    error={!!fieldErrors?.fieldErrors?.description}
+                    error={!!fieldErrors?.description}
                     className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
                     labelProps={{
                         className: "hidden",
                     }}
                     containerProps={{ className: "min-w-[100px]" }}
                 />
-                {fieldErrors?.fieldErrors?.description && (
+                {fieldErrors?.description?._errors?.length && (
                     <Typography variant="small" color="red" className="mt-1">
-                        {fieldErrors.fieldErrors.description}
+                        {fieldErrors.description._errors.join(', ')}
                     </Typography>
                 )}
             </div>
@@ -94,7 +98,7 @@ export function BillItemForm({
                     placeholder="0"
                     value={data.amount}
                     onChange={(e) => setData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                    error={!!fieldErrors?.fieldErrors?.amount}
+                    error={!!fieldErrors?.amount?._errors?.length}
                     className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
                     labelProps={{
                         className: "hidden",
@@ -104,9 +108,9 @@ export function BillItemForm({
                 <Typography variant="small" color="gray" className="mt-1">
                     {formatToIDR(data.amount)}
                 </Typography>
-                {fieldErrors?.fieldErrors?.amount && (
+                {fieldErrors?.amount?._errors?.length && (
                     <Typography variant="small" color="red" className="mt-1">
-                        {fieldErrors.fieldErrors.amount}
+                        {fieldErrors.amount._errors.join(', ')}
                     </Typography>
                 )}
             </div>
@@ -120,16 +124,16 @@ export function BillItemForm({
                     placeholder="Masukkan deskripsi internal (opsional)"
                     value={data.internal_description}
                     onChange={(e) => setData(prev => ({ ...prev, internal_description: e.target.value }))}
-                    error={!!fieldErrors?.fieldErrors?.internal_description}
+                    error={!!fieldErrors?.internal_description?._errors?.length}
                     className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
                     labelProps={{
                         className: "hidden",
                     }}
                     containerProps={{ className: "min-w-[100px]" }}
                 />
-                {fieldErrors?.fieldErrors?.internal_description && (
+                {fieldErrors?.internal_description?._errors?.length && (
                     <Typography variant="small" color="red" className="mt-1">
-                        {fieldErrors.fieldErrors.internal_description}
+                        {fieldErrors.internal_description._errors.join(', ')}
                     </Typography>
                 )}
             </div>

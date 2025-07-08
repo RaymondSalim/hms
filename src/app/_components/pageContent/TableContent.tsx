@@ -101,9 +101,9 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
         searchType: "smart",
         filterKeys: SelectOption<string>[]
     } | {
-    searchType: "default" | undefined
-}
-    )
+        searchType: "default" | undefined
+    }
+);
 
 
 const useAutoHidden = (cols: ColumnDef<any>[]) => {
@@ -116,7 +116,7 @@ const useAutoHidden = (cols: ColumnDef<any>[]) => {
             return vis;
         }, {});
     }, [cols]);
-}
+};
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
