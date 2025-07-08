@@ -31,7 +31,10 @@ export default function RoomTypesContent({types}: RoomTypesContentProps) {
     }),
     columnHelper.accessor(row => row.createdAt, {
       header: "Dibuat Pada",
-      cell: props => formatToDateTime(props.cell.getValue())
+      cell: props => formatToDateTime(props.cell.getValue()),
+      meta: {
+        hidden: true,
+      }
     }),
   ];
 

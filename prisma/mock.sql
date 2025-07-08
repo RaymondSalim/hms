@@ -1,3 +1,4 @@
+START TRANSACTION;
 INSERT INTO roomtypes (id, type, description)
 VALUES (1, 'Standard Room', 'A comfortable room with essential amenities.'),
        (2, 'Deluxe Room', 'An upgraded room with additional space and features.'),
@@ -209,10 +210,10 @@ SELECT setval(pg_get_serial_sequence('"roles"', 'id'), coalesce(max(id) + 1, 1),
 FROM "roles";
 -- Required to increment sequence as we are inserting values with the ID set
 
-INSERT INTO "categories" (category)
-VALUES ('Maintenance'),
-       ('Utilities')
-ON CONFLICT DO NOTHING;
+-- INSERT INTO "categories" (category)
+-- VALUES ('Maintenance'),
+--        ('Utilities')
+-- ON CONFLICT DO NOTHING;
 
 
 INSERT INTO expenses (amount, description, date, category_id, location_id)
@@ -454,3 +455,5 @@ SELECT
     now() AS "createdAt",
     now() AS "updatedAt"
 FROM generate_series(1,50) gs;
+
+COMMIT;

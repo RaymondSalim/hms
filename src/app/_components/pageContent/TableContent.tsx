@@ -90,14 +90,34 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
 
     customDialog?: ReactElement
     refetchFn?: (options?: RefetchOptions) => Promise<QueryObserverResult<T[]>>
+
+    filterByOptions?: {
+        columnId: string,
+        options: { value: string, label: string }[],
+        allLabel?: string
+    },
+    valueLabelMapping?: { [columnId: string]: { [value: string]: string } }
 } & (
     {
         searchType: "smart",
         filterKeys: SelectOption<string>[]
     } | {
-    searchType: "default" | undefined
-}
-    )
+        searchType: "default" | undefined
+    }
+);
+
+
+const useAutoHidden = (cols: ColumnDef<any>[]) => {
+    return useMemo<Record<string, boolean>>(() => {
+        return cols.reduce<Record<string, boolean>>((vis, col) => {
+            const id = col.id!;
+            if (col.meta?.hidden) {
+                vis[id] = false;
+            }
+            return vis;
+        }, {});
+    }, [cols]);
+};
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
@@ -236,6 +256,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         getPaginationRowModel: getPaginationRowModel(),
         getGroupedRowModel: getGroupedRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
+        initialState: {
+            columnVisibility: useAutoHidden(columns),
+        },
         state: {
             globalFilter: globalFilter,
             columnFilters: columnFilter,
@@ -308,6 +331,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             )
             : undefined;
 
+    const filterColumn = props.filterByOptions ? tanTable.getColumn(props.filterByOptions.columnId) : undefined;
+
     return (
         <div className={"flex-1 flex flex-col gap-y-2 min-h-0 h-full overflow-hidden"}>
             <div className="flex align-middle gap-2">
@@ -333,6 +358,30 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                             </Button>
                         ))}
                     </>
+                )}
+                {/* FilterByOptions chips */}
+                {props.filterByOptions && filterColumn && (
+                    <div className="flex gap-2 ml-4">
+                        <Button
+                            variant={!filterColumn.getFilterValue() ? 'filled' : 'outlined'}
+                            size="sm"
+                            className="min-w-[100px] rounded-full"
+                            onClick={() => { filterColumn.setFilterValue(undefined); }}
+                        >
+                            {props.filterByOptions.allLabel || 'Semua'}
+                        </Button>
+                        {props.filterByOptions.options.map(opt => (
+                            <Button
+                                key={opt.value}
+                                variant={filterColumn.getFilterValue() === opt.value ? 'filled' : 'outlined'}
+                                size="sm"
+                                className="min-w-[100px] rounded-full"
+                                onClick={() => { filterColumn.setFilterValue(opt.value); }}
+                            >
+                                {opt.label}
+                            </Button>
+                        ))}
+                    </div>
                 )}
             </div>
             <div className={styles.searchBarAndCreate}>
@@ -366,7 +415,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     </Button>
                 </div>
             <div className="w-full flex-1 min-h-0 overflow-auto" style={{height: '400px', overflowY: 'auto'}}>
-                <TanTable tanTable={tanTable}/>
+                <TanTable tanTable={tanTable} valueLabelMapping={props.valueLabelMapping}/>
             </div>
             <div className="flex flex-col md:flex-row items-center mt-4 gap-x-8 gap-y-8">
                 <div className={"w-full md:w-auto md:ml-auto"}>
@@ -412,6 +461,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 </div>
             </div>
             <Dialog
+                key={"tbc-form"}
                 open={dialogOpen}
                 size={"md"}
                 handler={() => setDialogOpen(prev => {

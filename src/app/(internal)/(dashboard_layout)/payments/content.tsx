@@ -41,6 +41,12 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
       size: 20,
       enableColumnFilter: true,
     }),
+    columnHelper.accessor(row => row.bookings.rooms?.room_number, {
+      id: 'room_number',
+      header: "Nomor Kamar",
+      size: 20,
+      enableColumnFilter: true,
+    }),
     columnHelper.accessor(row => `${row.bookings.tenants?.name} | ${row.bookings.tenants?.phone}`, {
       id: 'tenant',
       header: "Penyewa",

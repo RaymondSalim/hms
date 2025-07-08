@@ -35,6 +35,7 @@ export async function upsertTransactionAction(
                     category: data.category,
                     location_id: data.location_id,
                     type: data.type,
+                    related_id: data.booking_id ? { booking_id: data.booking_id } : Prisma.DbNull,
                 },
             });
         } else {
@@ -47,6 +48,7 @@ export async function upsertTransactionAction(
                     category: data.category,
                     location_id: data.location_id,
                     type: data.type,
+                    related_id: data.booking_id ? { booking_id: data.booking_id } : Prisma.DbNull,
                 },
             });
         }

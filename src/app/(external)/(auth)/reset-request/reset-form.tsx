@@ -51,7 +51,7 @@ export default function ResetForm() {
             >
               <span>{state.success}</span>
               <div className={styles.buttonContainer}>
-                <button onClick={handleBack} type="button" className={styles.button}>Balik</button>
+                <button onClick={handleBack} type="button" className={styles.button}>Kembali</button>
               </div>
             </motion.div>
           )

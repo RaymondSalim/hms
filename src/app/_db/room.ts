@@ -20,6 +20,29 @@ export type RoomsWithTypeAndLocation = Prisma.RoomGetPayload<{
     }
 }>
 
+export type RoomsWithTypeAndLocationAndBookings = Prisma.RoomGetPayload<{
+    include: {
+        locations: true,
+        roomtypes: {
+            include: {
+                roomtypedurations: {
+                    include: {
+                        durations: true
+                    }
+                }
+            }
+        },
+        roomstatuses: true,
+        bookings: {
+            include: {
+                tenants: true,
+                bookingstatuses: true,
+                durations: true
+            }
+        }
+    }
+}>
+
 export type RoomTypeDurationWithDuration = Prisma.RoomTypeDurationGetPayload<{
     include: {
         durations: true
@@ -299,4 +322,44 @@ export async function deleteRoomType(id: number) {
             id
         }
     });
+}
+
+export async function getRoomsWithBookings(id?: number, locationID?: number, limit?: number, offset?: number) {
+    return prisma.room.findMany({
+        where: {
+            id: id,
+            location_id: locationID
+        },
+        include: {
+            locations: true,
+            roomtypes: {
+                include: {
+                    roomtypedurations: {
+                        include: {
+                            durations: true
+                        }
+                    }
+                }
+            },
+            roomstatuses: true,
+            bookings: {
+                include: {
+                    tenants: true,
+                    bookingstatuses: true,
+                    durations: true
+                },
+                orderBy: {
+                    start_date: 'asc'
+                }
+            }
+        },
+        skip: offset,
+        take: limit
+    }).then(rooms => rooms.map(r => {
+        if (r.roomtypes?.roomtypedurations) {
+            r.roomtypes.roomtypedurations = r.roomtypes.roomtypedurations.filter(rtd => rtd.location_id == r.location_id);
+        }
+
+        return r;
+    }));
 }

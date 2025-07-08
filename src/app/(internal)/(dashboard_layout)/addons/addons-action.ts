@@ -9,9 +9,21 @@ import {AddonSchema} from "@/app/_lib/zod/addon/zod";
 
 export type AddonIncludePricing = Prisma.AddOnGetPayload<{
   include: {
-    pricing: true
+    pricing: true,
+    bookings: {
+      include: {
+        booking: {
+          include: {
+            tenants: true,
+            rooms: true
+          }
+        }
+      }
+    }
   }
-}>;
+}> & {
+  activeBookingsCount: number
+};
 
 export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) {
   const {success, data, error} = AddonSchema.safeParse(reqData);
@@ -149,15 +161,37 @@ export async function deleteAddOnAction(id: string) {
 }
 
 export async function getAddonsByLocation(id?: number) {
-  return prisma.addOn.findMany({
+  const addons = await prisma.addOn.findMany({
     where: {
       location_id: id
     },
     include: {
       pricing: true,
+      bookings: {
+        where: {
+          // Only count active bookings (within their date range)
+          start_date: {
+            lte: new Date()
+          },
+          end_date: {
+            gte: new Date()
+          }
+        },
+        include: {
+          booking: {
+            include: {
+              tenants: true,
+              rooms: true
+            }
+          }
+        }
+      }
     }
-  }).then(a => a.map(ai => ({
-    ...ai,
-    pricing: ai.pricing.sort((p1, p2) => p1.interval_start - p2.interval_start),
-  })));
+  });
+
+  return addons.map(addon => ({
+    ...addon,
+    pricing: addon.pricing.sort((p1, p2) => p1.interval_start - p2.interval_start),
+    activeBookingsCount: addon.bookings.length
+  }));
 }

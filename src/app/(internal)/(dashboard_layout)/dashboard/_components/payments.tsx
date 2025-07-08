@@ -84,7 +84,7 @@ export default function Payments() {
 
   return (
     <div className={styles.paymentsContainer}>
-      <h2>Payments</h2>
+      <h2>Pembayaran</h2>
       <div className={styles.statusPaymentContainer}>
         <div className={styles.statusContent}>
           <Button variant={status == null ? 'filled' : 'outlined'} size={"sm"} className={styles.btn}

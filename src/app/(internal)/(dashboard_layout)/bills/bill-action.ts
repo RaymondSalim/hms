@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
-import {Bill, BillType, Booking, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
+import {AddOn, Bill, BillType, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
     BillIncludeAll,
     billIncludeAll,
@@ -9,12 +9,12 @@ import {
     BillIncludePayment,
     createBill,
     getAllBillsWithBooking,
-    getBillsWithPayments,
-    updateBillByID
+    getBillsWithPayments
 } from "@/app/_db/bills";
 import {OmitIDTypeAndTimestamp, OmitTimestamp, PartialBy} from "@/app/_db/db";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {billSchemaWithOptionalID} from "@/app/_lib/zod/bill/zod";
+import {billItemCreateSchema, billItemUpdateSchema} from "@/app/_lib/zod/bill-item/zod";
 import {number, object} from "zod";
 import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
@@ -22,10 +22,19 @@ import {UpsertBookingPayload} from "@/app/(internal)/(dashboard_layout)/bookings
 import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
 import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 
+/**
+ * Type definition for bills that include payment information and sum of paid amounts
+ */
 export type BillIncludePaymentAndSum = BillIncludePayment & {
     sumPaidAmount: Prisma.Decimal
 };
 
+/**
+ * Retrieves unpaid bills for a booking, ordered by due date
+ * @param booking_id - The booking ID to get unpaid bills for
+ * @param args - Additional Prisma query arguments
+ * @returns Object containing total due amount and array of unpaid bills
+ */
 export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma.BillFindManyArgs): Promise<{
     total?: number,
     bills: BillIncludeAll[]
@@ -69,6 +78,13 @@ export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma
     };
 }
 
+/**
+ * Simulates how a payment amount would be allocated across unpaid bills
+ * @param balance - The payment amount to allocate
+ * @param filteredBills - Array of bills with payment information
+ * @param payment_id - Optional payment ID for the simulation
+ * @returns Simulation result with old and new state
+ */
 export async function simulateUnpaidBillPaymentAction(balance: number, filteredBills: BillIncludePaymentAndSum[], payment_id?: number) {
     const originalBalance = balance;
 
@@ -127,6 +143,52 @@ export async function simulateUnpaidBillPaymentAction(balance: number, filteredB
     };
 }
 
+/**
+ * Simulates payment allocation while excluding a specific payment from calculations
+ * Used when editing a payment to show correct allocation without double-counting
+ * @param balance - The payment amount to allocate
+ * @param booking_id - The booking ID to get bills for
+ * @param excludePaymentId - The payment ID to exclude from calculations
+ * @returns Simulation result with old and new state
+ */
+export async function simulateUnpaidBillPaymentActionWithExcludePayment(balance: number, booking_id: number, excludePaymentId: number) {
+    // Get all bills with payments (not just unpaid ones)
+    const bills = await getBillsWithPayments(booking_id, {
+        orderBy: {
+            due_date: "asc"
+        },
+        include: {
+            bill_item: true,
+            paymentBills: true
+        }
+    });
+
+    // For each bill, recalculate sumPaidAmount excluding the specified payment
+    const billsWithRecalculatedPayments = bills
+        .map(b => {
+            const currBillAmount = b.bill_item.reduce(
+                (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+            );
+            const filteredPaymentBills = b.paymentBills.filter(pb => pb.payment_id !== excludePaymentId);
+            const paidAmount = filteredPaymentBills.reduce((acc, pb) => acc.add(pb.amount), new Prisma.Decimal(0));
+            return {
+                ...b,
+                paymentBills: filteredPaymentBills, // Filter the paymentBills array itself
+                amount: currBillAmount,
+                sumPaidAmount: paidAmount
+            };
+        });
+
+    // Run the simulation as usual - let it handle which bills get allocated to
+    return simulateUnpaidBillPaymentAction(balance, billsWithRecalculatedPayments, excludePaymentId);
+}
+
+/**
+ * Generates payment-bill mappings from a list of payments and bills
+ * @param payments - Array of payments to allocate
+ * @param bills - Array of bills to allocate payments to
+ * @returns Array of payment-bill mappings
+ */
 export async function generatePaymentBillMappingFromPaymentsAndBills(payments: OmitTimestamp<Payment>[], bills: OmitTimestamp<BillIncludeBillItem>[]): Promise<OmitIDTypeAndTimestamp<PaymentBill>[]> {
     const paymentBills: OmitIDTypeAndTimestamp<PaymentBill>[] = [];
 
@@ -179,6 +241,14 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
     return paymentBills;
 }
 
+/**
+ * Creates payment-bill records for a given payment amount and bills
+ * @param balance - The payment amount to allocate
+ * @param bills - Array of bills with payment information
+ * @param payment_id - The payment ID to create records for
+ * @param trx - Optional transaction client
+ * @returns Object containing remaining balance and created records
+ */
 export async function createPaymentBillsAction(balance: number, bills: BillIncludePaymentAndSum[], payment_id: number, trx?: Prisma.TransactionClient) {
     const db = trx ?? prisma;
 
@@ -195,6 +265,14 @@ export async function createPaymentBillsAction(balance: number, bills: BillInclu
     };
 }
 
+/**
+ * Retrieves all bills with full booking information for a location
+ * @param id - Optional bill ID filter
+ * @param locationID - Location ID to filter bills by
+ * @param limit - Maximum number of bills to return
+ * @param offset - Number of bills to skip
+ * @returns Array of bills with full booking information
+ */
 export async function getAllBillsIncludeAll(id?: number, locationID?: number, limit?: number, offset?: number) {
     return getAllBillsWithBooking(
         id,
@@ -214,7 +292,8 @@ export async function getAllBillsIncludeAll(id?: number, locationID?: number, li
                 },
                 bookings: {
                     include: {
-                        rooms: true
+                        rooms: true,
+                        tenants: true,
                     }
                 },
                 bill_item: true
@@ -225,35 +304,11 @@ export async function getAllBillsIncludeAll(id?: number, locationID?: number, li
     );
 }
 
-export async function getAllBillsWithBookingAndPaymentsAction(id?: number, locationID?: number, limit?: number, offset?: number) {
-    return getAllBillsWithBooking(
-        id,
-        {
-            where: {
-                bookings: {
-                    rooms: {
-                        location_id: locationID
-                    }
-                }
-            },
-            include: {
-                paymentBills: {
-                    include: {
-                        payment: true
-                    }
-                },
-                bookings: {
-                    include: {
-                        rooms: true
-                    }
-                }
-            },
-            take: limit,
-            skip: offset,
-        }
-    );
-}
-
+/**
+ * Creates or updates a bill
+ * @param billData - Bill data to create or update
+ * @returns Success response with bill data or error information
+ */
 export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, "id">) {
     const {success, data, error} = billSchemaWithOptionalID.safeParse(billData);
 
@@ -263,19 +318,25 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
         };
     }
 
-    let parsedBillData: PartialBy<OmitTimestamp<Bill>, "id"> = {
-        ...data,
-        description: data?.description ?? "",
-    };
-
     try {
         let res;
-        // Update
+        // Update - only allow due_date changes
         if (data?.id) {
+            // For updates, only allow due_date to be modified
+            const updateData = {
+                due_date: data.due_date
+            };
+
             res = await prisma.$transaction(async (tx) => {
-                // @ts-ignore type error due to internal_description
-                let updated = await updateBillByID(data.id!, parsedBillData);
+                // Update only the due_date
+                await tx.bill.update({
+                    where: { id: data.id! },
+                    data: updateData
+                });
+
+                // Sync payment allocations since due_date affects payment priority
                 await syncBillsWithPaymentDate(data.booking_id, tx);
+
                 return tx.bill.findFirst({
                     where: {id: data.id!},
                     include: billIncludeAll.include
@@ -283,6 +344,12 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
             });
 
         } else {
+            // Create - allow all fields
+            let parsedBillData: PartialBy<OmitTimestamp<Bill>, "id"> = {
+                ...data,
+                description: data?.description ?? "",
+            };
+
             // @ts-ignore type error due to internal_description
             res = await createBill(parsedBillData);
         }
@@ -304,6 +371,11 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
     }
 }
 
+/**
+ * Deletes a bill by ID
+ * @param id - The bill ID to delete
+ * @returns Success response with deleted bill data or error information
+ */
 export async function deleteBillAction(id: number) {
     const {success, error, data} = object({id: number().positive()}).safeParse({
         id: id
@@ -333,6 +405,13 @@ export async function deleteBillAction(id: number) {
     }
 }
 
+/**
+ * Synchronizes payment-bill records for a booking based on payment dates
+ * Recalculates all payment allocations for the booking
+ * @param bookingID - The booking ID to sync payments for
+ * @param trx - Transaction client
+ * @param newPayments - Optional array of new payments to include in sync
+ */
 export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.TransactionClient, newPayments?: Payment[]) {
     let bills = await prisma.bill.findMany({
         where: {
@@ -352,27 +431,34 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
     allPayments = allPayments.concat(newPayments ?? []);
     // Remove dups
     allPayments = allPayments.filter((item, index, self) =>
-            index === self.findIndex((t) => (
-                t.id === item.id
+            item != undefined && index === self.findIndex((t) => (
+                t?.id === item.id
             ))
     );
 
     let generatedPaymentBills = await generatePaymentBillMappingFromPaymentsAndBills(allPayments, bills);
 
-    let deleteRes = await trx.paymentBill.deleteMany({
+    await trx.paymentBill.deleteMany({
         where: {
             id: {
                 in: paymentBillsID,
             }
         }
     });
-    let createRes = await trx.paymentBill.createManyAndReturn({
+    await trx.paymentBill.createManyAndReturn({
         data: [
             ...generatedPaymentBills
         ]
     });
 }
 
+/**
+ * Retrieves upcoming unpaid bills with user information for a specific date range
+ * @param targetDate - The target date to get bills for
+ * @param limit - Maximum number of bills to return
+ * @param offset - Number of bills to skip
+ * @returns Object containing bills and total count
+ */
 export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, limit?: number, offset?: number) {
     let where = {
         due_date: {
@@ -403,6 +489,11 @@ export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, li
     };
 }
 
+/**
+ * Sends a bill reminder email to the tenant
+ * @param billID - The bill ID to send reminder for
+ * @returns Success or failure response
+ */
 export async function sendBillEmailAction(billID: number) {
     let billData = await prisma.bill.findFirst({
         where: {
@@ -456,218 +547,210 @@ export async function sendBillEmailAction(billID: number) {
 
 }
 
-export async function generateBillItemsFromBookingAddons(
-    bookingAddons: BookingAddOn[],
-    booking: Pick<Booking, "end_date">
-): Promise<Map<string, PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[]>> {
-    const billItemsByMonth: Map<string, PartialBy<(Prisma.BillItemUncheckedCreateInput & {
-        effectiveEndDate?: Date
-        addonID: string
-        isBacktracked?: boolean
-    }), "bill_id">[]> = new Map();
+/**
+ * Generates bill items for booking add-ons and maps them to bills by due date
+ * @param bookingAddons - Array of booking add-ons
+ * @param bills - Array of bills with id and due_date
+ * @returns Object mapping bill_id to array of bill items
+ */
+export async function generateBookingAddonsBillItems(
+    bookingAddons: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[],
+    bills: { id: number, due_date: Date }[]
+): Promise<{ [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] }> {
+    const billItemsByBillId: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } = {};
 
-    for (const bookingAddon of bookingAddons) {
-        const addon = await prisma.addOn.findFirstOrThrow({
-            where: {id: bookingAddon.addon_id},
-            include: {pricing: true},
+    function findBillIdByDate(d: Date): number | undefined {
+        const bill = bills.find(b => {
+            return b.due_date.getMonth() == d.getMonth() && b.due_date.getFullYear() == d.getFullYear();
         });
 
-        const addonPricing = addon.pricing.sort((a, b) => a.interval_start - b.interval_start);
-        if (!addonPricing || addonPricing.length === 0) {
-            throw new Error(`No pricing available for AddOn with ID ${bookingAddon.addon_id}`);
+        return bill?.id;
+    }
+
+    function findClosestBillIdByDate(d: Date): number | undefined {
+        if (bills.length === 0) return undefined;
+        // Sort bills by due_date ascending
+        const sorted = bills.slice().sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
+        for (const bill of sorted) {
+            if (bill.due_date >= d) {
+                return bill.id;
+            }
         }
+        // If all bills are before the date, return the last bill's id
+        return sorted[sorted.length - 1].id;
+    }
+
+    type BillItemWithDates = BillItemUncheckedCreateInput & {
+        _startDate: Date,
+        _endDate: Date,
+        _shouldBacktrack: boolean
+    }
+
+    type BillItemWithPartialDates = PartialBy<BillItemWithDates, "_endDate" | "_startDate" | "_shouldBacktrack">
+
+    function generateDescription(addon: AddOn, billItem: BillItemWithDates) {
+        return `Biaya Layanan Tambahan (${addon.name}) (${billItem._startDate.toLocaleString('default', {month: 'long', day: 'numeric'})} - ${billItem._endDate.toLocaleString('default', {month: 'long', day: 'numeric'})})`;
+    }
+
+    let allBillItems: BillItemWithPartialDates[] = [];
+
+    for (let bookingAddon of bookingAddons) {
+        const currentBillItems: BillItemWithDates[] = [];
+        const addon = await prisma.addOn.findFirstOrThrow({
+            where: {
+                id: bookingAddon.addon_id
+            },
+            include: {
+                pricing: true
+            }
+        });
+
+        const sortedPricing = addon.pricing
+            .sort((a, b) => a.interval_start - b.interval_start);
 
         const addonStartDate = new Date(bookingAddon.start_date);
         const addonEndDate = new Date(bookingAddon.end_date);
 
-        const totalMonths = Math.ceil(
-            (addonEndDate.getFullYear() - addonStartDate.getFullYear()) * 12 +
-            addonEndDate.getMonth() -
-            addonStartDate.getMonth() +
-            1
-        );
+        let currentStartDate = addonStartDate;
+        let currentEndDate;
 
-        // Initialize empty arrays for each month
-        for (let monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
-            const monthKey = `${addonStartDate.getFullYear()}-${addonStartDate.getMonth() + monthIndex}`;
+        let monthCount = 0;
 
-            if (!billItemsByMonth.has(monthKey)) {
-                billItemsByMonth.set(monthKey, []);
+        let shouldProrate = false;
+
+        // Logic to create all the bills
+        while (currentStartDate < addonEndDate) {
+            let shouldBacktrack = false;
+            let billId = findBillIdByDate(currentStartDate);
+            if (currentBillItems.length > 0 && billId == undefined) {
+                billId = findClosestBillIdByDate(currentStartDate);
+                shouldBacktrack = currentBillItems.map(bi => bi.bill_id).includes(billId ?? -1);
             }
-        }
-
-        let currentStart = addonStartDate;
-        let fullPaymentStart: Date | null = null;
-        let fullPaymentAmount = 0;
-
-        while (currentStart <= addonEndDate) {
-            const applicablePricing = addonPricing.find(
-                (pricing) =>
-                    pricing.interval_start <=
-                    Math.ceil(
-                        (currentStart.getFullYear() - addonStartDate.getFullYear()) * 12 +
-                        currentStart.getMonth() -
-                        addonStartDate.getMonth() // no +1 as addonPricing is 0-indexed
-                    ) &&
-                    (!pricing.interval_end ||
-                        pricing.interval_end >=
-                        Math.ceil(
-                            (currentStart.getFullYear() - addonStartDate.getFullYear()) * 12 +
-                            currentStart.getMonth() -
-                            addonStartDate.getMonth() // no +1 as addonPricing is 0-indexed
-                        ))
-            );
-
-            if (!applicablePricing) {
-                throw new Error(`No pricing found for AddOn ${bookingAddon.addon_id}`);
+            if (billId == undefined) {
+                throw new Error("No matching bill found");
             }
 
-            const isFullPayment = !!applicablePricing.is_full_payment;
-            if (isFullPayment) {
-                if (!fullPaymentStart) {
-                    fullPaymentStart = currentStart;
-                }
-
-                let fullPaymentDurationMonth = (
-                    applicablePricing.interval_end
-                        ? (applicablePricing.interval_end - applicablePricing.interval_start)
-                        : 0) + 1;
-                let fullPaymentEndDate = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + fullPaymentDurationMonth,
-                    currentStart.getDate() - 1
-                );
-                fullPaymentAmount = applicablePricing.price;
-
-                const monthKey = `${fullPaymentStart.getFullYear()}-${fullPaymentStart.getMonth()}`;
-
-                if (!billItemsByMonth.has(monthKey)) {
-                    billItemsByMonth.set(monthKey, []);
-                }
-
-                billItemsByMonth.get(monthKey)!.push({
-                    addonID: bookingAddon.addon_id,
-                    description: `Biaya Layanan Tambahan (${addon.name}) (${fullPaymentStart.toLocaleString(
-                        'default',
-                        {month: 'long'}
-                    )} ${fullPaymentStart.getDate()} - ${fullPaymentEndDate.toLocaleString('default', {
-                        month: 'long',
-                    })} ${fullPaymentEndDate.getDate()})`,
-                    amount: new Prisma.Decimal(fullPaymentAmount),
-                });
-                currentStart = new Date(
-                    fullPaymentEndDate.getFullYear(),
-                    fullPaymentEndDate.getMonth(),
-                    fullPaymentEndDate.getDate() + 1
-                );
-            } else {
-                const currentEnd = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + 1,
-                    0
-                );
-
-                if (currentEnd > addonEndDate) {
-                    currentEnd.setDate(addonEndDate.getDate());
-                }
-
-                const daysInMonth = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + 1,
-                    0
-                ).getDate();
-                const daysUsed = currentEnd.getDate() - currentStart.getDate() + 1;
-                const proratedPrice =
-                    (applicablePricing.price / daysInMonth) * daysUsed;
-
-                const monthKey = `${currentStart.getFullYear()}-${currentStart.getMonth()}`;
-
-                if (!billItemsByMonth.has(monthKey)) {
-                    billItemsByMonth.set(monthKey, []);
-                }
-
-                billItemsByMonth.get(monthKey)!.push({
-                    addonID: bookingAddon.addon_id,
-                    description: `Biaya Layanan Tambahan (${addon.name}) (${currentStart.toLocaleString(
-                        'default',
-                        {month: 'long'}
-                    )} ${currentStart.getDate()} - ${currentStart.toLocaleString(
-                        'default',
-                        {month: 'long'}
-                    )} ${currentEnd.getDate()})`,
-                    amount: new Prisma.Decimal(proratedPrice),
-                    effectiveEndDate: currentEnd,
-                });
-
-                currentStart = new Date(
-                    currentStart.getFullYear(),
-                    currentStart.getMonth() + 1,
-                    1
-                );
-            }
-        }
-    }
-
-    // Adjust items outside the booking's effective end date
-    const mapEntries = Array.from(billItemsByMonth.entries());
-    for (let entryIndex = mapEntries.length - 1; entryIndex >= 0; entryIndex--) {
-        const [month, monthItems] = mapEntries[entryIndex];
-
-        for (let i = 0; i < monthItems.length; i++) {
-            const item = monthItems[i];
-
-            if (item.effectiveEndDate && item.effectiveEndDate > booking.end_date) {
-                const [prevMonth, prevMonthItems] = mapEntries[entryIndex - 1];
-                const previousItem = prevMonthItems.find(items => {
-                    return item.addonID == items.addonID;
-                });
-
-                if (previousItem) {
-                    previousItem.isBacktracked = true;
-                    previousItem.amount = new Prisma.Decimal(
-                        parseFloat(previousItem.amount.toString()) + parseFloat(item.amount.toString())
-                    );
-
-                    const previousDescriptionMatch = previousItem.description.match(
-                        /\((\w+)\) \((\w+)(\s+)(\d+)(\s*)-\s?(\D*)\s?(\d*)\)/
-                    );
-
-                    const currentDescriptionMatch = item.description.match(
-                        /\((\w+)(\s+)(\d+)(\s*)-\s?(\w*)\s?(\d*)\)/
-                    );
-
-                    if (previousDescriptionMatch && currentDescriptionMatch) {
-                        let [, addonName, startMonth, , startDate] = previousDescriptionMatch;
-                        let [, currentStartMonth, , currentStartDate, , currentEndMonth, currentEndDate] = currentDescriptionMatch;
-
-                        if (item.isBacktracked) {
-                            previousItem.description = `Biaya Layanan Tambahan (${addonName}) (${startMonth} ${startDate} - ${currentEndMonth} ${currentEndDate})`;
-                        } else {
-                            previousItem.description = `Biaya Layanan Tambahan (${addonName}) (${startMonth} ${startDate} - ${currentStartMonth} ${currentEndDate})`;
-                        }
+            const pricing = sortedPricing
+                .find(p => {
+                    if (p.interval_end != undefined) {
+                        return p.interval_start >= monthCount && p.interval_end >= monthCount;
+                    } else {
+                        return p.interval_start <= monthCount;
                     }
-                } else {
-                    item.effectiveEndDate = new Date(item.effectiveEndDate.getFullYear(), item.effectiveEndDate.getMonth() - 1, 1);
-                    prevMonthItems.push(item);
+                });
+
+            if (!pricing) {
+                throw new Error("Pricing not found");
+            }
+
+            if (pricing.interval_end) {
+                let currentDuration = pricing.interval_end - pricing.interval_start + 1;
+                currentEndDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + currentDuration, currentStartDate.getDate() - 1);
+
+                if (currentEndDate > addonEndDate) {
+                    currentEndDate = addonEndDate;
                 }
-                monthItems.splice(i, 1); // Remove the adjusted item
-                i--;
+
+                const billItem: BillItemWithDates = {
+                    bill_id: billId,
+                    amount: new Prisma.Decimal(Math.round(Number(pricing.price))),
+                    description: "TODO!", // TODO!
+                    _startDate: currentStartDate,
+                    _endDate: currentEndDate,
+                    _shouldBacktrack: shouldBacktrack
+                };
+                currentBillItems.push(billItem);
+
+                currentStartDate = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth(), currentEndDate.getDate() + 1);
+                if (currentStartDate.getDate() != 1) shouldProrate = true;
+                monthCount += currentDuration;
+            } else {
+                if (currentStartDate.getDate() != 1) shouldProrate = true;
+                if (shouldProrate) {
+                    currentEndDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + 1, 0);
+                    shouldProrate = false;
+                } else {
+                    currentEndDate = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + 1, currentStartDate.getDate() - 1);
+                }
+
+                if (currentEndDate > addonEndDate) {
+                    currentEndDate = addonEndDate;
+                }
+
+                const currentMonthStart = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth(), 1);
+                const currentMonthEnd = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth() + 1, 0);
+                const daysInMonth = currentMonthEnd.getDate() - currentMonthStart.getDate() + 1;
+                const daysActive = currentEndDate.getDate() - currentStartDate.getDate() + 1;
+                const currentPrice = (pricing.price / daysInMonth * daysActive);
+                const roundedPrice = Math.ceil((currentPrice / 100)) * 100;
+
+                const billItem: BillItemWithDates = {
+                    bill_id: billId,
+                    amount: new Prisma.Decimal(roundedPrice),
+                    description: "TODO!", // TODO!
+                    _startDate: currentStartDate,
+                    _endDate: currentEndDate,
+                    _shouldBacktrack: shouldBacktrack,
+                };
+                currentBillItems.push(billItem);
+
+                currentStartDate = new Date(currentEndDate.getFullYear(), currentEndDate.getMonth(), currentEndDate.getDate() + 1);
+                if (currentStartDate.getDate() != 1) shouldProrate = true;
+                monthCount += 1;
             }
         }
 
-        if (monthItems.length == 0) {
-            billItemsByMonth.delete(month);
+        // Logic to backtrack
+        // Find all bill items that have _shouldBacktrack=true and merge them into the last valid bill item for that bill_id
+        const backtrackItems = currentBillItems.filter(item => item._shouldBacktrack);
+        for (const backtrackItem of backtrackItems) {
+            // Find all items for this bill_id that are not backtrack
+            const sameBillItems = currentBillItems.filter(item => item.bill_id === backtrackItem.bill_id && !item._shouldBacktrack);
+            if (sameBillItems.length === 0) continue;
+            // Find the earliest start and latest end among the merged items
+            const lastItem = sameBillItems[sameBillItems.length - 1];
+            // Update the last valid bill item
+                        lastItem.amount = new Prisma.Decimal(Number(lastItem.amount) + Number(backtrackItem.amount));
+            lastItem._endDate = backtrackItem._endDate;
+        }
+
+        // Remove all backtrack items from billItems
+        for (let i = currentBillItems.length - 1; i >= 0; i--) {
+            if (currentBillItems[i]._shouldBacktrack) {
+                currentBillItems.splice(i, 1);
+            }
+        }
+
+        // Logic to create description, remove internal fields and concat
+        for (let i = currentBillItems.length - 1; i >= 0; i--) {
+            let curr: BillItemWithPartialDates = currentBillItems[i];
+            curr.description = generateDescription(addon, currentBillItems[i]);
+            delete curr._endDate;
+            delete curr._startDate;
+            delete curr._shouldBacktrack;
+            allBillItems.push(curr);
         }
     }
 
-    return new Map(
-        Array.from(billItemsByMonth.entries()).map(([month, monthItems]) => [
-            month,
-            monthItems.map(({effectiveEndDate, addonID, isBacktracked, ...item}) => item) // Remove temporary field
-        ])
-    );
+    // return billItemsByBillId
+    return allBillItems.reduce((acc: typeof billItemsByBillId, item) => {
+        const key = item.bill_id;
+        // if this bill_id hasn't been seen yet, initialize with an empty array
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        // push the current item onto its bill_id array
+        acc[key].push(item);
+        return acc;
+    }, {});
 }
 
+/**
+ * Generates bills and bill items for a booking based on fee and duration
+ * @param data - Booking data containing fee, start date, and optional second resident fee
+ * @param duration - Duration information with month count
+ * @returns Object containing bills with bill items, individual bill items, and end date
+ */
 export async function generateBookingBillandBillItems(
     data: PartialBy<Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">, "second_resident_fee">,
     duration: Pick<Duration, "month_count">
@@ -707,7 +790,10 @@ export async function generateBookingBillandBillItems(
             billItems = billItems.concat(bi);
 
             bills.push({
-                description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                description: `Tagihan untuk Bulan ${startDate.toLocaleString('default', {
+                    month: 'long',
+                    year: 'numeric'
+                })}`,
                 due_date: new Date(startDate.getFullYear(), startDate.getMonth(), totalDaysInMonth, startDate.getHours()),
                 bill_item: {
                     createMany: {
@@ -740,7 +826,10 @@ export async function generateBookingBillandBillItems(
                 billItems = billItems.concat(bi);
 
                 bills.push({
-                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {
+                        month: 'long',
+                        year: 'numeric'
+                    })}`,
                     due_date: billEndDate,
                     bill_item: {
                         createMany: {
@@ -771,7 +860,10 @@ export async function generateBookingBillandBillItems(
             billItems = billItems.concat(bi);
 
             bills.push({
-                description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                description: `Tagihan untuk Bulan ${lastMonthStartDate.toLocaleString('default', {
+                    month: 'long',
+                    year: 'numeric'
+                })}`,
                 due_date: lastMonthEndDate,
                 bill_item: {
                     createMany: {
@@ -804,7 +896,10 @@ export async function generateBookingBillandBillItems(
                 billItems = billItems.concat(bi);
 
                 bills.push({
-                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`,
+                    description: `Tagihan untuk Bulan ${billStartDate.toLocaleString('default', {
+                        month: 'long',
+                        year: 'numeric'
+                    })}`,
                     due_date: billEndDate,
                     bill_item: {
                         createMany: {
@@ -823,4 +918,178 @@ export async function generateBookingBillandBillItems(
         billItems,
         endDate
     };
+}
+
+/**
+ * Updates a bill item
+ * @param billItemData - Bill item data to update
+ * @returns Success response with updated bill item data or error information
+ */
+export async function updateBillItemAction(billItemData: {
+    id: number;
+    description?: string;
+    amount?: number;
+    internal_description?: string;
+}) {
+    const {success, data, error} = billItemUpdateSchema.safeParse(billItemData);
+
+    if (!success) {
+        return {
+            errors: error?.format()
+        };
+    }
+
+    try {
+        const res = await prisma.$transaction(async (tx) => {
+            // Update the bill item
+            const updatedBillItem = await tx.billItem.update({
+                where: { id: data.id },
+                data: {
+                    description: data.description,
+                    amount: data.amount ? new Prisma.Decimal(data.amount) : undefined,
+                    internal_description: data.internal_description,
+                }
+            });
+
+            // Get the bill with all related data for response
+            const bill = await tx.bill.findFirst({
+                where: { id: updatedBillItem.bill_id },
+                include: billIncludeAll.include
+            });
+
+            return {
+                billItem: updatedBillItem,
+                bill: bill
+            };
+        });
+
+        return {
+            success: res
+        };
+    } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError) {
+            console.error("[updateBillItemAction]", error.code, error.message);
+            if (error.code == "P2025") {
+                return {failure: "Bill item tidak ditemukan"};
+            }
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            console.error("[updateBillItemAction]", error.message);
+        }
+
+        return {failure: "Gagal memperbarui rincian tagihan"};
+    }
+}
+
+/**
+ * Deletes a bill item
+ * @param id - The bill item ID to delete
+ * @returns Success response with deleted bill item data or error information
+ */
+export async function deleteBillItemAction(id: number) {
+    try {
+        const res = await prisma.$transaction(async (tx) => {
+            // Get the bill item first to get bill_id
+            const billItem = await tx.billItem.findUnique({
+                where: { id },
+                select: { bill_id: true }
+            });
+
+            if (!billItem) {
+                throw new Error("Bill item tidak ditemukan");
+            }
+
+            // Delete the bill item
+            const deletedBillItem = await tx.billItem.delete({
+                where: { id }
+            });
+
+            // Get the updated bill with all related data for response
+            const bill = await tx.bill.findFirst({
+                where: { id: billItem.bill_id },
+                include: billIncludeAll.include
+            });
+
+            return {
+                billItem: deletedBillItem,
+                bill: bill
+            };
+        });
+
+        return {
+            success: res
+        };
+    } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError) {
+            console.error("[deleteBillItemAction]", error.code, error.message);
+            if (error.code == "P2025") {
+                return {failure: "Bill item tidak ditemukan"};
+            }
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            console.error("[deleteBillItemAction]", error.message);
+        }
+
+        return {failure: "Gagal menghapus rincian tagihan"};
+    }
+}
+
+/**
+ * Creates a new bill item
+ * @param billItemData - Bill item data to create
+ * @returns Success response with created bill item data or error information
+ */
+export async function createBillItemAction(billItemData: {
+    bill_id: number;
+    description: string;
+    amount: number;
+    internal_description?: string;
+    type?: BillType;
+}) {
+    const {success, data, error} = billItemCreateSchema.safeParse(billItemData);
+
+    if (!success) {
+        return {
+            errors: error?.format()
+        };
+    }
+
+    try {
+        const res = await prisma.$transaction(async (tx) => {
+            // Create the bill item
+            const createdBillItem = await tx.billItem.create({
+                data: {
+                    bill_id: data.bill_id,
+                    description: data.description,
+                    amount: new Prisma.Decimal(data.amount),
+                    internal_description: data.internal_description,
+                    type: (data.type as BillType) || BillType.CREATED,
+                }
+            });
+
+            // Get the bill with all related data for response
+            const bill = await tx.bill.findFirst({
+                where: { id: data.bill_id },
+                include: billIncludeAll.include
+            });
+
+            return {
+                billItem: createdBillItem,
+                bill: bill
+            };
+        });
+
+        return {
+            success: res
+        };
+    } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError) {
+            console.error("[createBillItemAction]", error.code, error.message);
+            if (error.code == "P2003") {
+                return {failure: "Bill tidak ditemukan"};
+            }
+        } else if (error instanceof PrismaClientUnknownRequestError) {
+            console.error("[createBillItemAction]", error.message);
+        }
+
+        return {failure: "Gagal membuat rincian tagihan"};
+    }
 }

@@ -2,7 +2,7 @@
 
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {roomWithType} from "@/app/_lib/zod/rooms/zod";
-import {createRoom, deleteRoom, RoomsWithTypeAndLocation, updateRoomByID} from "@/app/_db/room";
+import {createRoom, deleteRoom, RoomsWithTypeAndLocation, updateRoomByID, getRoomsWithBookings, RoomsWithTypeAndLocationAndBookings} from "@/app/_db/room";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {number, object} from "zod";
 
@@ -45,6 +45,10 @@ export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocatio
 
     return {failure: "Request unsuccessful"};
   }
+}
+
+export async function getRoomsWithBookingsAction(locationID?: number, limit?: number, offset?: number) {
+  return getRoomsWithBookings(undefined, locationID, limit, offset);
 }
 
 export async function deleteRoomAction(id: string): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
