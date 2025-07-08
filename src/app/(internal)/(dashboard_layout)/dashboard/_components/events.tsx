@@ -17,7 +17,7 @@ export default function Events() {
 
   return (
     <div className={styles.eventsContainer}>
-      <h2>Upcoming Events</h2>
+      <h2>Acara Mendatang</h2>
       <div className={styles.weeksContainer}>
         {
           result.isSuccess && dates.map(d => {

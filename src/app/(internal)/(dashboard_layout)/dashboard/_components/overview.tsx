@@ -21,35 +21,24 @@ export default function Overview() {
   const handlePopoverEnter = (key: string) => setOpenPopover(key);
   const handlePopoverLeave = () => setOpenPopover(null);
 
-  const renderPopoverContent = (type: 'check_in' | 'check_out' | 'available') => {
+  const renderPopoverContent = (type: 'check_in' | 'check_out') => {
     if (!data) return <span>No data</span>;
     let items: any[] = [];
     if (type === 'check_in') items = data.check_in;
     if (type === 'check_out') items = data.check_out;
-    if (type === 'available') items = data.available;
     if (!items.length) return <span className="text-gray-400">No records found</span>;
     return (
       <div className="min-w-[320px] max-h-72 overflow-y-auto p-2">
         {items.map((item, idx) => {
-          if (type === 'available') {
-            return (
-              <div key={item.id} className="flex items-center gap-2 border-b last:border-b-0 py-1 text-sm">
-                <span><b>ID:</b> {item.id}</span>
-                <span><b>Room:</b> {item.room_number}</span>
-                <a href={`/rooms/all-rooms?id=${item.id}`} className="text-blue-600 underline ml-auto" target="_blank" rel="noopener noreferrer">View</a>
-              </div>
-            );
-          } else {
-            const roomNumber = item.rooms?.room_number || (item.rooms && item.rooms[0]?.room_number) || '-';
-            return (
-              <div key={item.id} className="flex items-center gap-2 border-b last:border-b-0 py-1 text-sm">
-                <span><b>ID:</b> {item.id}</span>
-                <span><b>Room:</b> {roomNumber}</span>
-                <span><b>Start:</b> {item.start_date ? new Date(item.start_date).toLocaleDateString() : '-'}</span>
-                <a href={`/bookings?id=${item.id}`} className="text-blue-600 underline ml-auto" target="_blank" rel="noopener noreferrer">View</a>
-              </div>
-            );
-          }
+          const roomNumber = item.rooms?.room_number || (item.rooms && item.rooms[0]?.room_number) || '-';
+          return (
+            <div key={item.id} className="flex items-center gap-2 border-b last:border-b-0 py-1 text-sm">
+              <span><b>ID:</b> {item.id}</span>
+              <span><b>Room:</b> {roomNumber}</span>
+              <span><b>Start:</b> {item.start_date ? new Date(item.start_date).toLocaleDateString() : '-'}</span>
+              <a href={`/bookings?id=${item.id}`} className="text-blue-600 underline ml-auto" target="_blank" rel="noopener noreferrer">View</a>
+            </div>
+          );
         })}
       </div>
     );
@@ -117,31 +106,8 @@ export default function Overview() {
     {
       head: "Total",
       topic: "Kamar Tersedia",
-      data: data?.available.length,
-      popover: (
-        <Popover
-          open={openPopover === 'available'}
-          handler={() => setOpenPopover(openPopover === 'available' ? null : 'available')}
-          placement="bottom"
-        >
-          <PopoverHandler>
-            <span
-              className={styles.itemValue + " cursor-pointer"}
-              onMouseEnter={() => handlePopoverEnter('available')}
-              onMouseLeave={handlePopoverLeave}
-            >
-              {data?.available.length}
-            </span>
-          </PopoverHandler>
-          <PopoverContent
-            className="z-[99999]"
-            onMouseEnter={() => handlePopoverEnter('available')}
-            onMouseLeave={handlePopoverLeave}
-          >
-            {renderPopoverContent('available')}
-          </PopoverContent>
-        </Popover>
-      )
+      data: data?.available,
+      popover: null
     },
     {
       head: "Total",
@@ -154,7 +120,7 @@ export default function Overview() {
   return (
     <div className={styles.overviewContainer}>
       <div className={styles.overviewHeaderContainer}>
-        <h2>Overview</h2>
+        <h2>Ringaksan</h2>
         {isSuccess &&
             <div className={styles.overviewDate}>{`${data?.date_range.start} - ${data?.date_range.end}`}</div>}
       </div>

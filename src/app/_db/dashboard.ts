@@ -1,7 +1,7 @@
 "use server";
 
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
-import {endOfWeek, format, startOfWeek} from "date-fns";
+import {format} from "date-fns";
 import prisma from "@/app/_lib/primsa";
 import {Period} from "@/app/_enum/financial";
 import {getDatesInRange} from "@/app/_lib/util";
@@ -23,73 +23,71 @@ export async function getOverviewData(locationID?: number) {
     const sevenDaysAhead = new Date();
     sevenDaysAhead.setDate(today.getDate() + 7);
 
+    const locationClause = locationID ? Prisma.sql`r.location_id = ${locationID}` : Prisma.sql`TRUE`;
+    
     const [checkIn, checkOut, availableRooms, roomCount] = await prisma.$transaction([
+        // Get check-ins from today to 7 days ahead
         prisma.booking.findMany({
             where: {
                 rooms: {
                     location_id: locationID
                 },
                 start_date: {
-                    gte: firstDateOfWeek,
-                    lte: lastDateOfWeek,
+                    gte: today,
+                    lt: sevenDaysAhead,
                 }
             },
-            start_date: {
-                gte: today,
-                lt: sevenDaysAhead,
-            }
-        }
-    });
-
-    const locationClause = locationID ? Prisma.sql`r.location_id = ${locationID}` : Prisma.sql`TRUE`;
-    const bookingsCountRaw = prisma.$queryRaw<{ count: number }[]>`
-        SELECT COUNT(*)::integer AS COUNT
-        FROM "bookings" b
-                 LEFT JOIN durations d ON b.duration_id = d.id
-                 LEFT JOIN rooms r ON b.room_id = r.id
-        WHERE ${locationClause}
-          AND (
-            b.start_date + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
-            ) BETWEEN ${today} AND ${sevenDaysAhead}
-    `;
-    // const bookingsCount: Promise<number> = bookingsCountRaw.then(e => new Promise(resolve => setTimeout(() => resolve(e[0].count), 10000)));
-    const bookingsCount = bookingsCountRaw.then(e => e[0].count);
-
-    const availableCount = prisma.room.count({
-        where: {
-            roomstatuses: {
-                id: 1,
-            },
-            select: {
-                id: true,
+            include: {
                 rooms: {
-                    select: {
-                        room_number: true,
-                    },
+                    include: {
+                        roomtypes: true
+                    }
                 },
-                start_date: true,
-                end_date: true,
+                tenants: true,
+                durations: true,
             }
         }),
-        prisma.room.findMany({
+
+        // Get check-outs from today to 7 days ahead
+        prisma.booking.findMany({
+            where: {
+                rooms: {
+                    location_id: locationID,
+                },
+                end_date: {
+                    gte: today,
+                    lt: sevenDaysAhead,
+                },
+            },
+            include: {
+                rooms: {
+                    include: {
+                        roomtypes: true
+                    }
+                },
+                tenants: true,
+                durations: true,
+            }
+        }),
+
+        // Get available rooms count
+        prisma.room.count({
             where: {
                 location_id: locationID,
                 bookings: {
                     none: {
                         start_date: {
-                            lte: lastDateOfWeek,  // booking starts before week ends
+                            lte: sevenDaysAhead,  // booking starts before week ends
                         },
                         end_date: {
-                            gte: firstDateOfWeek, // booking ends after week starts
+                            gte: today, // booking ends after week starts
                         },
                     },
                 },
-            },
-            select: {
-                id: true,
-                room_number: true,
             }
         }),
+
+        // Get total room count
         prisma.room.count({
             where: {
                 location_id: locationID,
@@ -101,7 +99,7 @@ export async function getOverviewData(locationID?: number) {
         check_in: checkIn,
         check_out: checkOut,
         available: availableRooms,
-        occupied: roomCount - availableRooms.length,
+        occupied: roomCount - availableRooms,
         date_range: {
             start: formatDateToString(today),
             end: formatDateToString(sevenDaysAhead)
