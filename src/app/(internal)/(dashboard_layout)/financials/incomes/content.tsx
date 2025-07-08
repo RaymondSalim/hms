@@ -15,11 +15,12 @@ import {
     deleteTransactionAction,
     upsertTransactionAction
 } from "@/app/(internal)/(dashboard_layout)/financials/transaction-action";
+import { TransactionWithBookingInfo } from "@/app/_db/transaction";
 
 
 export interface IncomesContentProps {
-    incomes: Transaction[]
-    refetchFn: (options?: RefetchOptions) => Promise<QueryObserverResult<Transaction[]>>
+    incomes: TransactionWithBookingInfo[]
+    refetchFn: (options?: RefetchOptions) => Promise<QueryObserverResult<TransactionWithBookingInfo[]>>
 }
 
 export default function IncomesContent({incomes, refetchFn}: IncomesContentProps) {
@@ -94,6 +95,7 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
             }
             searchPlaceholder={"TODO!"} // TODO!
             upsert={{
+                // @ts-expect-error weird type error
                 mutationFn: upsertTransactionAction,
             }}
 

@@ -21,7 +21,9 @@ import {getTransactions} from "@/app/_db/transaction";
 interface IncomeFormProps extends TableFormProps<Transaction> {
 }
 
-type DataType = Partial<NonUndefined<IncomeFormProps['contentData']>>;
+type DataType = Partial<NonUndefined<IncomeFormProps['contentData']>> & {
+    booking_id?: number;
+};
 
 export function IncomeForm(props: IncomeFormProps) {
     let parsedData: typeof props.contentData;
@@ -127,7 +129,7 @@ export function IncomeForm(props: IncomeFormProps) {
 
     return (
         <div className={"w-full px-8 py-4"}>
-            <h1 className={"text-xl font-semibold text-black"}>{(parsedData && parsedData.id) ? "Perubahan" : "Pembuatan"} Pengeluaran</h1>
+            <h1 className={"text-xl font-semibold text-black"}>{(parsedData && parsedData.id) ? "Perubahan" : "Pembuatan"} Pemasukan</h1>
             <form className={"mt-4"}>
                 <div className="mb-1 flex flex-col gap-6">
                     <MotionConfig
@@ -175,7 +177,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                         }))}
                                         options={bookingDataMapped}
                                         selectedOption={
-                                            bookingDataMapped.find(r => r.value == data.booking_id)
+                                            bookingDataMapped.find(r => r.value == (data.related_id && typeof data.related_id === 'object' && 'booking_id' in data.related_id ? data.related_id.booking_id as number : undefined))
                                         }
                                         placeholder={"Pilih Booking (Opsional)"}
                                         isError={!!fieldErrors?.booking_id}

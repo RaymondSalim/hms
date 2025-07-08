@@ -1,15 +1,22 @@
 "use server";
 
-import {Prisma, Transaction} from "@prisma/client";
+import {Booking, Prisma, Transaction} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 import TransactionFindManyArgs = Prisma.TransactionFindManyArgs;
+
+export type TransactionWithBookingInfo = Transaction & {
+  booking: Booking;
+  room_number: string | null;
+  tenant_name: string | null;
+  location_name: string | null;
+}
 
 export async function getTransactions(args: TransactionFindManyArgs) {
   return prisma.transaction.findMany(args);
 }
 
-export async function getTransactionsWithBookingInfo(args: TransactionFindManyArgs) {
+export async function getTransactionsWithBookingInfo(args: TransactionFindManyArgs): Promise<TransactionWithBookingInfo[]> {
   // First get the basic transactions
   const transactions = await prisma.transaction.findMany(args);
   
@@ -34,18 +41,32 @@ export async function getTransactionsWithBookingInfo(args: TransactionFindManyAr
           
           return {
             ...transaction,
-            booking,
+            booking: booking!,
             room_number: booking?.rooms?.room_number || null,
             tenant_name: booking?.tenants?.name || null,
             location_name: booking?.rooms?.locations?.name || null
           };
         } catch (error) {
           console.error(`Error fetching booking info for transaction ${transaction.id}:`, error);
-          return transaction;
+          // Return a default booking object when there's an error
+          return {
+            ...transaction,
+            booking: {} as Booking,
+            room_number: null,
+            tenant_name: null,
+            location_name: null
+          };
         }
       }
       
-      return transaction;
+      // Return a default booking object for transactions without booking info
+      return {
+        ...transaction,
+        booking: {} as Booking,
+        room_number: null,
+        tenant_name: null,
+        location_name: null
+      };
     })
   );
   

@@ -16,12 +16,14 @@ import {NonUndefined} from "@/app/_lib/types";
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {useHeader} from "@/app/_context/HeaderContext";
-import {getTransactions} from "@/app/_db/transaction";
+import {getTransactions, TransactionWithBookingInfo} from "@/app/_db/transaction";
 
-interface ExpenseFormProps extends TableFormProps<Transaction> {
+interface ExpenseFormProps extends TableFormProps<TransactionWithBookingInfo> {
 }
 
-type DataType = Partial<NonUndefined<ExpenseFormProps['contentData']>>;
+type DataType = Partial<NonUndefined<ExpenseFormProps['contentData']>> & {
+    booking_id?: number;
+};
 
 export function ExpenseForm(props: ExpenseFormProps) {
     let parsedData: typeof props.contentData;
@@ -175,7 +177,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
                                         }))}
                                         options={bookingDataMapped}
                                         selectedOption={
-                                            bookingDataMapped.find(r => r.value == data.booking_id)
+                                            bookingDataMapped.find(r => r.value == (data.related_id && typeof data.related_id === 'object' && 'booking_id' in data.related_id ? data.related_id.booking_id as number : undefined))
                                         }
                                         placeholder={"Pilih Booking (Opsional)"}
                                         isError={!!fieldErrors?.booking_id}
