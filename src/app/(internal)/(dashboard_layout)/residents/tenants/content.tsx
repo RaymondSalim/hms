@@ -142,7 +142,7 @@ function TenantInfo({tenant}: TenantInfoProps) {
         <div className="container mx-auto p-6 h-full">
             <h1 className="text-xl font-semibold text-black">Informasi Penghuni</h1>
             <Card className="shadow-none">
-                <CardBody className="space-y-4">
+                <CardBody className="mt-4 p-0 space-y-4">
                     {/* Basic Information */}
                     <Typography variant="h5" className="font-semibold">Informasi Dasar</Typography>
                     <Typography><strong>Nama Lengkap:</strong> {tenant.name}</Typography>

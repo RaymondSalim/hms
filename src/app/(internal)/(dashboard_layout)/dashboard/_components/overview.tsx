@@ -15,12 +15,12 @@ export default function Overview() {
 
   const items = [
     {
-      head: "This Week's",
+      head: "Next 7 Days",
       topic: "Check-in",
       data: data?.check_in
     },
     {
-      head: "This Week's",
+      head: "Next 7 Days",
       topic: "Check-out",
       data: data?.check_out
     },

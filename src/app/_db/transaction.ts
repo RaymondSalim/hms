@@ -9,6 +9,49 @@ export async function getTransactions(args: TransactionFindManyArgs) {
   return prisma.transaction.findMany(args);
 }
 
+export async function getTransactionsWithBookingInfo(args: TransactionFindManyArgs) {
+  // First get the basic transactions
+  const transactions = await prisma.transaction.findMany(args);
+  
+  // For transactions that have booking_id in related_id, fetch booking and room info
+  const transactionsWithBookingInfo = await Promise.all(
+    transactions.map(async (transaction) => {
+      if (transaction.related_id && typeof transaction.related_id === 'object' && 'booking_id' in transaction.related_id) {
+        const bookingId = transaction.related_id.booking_id as number;
+        
+        try {
+          const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: {
+              rooms: {
+                include: {
+                  locations: true
+                }
+              },
+              tenants: true
+            }
+          });
+          
+          return {
+            ...transaction,
+            booking,
+            room_number: booking?.rooms?.room_number || null,
+            tenant_name: booking?.tenants?.name || null,
+            location_name: booking?.rooms?.locations?.name || null
+          };
+        } catch (error) {
+          console.error(`Error fetching booking info for transaction ${transaction.id}:`, error);
+          return transaction;
+        }
+      }
+      
+      return transaction;
+    })
+  );
+  
+  return transactionsWithBookingInfo;
+}
+
 export async function createTransaction(transactionData: OmitIDTypeAndTimestamp<Transaction>) {
   return prisma.transaction.create({
     data: {

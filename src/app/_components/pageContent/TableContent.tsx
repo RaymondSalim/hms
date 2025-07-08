@@ -96,6 +96,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
         options: { value: string, label: string }[],
         allLabel?: string
     },
+    valueLabelMapping?: { [columnId: string]: { [value: string]: string } }
 } & (
     {
         searchType: "smart",
@@ -414,7 +415,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     </Button>
                 </div>
             <div className="w-full flex-1 min-h-0 overflow-auto" style={{height: '400px', overflowY: 'auto'}}>
-                <TanTable tanTable={tanTable}/>
+                <TanTable tanTable={tanTable} valueLabelMapping={props.valueLabelMapping}/>
             </div>
             <div className="flex flex-col md:flex-row items-center mt-4 gap-x-8 gap-y-8">
                 <div className={"w-full md:w-auto md:ml-auto"}>

@@ -19,8 +19,9 @@ export interface SimplifiedIncomeExpense {
 }
 
 export async function getOverviewData(locationID?: number) {
-    const firstDateOfWeek = getFirstDateOfWeek(new Date());
-    const lastDateOfWeek = getLastDateOfWeek(new Date());
+    const today = new Date();
+    const sevenDaysAhead = new Date();
+    sevenDaysAhead.setDate(today.getDate() + 7);
 
     const checkIn = prisma.booking.count({
         where: {
@@ -28,8 +29,8 @@ export async function getOverviewData(locationID?: number) {
                 location_id: locationID
             },
             start_date: {
-                gte: firstDateOfWeek,
-                lt: lastDateOfWeek,
+                gte: today,
+                lt: sevenDaysAhead,
             }
         }
     });
@@ -43,7 +44,7 @@ export async function getOverviewData(locationID?: number) {
         WHERE ${locationClause}
           AND (
             b.start_date + INTERVAL '1 MONTH' * COALESCE(d.month_count, 0)
-            ) BETWEEN ${firstDateOfWeek} AND ${lastDateOfWeek}
+            ) BETWEEN ${today} AND ${sevenDaysAhead}
     `;
     // const bookingsCount: Promise<number> = bookingsCountRaw.then(e => new Promise(resolve => setTimeout(() => resolve(e[0].count), 10000)));
     const bookingsCount = bookingsCountRaw.then(e => e[0].count);
@@ -72,8 +73,8 @@ export async function getOverviewData(locationID?: number) {
         available: availableCount,
         occupied: occupiedCount,
         date_range: {
-            start: formatDateToString(firstDateOfWeek),
-            end: formatDateToString(lastDateOfWeek)
+            start: formatDateToString(today),
+            end: formatDateToString(sevenDaysAhead)
         }
     };
 }

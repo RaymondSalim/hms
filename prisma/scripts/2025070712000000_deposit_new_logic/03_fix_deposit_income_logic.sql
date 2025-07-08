@@ -74,7 +74,7 @@ SELECT
     pa.payment_date as date,
     'Pemasukan untuk Pembayaran #' || pa.payment_id as description,
     'INCOME'::"TransactionType" as type,
-    json_build_object('payment_id', pa.payment_id) as related_id,
+    json_build_object('payment_id', pa.payment_id, 'booking_id', pa.booking_id) as related_id,
     NOW() as "createdAt",
     NOW() as "updatedAt"
 FROM payment_analysis pa
@@ -99,7 +99,7 @@ SELECT
     pa.payment_date as date,
     'Deposit diterima untuk Pembayaran #' || pa.payment_id as description,
     'INCOME'::"TransactionType" as type,
-    json_build_object('payment_id', pa.payment_id, 'deposit_id', pa.deposit_id) as related_id,
+    json_build_object('payment_id', pa.payment_id, 'booking_id', pa.booking_id, 'deposit_id', pa.deposit_id) as related_id,
     NOW() as "createdAt",
     NOW() as "updatedAt"
 FROM payment_analysis pa
@@ -200,7 +200,7 @@ SELECT
     pa.payment_date as date,
     'Deposit diterima untuk Pembayaran #' || pa.payment_id as description,
     'INCOME'::"TransactionType" as type,
-    json_build_object('payment_id', pa.payment_id, 'deposit_id', pa.deposit_id) as related_id,
+    json_build_object('payment_id', pa.payment_id, 'booking_id', pa.booking_id, 'deposit_id', pa.deposit_id) as related_id,
     NOW() as "createdAt",
     NOW() as "updatedAt"
 FROM payment_analysis pa

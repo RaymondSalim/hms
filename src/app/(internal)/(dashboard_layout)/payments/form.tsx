@@ -10,7 +10,7 @@ import {ZodFormattedError} from "zod";
 import {DayPicker} from "react-day-picker";
 import {fileToBase64, formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import "react-day-picker/style.css";
-import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
+import {getBookingsWithUnpaidBillsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {PaymentIncludeAll} from "@/app/_db/payment";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -124,10 +124,10 @@ export function PaymentForm(props: PaymentForm) {
         }
     }, [locationData, locationDataSuccess]);
 
-    // Booking Data
+    // Booking Data - Only get bookings with unpaid bills
     const {data: bookingData, isSuccess: isBookingDataSuccess} = useQuery({
-        queryKey: ['bookings', 'location_id', locationID],
-        queryFn: () => getAllBookingsAction(locationID),
+        queryKey: ['bookings.with.unpaid.bills', 'location_id', locationID],
+        queryFn: () => getBookingsWithUnpaidBillsAction(locationID),
 
         enabled: locationID != undefined,
     });
@@ -323,14 +323,14 @@ export function PaymentForm(props: PaymentForm) {
                                 >
                                     <label htmlFor="booking_id">
                                         <Typography variant="h6" color="blue-gray">
-                                            Pemesanan
+                                            Pemesanan (Hanya yang memiliki tagihan belum lunas)
                                         </Typography>
                                     </label>
                                     <SelectComponent<number>
                                         setValue={(v) => setData(prevState => ({...prevState, booking_id: v}))}
                                         options={bookingDataMapped}
                                         selectedOption={bookingDataMapped.find(r => r.value == data?.bookings?.id)}
-                                        placeholder={"Pilih Pemesanan"}
+                                        placeholder={"Pilih Pemesanan dengan tagihan belum lunas"}
                                         isError={!!fieldErrors?.booking_id}
                                     />
                                     {

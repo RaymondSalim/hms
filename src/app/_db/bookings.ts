@@ -23,7 +23,11 @@ const includeAll: BookingInclude = {
     bookingstatuses: true,
     tenants: true,
     checkInOutLogs: true,
-    addOns: true,
+    addOns: {
+        include: {
+            addOn: true
+        }
+    },
     deposit: true,
 };
 
@@ -442,4 +446,49 @@ export async function getBookingByID<T extends Prisma.BookingInclude>(id: number
             id
         },
     });
+}
+
+export async function getBookingsWithUnpaidBills(location_id?: number, room_id?: number, where?: Prisma.BookingWhereInput, limit?: number, offset?: number) {
+    // Use a more efficient approach with a single query and aggregation
+    const bookingsWithBills = await prisma.booking.findMany({
+        where: {
+            ...where,
+            rooms: {
+                id: room_id,
+                location_id: location_id,
+            }
+        },
+        skip: offset,
+        take: limit,
+        include: {
+            ...includeAll,
+            bills: {
+                include: {
+                    bill_item: true,
+                    paymentBills: {
+                        include: {
+                            payment: true
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Filter bookings that have unpaid bills
+    const bookingsWithUnpaidBills = bookingsWithBills.filter(booking => {
+        return booking.bills.some(bill => {
+            const billAmount = bill.bill_item.reduce(
+                (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+            );
+            const paidAmount = bill.paymentBills.reduce(
+                (acc, pb) => acc.add(pb.amount), new Prisma.Decimal(0)
+            );
+            
+            // Bill is unpaid if paid amount is less than total bill amount
+            return paidAmount.lessThan(billAmount);
+        });
+    });
+    
+    return bookingsWithUnpaidBills;
 }

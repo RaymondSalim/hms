@@ -6,7 +6,7 @@ import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
-import {BookingsIncludeAll, createBooking, getAllBookings, updateBookingByID} from "@/app/_db/bookings";
+import {BookingsIncludeAll, createBooking, getAllBookings, getBookingsWithUnpaidBills, updateBookingByID} from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
@@ -119,6 +119,10 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
 
 export async function getAllBookingsAction(...args: Parameters<typeof getAllBookings>) {
     return getAllBookings(...args);
+}
+
+export async function getBookingsWithUnpaidBillsAction(...args: Parameters<typeof getBookingsWithUnpaidBills>) {
+    return getBookingsWithUnpaidBills(...args);
 }
 
 export async function deleteBookingAction(id: number) {

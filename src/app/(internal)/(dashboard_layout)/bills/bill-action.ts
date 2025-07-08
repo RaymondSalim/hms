@@ -292,7 +292,8 @@ export async function getAllBillsIncludeAll(id?: number, locationID?: number, li
                 },
                 bookings: {
                     include: {
-                        rooms: true
+                        rooms: true,
+                        tenants: true,
                     }
                 },
                 bill_item: true

@@ -1,7 +1,7 @@
 "use client";
 
 import {createColumnHelper} from "@tanstack/react-table";
-import React, {useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {useHeader} from "@/app/_context/HeaderContext";
@@ -15,6 +15,9 @@ import {
 import {BookingForm} from "@/app/(internal)/(dashboard_layout)/bookings/form";
 import {
     Button,
+    Card,
+    CardBody,
+    CardFooter,
     Dialog,
     DialogBody,
     DialogFooter,
@@ -58,6 +61,21 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     });
     let [onCancel, setOnCancel] = useState(() => () => {
     });
+
+    // Detail dialog states
+    let [dialogContent, setDialogContent] = useState(<></>);
+    let [showDialog, setShowDialog] = useState(false);
+    const dialogRef = useRef<HTMLDivElement>(null);
+
+    // Ensure the dialog scrolls to the top when opened
+    useEffect(() => {
+        if (showDialog) {
+            const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+            delay(10).then(() => requestAnimationFrame(() => {
+                dialogRef.current?.scrollTo({top: 0, behavior: "smooth"});
+            }));
+        }
+    }, [showDialog, dialogContent]);
 
     // Check in/out confirmation dialog states
     const [showCheckInOutDialog, setShowCheckInOutDialog] = useState(false);
@@ -258,6 +276,14 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                     }
                 }}>Lihat Tagihan</Link>
         }),
+        columnHelper.display({
+            header: "Detail",
+            cell: props =>
+                <Link className={"text-blue-400"} type="button" href="" onClick={() => {
+                    setDialogContent(<BookingInfo booking={props.row.original}/>);
+                    setShowDialog(true);
+                }}>Lihat Selengkapnya</Link>
+        }),
     ];
 
     const filterKeys: SelectOption<string>[] = columns
@@ -393,6 +419,22 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             }}
             customDialog={
                 <>
+                    <Dialog
+                        open={showDialog}
+                        size={"md"}
+                        handler={() => setShowDialog(prev => !prev)}
+                        className={"flex flex-col gap-y-4 p-8 h-[80dvh]"}
+                    >
+                        <div ref={dialogRef} className="overflow-y-auto h-full">
+                            {dialogContent}
+                        </div>
+                        <div className={"flex gap-x-4 justify-end"}>
+                            <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
+                                Tutup
+                            </Button>
+                        </div>
+                    </Dialog>
+
                     <Dialog
                         key={"confirmation-dialog"}
                         open={showConfirmationDialog}
@@ -558,5 +600,102 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                 </>
             }
         />
+    );
+}
+
+interface BookingInfoProps {
+    booking: BookingsIncludeAll;
+}
+
+function BookingInfo({booking}: BookingInfoProps) {
+    return (
+        <div className="container mx-auto p-6 h-full">
+            <h1 className="text-xl font-semibold text-black">Informasi Pemesanan</h1>
+            <Card className="shadow-none">
+                <CardBody className="mt-4 p-0 space-y-4">
+                    {/* Basic Information */}
+                    <Typography variant="h5" className="font-semibold">Informasi Dasar</Typography>
+                    <Typography><strong>ID Pemesanan:</strong> {booking.id}</Typography>
+                    <Typography><strong>Status:</strong> {booking.bookingstatuses?.status || "N/A"}</Typography>
+                    <Typography><strong>Biaya:</strong> {formatToIDR(new Prisma.Decimal(booking.fee).toNumber())}</Typography>
+                    <Typography><strong>Biaya Penghuni Kedua:</strong> {booking.second_resident_fee ? formatToIDR(new Prisma.Decimal(booking.second_resident_fee).toNumber()) : "N/A"}</Typography>
+
+                    {/* Tenant Information */}
+                    <Typography variant="h5" className="font-semibold mt-4">Informasi Penyewa</Typography>
+                    <Typography><strong>Nama:</strong> {booking.tenants?.name || "N/A"}</Typography>
+                    <Typography><strong>Email:</strong> {booking.tenants?.email || "N/A"}</Typography>
+                    <Typography><strong>Nomor Telepon:</strong> {booking.tenants?.phone || "N/A"}</Typography>
+                    <Typography><strong>Nomor Identitas:</strong> {booking.tenants?.id_number || "N/A"}</Typography>
+
+                    {/* Room Information */}
+                    <Typography variant="h5" className="font-semibold mt-4">Informasi Kamar</Typography>
+                    <Typography><strong>Nomor Kamar:</strong> {booking.rooms?.room_number || "N/A"}</Typography>
+                    <Typography><strong>Lokasi:</strong> {(booking.rooms as any)?.locations?.name || "N/A"}</Typography>
+
+                    {/* Duration Information */}
+                    <Typography variant="h5" className="font-semibold mt-4">Informasi Durasi</Typography>
+                    <Typography><strong>Durasi:</strong> {booking.durations?.duration || "N/A"}</Typography>
+                    <Typography><strong>Jumlah Bulan:</strong> {booking.durations?.month_count || "N/A"}</Typography>
+
+                    {/* Date Information */}
+                    <Typography variant="h5" className="font-semibold mt-4">Informasi Tanggal</Typography>
+                    <Typography><strong>Tanggal Mulai:</strong> {formatToDateTime(booking.start_date, false)}</Typography>
+                    <Typography><strong>Tanggal Selesai:</strong> {formatToDateTime(booking.end_date, false)}</Typography>
+
+                    {/* Deposit Information */}
+                    <Typography variant="h5" className="font-semibold mt-4">Informasi Deposit</Typography>
+                    {booking.deposit ? (
+                        <>
+                            <Typography><strong>Jumlah Deposit:</strong> {formatToIDR(new Prisma.Decimal(booking.deposit.amount).toNumber())}</Typography>
+                            <Typography><strong>Status Deposit:</strong> {booking.deposit.status}</Typography>
+                        </>
+                    ) : (
+                        <Typography>Tidak ada deposit</Typography>
+                    )}
+
+                    {/* Add-ons Information */}
+                    <Typography variant="h5" className="font-semibold mt-4">Layanan Tambahan</Typography>
+                    {booking.addOns && booking.addOns.length > 0 ? (
+                        <div className="space-y-2">
+                            {booking.addOns.map((addon, index) => (
+                                <div key={index} className="border-l-4 border-blue-500 pl-3">
+                                    <Typography><strong>Nama:</strong> {(addon as any).addOn?.name || "N/A"}</Typography>
+                                    <Typography><strong>Deskripsi:</strong> {(addon as any).addOn?.description || "N/A"}</Typography>
+                                    <Typography><strong>Tanggal Mulai:</strong> {formatToDateTime(addon.start_date, false)}</Typography>
+                                    <Typography><strong>Tanggal Selesai:</strong> {formatToDateTime(addon.end_date, false)}</Typography>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <Typography>Tidak ada layanan tambahan</Typography>
+                    )}
+
+                    {/* Check In/Out Logs */}
+                    <Typography variant="h5" className="font-semibold mt-4">Riwayat Check In/Out</Typography>
+                    {booking.checkInOutLogs && booking.checkInOutLogs.length > 0 ? (
+                        <div className="space-y-2">
+                            {booking.checkInOutLogs.map((log, index) => (
+                                <div key={index} className="border-l-4 border-green-500 pl-3">
+                                    <Typography><strong>Tipe:</strong> {log.event_type}</Typography>
+                                    <Typography><strong>Tanggal:</strong> {formatToDateTime(log.event_date)}</Typography>
+                                    <Typography><strong>Dibuat Pada:</strong> {formatToDateTime(log.createdAt)}</Typography>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <Typography>Belum ada riwayat check in/out</Typography>
+                    )}
+                </CardBody>
+
+                <CardFooter divider className="flex items-center justify-between py-3">
+                    <Typography variant="small" color="gray">
+                        Dibuat Pada: {formatToDateTime(booking.createdAt)}
+                    </Typography>
+                    <Typography variant="small" color="gray">
+                        Terakhir Diubah: {formatToDateTime(booking.updatedAt)}
+                    </Typography>
+                </CardFooter>
+            </Card>
+        </div>
     );
 }

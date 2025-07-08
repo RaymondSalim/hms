@@ -10,9 +10,10 @@ import {AnimatePresence, motion} from "framer-motion";
 
 export interface TanTableProps {
     tanTable: Table<any>
+    valueLabelMapping?: { [columnId: string]: { [value: string]: string } }
 }
 
-export default function TanTable({tanTable}: TanTableProps) {
+export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
     const [selectedValues, setSelectedValues] = useState<{ [key: string]: string[] }>({});
     const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
     const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
@@ -36,6 +37,14 @@ export default function TanTable({tanTable}: TanTableProps) {
         setSelectedValues(initialSelectedValues);
         setSearchTerms(initialSearchTerms);
     }, [tanTable]);
+
+    // Get display label for a value
+    const getDisplayLabel = (columnId: string, value: string) => {
+        if (valueLabelMapping && valueLabelMapping[columnId] && valueLabelMapping[columnId][value]) {
+            return valueLabelMapping[columnId][value];
+        }
+        return value;
+    };
 
     // Get unique values for the column
     const getUniqueValues = (columnId: string) => {
@@ -201,7 +210,7 @@ export default function TanTable({tanTable}: TanTableProps) {
                                                                         }));
                                                                     }}
                                                                 />
-                                                                <span className="text-sm">{val}</span>
+                                                                <span className="text-sm">{getDisplayLabel(header.id, val)}</span>
                                                             </div>
                                                         ))}
 
@@ -227,7 +236,7 @@ export default function TanTable({tanTable}: TanTableProps) {
                                                                         }));
                                                                     }}
                                                                 />
-                                                                <span className="text-sm">{val}</span>
+                                                                <span className="text-sm">{getDisplayLabel(header.id, val)}</span>
                                                             </div>
                                                         ))}
                                                 </div>

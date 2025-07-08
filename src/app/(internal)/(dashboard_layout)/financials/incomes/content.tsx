@@ -42,7 +42,15 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
         }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
-            minSize: 275
+            minSize: 200
+        }),
+        columnHelper.accessor(row => row.booking?.id || "", {
+            header: "Booking ID",
+            cell: props => props.row.original.booking?.id ? `#${props.row.original.booking.id}` : "-"
+        }),
+        columnHelper.accessor(row => row.room_number || "", {
+            header: "Nomor Kamar",
+            cell: props => props.row.original.room_number || "-"
         }),
         // columnHelper.display({
         //     header: "Rincian Tagihan",

@@ -129,6 +129,11 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             header: "Nomor Kamar",
             enableColumnFilter: true,
         }),
+        columnHelper.accessor(row => row.bookings?.tenants?.name, {
+            id: "tenant_name",
+            header: "Nama Penyewa",
+            enableColumnFilter: true,
+        }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
             minSize: 275,
@@ -332,6 +337,22 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 }
                 searchType={"smart"}
                 filterKeys={filterKeys}
+                filterByOptions={{
+                    columnId: 'payment_status',
+                    options: [
+                        {value: 'paid', label: 'Lunas'},
+                        {value: 'partial', label: 'Sebagian'},
+                        {value: 'unpaid', label: 'Belum Lunas'},
+                    ],
+                    allLabel: 'Semua',
+                }}
+                valueLabelMapping={{
+                    payment_status: {
+                        'paid': 'Lunas',
+                        'partial': 'Sebagian',
+                        'unpaid': 'Belum Lunas'
+                    }
+                }}
                 queryParams={
                     (queryParams?.action == undefined || queryParams?.action == "search") ?
                         {

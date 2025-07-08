@@ -347,6 +347,10 @@ async function createOrUpdatePaymentTransactions(paymentId: number, trx: Prisma.
                     amount: regularAmount,
                     date: payment.payment_date,
                     description: `Pemasukan untuk Pembayaran #${payment.id}`,
+                    related_id: {
+                        payment_id: payment.id,
+                        booking_id: payment.booking_id
+                    }
                 }
             });
             finalRegularTransactionId = regularTransaction.id;
@@ -361,7 +365,8 @@ async function createOrUpdatePaymentTransactions(paymentId: number, trx: Prisma.
                     description: `Pemasukan untuk Pembayaran #${payment.id}`,
                     type: TransactionType.INCOME,
                     related_id: {
-                        payment_id: payment.id
+                        payment_id: payment.id,
+                        booking_id: payment.booking_id
                     }
                 }
             });
@@ -392,6 +397,11 @@ async function createOrUpdatePaymentTransactions(paymentId: number, trx: Prisma.
                     amount: depositAmount,
                     date: payment.payment_date,
                     description: `Deposit diterima untuk Booking #${payment.booking_id}`,
+                    related_id: {
+                        payment_id: payment.id,
+                        booking_id: payment.booking_id,
+                        ...(depositTransaction.related_id && typeof depositTransaction.related_id === 'object' && 'deposit_id' in depositTransaction.related_id && { deposit_id: depositTransaction.related_id.deposit_id })
+                    }
                 }
             });
             finalDepositTransactionId = depositTransaction.id;
