@@ -1,7 +1,7 @@
 "use server";
 
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
-import {endOfWeek, format, startOfWeek} from "date-fns";
+import {format} from "date-fns";
 import prisma from "@/app/_lib/primsa";
 import {Period} from "@/app/_enum/financial";
 import {getDatesInRange} from "@/app/_lib/util";
@@ -20,71 +20,74 @@ export interface SimplifiedIncomeExpense {
 
 export async function getOverviewData(locationID?: number) {
     const today = new Date();
-    const firstDateOfWeek = startOfWeek(today, {weekStartsOn: 1}); // Monday
-    const lastDateOfWeek = endOfWeek(today, {weekStartsOn: 1});
+    const sevenDaysAhead = new Date();
+    sevenDaysAhead.setDate(today.getDate() + 7);
 
+    const locationClause = locationID ? Prisma.sql`r.location_id = ${locationID}` : Prisma.sql`TRUE`;
+    
     const [checkIn, checkOut, availableRooms, roomCount] = await prisma.$transaction([
+        // Get check-ins from today to 7 days ahead
         prisma.booking.findMany({
             where: {
                 rooms: {
                     location_id: locationID
                 },
                 start_date: {
-                    gte: firstDateOfWeek,
-                    lte: lastDateOfWeek,
+                    gte: today,
+                    lt: sevenDaysAhead,
                 }
             },
-            select: {
-                id: true,
+            include: {
                 rooms: {
-                    select: {
-                        room_number: true,
-                    },
+                    include: {
+                        roomtypes: true
+                    }
                 },
-                start_date: true,
-                end_date: true,
+                tenants: true,
+                durations: true,
             }
         }),
+
+        // Get check-outs from today to 7 days ahead
         prisma.booking.findMany({
             where: {
                 rooms: {
-                    location_id: locationID
+                    location_id: locationID,
                 },
                 end_date: {
-                    gte: firstDateOfWeek,
-                    lte: lastDateOfWeek,
-                }
-            },
-            select: {
-                id: true,
-                rooms: {
-                    select: {
-                        room_number: true,
-                    },
+                    gte: today,
+                    lt: sevenDaysAhead,
                 },
-                start_date: true,
-                end_date: true,
+            },
+            include: {
+                rooms: {
+                    include: {
+                        roomtypes: true
+                    }
+                },
+                tenants: true,
+                durations: true,
             }
         }),
-        prisma.room.findMany({
+
+        // Get available rooms count
+        prisma.room.count({
             where: {
                 location_id: locationID,
                 bookings: {
                     none: {
                         start_date: {
-                            lte: lastDateOfWeek,  // booking starts before week ends
+                            lte: sevenDaysAhead,  // booking starts before week ends
                         },
                         end_date: {
-                            gte: firstDateOfWeek, // booking ends after week starts
+                            gte: today, // booking ends after week starts
                         },
                     },
                 },
-            },
-            select: {
-                id: true,
-                room_number: true,
             }
         }),
+
+        // Get total room count
         prisma.room.count({
             where: {
                 location_id: locationID,
@@ -96,10 +99,10 @@ export async function getOverviewData(locationID?: number) {
         check_in: checkIn,
         check_out: checkOut,
         available: availableRooms,
-        occupied: roomCount - availableRooms.length,
+        occupied: roomCount - availableRooms,
         date_range: {
-            start: formatDateToString(firstDateOfWeek),
-            end: formatDateToString(lastDateOfWeek)
+            start: formatDateToString(today),
+            end: formatDateToString(sevenDaysAhead)
         }
     };
 }

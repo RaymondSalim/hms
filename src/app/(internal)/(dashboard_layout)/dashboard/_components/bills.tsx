@@ -71,7 +71,7 @@ export default function Bills() {
 
   return (
     <div className={styles.billsContainer}>
-      <h2>Unpaid Bills</h2>
+      <h2>Tagihan Belum Dibayar</h2>
       <div className={styles.billsTableContainer}>
         <div className={styles.durationContent}>
           <Button variant={durationID == null ? 'filled' : 'outlined'} size={"sm"} className={styles.btn}

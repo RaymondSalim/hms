@@ -15,11 +15,12 @@ import {
     deleteTransactionAction,
     upsertTransactionAction
 } from "@/app/(internal)/(dashboard_layout)/financials/transaction-action";
+import { TransactionWithBookingInfo } from "@/app/_db/transaction";
 
 
 export interface ExpensesContentProps {
-    expenses: Transaction[]
-    refetchFn: (options?: RefetchOptions) => Promise<QueryObserverResult<Transaction[]>>
+    expenses: TransactionWithBookingInfo[]
+    refetchFn: (options?: RefetchOptions) => Promise<QueryObserverResult<TransactionWithBookingInfo[]>>
 }
 
 export default function ExpensesContent({expenses, refetchFn}: ExpensesContentProps) {
@@ -42,7 +43,15 @@ export default function ExpensesContent({expenses, refetchFn}: ExpensesContentPr
         }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
-            minSize: 275
+            minSize: 200
+        }),
+        columnHelper.accessor(row => row.booking?.id || "", {
+            header: "Booking ID",
+            cell: props => props.row.original.booking?.id ? `#${props.row.original.booking.id}` : "-"
+        }),
+        columnHelper.accessor(row => row.room_number || "", {
+            header: "Nomor Kamar",
+            cell: props => props.row.original.room_number || "-"
         }),
         // columnHelper.display({
         //     header: "Rincian Tagihan",
@@ -86,6 +95,7 @@ export default function ExpensesContent({expenses, refetchFn}: ExpensesContentPr
             }
             searchPlaceholder={"TODO!"} // TODO!
             upsert={{
+                // @ts-expect-error weird type error
                 mutationFn: upsertTransactionAction,
             }}
 

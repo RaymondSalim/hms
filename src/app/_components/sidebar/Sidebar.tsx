@@ -26,10 +26,10 @@ export default function Sidebar({session, companyInfo}: SidebarProps) {
         const checkMobile = () => {
             setIsMobile(window.innerWidth < 720);
         };
-        
+
         checkMobile();
         window.addEventListener('resize', checkMobile);
-        
+
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
@@ -94,8 +94,10 @@ export default function Sidebar({session, companyInfo}: SidebarProps) {
             icon: <FaMoneyBill/>,
             children: [
                 {name: 'Ringkasan', path: '/financials/summary', icon: <FaFileInvoiceDollar/>},
+                {name: 'Deposit', path: '/deposits', icon: <FaFileInvoiceDollar/>},
                 {name: 'Pemasukan', path: '/financials/incomes', icon: <FaFileInvoiceDollar/>},
                 {name: 'Pengeluaran', path: '/financials/expenses', icon: <FaFileInvoiceDollar/>},
+
                 // {name: 'Laporan', path: '/financials/reports', icon: <FaChartBar/>},
             ]
         },

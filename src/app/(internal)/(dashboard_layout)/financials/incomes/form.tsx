@@ -6,6 +6,7 @@ import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
+import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {ZodFormattedError} from "zod";
 import {DayPicker} from "react-day-picker";
 import {formatToDateTime} from "@/app/_lib/util";
@@ -20,7 +21,9 @@ import {getTransactions} from "@/app/_db/transaction";
 interface IncomeFormProps extends TableFormProps<Transaction> {
 }
 
-type DataType = Partial<NonUndefined<IncomeFormProps['contentData']>>;
+type DataType = Partial<NonUndefined<IncomeFormProps['contentData']>> & {
+    booking_id?: number;
+};
 
 export function IncomeForm(props: IncomeFormProps) {
     let parsedData: typeof props.contentData;
@@ -64,6 +67,22 @@ export function IncomeForm(props: IncomeFormProps) {
             })));
         }
     }, [locationData, locationDataSuccess]);
+
+    // Booking Data
+    const {data: bookingData, isSuccess: isBookingDataSuccess} = useQuery({
+        queryKey: ['bookings', 'location_id', data.location_id],
+        queryFn: () => getAllBookingsAction(data.location_id),
+        enabled: data.location_id != undefined,
+    });
+    const [bookingDataMapped, setBookingDataMapped] = useState<SelectOption<number>[]>([]);
+    useEffect(() => {
+        if (isBookingDataSuccess && bookingData) {
+            setBookingDataMapped(bookingData.map(e => ({
+                value: e.id,
+                label: `Booking #${e.id} - ${e.rooms?.room_number || 'N/A'} - ${e.tenants?.name || 'N/A'}`,
+            })));
+        }
+    }, [bookingData, isBookingDataSuccess]);
 
     // Location Data
     const {data: incomeCategory, isSuccess: incomeCategorySuccess} = useQuery({
@@ -110,7 +129,7 @@ export function IncomeForm(props: IncomeFormProps) {
 
     return (
         <div className={"w-full px-8 py-4"}>
-            <h1 className={"text-xl font-semibold text-black"}>{(parsedData && parsedData.id) ? "Perubahan" : "Pembuatan"} Pengeluaran</h1>
+            <h1 className={"text-xl font-semibold text-black"}>{(parsedData && parsedData.id) ? "Perubahan" : "Pembuatan"} Pemasukan</h1>
             <form className={"mt-4"}>
                 <div className="mb-1 flex flex-col gap-6">
                     <MotionConfig
@@ -138,6 +157,37 @@ export function IncomeForm(props: IncomeFormProps) {
                                     isError={false}
                                 />
                             </div>
+                            {
+                                data?.location_id &&
+                                <motion.div
+                                    key={"booking"}
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <label htmlFor="booking">
+                                        <Typography variant="h6" color="blue-gray">
+                                            Booking (Opsional)
+                                        </Typography>
+                                    </label>
+                                    <SelectComponent<number>
+                                        setValue={(v) => setData(d => ({
+                                            ...d,
+                                            booking_id: v,
+                                        }))}
+                                        options={bookingDataMapped}
+                                        selectedOption={
+                                            bookingDataMapped.find(r => r.value == (data.related_id && typeof data.related_id === 'object' && 'booking_id' in data.related_id ? data.related_id.booking_id as number : undefined))
+                                        }
+                                        placeholder={"Pilih Booking (Opsional)"}
+                                        isError={!!fieldErrors?.booking_id}
+                                    />
+                                    {
+                                        fieldErrors?.booking_id &&
+                                        <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
+                                    }
+                                </motion.div>
+                            }
                             <motion.div
                                 key={"amount"}
                                 initial={{opacity: 0, height: 0}}

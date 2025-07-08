@@ -70,8 +70,13 @@ export const billIncludeAll = Prisma.validator<Prisma.BillDefaultArgs>()({
   include: {
     bookings: {
       include: {
-        rooms: true,
-        tenants: true
+        rooms: {
+          include: {
+            locations: true,
+          }
+        },
+        tenants: true,
+        deposit: true,
       }
     },
     paymentBills: {
@@ -115,6 +120,8 @@ export async function getAllBillsWithBooking(id?: Prisma.IntFilter<"Bill"> | num
       ...args?.include,
       bookings: {
         include: {
+          // @ts-expect-error weird error
+          ...args?.include?.bookings?.include,
           rooms: {
             include: {
               locations: true

@@ -24,4 +24,5 @@ export const transactionSchema = z.object({
     category: z.string().optional(),
     location_id: z.number().positive(),
     type: z.nativeEnum(TransactionType),
+    booking_id: z.number().positive().optional(),
 });

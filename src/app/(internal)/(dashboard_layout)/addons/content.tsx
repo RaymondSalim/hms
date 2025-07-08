@@ -2,7 +2,7 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React, {useEffect, useRef, useState} from "react";
-import {delay} from "@/app/_lib/util";
+import {delay, formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
@@ -46,9 +46,9 @@ export default function AddonContent({addons, queryParams}: AddonContentProps) {
         columnHelper.accessor(row => row.name, {
             header: "Nama"
         }),
-        columnHelper.accessor(row => row.description, {
-            header: "Deskripsi",
-            maxSize: 150
+        columnHelper.accessor(row => row.activeBookingsCount, {
+            header: "Jumlah Pemesanan Aktif",
+            cell: props => <span>{props.getValue()}</span>
         }),
         columnHelper.display({
             header: "Detail",
@@ -137,7 +137,7 @@ function AddonInfo({addon}: AddonInfoProps) {
         <div className="container mx-auto p-6 h-full">
             <h1 className="text-xl font-semibold text-black">Informasi Layanan Tambahan</h1>
             <Card className="shadow-none">
-                <CardBody className="space-y-4">
+                <CardBody className="mt-4 p-0 space-y-4">
             {/* Basic Information */}
                     <Typography variant="h5" className="font-semibold">Informasi Dasar</Typography>
                     <Typography>
@@ -176,6 +176,58 @@ function AddonInfo({addon}: AddonInfoProps) {
                         ))}
                         </tbody>
                     </table>
+
+                    {/* Active Bookings Information */}
+                    <Typography variant="h5" className="font-semibold mt-4">Pemesanan Aktif</Typography>
+                    {addon.bookings && addon.bookings.length > 0 ? (
+                        <div className="space-y-2">
+                            {addon.bookings.map((bookingAddon, index) => (
+                                <div key={index} className="border-l-4 border-blue-500 pl-3 bg-gray-50 p-3 rounded">
+                                    <Typography variant="h6" className="font-medium">
+                                        Pemesanan #{bookingAddon.booking.id}
+                                    </Typography>
+                                    <div className="grid grid-cols-2 gap-4 mt-2">
+                                        <div>
+                                            <Typography variant="small" className="font-medium text-gray-700">
+                                                Penyewa:
+                                            </Typography>
+                                            <Typography variant="small" className="text-gray-600">
+                                                {bookingAddon.booking.tenants?.name || "N/A"}
+                                            </Typography>
+                                        </div>
+                                        <div>
+                                            <Typography variant="small" className="font-medium text-gray-700">
+                                                Kamar:
+                                            </Typography>
+                                            <Typography variant="small" className="text-gray-600">
+                                                {bookingAddon.booking.rooms?.room_number || "N/A"}
+                                            </Typography>
+                                        </div>
+                                        <div>
+                                            <Typography variant="small" className="font-medium text-gray-700">
+                                                Tanggal Mulai Addon:
+                                            </Typography>
+                                            <Typography variant="small" className="text-gray-600">
+                                                {formatToDateTime(bookingAddon.start_date, false)}
+                                            </Typography>
+                                        </div>
+                                        <div>
+                                            <Typography variant="small" className="font-medium text-gray-700">
+                                                Tanggal Selesai Addon:
+                                            </Typography>
+                                            <Typography variant="small" className="text-gray-600">
+                                                {formatToDateTime(bookingAddon.end_date, false)}
+                                            </Typography>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <Typography variant="small" className="text-gray-500 italic">
+                            Tidak ada pemesanan aktif untuk layanan tambahan ini.
+                        </Typography>
+                    )}
                 </CardBody>
 
                 <CardFooter divider className="flex items-center justify-between py-3">

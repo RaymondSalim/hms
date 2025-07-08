@@ -1,5 +1,5 @@
 import {RoomTypeWithRoomCount} from "@/app/_db/room";
-import React, {Dispatch, SetStateAction, useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {
     Button,
     Card,
@@ -26,13 +26,13 @@ import {RiErrorWarningLine} from "react-icons/ri";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {FaChevronDown} from "react-icons/fa6";
 import Link from "next/link";
+import {AiOutlineLoading} from "react-icons/ai";
+import {useQuery} from "@tanstack/react-query";
+import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 
 export interface RoomAvailabilityProps {
     roomTypes: RoomTypeWithRoomCount[]
-    bookings?: BookingsIncludeAll[]
     locationID?: number
-
-    dateState: [DateRange | undefined, Dispatch<SetStateAction<DateRange | undefined>>]
 }
 
 type RoomTypeWithRoomCountAndAvailability = RoomTypeWithRoomCount & {
@@ -41,7 +41,8 @@ type RoomTypeWithRoomCountAndAvailability = RoomTypeWithRoomCount & {
 
 export function calculateRoomAvailability(
     roomTypes: RoomTypeWithRoomCount[],
-    bookings?: BookingsIncludeAll[]
+    bookings?: BookingsIncludeAll[],
+    dateRange?: DateRange
 ): RoomTypeWithRoomCountAndAvailability[] {
     return roomTypes.map((rt) => {
         const totalRooms = rt._count.rooms;
@@ -49,7 +50,25 @@ export function calculateRoomAvailability(
         // Calculate the number of rooms booked for the current room type
         const roomsBooked = bookings?.reduce((count, booking) => {
             if (booking.rooms?.room_type_id === rt.id) {
-                return count + 1;
+                // Check if the booking overlaps with the selected date range
+                if (dateRange?.from) {
+                    const bookingStart = new Date(booking.start_date);
+                    const bookingEnd = new Date(booking.end_date);
+                    const rangeStart = new Date(dateRange.from);
+                    rangeStart.setHours(0, 0, 0, 0);
+                    const rangeEnd = dateRange.to ? new Date(dateRange.to) : new Date(dateRange.from);
+                    rangeEnd.setHours(23, 59, 59, 999);
+                    
+                    // Check for overlap: booking overlaps if it starts before range ends AND ends after range starts
+                    const hasOverlap = bookingStart < rangeEnd && bookingEnd > rangeStart;
+                    
+                    if (hasOverlap) {
+                        return count + 1;
+                    }
+                } else {
+                    // If no date range selected, count all bookings
+                    return count + 1;
+                }
             }
             return count;
         }, 0) || 0;
@@ -63,17 +82,81 @@ export function calculateRoomAvailability(
     });
 }
 
-// TODO! Change into input single date, and duration
 export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
     const today = new Date();
 
-    const [dates, setDates] = props.dateState;
+    const [dates, setDates] = useState<DateRange | undefined>(undefined);
     const [roomTypes, setRoomTypes] = useState<RoomTypeWithRoomCountAndAvailability[]>(props.roomTypes);
     const [popoverOpen, setIsPopoverOpen] = useState(false);
+    const [searchTriggered, setSearchTriggered] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
 
     const [filteredRoomTypeIDs, setFilteredRoomTypeIDs] = useState<Set<number>>(new Set());
 
     const dateInputRef = useRef<HTMLInputElement>(null);
+
+    // Query for bookings when dates are selected
+    const {data: bookings, isLoading: isBookingsLoading, refetch: refetchBookings} = useQuery({
+        queryKey: ['bookings', 'location_id', props.locationID, 'date', dates],
+        enabled: dates?.from != undefined && props.locationID != undefined && searchTriggered,
+        queryFn: async () => {
+            const dateRange = dates;
+            if (!dateRange?.from) return Promise.resolve([]);
+            
+            // Create a wider date range to capture all potentially overlapping bookings
+            const startDate = new Date(dateRange.from);
+            const endDate = dateRange.to ? new Date(dateRange.to) : new Date(dateRange.from);
+            
+            // Extend the range by a reasonable amount to catch overlapping bookings
+            const extendedStart = new Date(startDate);
+            extendedStart.setDate(extendedStart.getDate() - 30); // 30 days before
+            
+            const extendedEnd = new Date(endDate);
+            extendedEnd.setDate(extendedEnd.getDate() + 30); // 30 days after
+            
+            const rawBookings = await getAllBookingsAction(props.locationID, undefined, {
+                OR: [
+                    {
+                        // Bookings that start within our extended range
+                        start_date: {
+                            gte: extendedStart,
+                            lte: extendedEnd,
+                        }
+                    },
+                    {
+                        // Bookings that end within our extended range
+                        end_date: {
+                            gte: extendedStart,
+                            lte: extendedEnd,
+                        }
+                    },
+                    {
+                        // Bookings that span across our extended range
+                        AND: [
+                            {
+                                start_date: {
+                                    lte: extendedStart,
+                                }
+                            },
+                            {
+                                end_date: {
+                                    gte: extendedEnd,
+                                }
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            console.log(rawBookings);
+            
+            // Add custom_id field to match BookingsIncludeAll type
+            return rawBookings?.map(booking => ({
+                ...booking,
+                custom_id: `#${booking.id}`
+            })) || [];
+        }
+    });
 
     useEffect(() => {
         // Set default value as all
@@ -82,15 +165,40 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
            newSet.add(rt.id);
         });
         setFilteredRoomTypeIDs(newSet);
-    }, []);
+    }, [props.roomTypes]);
 
     useEffect(() => {
-        if (props.bookings) {
+        if (bookings && searchTriggered) {
             setRoomTypes(
-                calculateRoomAvailability(props.roomTypes, props.bookings)
+                calculateRoomAvailability(props.roomTypes, bookings, dates)
             );
+            setIsSearching(false);
         }
-    }, [props]);
+    }, [bookings, props.roomTypes, dates, searchTriggered]);
+
+    const handleSearch = () => {
+        if (dates?.from && dates?.to) {
+            setSearchTriggered(true);
+            setIsSearching(true);
+            if (!isBookingsLoading) {
+                refetchBookings();
+            }
+        } else {
+            setIsPopoverOpen(true);
+        }
+    };
+
+    const handleDateSelect = (d?: DateRange) => {
+        if (d?.from) {
+            // Allow single date selection
+            const selectedRange = d.to ? d : { from: d.from, to: d.from };
+            setDates(selectedRange);
+        }
+
+        if (d?.from && d?.to) {
+            setIsPopoverOpen(false);
+        }
+    };
 
     return (
         <>
@@ -174,12 +282,15 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             icon={<CiCalendarDate/>}
                             onChange={() => null}
                             value={(() => {
-                                if (dates?.from && dates?.to) {
-                                    return `${formatToDateTime(dates.from, false)} - ${formatToDateTime(dates.to, false)}`;
+                                if (dates?.from) {
+                                    if (dates?.to && dates.from.getTime() !== dates.to.getTime()) {
+                                        return `${formatToDateTime(dates.from, false)} - ${formatToDateTime(dates.to, false)}`;
+                                    }
+                                    return formatToDateTime(dates.from, false);
                                 }
-
-                                return undefined;
+                                return "";
                             })()}
+                            placeholder="Pilih tanggal"
                             containerProps={{
                                 className: "basis-1/2 md:basis-auto md:ml-auto !w-auto !md:min-w-[225px] !h-auto min-h-10"
                             }}
@@ -194,12 +305,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             mode="range"
                             fixedWeeks={true}
                             selected={dates}
-                            onSelect={(d?: DateRange) => {
-                                if (d?.from && d?.to) {
-                                    setIsPopoverOpen(false);
-                                    setDates(d);
-                                }
-                            }}
+                            onSelect={handleDateSelect}
                             min={1}
                             showOutsideDays
                             startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
@@ -209,11 +315,43 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             }}/>
                     </PopoverContent>
                 </Popover>
-                <Button className={"basis-full md:basis-auto border-[#b0bec5] text-[#b0bec5] flex justify-center items-center gap-4"} variant={"outlined"}>
-                    <CiSearch/>
-                    <span className={"md:hidden"}>Cari</span>
+                <Button 
+                    className={"basis-full md:basis-auto border-[#b0bec5] text-[#b0bec5] flex justify-center items-center gap-4"} 
+                    variant={"outlined"}
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                >
+                    {isSearching ? (
+                        <AiOutlineLoading className="animate-spin"/>
+                    ) : (
+                        <CiSearch/>
+                    )}
+                    <span className={"md:hidden"}>
+                        {isSearching ? "Mencari..." : "Cari"}
+                    </span>
                 </Button>
             </div>
+            
+            {(isSearching || isBookingsLoading) && (
+                <div className="mt-4 text-center">
+                    <Typography color="gray" className="flex items-center justify-center gap-2">
+                        <AiOutlineLoading className="animate-spin"/>
+                        Mencari ketersediaan kamar...
+                    </Typography>
+                </div>
+            )}
+            
+            {searchTriggered && dates?.from && !isSearching && (
+                <div className="mt-4 text-center">
+                    <Typography color="blue-gray" className="text-sm">
+                        Menampilkan ketersediaan untuk: {formatToDateTime(dates.from, false)}
+                        {dates.to && dates.from.getTime() !== dates.to.getTime() && 
+                            ` - ${formatToDateTime(dates.to, false)}`
+                        }
+                    </Typography>
+                </div>
+            )}
+            
             <div className="mt-8">
                 {(roomTypes.length == 0 || filteredRoomTypeIDs.size == 0) ?
                     <div className={"w-full flex gap-4 justify-center"}>
@@ -221,7 +359,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                             <RiErrorWarningLine color={"gray"} className={"w-14 h-14 mx-auto mb-4"}/>
                             <Typography color={"gray"}>
                                 {roomTypes.length == 0 ?
-                                    "Tidak ada kamar yang tersedia pada tangga tersebut. Mohon pilih tanggal lain." :
+                                    "Tidak ada kamar yang tersedia pada tanggal tersebut. Mohon pilih tanggal lain." :
                                     "Mohon pilih setidaknya satu tipe kamar."}
                             </Typography>
                         </div>
@@ -245,13 +383,13 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                                             {rt.type}
                                         </Typography>
                                         <Chip
-                                            color={props.bookings ?
+                                            color={bookings && searchTriggered ?
                                                 (rt.roomLeft === 0 ? "red" : "green") :
                                                 "blue-gray"}
                                             className="rounded-full"
                                             value={(() => {
                                                 let str = '';
-                                                if (props.bookings) {
+                                                if (bookings && searchTriggered) {
                                                     str += `${rt.roomLeft}/`;
                                                 }
                                                 str += rt._count.rooms;
@@ -265,7 +403,7 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                                 </CardBody>
                                 <CardFooter className="pt-3 mt-auto">
                                     <Link
-                                        href={dates != undefined ?
+                                        href={searchTriggered && dates != undefined ?
                                             {
                                                 pathname: "/bookings",
                                                 query: {
@@ -276,17 +414,17 @@ export default function RoomAvailabilityContent(props: RoomAvailabilityProps) {
                                             } : {}}
                                     >
                                         <Button
-                                            disabled={rt.roomLeft === 0}
+                                            disabled={rt.roomLeft === 0 && searchTriggered}
                                             size="lg"
                                             fullWidth={true}
                                             onClick={() => {
-                                                if (dates == undefined) {
+                                                if (!searchTriggered) {
                                                     setIsPopoverOpen(true);
                                                     return;
                                                 }
                                             }}
                                         >
-                                            {dates == undefined ?
+                                            {!searchTriggered ?
                                                 "Pilih Tanggal" :
                                                 (
                                                     rt.roomLeft == 0 ?
