@@ -9,6 +9,7 @@ import {
     getRoomTypeDurationsByRoomTypeIDAndLocationID,
     getRoomTypes,
     RoomsWithTypeAndLocation,
+    RoomsWithTypeAndLocationAndBookings,
     RoomTypeDurationWithDuration
 } from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";

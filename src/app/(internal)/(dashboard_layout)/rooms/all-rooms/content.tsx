@@ -4,26 +4,27 @@ import {createColumnHelper} from "@tanstack/react-table";
 import React, {useState} from "react";
 import {formatToDateTime} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
-import {RoomsWithTypeAndLocation} from "@/app/_db/room";
+import {RoomsWithTypeAndLocationAndBookings} from "@/app/_db/room";
 import {RoomForm} from "@/app/(internal)/(dashboard_layout)/rooms/all-rooms/form";
-import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/(dashboard_layout)/rooms/room-actions";
+import {deleteRoomAction, upsertRoomAction, getRoomsWithBookingsAction} from "@/app/(internal)/(dashboard_layout)/rooms/room-actions";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getSortedDurations} from "@/app/_db/duration";
 import Link from "next/link";
 import {toast} from "react-toastify";
+import {isBookingActive, getNextUpcomingBooking} from "@/app/_lib/util";
 
 
 export interface RoomsContentProps {
-  rooms: RoomsWithTypeAndLocation[]
+  rooms: RoomsWithTypeAndLocationAndBookings[]
 }
 
 const detailsHeader = ["Duration", "Price"];
 
 export default function RoomsContent({rooms}: RoomsContentProps) {
   const headerContext = useHeader();
-  const [activeData, setActiveData] = useState<RoomsWithTypeAndLocation | undefined>(undefined);
+  const [activeData, setActiveData] = useState<RoomsWithTypeAndLocationAndBookings | undefined>(undefined);
   const [showDialog, setShowDialog] = useState(false);
 
   const {data: durationsData, isSuccess, isLoading} = useQuery({
@@ -31,7 +32,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
     queryFn: () => getSortedDurations(),
   });
 
-  const columnHelper = createColumnHelper<RoomsWithTypeAndLocation>();
+  const columnHelper = createColumnHelper<RoomsWithTypeAndLocationAndBookings>();
   const columns = [
     columnHelper.accessor(row => row.id, {
       header: "ID",
@@ -45,6 +46,47 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
     }),
     columnHelper.accessor(row => row.roomstatuses?.status, {
       header: "Status",
+    }),
+    columnHelper.display({
+      header: "Status Pemesanan",
+      cell: props => {
+        const room = props.row.original;
+        const activeBooking = room.bookings?.find(booking => isBookingActive(booking));
+        const nextUpcomingBooking = getNextUpcomingBooking(room.bookings || []);
+        
+        if (activeBooking) {
+          return (
+            <div className="flex flex-col">
+              <span className="text-green-600 font-medium">Sedang Dihuni</span>
+              <Link 
+                href={`/bookings?action=search&id=${activeBooking.id}`}
+                className="text-blue-400 text-sm hover:underline"
+              >
+                {activeBooking.tenants?.name || 'Tanpa Nama'} - {activeBooking.durations?.duration}
+              </Link>
+            </div>
+          );
+        } else if (nextUpcomingBooking) {
+          return (
+            <div className="flex flex-col">
+              <span className="text-orange-600 font-medium">Pemesanan Berikutnya</span>
+              <Link 
+                href={`/bookings?action=search&id=${nextUpcomingBooking.id}`}
+                className="text-blue-400 text-sm hover:underline"
+              >
+                {nextUpcomingBooking.tenants?.name || 'Tanpa Nama'} - {nextUpcomingBooking.durations?.duration}
+              </Link>
+              <span className="text-gray-500 text-xs">
+                Mulai: {formatToDateTime(nextUpcomingBooking.start_date, false)}
+              </span>
+            </div>
+          );
+        } else {
+          return (
+            <span className="text-gray-500">Tidak Ada Pemesanan</span>
+          );
+        }
+      }
     }),
     columnHelper.display({
       header: "Harga",
@@ -71,7 +113,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
   }
 
   return (
-      <TableContent<RoomsWithTypeAndLocation>
+      <TableContent<RoomsWithTypeAndLocationAndBookings>
         name={"Kamar"}
         initialContents={rooms}
         columns={columns}
@@ -81,6 +123,7 @@ export default function RoomsContent({rooms}: RoomsContentProps) {
         }
         searchPlaceholder={"Cari berdasarkan nama atau alamat email"}
         upsert={{
+          // @ts-ignore - View-only column, form doesn't need booking data
           mutationFn: upsertRoomAction,
           customOnSuccess: (data, variables, context, setMutationResponse, setContentsState, setDialogOpen) => {
             setMutationResponse(data);

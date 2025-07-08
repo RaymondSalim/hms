@@ -5,7 +5,7 @@ import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
-import {getRooms} from "@/app/_db/room";
+import {getRoomsWithBookingsAction} from "@/app/(internal)/(dashboard_layout)/rooms/room-actions";
 import RoomsContent from "@/app/(internal)/(dashboard_layout)/rooms/all-rooms/content";
 
 export default function RoomsPage() {
@@ -22,7 +22,7 @@ export default function RoomsPage() {
 
   const {data: rooms, isLoading, isSuccess} = useQuery({
     queryKey: ['rooms', headerContext.locationID],
-    queryFn: () => getRooms(undefined, headerContext.locationID),
+    queryFn: () => getRoomsWithBookingsAction(headerContext.locationID),
   });
 
   return (

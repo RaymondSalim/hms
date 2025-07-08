@@ -217,3 +217,36 @@ export function objectToStringArray<T extends Record<string, any>>(obj: T): stri
       .filter(([_, value]) => value !== undefined && value !== null) // Ignore undefined/null values
       .map(([key, value]) => `${key}:${String(value)}`);
 }
+
+export function isBookingActive(booking: { start_date: Date; end_date: Date; bookingstatuses?: { status: string } | null }) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const startDate = new Date(booking.start_date);
+    const endDate = new Date(booking.end_date);
+    
+    // Check if booking is within date range and has confirmed status
+    const isWithinDateRange = startDate <= today && today <= endDate;    
+    return isWithinDateRange;
+}
+
+export function getNextUpcomingBooking(bookings: Array<{ 
+    id: number; 
+    start_date: Date; 
+    end_date: Date; 
+    tenants?: { name: string } | null;
+    bookingstatuses?: { status: string } | null;
+    durations?: { duration: string } | null;
+}>) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Filter for confirmed bookings that start in the future
+    const upcomingBookings = bookings.filter(booking => {
+        const startDate = new Date(booking.start_date);
+        return startDate > today;
+    });
+    
+    // Return the earliest upcoming booking
+    return upcomingBookings.length > 0 ? upcomingBookings[0] : null;
+}
