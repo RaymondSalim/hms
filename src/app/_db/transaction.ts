@@ -60,7 +60,8 @@ export async function createTransaction(transactionData: OmitIDTypeAndTimestamp<
       date: transactionData.date,
       category: transactionData.category,
       location_id: transactionData.location_id,
-      type: transactionData.type
+      type: transactionData.type,
+      related_id: transactionData.related_id ?? Prisma.DbNull
     },
   });
 }
