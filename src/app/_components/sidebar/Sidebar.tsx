@@ -1,6 +1,6 @@
 "use client";
 
-import {FaBed, FaCalendar, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUserFriends} from 'react-icons/fa';
+import {FaBed, FaCalendar, FaCog, FaDatabase, FaMoneyBill, FaTachometerAlt, FaUserFriends, FaTools} from 'react-icons/fa';
 import styles from './sidebar.module.css';
 import {InteractiveUserDropdown, SidebarItem} from "@/app/_components/sidebar/SidebarItem";
 import {Session} from 'next-auth';
@@ -88,6 +88,7 @@ export default function Sidebar({session, companyInfo}: SidebarProps) {
         {name: 'Layanan Tambahan', path: '/addons', icon: <IoIosAddCircleOutline/>},
         {name: 'Pembayaran', path: '/payments', icon: <FaMoneyBill/>},
         {name: 'Tagihan', path: '/bills', icon: <FaReceipt/>},
+        {name: 'Maintenance', path: '/maintenance', icon: <FaTools/>},
         {
             name: 'Keuangan',
             path: '/financials',
