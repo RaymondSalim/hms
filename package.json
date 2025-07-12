@@ -15,7 +15,8 @@
     "pgm": "npm run prisma-gen && npm run prisma-migrate",
     "postinstall": "prisma generate",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "seed-rbac": "node prisma/seed-rbac.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.2.0",
@@ -30,7 +31,7 @@
     "@fullcalendar/resource-timeline": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@material-tailwind/react": "^2.1.9",
-    "@prisma/client": "^5.16.0",
+    "@prisma/client": "^6.11.1",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-query": "^5.45.1",
     "@tanstack/react-table": "^8.17.3",
@@ -71,7 +72,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-mock-extended": "^3.0.7",
     "postcss": "^8",
-    "prisma": "^5.16.0",
+    "prisma": "^6.11.1",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5"
