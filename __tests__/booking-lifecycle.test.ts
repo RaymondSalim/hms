@@ -973,4 +973,56 @@ describe('Booking Lifecycle Integration', () => {
         // Assert
         expect(result.failure).toMatch(/Total manual allocation must equal payment amount/);
     });
+
+    it('should update booking end_date when early checkout occurs', async () => {
+        // Arrange
+        const bookingId = 99;
+        const originalEndDate = new Date(2025, 11, 31); // 31 Dec 2025
+        const earlyCheckoutDate = new Date(2025, 5, 15); // 15 Jun 2025
+
+        prismaMock.booking.findFirst.mockResolvedValue({
+            id: bookingId,
+            tenant_id: 'tenant-early',
+            end_date: originalEndDate,
+            deposit: null, // No deposit involved for this test
+            rooms: {
+                // @ts-expect-error partial mock data
+                id: 1,
+                location_id: 1,
+            },
+        });
+
+        prismaMock.checkInOutLog.create.mockResolvedValue({
+            id: 1,
+            booking_id: bookingId,
+            event_type: CheckInOutType.CHECK_OUT,
+            event_date: earlyCheckoutDate,
+            tenant_id: 'tenant-early',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        prismaMock.booking.update.mockResolvedValue({
+            id: bookingId,
+            end_date: earlyCheckoutDate,
+            // @ts-expect-error partial mock data
+            tenant_id: 'tenant-early',
+        });
+
+        // Act
+        const result = await checkInOutAction({
+            booking_id: bookingId,
+            action: CheckInOutType.CHECK_OUT,
+            eventDate: earlyCheckoutDate,
+        });
+
+        // Assert
+        expect(result.success).toBeDefined();
+        expect(prismaMock.booking.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {id: bookingId},
+                data: {end_date: earlyCheckoutDate},
+            })
+        );
+    });
 });
