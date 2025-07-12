@@ -7,6 +7,7 @@ import {SessionProvider} from "next-auth/react";
 import {auth} from "@/app/_lib/auth";
 import {getCompanyInfo} from "@/app/_db/settings";
 import Script from "next/script";
+import ChangelogModal from "@/app/_components/ChangelogModal";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -38,6 +39,8 @@ export default async function RootLayout({
                     <div className={styles.container}>
                         {children}
                     </div>
+                    {/* Changelog modal displays once per version */}
+                    <ChangelogModal />
                     <Script
                         src="https://static.cloudflareinsights.com/beacon.min.js"
                         data-cf-beacon='{"token": "TOKEN_VALUE", "spa": true}'
