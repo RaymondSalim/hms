@@ -40,7 +40,7 @@ export default async function RootLayout({
                         {children}
                     </div>
                     {/* Changelog modal displays once per version */}
-                    <ChangelogModal />
+                    <ChangelogModal version={APP_VERSION} />
                     <Script
                         src="https://static.cloudflareinsights.com/beacon.min.js"
                         data-cf-beacon='{"token": "TOKEN_VALUE", "spa": true}'

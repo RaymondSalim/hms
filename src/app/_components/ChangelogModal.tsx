@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { APP_VERSION } from '@/app/_lib/version';
 import { getLastSeenVersion, setLastSeenVersion } from '@/app/_lib/changelog';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface ChangelogModalProps {
+  version: string;
   className?: string;
 }
 
@@ -27,15 +27,15 @@ function Modal({ open, onClose, children }: { open: boolean; onClose: () => void
   );
 }
 
-export default function ChangelogModal({ className }: ChangelogModalProps) {
+export default function ChangelogModal({ version, className }: ChangelogModalProps) {
   const [open, setOpen] = useState(false);
   const [markdown, setMarkdown] = useState<string | null>(null);
 
   useEffect(() => {
     const lastSeen = getLastSeenVersion();
-    if (lastSeen !== APP_VERSION) {
+    if (lastSeen !== version) {
       // Fetch markdown lazily
-      fetch(`/changelog/${APP_VERSION}.md`)
+      fetch(`/changelog/${version}.md`)
         .then((res) => {
           if (!res.ok) throw new Error('Failed to fetch changelog');
           return res.text();
@@ -51,7 +51,7 @@ export default function ChangelogModal({ className }: ChangelogModalProps) {
   }, []);
 
   const handleClose = () => {
-    setLastSeenVersion(APP_VERSION);
+    setLastSeenVersion(version);
     setOpen(false);
   };
 
