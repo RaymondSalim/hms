@@ -3,10 +3,10 @@ import {Inter} from "next/font/google";
 import "./globals.css";
 import styles from "./layout.module.css";
 import React from "react";
-import {SessionProvider} from "next-auth/react";
 import {auth} from "@/app/_lib/auth";
 import {getCompanyInfo} from "@/app/_db/settings";
 import Script from "next/script";
+import ClientProviders from "./_components/ClientProviders";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -32,18 +32,18 @@ export default async function RootLayout({
     const session = await auth();
 
     return (
-        <SessionProvider session={session}>
-            <html lang="en" className={styles.html}>
-                <body className={`${inter.className} ${styles.body}`}>
+        <html lang="en" className={styles.html}>
+            <body className={`${inter.className} ${styles.body}`}>
+                <ClientProviders session={session}>
                     <div className={styles.container}>
                         {children}
                     </div>
-                    <Script
-                        src="https://static.cloudflareinsights.com/beacon.min.js"
-                        data-cf-beacon='{"token": "TOKEN_VALUE", "spa": true}'
-                    />
-                </body>
-            </html>
-        </SessionProvider>
+                </ClientProviders>
+                <Script
+                    src="https://static.cloudflareinsights.com/beacon.min.js"
+                    data-cf-beacon='{"token": "TOKEN_VALUE", "spa": true}'
+                />
+            </body>
+        </html>
     );
 }
