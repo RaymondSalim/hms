@@ -1,7 +1,3 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { getVersion } = require('./scripts/get-version.js');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     experimental: {
@@ -13,8 +9,8 @@ const nextConfig = {
         // Vercel automatically provides these
         NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
         NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF: process.env.VERCEL_GIT_COMMIT_REF,
-        // Custom version detection
-        NEXT_PUBLIC_APP_VERSION: getVersion(),
+        // Version from GitHub action (stored in .env.production)
+        NEXT_PUBLIC_VERSION: process.env.VERSION || 'development',
         NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
     },
 };

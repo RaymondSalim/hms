@@ -1,0 +1,41 @@
+name: Create Version Environment File
+
+on:
+  push:
+    branches: [ prod ]
+  pull_request:
+    branches: [ prod ]
+    types: [ closed ]
+
+jobs:
+  create-version-env:
+    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/prod'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
+      
+      - name: Create .env.production
+        run: |
+          echo "VERSION=${{ steps.get_tag.outputs.tag }}" > .env.production
+          echo "Created .env.production with VERSION=${{ steps.get_tag.outputs.tag }}"
+          cat .env.production
+      
+      - name: Commit and push .env.production
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .env.production
+          git commit -m "Update version to ${{ steps.get_tag.outputs.tag }}" || exit 0
+          git push

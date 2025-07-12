@@ -17,7 +17,7 @@ export function useChangelog() {
   const [metadata, setMetadata] = useState<ChangelogMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION || 'development';
+  const currentVersion = process.env.NEXT_PUBLIC_VERSION || 'development';
 
   useEffect(() => {
     const checkAndLoadChangelog = async () => {
