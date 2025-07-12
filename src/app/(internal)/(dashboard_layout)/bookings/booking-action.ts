@@ -202,6 +202,15 @@ export async function checkInOutAction(data: {
                 });
             }
 
+            // If the guest checks out early, shorten the booking's end_date so the room becomes available.
+            const checkoutDate = data.eventDate ? new Date(data.eventDate) : new Date();
+            if (checkoutDate < booking.end_date) {
+                await tx.booking.update({
+                    where: { id: booking.id },
+                    data: { end_date: checkoutDate },
+                });
+            }
+
             // TODO: Update room status to available (this can be moved to a separate ticket)
             // For now, we'll just log that checkout is complete
             // console.log(`Checkout completed for booking ${data.booking_id}. Room status update can be implemented in a separate ticket.`);
