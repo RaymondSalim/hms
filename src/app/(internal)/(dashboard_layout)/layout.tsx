@@ -8,6 +8,7 @@ import {SettingsKey} from "@/app/_enum/setting";
 import {auth} from "@/app/_lib/auth";
 import Header from "@/app/_components/header/header";
 import {getCompanyInfo} from "@/app/_db/settings";
+import ChangelogProvider from "@/app/_components/ChangelogProvider";
 
 export default async function Layout({
   children,
@@ -32,13 +33,15 @@ export default async function Layout({
 
   return (
     <HeaderProvider>
-      <div className={styles.layout}>
-        <Sidebar companyInfo={companyInfo} session={session} />
-        <main className={styles.main}>
-          <Header companyInfo={companyInfo}/>
-          <div className={styles.content}>{children}</div>
-        </main>
-      </div>
+      <ChangelogProvider>
+        <div className={styles.layout}>
+          <Sidebar companyInfo={companyInfo} session={session} />
+          <main className={styles.main}>
+            <Header companyInfo={companyInfo}/>
+            <div className={styles.content}>{children}</div>
+          </main>
+        </div>
+      </ChangelogProvider>
     </HeaderProvider>
   );
 }

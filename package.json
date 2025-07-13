@@ -50,6 +50,7 @@
     "react-day-picker": "^9.3.2",
     "react-dom": "^18",
     "react-icons": "^5.2.1",
+    "react-markdown": "^10.1.0",
     "react-select": "^5.8.0",
     "react-toastify": "^10.0.5",
     "use-react-countries": "github:RaymondSalim/use-react-countries#e797af4905ec43111fc5da200cd8d674e7446c2f",
