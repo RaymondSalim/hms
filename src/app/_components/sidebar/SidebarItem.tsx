@@ -8,6 +8,7 @@ import {SiteUser} from "@prisma/client";
 import {CiLogout} from "react-icons/ci";
 import React, {useRef, useState} from "react";
 import {signOut} from "next-auth/react";
+import {useChangelogContext} from "../ChangelogProvider";
 
 interface SidebarItemProps {
     name: string;
@@ -71,6 +72,8 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const userAvatarRef = useRef<HTMLDivElement>(null);
+    const { showChangelogManually } = useChangelogContext();
+
 
     const getUserNameInitials = (name: string) => {
         if (!name) return "";
@@ -96,6 +99,11 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
             }
             return !prevState;
         });
+    };
+
+    const handleWhatsNewClick = () => {
+        setIsUserDropdownOpen(false);
+        showChangelogManually();
     };
 
     return (
@@ -125,7 +133,9 @@ export function InteractiveUserDropdown({user}: { user: SiteUser }) {
                 </div>
                 <ul className={styles.dropdownList}>
                     <li>
-                        <Link href="/whats-new">Apa yang baru?</Link>
+                        <button onClick={handleWhatsNewClick} className="w-full text-left">
+                            Apa yang baru?
+                        </button>
                     </li>
                     <li>
                         <Link href="/profile">Profil anda</Link>
