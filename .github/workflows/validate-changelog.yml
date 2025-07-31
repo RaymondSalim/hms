@@ -1,0 +1,166 @@
+name: Validate PR Title and Changelog for Release
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches:
+      - prod
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Validate PR Title Format
+        id: validate_title
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          if [[ ! "$title" =~ ^Release[[:space:]]v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Pull request title must be in the format 'Release v0.0.0', where each '0' is a digit."
+            echo "Current title: '$title'"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "✅ PR title format is valid"
+          echo "valid=true" >> $GITHUB_OUTPUT
+      
+      - name: Extract Version from PR Title
+        id: extract_version
+        if: steps.validate_title.outputs.valid == 'true'
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          if [[ "$title" =~ Release[[:space:]]+(.+) ]]; then
+            version="${BASH_REMATCH[1]}"
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "Extracted version: $version"
+          else
+            echo "No version found in PR title: $title"
+            echo "Expected format: 'Release v1.2.3'"
+            exit 1
+          fi
+      
+      - name: Check if Changelog File Exists
+        id: check_changelog
+        if: steps.validate_title.outputs.valid == 'true'
+        run: |
+          version="${{ steps.extract_version.outputs.version }}"
+          changelog_file="public/changelogs/${version}.md"
+          
+          if [ -f "$changelog_file" ]; then
+            echo "✅ Changelog file found: $changelog_file"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Changelog file not found: $changelog_file"
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Please create a changelog file at: $changelog_file"
+            echo "Expected format: public/changelogs/${version}.md"
+            exit 1
+          fi
+      
+      - name: Validate Changelog Format
+        if: steps.validate_title.outputs.valid == 'true' && steps.check_changelog.outputs.exists == 'true'
+        run: |
+          version="${{ steps.extract_version.outputs.version }}"
+          changelog_file="public/changelogs/${version}.md"
+          
+          echo "Validating changelog format for: $changelog_file"
+          
+          # Check if file has frontmatter with version
+          if ! grep -q "version: \"$version\"" "$changelog_file"; then
+            echo "❌ Changelog file does not contain correct version in frontmatter"
+            echo "Expected: version: \"$version\""
+            exit 1
+          fi
+          
+          # Check if file has required frontmatter fields
+          if ! grep -q "date:" "$changelog_file"; then
+            echo "❌ Changelog file missing 'date' field in frontmatter"
+            exit 1
+          fi
+          
+          if ! grep -q "importance:" "$changelog_file"; then
+            echo "❌ Changelog file missing 'importance' field in frontmatter"
+            exit 1
+          fi
+          
+          echo "✅ Changelog format validation passed"
+      
+      - name: Comment on PR Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '${{ github.event.pull_request.title }}';
+            const version = '${{ steps.extract_version.outputs.version }}';
+            const changelogFile = version ? `public/changelogs/${version}.md` : '';
+            
+            let message = `## ❌ Release Validation Failed\n\n`;
+            
+            if ('${{ steps.validate_title.outputs.valid }}' !== 'true') {
+              message += `**Issue:** Invalid PR title format\n\n`;
+              message += `**Current title:** \`${title}\`\n\n`;
+              message += `**Required format:** \`Release v0.0.0\` (where each 0 is a digit)\n\n`;
+              message += `**Examples:**\n`;
+              message += `- \`Release v1.2.3\` ✅\n`;
+              message += `- \`Release v0.0.1\` ✅\n`;
+              message += `- \`release v1.2.3\` ❌ (lowercase)\n`;
+              message += `- \`Release 1.2.3\` ❌ (missing 'v')\n`;
+              message += `- \`Release v1.2\` ❌ (missing patch version)\n\n`;
+            } else if ('${{ steps.check_changelog.outputs.exists }}' === 'false') {
+              message += `**Issue:** Changelog file not found\n\n`;
+              message += `**Missing file:** \`${changelogFile}\`\n\n`;
+              message += `**Solution:** Please create a changelog file at \`${changelogFile}\` with the following format:\n\n`;
+              message += `\`\`\`markdown\n`;
+              message += `---\n`;
+              message += `version: "${version}"\n`;
+              message += `date: "YYYY-MM-DD"\n`;
+              message += `importance: "major|minor|patch"\n`;
+              message += `prevVersion: "vX.X.X"\n`;
+              message += `---\n\n`;
+              message += `# 🚀 New Features\n\n`;
+              message += `## Feature Name\n`;
+              message += `- Description of the feature\n\n`;
+              message += `# 🐛 Bug Fixes\n\n`;
+              message += `- Description of bug fix\n\n`;
+              message += `# 🎨 UI Improvements\n\n`;
+              message += `- Description of UI improvement\n`;
+              message += `\`\`\`\n\n`;
+            } else {
+              message += `**Issue:** Changelog format validation failed\n\n`;
+              message += `**Solution:** Please ensure your changelog file at \`${changelogFile}\` contains:\n`;
+              message += `- Correct version in frontmatter: \`version: "${version}"\`\n`;
+              message += `- Required fields: \`date\`, \`importance\`\n`;
+              message += `- Proper markdown formatting\n\n`;
+            }
+            
+            message += `**Note:** This validation ensures that every release has proper documentation and follows our naming conventions.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
+      
+      - name: Comment on PR Success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.extract_version.outputs.version }}';
+            const changelogFile = `public/changelogs/${version}.md`;
+            
+            const message = `## ✅ Release Validation Passed\n\n`;
+            message += `**Version:** ${version}\n`;
+            message += `**Changelog file:** \`${changelogFile}\`\n\n`;
+            message += `Your release is ready to be merged! 🚀`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            }); 

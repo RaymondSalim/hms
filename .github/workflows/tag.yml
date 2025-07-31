@@ -1,4 +1,4 @@
-name: Tag on Merge to Prod
+name: Tag and Create Version Environment on Merge to Prod
 
 on:
   pull_request:
@@ -7,13 +7,15 @@ on:
       - prod
 
 jobs:
-  tag_on_merge:
+  tag_and_version:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Extract Tag from Title
         id: extract_tag
@@ -22,6 +24,7 @@ jobs:
           if [[ "$title" =~ Release[[:space:]]+(.+) ]]; then
             tag_name="${BASH_REMATCH[1]}"
             echo "tag_name=$tag_name" >> $GITHUB_ENV
+            echo "tag=$tag_name" >> $GITHUB_OUTPUT
           fi
 
       - name: Create Tag
@@ -31,3 +34,19 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git tag "$tag_name"
           git push origin "$tag_name"
+
+      - name: Create .env.production
+        if: env.tag_name != ''
+        run: |
+          echo "VERSION=${{ steps.extract_tag.outputs.tag }}" > .env.production
+          echo "Created .env.production with VERSION=${{ steps.extract_tag.outputs.tag }}"
+          cat .env.production
+
+      - name: Commit and push .env.production
+        if: env.tag_name != ''
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .env.production
+          git commit -m "Update version to ${{ steps.extract_tag.outputs.tag }}" || exit 0
+          git push
