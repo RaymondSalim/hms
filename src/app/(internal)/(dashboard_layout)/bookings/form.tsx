@@ -248,6 +248,21 @@ export function BookingForm(props: BookingFormProps) {
                 }
             }
             
+            // Handle rolling bookings that have been converted to fixed end date (is_rolling = false, end_date set, duration_id = null)
+            if (existingBooking.end_date && !existingBooking.durations) {
+                // Normalize dates to remove time components for accurate comparison
+                const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const normalizedExistingStartDate = new Date(existingBooking.start_date.getFullYear(), existingBooking.start_date.getMonth(), existingBooking.start_date.getDate());
+                const normalizedExistingEndDate = new Date(existingBooking.end_date.getFullYear(), existingBooking.end_date.getMonth(), existingBooking.end_date.getDate());
+                
+                if (endDate) {
+                    const normalizedEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                    return normalizedStartDate <= normalizedExistingEndDate && normalizedEndDate >= normalizedExistingStartDate;
+                } else {
+                    return normalizedStartDate <= normalizedExistingEndDate;
+                }
+            }
+            
             return false;
         });
     };

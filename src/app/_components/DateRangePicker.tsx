@@ -4,9 +4,9 @@ import React, {useRef, useState} from 'react';
 import {Button, Input, Popover, PopoverContent, PopoverHandler} from "@material-tailwind/react";
 import {CiCalendarDate, CiSearch} from "react-icons/ci";
 import {DateRange, DayPicker} from "react-day-picker";
-import "react-day-picker/style.css";
 import {formatToDateTime} from "@/app/_lib/util";
 import {AiOutlineLoading} from "react-icons/ai";
+import "react-day-picker/style.css";
 
 export interface DatePickerProps {
     mode?: "single" | "range";
@@ -141,7 +141,7 @@ export function DatePicker({
                         placeholder={placeholder}
                         disabled={disabled}
                         containerProps={{
-                            className: "basis-1/2 md:basis-auto md:ml-auto !w-auto !md:min-w-[225px] !h-auto min-h-10"
+                            className: "basis-1/2 md:basis-auto md:ml-auto !w-full !md:min-w-[225px] !h-auto min-h-10"
                         }}
                         className={`relative !border-t-blue-gray-200 focus:!border-t-gray-900`}
                         labelProps={{
@@ -164,7 +164,7 @@ export function DatePicker({
                             endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
                             classNames={{
                                 disabled: "rdp-disabled cursor-not-allowed",
-                                root: "w-full !ml-0"
+                                // root: "w-full !ml-0"
                             }}/>
                     </div>
                     <div className="flex gap-2 p-3 border-t border-gray-200">
