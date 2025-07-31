@@ -25,11 +25,10 @@ import {GenericActionsType} from "@/app/_lib/actions";
 import {upsertEventAction} from "@/app/(internal)/(dashboard_layout)/schedule/create/event-action";
 import {getEventByID} from "@/app/_db/event";
 import {formatToDateTime} from "@/app/_lib/util";
-import {DayPicker} from "react-day-picker";
+import {DatePicker} from "@/app/_components/DateRangePicker";
 import {eventSchema} from "@/app/_lib/zod/event/zod";
 
 import {FaRegCalendar, FaRegClock} from "react-icons/fa6";
-import "react-day-picker/style.css";
 import "./styles/create.css";
 
 type EventPageQueryParam = {
@@ -72,12 +71,7 @@ export default function CreateEventPage() {
 
     const searchParams = useSearchParams();
     const [queryParams, setQueryParams] = useState<EventPageQueryParam>();
-    const [isPopoverOpen, setIsPopoverOpen] = useState({
-        start: false,
-        end: false,
-        startRecur: false,
-        endRecur: false
-    });
+
     const [eventData, setEventData] = useState<EventData>({
         title: "",
         description: "",
@@ -249,51 +243,16 @@ export default function CreateEventPage() {
                                 </Typography>
                             </label>
                             <div className={"flex flex-col flex-wrap gap-y-2"}>
-                                <Popover
-                                    key="start_date"
-                                    open={isPopoverOpen.start}
-                                    handler={() => setIsPopoverOpen(p => ({
-                                        ...p,
-                                        start: !p.start
-                                    }))}
-                                    placement="bottom-end"
-                                >
-                                    <PopoverHandler>
-                                        <Input
-                                            icon={<FaRegCalendar/>}
-                                            variant="outlined"
-                                            size="lg"
-                                            onChange={() => null}
-                                            value={eventData.start ? formatToDateTime(new Date(eventData.start), false) : ""}
-                                            error={!!fieldErrors?.start}
-                                            className={`basis-1/2 md:basis-auto relative ${!!fieldErrors?.start ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                            labelProps={{
-                                                className: "before:content-none after:content-none",
-                                            }}
-                                        />
-                                    </PopoverHandler>
-                                    <PopoverContent className={"z-[99999]"}>
-                                        <DayPicker
-                                            captionLayout="dropdown"
-                                            mode="single"
-                                            fixedWeeks={true}
-                                            selected={eventData.start ? new Date(eventData.start) : undefined}
-                                            onSelect={(d) => {
-                                                setIsPopoverOpen(p => ({
-                                                    ...p,
-                                                    start: false
-                                                }));
-                                                if (d) setEventData({...eventData, start: d});
-                                            }}
-                                            showOutsideDays
-                                            classNames={{
-                                                disabled: "rdp-disabled cursor-not-allowed",
-                                            }}
-                                            startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                            endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                <DatePicker
+                                    mode="single"
+                                    placeholder="Pilih tanggal mulai"
+                                    showSearchButton={false}
+                                    onUpdate={(dateData) => {
+                                        if (dateData.singleDate) {
+                                            setEventData({...eventData, start: dateData.singleDate});
+                                        }
+                                    }}
+                                />
                                 <Input
                                     disabled={!eventData.start || eventData.allDay === true}
                                     size="lg"
@@ -339,52 +298,17 @@ export default function CreateEventPage() {
                                 </Typography>
                             </label>
                             <div className={"flex flex-col flex-wrap gap-y-2"}>
-                                <Popover
-                                    key={"end_date"}
-                                    open={isPopoverOpen.end}
-                                    handler={() => setIsPopoverOpen(p => ({
-                                        ...p,
-                                        end: !p.start
-                                    }))}
-                                    placement="bottom-end"
-                                >
-                                    <PopoverHandler>
-                                        <Input
-                                            disabled={eventData.start == undefined}
-                                            icon={<FaRegCalendar/>}
-                                            variant="outlined"
-                                            size="lg"
-                                            onChange={() => null}
-                                            value={eventData.end ? formatToDateTime(new Date(eventData.end), false) : ""}
-                                            error={!!fieldErrors?.end}
-                                            className={`basis-1/2 md:basis-auto relative ${!!fieldErrors?.end ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                            labelProps={{
-                                                className: "before:content-none after:content-none",
-                                            }}
-                                        />
-                                    </PopoverHandler>
-                                    <PopoverContent className={"z-[99999]"}>
-                                        <DayPicker
-                                            captionLayout="dropdown"
-                                            mode="single"
-                                            fixedWeeks={true}
-                                            selected={eventData.end ? new Date(eventData.end) : undefined}
-                                            onSelect={(d) => {
-                                                setIsPopoverOpen(p => ({
-                                                    ...p,
-                                                    end: false
-                                                }));
-                                                if (d) setEventData({...eventData, end: d});
-                                            }}
-                                            showOutsideDays
-                                            classNames={{
-                                                disabled: "rdp-disabled cursor-not-allowed",
-                                            }}
-                                            startMonth={eventData.start}
-                                            endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                <DatePicker
+                                    mode="single"
+                                    placeholder="Pilih tanggal selesai"
+                                    showSearchButton={false}
+                                    disabled={eventData.start == undefined}
+                                    onUpdate={(dateData) => {
+                                        if (dateData.singleDate) {
+                                            setEventData({...eventData, end: dateData.singleDate});
+                                        }
+                                    }}
+                                />
                                 <Input
                                     disabled={!eventData.end || eventData.allDay === true}
                                     size="lg"
@@ -542,108 +466,50 @@ export default function CreateEventPage() {
 
                                 <div className="space-y-2">
                                     <Typography variant="h6" color="blue-gray">Mulai Pada</Typography>
-                                    <Popover
-                                        open={isPopoverOpen.startRecur}
-                                        handler={() => setIsPopoverOpen(p => ({...p, startRecur: !p.startRecur}))}
-                                        placement="bottom-start"
-                                    >
-                                        <PopoverHandler>
-                                            <Input
-                                                icon={<FaRegCalendar/>}
-                                                variant="outlined"
-                                                size="lg"
-                                                onChange={() => null}
-                                                value={(eventData.extendedProps as ExtendedProps)?.recurrence?.startRecur ? formatToDateTime(new Date((eventData.extendedProps as ExtendedProps).recurrence!.startRecur!), false) : ""}
-                                                className="relative !border-t-blue-gray-200 focus:!border-t-gray-900"
-                                                labelProps={{
-                                                    className: "before:content-none after:content-none",
-                                                }}
-                                            />
-                                        </PopoverHandler>
-                                        <PopoverContent className={"z-[99999]"}>
-                                            <DayPicker
-                                                captionLayout="dropdown"
-                                                mode="single"
-                                                fixedWeeks={true}
-                                                selected={(eventData.extendedProps as ExtendedProps)?.recurrence?.startRecur ? new Date((eventData.extendedProps as ExtendedProps).recurrence!.startRecur!) : undefined}
-                                                onSelect={(d: Date | undefined) => {
-                                                    setIsPopoverOpen(p => ({...p, startRecur: false}));
-                                                    if (d) {
-                                                        const extendedProps = eventData.extendedProps as ExtendedProps;
-                                                        setEventData({
-                                                            ...eventData,
-                                                            extendedProps: {
-                                                                ...extendedProps,
-                                                                recurrence: {
-                                                                    ...extendedProps?.recurrence,
-                                                                    startRecur: d.toISOString()
-                                                                }
-                                                            }
-                                                        });
+                                    <DatePicker
+                                        mode="single"
+                                        placeholder="Pilih tanggal mulai berulang"
+                                        showSearchButton={false}
+                                        onUpdate={(dateData) => {
+                                            if (dateData.singleDate) {
+                                                const extendedProps = eventData.extendedProps as ExtendedProps;
+                                                setEventData({
+                                                    ...eventData,
+                                                    extendedProps: {
+                                                        ...extendedProps,
+                                                        recurrence: {
+                                                            ...extendedProps?.recurrence,
+                                                            startRecur: dateData.singleDate.toISOString()
+                                                        }
                                                     }
-                                                }}
-                                                showOutsideDays
-                                                classNames={{
-                                                    disabled: "rdp-disabled cursor-not-allowed",
-                                                }}
-                                                startMonth={eventData.start}
-                                                endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                                });
+                                            }
+                                        }}
+                                    />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Typography variant="h6" color="blue-gray">Selesai Pada</Typography>
-                                    <Popover
-                                        open={isPopoverOpen.endRecur}
-                                        handler={() => setIsPopoverOpen(p => ({...p, endRecur: !p.endRecur}))}
-                                        placement="bottom-start"
-                                    >
-                                        <PopoverHandler>
-                                            <Input
-                                                icon={<FaRegCalendar/>}
-                                                variant="outlined"
-                                                size="lg"
-                                                onChange={() => null}
-                                                value={(eventData.extendedProps as ExtendedProps)?.recurrence?.endRecur ? formatToDateTime(new Date((eventData.extendedProps as ExtendedProps).recurrence!.endRecur!), false) : ""}
-                                                className="relative !border-t-blue-gray-200 focus:!border-t-gray-900"
-                                                labelProps={{
-                                                    className: "before:content-none after:content-none",
-                                                }}
-                                            />
-                                        </PopoverHandler>
-                                        <PopoverContent className={"z-[99999]"}>
-                                            <DayPicker
-                                                captionLayout="dropdown"
-                                                mode="single"
-                                                fixedWeeks={true}
-                                                selected={(eventData.extendedProps as ExtendedProps)?.recurrence?.endRecur ? new Date((eventData.extendedProps as ExtendedProps).recurrence!.endRecur!) : undefined}
-                                                onSelect={(d: Date | undefined) => {
-                                                    setIsPopoverOpen(p => ({...p, endRecur: false}));
-                                                    if (d) {
-                                                        const extendedProps = eventData.extendedProps as ExtendedProps;
-                                                        setEventData({
-                                                            ...eventData,
-                                                            extendedProps: {
-                                                                ...extendedProps,
-                                                                recurrence: {
-                                                                    ...extendedProps?.recurrence,
-                                                                    endRecur: d.toISOString()
-                                                                }
-                                                            }
-                                                        });
+                                    <DatePicker
+                                        mode="single"
+                                        placeholder="Pilih tanggal selesai berulang"
+                                        showSearchButton={false}
+                                        onUpdate={(dateData) => {
+                                            if (dateData.singleDate) {
+                                                const extendedProps = eventData.extendedProps as ExtendedProps;
+                                                setEventData({
+                                                    ...eventData,
+                                                    extendedProps: {
+                                                        ...extendedProps,
+                                                        recurrence: {
+                                                            ...extendedProps?.recurrence,
+                                                            endRecur: dateData.singleDate.toISOString()
+                                                        }
                                                     }
-                                                }}
-                                                showOutsideDays
-                                                classNames={{
-                                                    disabled: "rdp-disabled cursor-not-allowed",
-                                                }}
-                                                startMonth={eventData.start}
-                                                endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                                });
+                                            }
+                                        }}
+                                    />
                                 </div>
                             </div>
                         )}

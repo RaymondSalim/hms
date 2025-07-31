@@ -3,6 +3,7 @@
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
 import {format} from "date-fns";
 import prisma from "@/app/_lib/primsa";
+import {getRoomTypeAvailability, RoomTypeWithRoomCountAndAvailability} from "@/app/_db/availability";
 import {Period} from "@/app/_enum/financial";
 import {getDatesInRange} from "@/app/_lib/util";
 
@@ -23,9 +24,7 @@ export async function getOverviewData(locationID?: number) {
     const sevenDaysAhead = new Date();
     sevenDaysAhead.setDate(today.getDate() + 7);
 
-    const locationClause = locationID ? Prisma.sql`r.location_id = ${locationID}` : Prisma.sql`TRUE`;
-    
-    const [checkIn, checkOut, availableRooms, roomCount] = await prisma.$transaction([
+    const [checkIn, checkOut, roomCount] = await prisma.$transaction([
         // Get check-ins from today to 7 days ahead
         prisma.booking.findMany({
             where: {
@@ -70,23 +69,6 @@ export async function getOverviewData(locationID?: number) {
             }
         }),
 
-        // Get available rooms count
-        prisma.room.count({
-            where: {
-                location_id: locationID,
-                bookings: {
-                    none: {
-                        start_date: {
-                            lte: sevenDaysAhead,  // booking starts before week ends
-                        },
-                        end_date: {
-                            gte: today, // booking ends after week starts
-                        },
-                    },
-                },
-            }
-        }),
-
         // Get total room count
         prisma.room.count({
             where: {
@@ -95,14 +77,18 @@ export async function getOverviewData(locationID?: number) {
         })
     ]);
 
+    // Get available rooms count using the centralized function
+    const roomAvailability: RoomTypeWithRoomCountAndAvailability[] = await getRoomTypeAvailability(locationID, { from: today, to: sevenDaysAhead });
+    const availableRooms = roomAvailability.reduce((sum: number, rt: RoomTypeWithRoomCountAndAvailability) => sum + rt.roomLeft, 0);
+
     return {
         check_in: checkIn,
         check_out: checkOut,
         available: availableRooms,
         occupied: roomCount - availableRooms,
         date_range: {
-            start: formatDateToString(today),
-            end: formatDateToString(sevenDaysAhead)
+            start: today.toISOString(),
+            end: sevenDaysAhead.toISOString()
         }
     };
 }
@@ -385,13 +371,6 @@ async function getCheckOutWithExtras(now: Date, sevenDaysAhead: Date, locationID
         ...r,
         checkout_date: r.end_date, // For compatibility with the mapping logic
     })));
-}
-
-function formatDateToString(date: Date): string {
-    return new Intl.DateTimeFormat('id', {
-        dateStyle: "short",
-        timeZone: 'Asia/Jakarta',
-    }).format(date);
 }
 
 /**

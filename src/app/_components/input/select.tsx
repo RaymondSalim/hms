@@ -54,9 +54,7 @@ export function SelectComponent<T = string>({type = "select", ...props}: SelectP
     };
 
     useEffect(() => {
-        if (props.selectedOption) {
-            setValue(props.selectedOption);
-        }
+        setValue(props.selectedOption);
     }, [props.selectedOption]);
 
     useEffect(() => {
