@@ -7,9 +7,8 @@ import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {ZodFormattedError} from "zod";
-import {DayPicker} from "react-day-picker";
+import {DatePicker} from "@/app/_components/DateRangePicker";
 import {formatToDateTime} from "@/app/_lib/util";
-import "react-day-picker/style.css";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {NonUndefined} from "@/app/_lib/types";
@@ -37,7 +36,6 @@ export function BillForm(props: BillForm) {
     const [data, setData] = useState<DataType>(parsedData ?? {});
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
     const [locationID, setLocationID] = useState<number | undefined>(parsedData?.bookings?.rooms?.location_id ?? undefined);
-    const [popoverOpen, setIsPopoverOpen] = useState(false);
     const [understoodWarning, setUnderstoodWarning] = useState(false);
 
     const today = new Date();
@@ -171,44 +169,16 @@ export function BillForm(props: BillForm) {
                                             Tanggal Jatuh Tempo
                                         </Typography>
                                     </label>
-                                    <Popover
-                                        open={popoverOpen}
-                                        handler={() => setIsPopoverOpen(p => !p)}
-                                        placement="bottom-end"
-                                    >
-                                        <PopoverHandler>
-                                            <Input
-                                                variant="outlined"
-                                                size="lg"
-                                                onChange={() => null}
-                                                value={data.due_date ? formatToDateTime(data.due_date, false) : ""}
-                                                error={!!fieldErrors?.due_date}
-                                                className={`relative ${!!fieldErrors?.due_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                labelProps={{
-                                                    className: "before:content-none after:content-none",
-                                                }}
-                                            />
-                                        </PopoverHandler>
-                                        <PopoverContent className={"z-[99999]"}>
-                                            <DayPicker
-                                                timeZone={"UTC"}
-                                                captionLayout="dropdown"
-                                                mode="single"
-                                                fixedWeeks={true}
-                                                selected={data.due_date ? data.due_date : new Date()}
-                                                onSelect={(d) => {
-                                                    setIsPopoverOpen(false);
-                                                    setData(p => ({...p, due_date: d}));
-                                                }}
-                                                showOutsideDays
-                                                classNames={{
-                                                    disabled: "rdp-disabled cursor-not-allowed",
-                                                }}
-                                                startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                                endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <DatePicker
+                                        mode="single"
+                                        placeholder="Pilih tanggal jatuh tempo"
+                                        showSearchButton={false}
+                                        onUpdate={(dateData) => {
+                                            if (dateData.singleDate) {
+                                                setData(p => ({...p, due_date: dateData.singleDate}));
+                                            }
+                                        }}
+                                    />
                                     {
                                         fieldErrors?.due_date &&
                                         <Typography color="red">{fieldErrors?.due_date._errors}</Typography>

@@ -18,7 +18,7 @@ import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {AddOnPricing} from "@prisma/client";
 import {ZodFormattedError} from "zod";
-import "react-day-picker/style.css";
+
 import {AnimatePresence, MotionConfig} from "framer-motion";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
