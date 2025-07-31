@@ -16,8 +16,9 @@ model Booking {
   status_id           Int?
   fee                 Decimal  @db.Decimal(10, 2)
   tenant_id           String?
-  end_date            DateTime @db.Date
+  end_date            DateTime? @db.Date
   second_resident_fee Decimal? @db.Decimal(10, 2)
+  is_rolling          Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -568,4 +569,5 @@ enum DepositStatus {
   APPLIED
   REFUNDED
   PARTIALLY_REFUNDED
+  FORFEITED
 }
