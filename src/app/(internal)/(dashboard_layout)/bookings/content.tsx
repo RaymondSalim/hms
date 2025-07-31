@@ -39,6 +39,7 @@ import {MdContentCopy} from "react-icons/md";
 import {toast} from "react-toastify";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {getUnpaidBillsDueAction} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
+import {EndOfStayForm} from "@/app/(internal)/(dashboard_layout)/bookings/_components/EndOfStayForm";
 
 
 export interface BookingsContentProps {
@@ -61,6 +62,10 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     });
     let [onCancel, setOnCancel] = useState(() => () => {
     });
+
+    // End of Stay dialog states
+    const [showEndOfStayDialog, setShowEndOfStayDialog] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<BookingsIncludeAll | null>(null);
 
     // Detail dialog states
     let [dialogContent, setDialogContent] = useState(<></>);
@@ -170,10 +175,15 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         const now = new Date();
         const today = now.toISOString().split('T')[0];
         const startDate = booking.start_date.toISOString().split('T')[0];
-        const endDate = booking.end_date.toISOString().split('T')[0];
+        const endDate = booking.end_date ? booking.end_date.toISOString().split('T')[0] : null;
 
         // Set default date to today if within range, otherwise undefined
-        if (today >= startDate && today <= endDate) {
+        let isWithinRange = today >= startDate;
+        if (endDate) {
+            isWithinRange = isWithinRange && today <= endDate;
+        }
+        
+        if (isWithinRange) {
             setEventDate(today);
         } else {
             setEventDate('');
@@ -259,7 +269,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
             header: "Tanggal Mulai",
         }),
-        columnHelper.accessor(row => formatToDateTime(row.end_date, false), {
+        columnHelper.accessor(row => row.end_date ? formatToDateTime(row.end_date, false) : "-", {
             header: "Tanggal Selesai",
         }),
         columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.fee).toNumber()), {
@@ -377,6 +387,27 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                         },
                     },
                     {
+                        generateButton: (rowData) => {
+                            if (!rowData.is_rolling || rowData.end_date) {
+                                return <></>;
+                            }
+                            return (
+                                <Button
+                                    key={`${rowData.id}_end_of_stay`}
+                                    size={"sm"}
+                                    color="orange"
+                                    className="flex items-center gap-2 w-fit"
+                                    onClick={() => {
+                                        setSelectedBooking(rowData);
+                                        setShowEndOfStayDialog(true);
+                                    }}
+                                >
+                                    <span className={"text-white whitespace-nowrap"}>Jadwalkan Berhenti Sewa</span>
+                                </Button>
+                            );
+                        }
+                    },
+                    {
                         generateButton: (rowData, setActiveContent, setDialogOpen) => (
                             <MdContentCopy
                                 className="h-5 w-5 cursor-pointer hover:text-green-500"
@@ -393,23 +424,25 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                         updatedAt,
                                         ...rest
                                     } = rowData;
-                                    const duplicatedBooking: Partial<UpsertBookingPayload> = {
+                                    const duplicatedBooking: Partial<BookingsIncludeAll> = {
                                         ...rest,
-                                        // @ts-expect-error invalid type
-                                        rooms: rowRooms?.location_id ? {
-                                            location_id: rowRooms.location_id
-                                        } : null,
-                                        // @ts-expect-error id type undefined error
+                                        rooms: rowRooms,
+                                        durations: durations,
+                                        bookingstatuses: bookingstatuses,
+                                        tenants: tenants,
+                                        checkInOutLogs: checkInOutLogs,
+                                        end_date: end_date,
+                                        createdAt: createdAt,
+                                        updatedAt: updatedAt,
                                         addOns: rowData.addOns?.map(addon => ({
                                             ...addon,
                                             id: undefined,
                                             booking_id: undefined,
                                             createdAt: undefined,
                                             updatedAt: undefined
-                                        })) ?? [],
+                                        })) as any,
                                     };
-                                    // @ts-expect-error type
-                                    setActiveContent(duplicatedBooking);
+                                    setActiveContent(duplicatedBooking as BookingsIncludeAll);
                                     setDialogOpen(true);
                                 }}
                             />
@@ -459,6 +492,17 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             </Button>
                         </DialogFooter>
                     </Dialog>
+
+                    {selectedBooking && (
+                        <EndOfStayForm
+                            booking={selectedBooking}
+                            open={showEndOfStayDialog}
+                            onClose={() => {
+                                setShowEndOfStayDialog(false);
+                                setSelectedBooking(null);
+                            }}
+                        />
+                    )}
 
                     <Dialog
                         key={"check-in-out-dialog"}
@@ -640,7 +684,11 @@ function BookingInfo({booking}: BookingInfoProps) {
                     {/* Date Information */}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Tanggal</Typography>
                     <Typography><strong>Tanggal Mulai:</strong> {formatToDateTime(booking.start_date, false)}</Typography>
-                    <Typography><strong>Tanggal Selesai:</strong> {formatToDateTime(booking.end_date, false)}</Typography>
+                    <Typography><strong>Tanggal Selesai:</strong> {
+                        booking.is_rolling ?
+                            "Rolling (Tiap bulan)" :
+                            formatToDateTime(booking.end_date!, false)
+                    }</Typography>
 
                     {/* Deposit Information */}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Deposit</Typography>

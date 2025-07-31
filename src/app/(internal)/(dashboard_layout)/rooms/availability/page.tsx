@@ -35,7 +35,6 @@ export default function RoomsPage() {
                 isSuccess &&
                 <RoomAvailabilityContent
                     roomTypes={roomTypeData}
-                    locationID={headerContext.locationID}
                 />
             }
         </>

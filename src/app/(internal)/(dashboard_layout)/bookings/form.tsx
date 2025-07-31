@@ -2,21 +2,19 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Checkbox, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
+import {Button, Checkbox, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getRooms, getRoomTypes} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
-import {Duration, Prisma} from "@prisma/client";
+import {Prisma} from "@prisma/client";
 import {ZodFormattedError} from "zod";
 import {BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
-import {DayPicker} from "react-day-picker";
-import {formatToDateTime, generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
-import "react-day-picker/style.css";
+import {DatePicker} from "@/app/_components/DateRangePicker";
+import {getLastDateOfBooking} from "@/app/_lib/util";
 import {getAllBookingsAction, UpsertBookingPayload,} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
-import {DateSet} from "@/app/_lib/customSet";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {getAddonsByLocation} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
@@ -53,7 +51,7 @@ export function BookingForm(props: BookingFormProps) {
         const basicValidation = !bookingData.tenant_id ||
             !bookingData.room_id ||
             !bookingData.start_date ||
-            !bookingData.duration_id ||
+            !(bookingData.duration_id || bookingData.is_rolling) ||
             !bookingData.fee ||
             !bookingData.status_id;
         const warningValidation = props.contentData?.id ? !understoodWarning : false; // Only require checkbox when editing
@@ -118,10 +116,15 @@ export function BookingForm(props: BookingFormProps) {
     const [durationDataMapped, setDurationDataMapped] = useState<SelectOption<number>[]>([]);
     useEffect(() => {
         if (durationsDataSuccess) {
-            setDurationDataMapped(durationsData.map(d => ({
+            const rollingOption: SelectOption<number> = {
+                value: -1, // Using -1 to signify a rolling booking
+                label: "Sewa Bulanan (Rolling)"
+            };
+            const mappedDurations = durationsData.map(d => ({
                 value: d.id,
                 label: `${d.duration}`
-            })));
+            }));
+            setDurationDataMapped([rollingOption, ...mappedDurations]);
         }
     }, [durationsData, durationsDataSuccess]);
 
@@ -203,35 +206,96 @@ export function BookingForm(props: BookingFormProps) {
         queryFn: () => getAllBookingsAction(undefined, bookingData.room_id ?? undefined),
         enabled: bookingData.room_id != undefined,
     });
-    const [disabledDatesSet, setDisabledDatesSet] = useState<DateSet>(new DateSet());
-    useEffect(() => {
-        if (isExistingBookingSuccess) {
-            const datesSet = new DateSet();
-            existingBookings?.forEach(b => {
-                generateDatesFromBooking(
-                    // @ts-ignore
-                    b,
-                    (d) => {
-                        datesSet.add(d);
-                    }
-                );
-            });
-            setDisabledDatesSet(datesSet);
-        }
-    }, [existingBookings, isExistingBookingSuccess]);
+    // Helper function to check if a booking period overlaps with existing bookings
+    const checkBookingOverlap = (startDate: Date, endDate?: Date): boolean => {
+        if (!existingBookings) return false;
+
+        return existingBookings.some(existingBooking => {
+            // Skip current booking if editing
+            if (existingBooking.id === props.contentData?.id) return false;
+
+            // For rolling bookings, check if they would overlap
+            if (existingBooking.is_rolling) {
+                // If existing booking is rolling, any new booking that starts before its end date (if any) would overlap
+                if (existingBooking.end_date) {
+                    // Normalize dates to remove time components for accurate comparison
+                    const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                    const normalizedExistingEndDate = new Date(existingBooking.end_date.getFullYear(), existingBooking.end_date.getMonth(), existingBooking.end_date.getDate());
+                    return normalizedStartDate <= normalizedExistingEndDate;
+                } else {
+                    // If existing rolling booking has no end date, any new booking would overlap
+                    return true;
+                }
+            }
+
+            // For fixed duration bookings, check if periods overlap
+            if (existingBooking.durations) {
+                const existingEndDate = getLastDateOfBooking(existingBooking.start_date, existingBooking.durations);
+                // Check if the new booking period overlaps with the existing booking period
+                // Two periods overlap if: new start <= existing end AND new end >= existing start
+
+                // Normalize dates to remove time components for accurate comparison
+                const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const normalizedExistingStartDate = new Date(existingBooking.start_date.getFullYear(), existingBooking.start_date.getMonth(), existingBooking.start_date.getDate());
+                const normalizedExistingEndDate = new Date(existingEndDate.getFullYear(), existingEndDate.getMonth(), existingEndDate.getDate());
+
+                if (endDate) {
+                    const normalizedEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                    return normalizedStartDate <= normalizedExistingEndDate && normalizedEndDate >= normalizedExistingStartDate;
+                } else {
+                    return normalizedStartDate <= normalizedExistingEndDate;
+                }
+            }
+
+            // Handle rolling bookings that have been converted to fixed end date (is_rolling = false, end_date set, duration_id = null)
+            if (existingBooking.end_date && !existingBooking.durations) {
+                // Normalize dates to remove time components for accurate comparison
+                const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                const normalizedExistingStartDate = new Date(existingBooking.start_date.getFullYear(), existingBooking.start_date.getMonth(), existingBooking.start_date.getDate());
+                const normalizedExistingEndDate = new Date(existingBooking.end_date.getFullYear(), existingBooking.end_date.getMonth(), existingBooking.end_date.getDate());
+
+                if (endDate) {
+                    const normalizedEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                    return normalizedStartDate <= normalizedExistingEndDate && normalizedEndDate >= normalizedExistingStartDate;
+                } else {
+                    return normalizedStartDate <= normalizedExistingEndDate;
+                }
+            }
+
+            return false;
+        });
+    };
 
     // Disable duration options when start date is selected
     useEffect(() => {
         if (bookingData.start_date) {
             const newDurationData = structuredClone(durationDataMapped);
             let hasChange = false;
+
+            // Check if there's already a rolling booking for this room
+            const hasExistingRollingBooking = existingBookings?.some(booking =>
+                booking.is_rolling &&
+                booking.id !== props.contentData?.id // Exclude current booking if editing
+            ) ?? false;
+
+            // Disable rolling option if there's already a rolling booking or if it would overlap with existing bookings
+            if (newDurationData[0]) { // Rolling option is at index 0
+                const wouldOverlap = checkBookingOverlap(bookingData.start_date!);
+                const shouldDisableRolling = hasExistingRollingBooking || wouldOverlap;
+                hasChange = hasChange || newDurationData[0].isDisabled != shouldDisableRolling;
+                newDurationData[0].isDisabled = shouldDisableRolling;
+            }
+
+            // Check fixed duration bookings
             durationsData?.forEach((val, index) => {
-                if (newDurationData[index]) {
+                // Adjust index because durationDataMapped has rolling option at index 0
+                const mappedIndex = index + 1;
+                if (newDurationData[mappedIndex]) {
                     let lastDate = getLastDateOfBooking(bookingData.start_date!, val);
-                    let dates = generateDatesBetween(bookingData.start_date!, lastDate);
-                    let inSet = disabledDatesSet.has(dates[dates.length - 1]);
-                    hasChange = hasChange || newDurationData[index].isDisabled != inSet;
-                    newDurationData[index].isDisabled = inSet;
+                    const wouldOverlap = checkBookingOverlap(bookingData.start_date!, lastDate);
+
+                    hasChange = hasChange || newDurationData[mappedIndex].isDisabled != wouldOverlap;
+                    newDurationData[mappedIndex].isDisabled = wouldOverlap;
                 }
             });
 
@@ -239,7 +303,7 @@ export function BookingForm(props: BookingFormProps) {
                 setDurationDataMapped([...newDurationData]);
             }
         }
-    }, [bookingData.start_date, disabledDatesSet, durationDataMapped, durationsData]);
+    }, [bookingData.start_date, durationDataMapped, durationsData, existingBookings, props.contentData?.id]);
 
     // Helper Functions for Addons Management
     const addAddonEntry = () => {
@@ -368,45 +432,17 @@ export function BookingForm(props: BookingFormProps) {
                                             Tanggal Mulai
                                         </Typography>
                                     </label>
-                                    <Popover
-                                        open={popoverOpenMap["BOOKING_SD"]}
-                                        handler={() => togglePopover("BOOKING_SD")}
-                                        placement="bottom-end"
-                                    >
-                                        <PopoverHandler>
-                                            <Input
-                                                variant="outlined"
-                                                size="lg"
-                                                onChange={() => null}
-                                                value={bookingData.start_date ? formatToDateTime(bookingData.start_date, false) : ""}
-                                                error={!!fieldErrors?.start_date}
-                                                className={`relative ${!!fieldErrors?.start_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                labelProps={{
-                                                    className: "before:content-none after:content-none",
-                                                }}
-                                            />
-                                        </PopoverHandler>
-                                        <PopoverContent className={"z-[99999]"}>
-                                            <DayPicker
-                                                timeZone={"UTC"}
-                                                captionLayout="dropdown"
-                                                mode="single"
-                                                fixedWeeks={true}
-                                                selected={bookingData.start_date}
-                                                onSelect={(d) => {
-                                                    togglePopover("BOOKING_SD");
-                                                    setBookingData(p => ({...p, start_date: d}));
-                                                }}
-                                                disabled={disabledDatesSet.values()}
-                                                showOutsideDays
-                                                classNames={{
-                                                    disabled: "rdp-disabled cursor-not-allowed",
-                                                }}
-                                                startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                                endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <DatePicker
+                                        className="w-full !ml-0"
+                                        mode="single"
+                                        placeholder="Pilih tanggal mulai"
+                                        showSearchButton={false}
+                                        onUpdate={(dateData) => {
+                                            if (dateData.singleDate) {
+                                                setBookingData(p => ({...p, start_date: dateData.singleDate, duration_id: undefined,}));
+                                            }
+                                        }}
+                                    />
                                     {
                                         fieldErrors?.start_date &&
                                         <Typography color="red">{fieldErrors?.start_date._errors}</Typography>
@@ -427,13 +463,27 @@ export function BookingForm(props: BookingFormProps) {
                                         </Typography>
                                     </label>
                                     <SelectComponent<number>
-                                        setValue={(v) => setBookingData(p => ({
-                                            ...p,
-                                            duration_id: v
-                                        }))}
+                                        setValue={(v) => {
+                                            if (v === -1) {
+                                                setBookingData(p => ({
+                                                    ...p,
+                                                    duration_id: null,
+                                                    is_rolling: true
+                                                }));
+                                            } else {
+                                                setBookingData(p => ({
+                                                    ...p,
+                                                    duration_id: v,
+                                                    is_rolling: false
+                                                }));
+                                            }
+                                        }}
                                         options={durationDataMapped}
                                         selectedOption={
-                                            durationDataMapped.find(r => r.value == bookingData.duration_id)
+                                            bookingData.is_rolling ? durationDataMapped[0] :
+                                            (bookingData.duration_id !== undefined && bookingData.duration_id !== null)
+                                                ? durationDataMapped.find(r => r.value === bookingData.duration_id)
+                                                : undefined
                                         }
                                         placeholder={"Pick duration"}
                                         isError={!!fieldErrors?.duration_id}
@@ -445,7 +495,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                bookingData.duration_id &&
+                                (bookingData.duration_id || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"price"}
                                     initial={{opacity: 0, height: 0}}
@@ -481,7 +531,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                bookingData.duration_id &&
+                                (bookingData.duration_id || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"status"}
                                     initial={{opacity: 0, height: 0}}
@@ -507,7 +557,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                bookingData.duration_id &&
+                                (bookingData.duration_id || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"deposit"}
                                     initial={{opacity: 0, height: 0}}
@@ -581,7 +631,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                bookingData.duration_id &&
+                                (bookingData.duration_id || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"second_resident"}
                                     initial={{opacity: 0, height: 0}}
@@ -642,7 +692,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                bookingData.duration_id &&
+                                (bookingData.duration_id || bookingData.is_rolling) &&
                                 <motion.div
                                     initial={{opacity: 0, height: 0}}
                                     animate={{opacity: 1, height: "auto"}}
@@ -714,62 +764,17 @@ export function BookingForm(props: BookingFormProps) {
                                                         <Typography variant="h6" color="blue-gray">
                                                             Tanggal Mulai
                                                         </Typography>
-                                                        <Popover
-                                                            key={`${index}_p`}
-                                                            open={popoverOpenMap[`${index}_sd`]}
-                                                            handler={() => togglePopover(`${index}_sd`)}
-                                                            placement="bottom-end"
-                                                        >
-                                                            <PopoverHandler key={`${index}_ph`}>
-                                                                <Input
-                                                                    key={`${index}_sd_input`}
-                                                                    variant="outlined"
-                                                                    size="lg"
-                                                                    onChange={() => null}
-                                                                    value={addon.start_date ? formatToDateTime(addon.start_date, false) : ""}
-                                                                    error={!!fieldErrors?.addOns?.[index]?.start_date}
-                                                                    className={`relative ${!!fieldErrors?.addOns?.[index]?.start_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                                    labelProps={{
-                                                                        className: "before:content-none after:content-none",
-                                                                    }}
-                                                                />
-                                                            </PopoverHandler>
-                                                            <PopoverContent key={`${index}_pc`} className={"z-[99999]"}>
-                                                                <DayPicker
-                                                                    key={`${index}_dp`}
-                                                                    timeZone={"UTC"}
-                                                                    captionLayout="dropdown"
-                                                                    mode="single"
-                                                                    fixedWeeks={true}
-                                                                    selected={addon.start_date}
-                                                                    onSelect={(date) => {
-                                                                        togglePopover(`${index}_sd`);
-                                                                        updateAddonEntry(index, "start_date", date);
-                                                                    }}
-                                                                    showOutsideDays
-                                                                    classNames={{
-                                                                        disabled: "rdp-disabled cursor-not-allowed",
-                                                                    }}
-                                                                    startMonth={bookingData.start_date ?? new Date(today.getFullYear() - 5, today.getMonth())}
-                                                                    endMonth={(() => {
-                                                                        if (bookingData.start_date && (bookingData.durations || bookingData.duration_id)) {
-                                                                            let duration: Duration | undefined;
-                                                                            if (bookingData.durations) {
-                                                                                duration = bookingData.durations;
-                                                                            } else {
-                                                                                duration = durationsData?.find(d => d.id == bookingData.duration_id);
-                                                                            }
-
-                                                                            if (!duration) return new Date(today.getFullYear() + 5, today.getMonth());
-
-                                                                            return getLastDateOfBooking(bookingData.start_date, duration);
-                                                                        }
-
-                                                                        return new Date(today.getFullYear() + 5, today.getMonth());
-                                                                    })()}
-                                                                />
-                                                            </PopoverContent>
-                                                        </Popover>
+                                                        <DatePicker
+                                                            key={`${index}_dp`}
+                                                            mode="single"
+                                                            placeholder="Pilih tanggal mulai"
+                                                            showSearchButton={false}
+                                                            onUpdate={(dateData) => {
+                                                                if (dateData.singleDate) {
+                                                                    updateAddonEntry(index, "start_date", dateData.singleDate);
+                                                                }
+                                                            }}
+                                                        />
                                                         {fieldErrors?.addOns?.[index]?.start_date && (
                                                             <Typography color="red">
                                                                 {fieldErrors.addOns[index].start_date?._errors}
@@ -782,63 +787,17 @@ export function BookingForm(props: BookingFormProps) {
                                                         <Typography variant="h6" color="blue-gray">
                                                             Tanggal Selesai
                                                         </Typography>
-                                                        <Popover
-                                                            key={`${index}_p_ed`}
-                                                            open={popoverOpenMap[`${index}_ed`]}
-                                                            handler={() => togglePopover(`${index}_ed`)}
-                                                            placement="bottom-end"
-                                                        >
-                                                            <PopoverHandler key={`${index}_ph_ed`}>
-                                                                <Input
-                                                                    key={`${index}_ed_input`}
-                                                                    variant="outlined"
-                                                                    size="lg"
-                                                                    value={addon.end_date ? formatToDateTime(addon.end_date, false) : ""}
-                                                                    onChange={() => null} // Managed via DayPicker
-                                                                    placeholder="Pilih tanggal selesai"
-                                                                    error={!!fieldErrors?.addOns?.[index]?.end_date}
-                                                                    className={`relative ${!!fieldErrors?.addOns?.[index]?.end_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                                    labelProps={{
-                                                                        className: "before:content-none after:content-none",
-                                                                    }}
-                                                                />
-                                                            </PopoverHandler>
-                                                            <PopoverContent key={`${index}_pc_ed`} className={"z-[99999]"}>
-                                                                <DayPicker
-                                                                    key={`${index}_dp_ed`}
-                                                                    timeZone={"UTC"}
-                                                                    captionLayout="dropdown"
-                                                                    mode="single"
-                                                                    fixedWeeks={true}
-                                                                    selected={addon.end_date}
-                                                                    onSelect={(date) => {
-                                                                        togglePopover(`${index}_ed`);
-                                                                        updateAddonEntry(index, "end_date", date);
-                                                                    }}
-                                                                    showOutsideDays
-                                                                    classNames={{
-                                                                        disabled: "rdp-disabled cursor-not-allowed",
-                                                                    }}
-                                                                    startMonth={bookingData.addOns?.[index]?.start_date ?? bookingData.start_date ?? new Date(today.getFullYear() - 5, today.getMonth())}
-                                                                    endMonth={(() => {
-                                                                        if (bookingData.start_date && (bookingData.durations || bookingData.duration_id)) {
-                                                                            let duration: Duration | undefined;
-                                                                            if (bookingData.durations) {
-                                                                                duration = bookingData.durations;
-                                                                            } else {
-                                                                                duration = durationsData?.find(d => d.id == bookingData.duration_id);
-                                                                            }
-
-                                                                            if (!duration) return new Date(today.getFullYear() + 5, today.getMonth());
-
-                                                                            return getLastDateOfBooking(bookingData.start_date, duration);
-                                                                        }
-
-                                                                        return new Date(today.getFullYear() + 5, today.getMonth());
-                                                                    })()}
-                                                                />
-                                                            </PopoverContent>
-                                                        </Popover>
+                                                        <DatePicker
+                                                            key={`${index}_dp_ed`}
+                                                            mode="single"
+                                                            placeholder="Pilih tanggal selesai"
+                                                            showSearchButton={false}
+                                                            onUpdate={(dateData) => {
+                                                                if (dateData.singleDate) {
+                                                                    updateAddonEntry(index, "end_date", dateData.singleDate);
+                                                                }
+                                                            }}
+                                                        />
                                                         {fieldErrors?.addOns?.[index]?.end_date && (
                                                             <Typography color="red">
                                                                 {fieldErrors.addOns[index].end_date?._errors}
@@ -915,7 +874,7 @@ export function BookingForm(props: BookingFormProps) {
                                                     Peringatan Alokasi Pembayaran
                                                 </Typography>
                                                 <Typography variant="small" color="amber" className="mt-1 text-amber-700">
-                                                    Mengubah rincian pemesanan dapat mempengaruhi alokasi pembayaran yang sudah ada. 
+                                                    Mengubah rincian pemesanan dapat mempengaruhi alokasi pembayaran yang sudah ada.
                                                     Harap periksa kembali alokasi pembayaran setelah menyimpan perubahan ini.
                                                 </Typography>
                                             </div>

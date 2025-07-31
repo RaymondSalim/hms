@@ -356,7 +356,7 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
                             <strong>Mulai:</strong> {formatToDateTime(bookingData.start_date, false)}
                         </Typography>
                         <Typography>
-                            <strong>Selesai:</strong> {formatToDateTime(bookingData.end_date, false)}
+                            <strong>Selesai:</strong> {bookingData.end_date ? formatToDateTime(bookingData.end_date, false) : "Rolling"}
                         </Typography>
                     </div>
                     <div className="text-gray-700 text-sm mb-4">
