@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+MIGRATION_GUIDE.md
+
+# Scripts (not needed in container)
+scripts/
+*.sh
+
+# Logs and data (will be mounted as volumes)
+logs/
+*.log
+
+# Environment files
+.env
+env.example
+
+# Docker files
+docker-compose.yml
+.dockerignore
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db 
+
+*.bak

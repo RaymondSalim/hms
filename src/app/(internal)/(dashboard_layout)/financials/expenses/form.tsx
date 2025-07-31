@@ -8,9 +8,8 @@ import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {ZodFormattedError} from "zod";
-import {DayPicker} from "react-day-picker";
+import {DatePicker} from "@/app/_components/DateRangePicker";
 import {formatToDateTime} from "@/app/_lib/util";
-import "react-day-picker/style.css";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {NonUndefined} from "@/app/_lib/types";
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
@@ -40,7 +39,7 @@ export function ExpenseForm(props: ExpenseFormProps) {
         type: TransactionType.EXPENSE
     });
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
-    const [popoverOpen, setIsPopoverOpen] = useState(false);
+
 
     const today = new Date();
 
@@ -296,44 +295,16 @@ export function ExpenseForm(props: ExpenseFormProps) {
                                             Tanggal
                                         </Typography>
                                     </label>
-                                    <Popover
-                                        open={popoverOpen}
-                                        handler={() => setIsPopoverOpen(p => !p)}
-                                        placement="bottom-end"
-                                    >
-                                        <PopoverHandler>
-                                            <Input
-                                                variant="outlined"
-                                                size="lg"
-                                                onChange={() => null}
-                                                value={data.date ? formatToDateTime(data.date, false) : ""}
-                                                error={!!fieldErrors?.date}
-                                                className={`relative ${!!fieldErrors?.date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                labelProps={{
-                                                    className: "before:content-none after:content-none",
-                                                }}
-                                            />
-                                        </PopoverHandler>
-                                        <PopoverContent className={"z-[99999]"}>
-                                            <DayPicker
-                                                timeZone={"UTC"}
-                                                captionLayout="dropdown"
-                                                mode="single"
-                                                fixedWeeks={true}
-                                                selected={data.date ? data.date : undefined}
-                                                onSelect={(d) => {
-                                                    setIsPopoverOpen(false);
-                                                    setData(p => ({...p, date: d}));
-                                                }}
-                                                showOutsideDays
-                                                classNames={{
-                                                    disabled: "rdp-disabled cursor-not-allowed",
-                                                }}
-                                                startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                                endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <DatePicker
+                                        mode="single"
+                                        placeholder="Pilih tanggal transaksi"
+                                        showSearchButton={false}
+                                        onUpdate={(dateData) => {
+                                            if (dateData.singleDate) {
+                                                setData(p => ({...p, date: dateData.singleDate}));
+                                            }
+                                        }}
+                                    />
                                     {
                                         fieldErrors?.date &&
                                         <Typography color="red">{fieldErrors?.date._errors}</Typography>

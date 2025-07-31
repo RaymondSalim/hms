@@ -1,0 +1,12 @@
+# Cronicle data and logs
+data/
+logs/
+
+# Environment files
+.env
+
+# Temporary files
+*.tmp
+*.log 
+
+*.bak
