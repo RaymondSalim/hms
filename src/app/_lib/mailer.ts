@@ -36,8 +36,8 @@ class NodemailerSingleton {
                 host: 'smtp.ethereal.email',
                 port: 587,
                 auth: {
-                    user: 'maude.maggio@ethereal.email',
-                    pass: 'h8nCP1DUQm24jvekgt'
+                    user: 'nora56@ethereal.email',
+                    pass: 'S4dvJJZJfGCB6P9V7T'
                 }
             });
         }
