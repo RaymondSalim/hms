@@ -3,7 +3,7 @@ import {
     generateNextMonthlyBill,
     scheduleEndOfRollingBooking
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
-import {Booking, Bill, Prisma} from "@prisma/client";
+import {Bill, Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 
 jest.mock('@/app/_lib/primsa', () => ({
@@ -32,15 +32,23 @@ describe("Rolling Booking Feature", () => {
             expect(bills).toHaveLength(2);
 
             // Bill for July (prorated)
-            expect(bills[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
-            // @ts-ignore
-            expect(bills[0].amount.toNumber()).toBeCloseTo(1741935.48);
+            expect(bills[0].description).toBe("Tagihan untuk Bulan Juli 2024");
+            expect(bills[0].bill_item).toBeDefined();
+            // @ts-expect-error type
+            expect(bills[0].bill_item?.create?.[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
+            // @ts-expect-error type
+            expect(Number(bills[0].bill_item?.create?.[0].amount)).toBeCloseTo(1741935.48);
+            // @ts-expect-error due_date toISOString type
             expect(bills[0].due_date.toISOString().split('T')[0]).toBe(new Date("2024-07-31T00:00:00.000Z").toISOString().split('T')[0]);
 
             // Bill for August (full month)
-            expect(bills[1].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
-            // @ts-ignore
-            expect(bills[1].amount.toNumber()).toBe(2000000);
+            expect(bills[1].description).toBe("Tagihan untuk Bulan Agustus 2024");
+            expect(bills[1].bill_item).toBeDefined();
+            // @ts-expect-error type
+            expect(bills[1].bill_item?.create?.[0].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
+            // @ts-expect-error type
+            expect(Number(bills[1].bill_item?.create?.[0].amount)).toBe(2000000);
+            // @ts-expect-error due_date toISOString type
             expect(bills[1].due_date.toISOString().split('T')[0]).toBe(new Date("2024-08-31T00:00:00.000Z").toISOString().split('T')[0]);
         });
     });
@@ -48,7 +56,7 @@ describe("Rolling Booking Feature", () => {
     describe("generateNextMonthlyBill (Cron Job Simulation)", () => {
         it("should not generate a bill for a month that is already billed", async () => {
             const existingBills: Partial<Bill>[] = [{
-                description: "Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)",
+                description: "Tagihan untuk Bulan Agustus 2024",
                 due_date: new Date("2024-08-31T00:00:00.000Z")
             }];
             const newBill = await generateNextMonthlyBill(mockBooking as Booking, existingBills as Bill[], new Date("2024-08-01T00:00:00.000Z"));
@@ -57,15 +65,21 @@ describe("Rolling Booking Feature", () => {
 
         it("should generate a bill for the next month if it hasn't been billed yet", async () => {
             const existingBills: Partial<Bill>[] = [{
-                description: "Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)",
+                description: "Tagihan untuk Bulan Agustus 2024",
                 due_date: new Date("2024-08-31T00:00:00.000Z")
             }];
             const newBill = await generateNextMonthlyBill(mockBooking as Booking, existingBills as Bill[], new Date("2024-09-01T00:00:00.000Z"));
             expect(newBill).not.toBeNull();
-            expect(newBill?.description).toBe("Sewa Kamar (1 September 2024 - 30 September 2024)");
-            // @ts-ignore
-            expect(newBill?.amount.toNumber()).toBe(2000000);
+            expect(newBill?.description).toBe("Tagihan untuk Bulan September 2024");
+            expect(newBill?.bill_item?.create?.[0].description).toBe("Sewa Kamar (1 September 2024 - 30 September 2024)");
+            expect(Number(newBill?.bill_item?.create?.[0].amount)).toBe(2000000);
+            // @ts-expect-error due_date toISOString type
             expect(newBill?.due_date.toISOString().split('T')[0]).toBe(new Date("2024-09-30T00:00:00.000Z").toISOString().split('T')[0]);
+        });
+
+        it("should not generate a bill if no existing bills are found", async () => {
+            const newBill = await generateNextMonthlyBill(mockBooking as Booking, [], new Date("2024-09-01T00:00:00.000Z"));
+            expect(newBill).toBeNull();
         });
     });
 
@@ -87,7 +101,11 @@ describe("Rolling Booking Feature", () => {
 
         it("should not generate any more bills after the end_date has passed", async () => {
             const endedBooking = { ...mockBooking, end_date: new Date("2024-10-31T00:00:00.000Z") };
-            const newBill = await generateNextMonthlyBill(endedBooking as Booking, [], new Date("2024-11-01T00:00:00.000Z"));
+            const existingBills: Partial<Bill>[] = [{
+                description: "Tagihan untuk Bulan Oktober 2024",
+                due_date: new Date("2024-10-31T00:00:00.000Z")
+            }];
+            const newBill = await generateNextMonthlyBill(endedBooking as Booking, existingBills as Bill[], new Date("2024-11-01T00:00:00.000Z"));
             expect(newBill).toBeNull();
         });
     });
