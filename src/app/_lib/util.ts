@@ -85,7 +85,7 @@ export function generateDatesFromBooking(bookings: BookingsIncludeAll, callback?
     const endDate = bookings.end_date ?? new Date(new Date().setFullYear(new Date().getFullYear() + 5));
     return generateDatesBetween(bookings.start_date, endDate, callback);
   }
-  
+
   if (bookings.durations) {
     const lastDate = getLastDateOfBooking(bookings.start_date, bookings.durations);
     return generateDatesBetween(bookings.start_date, lastDate, callback);
@@ -232,35 +232,58 @@ export function objectToStringArray<T extends Record<string, any>>(obj: T): stri
       .map(([key, value]) => `${key}:${String(value)}`);
 }
 
-export function isBookingActive(booking: { start_date: Date; end_date: Date; bookingstatuses?: { status: string } | null }) {
-    const now = new Date();
+export function isBookingActive(booking: { start_date: Date; end_date?: Date | null; is_rolling: boolean ;bookingstatuses?: { status: string } | null }) {
+    const now = new Date(Date.now());
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     const startDate = new Date(booking.start_date);
+
+    // For rolling bookings, check if start date has passed and no end date is set
+    if (booking.is_rolling) {
+        return startDate <= today && !booking.end_date;
+    }
+
+    // For regular bookings, check if booking is within date range
+    if (!booking.end_date) {
+        return false; // Regular booking without end date is not active
+    }
+
     const endDate = new Date(booking.end_date);
-    
-    // Check if booking is within date range and has confirmed status
-    const isWithinDateRange = startDate <= today && today <= endDate;    
+    const isWithinDateRange = startDate <= today && today <= endDate;
     return isWithinDateRange;
 }
 
-export function getNextUpcomingBooking(bookings: Array<{ 
-    id: number; 
-    start_date: Date; 
-    end_date: Date; 
+export function getNextUpcomingBooking(bookings: Array<{
+    id: number;
+    start_date: Date;
+    end_date?: Date | null;
+    is_rolling?: boolean;
     tenants?: { name: string } | null;
     bookingstatuses?: { status: string } | null;
     durations?: { duration: string } | null;
 }>) {
-    const now = new Date();
+    const now = new Date(Date.now());
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // Filter for confirmed bookings that start in the future
+
+    // Filter for upcoming bookings
     const upcomingBookings = bookings.filter(booking => {
         const startDate = new Date(booking.start_date);
+        
+        // For rolling bookings, only include if they haven't started yet
+        if (booking.is_rolling) {
+            return startDate > today;
+        }
+        
+        // For regular bookings, include if they start in the future
         return startDate > today;
     });
-    
-    // Return the earliest upcoming booking
+
+    // Sort by start date and return the earliest upcoming booking
+    upcomingBookings.sort((a, b) => {
+        const startDateA = new Date(a.start_date);
+        const startDateB = new Date(b.start_date);
+        return startDateA.getTime() - startDateB.getTime();
+    });
+
     return upcomingBookings.length > 0 ? upcomingBookings[0] : null;
 }

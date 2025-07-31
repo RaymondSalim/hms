@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {Button, Input, Popover, PopoverContent, PopoverHandler} from "@material-tailwind/react";
 import {CiCalendarDate, CiSearch} from "react-icons/ci";
 import {DateRange, DayPicker} from "react-day-picker";
@@ -10,10 +10,10 @@ import "react-day-picker/style.css";
 
 export interface DatePickerProps {
     mode?: "single" | "range";
-    onUpdate: (data: { 
-        range?: DateRange, 
+    onUpdate: (data: {
+        range?: DateRange,
         singleDate?: Date,
-        searchTriggered: boolean 
+        searchTriggered: boolean
     }) => void;
     placeholder?: string;
     showSearchButton?: boolean;
@@ -25,9 +25,9 @@ export interface DatePickerProps {
     className?: string;
 }
 
-export function DatePicker({ 
-    mode = "range", 
-    onUpdate, 
+export function DatePicker({
+    mode = "range",
+    onUpdate,
     placeholder = "Pilih tanggal",
     showSearchButton = true,
     searchButtonText = "Cari",
@@ -124,7 +124,7 @@ export function DatePicker({
             return !singleDate;
         }
     };
-    
+
     return (
         <div className={`flex flex-wrap md:flex-nowrap gap-4 ${className || ''}`}>
             <Popover
@@ -155,6 +155,7 @@ export function DatePicker({
                             captionLayout="dropdown"
                             mode={mode}
                             fixedWeeks={true}
+                            // @ts-expect-error type error
                             selected={mode === "range" ? dates : singleDate}
                             onSelect={handleDateSelect}
                             {...(min !== undefined && { min })}
@@ -190,8 +191,8 @@ export function DatePicker({
                 </PopoverContent>
             </Popover>
             {showSearchButton && (
-                <Button 
-                    className={"basis-full md:basis-auto border-[#b0bec5] text-[#b0bec5] flex justify-center items-center gap-4"} 
+                <Button
+                    className={"basis-full md:basis-auto border-[#b0bec5] text-[#b0bec5] flex justify-center items-center gap-4"}
                     variant={"outlined"}
                     onClick={handleSearch}
                     disabled={isSearching || disabled}
@@ -222,4 +223,4 @@ export function DateRangePicker({ onUpdate }: DateRangePickerProps) {
             onUpdate={(data) => onUpdate({ range: data.range!, searchTriggered: data.searchTriggered })}
         />
     );
-} 
+}

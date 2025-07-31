@@ -154,7 +154,7 @@ describe("Rolling Booking Feature", () => {
             }];
             const newBill = await generateNextMonthlyBill(mockBookingWithSecondResident as Booking, existingBills as Bill[], new Date("2024-09-01T00:00:00.000Z"));
             expect(newBill).not.toBeNull();
-
+            
             const billItems = newBill?.bill_item?.create;
             expect(billItems).toHaveLength(2);
             expect(billItems?.[0].description).toBe("Sewa Kamar (1 September 2024 - 30 September 2024)");

@@ -2,20 +2,19 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Checkbox, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
+import {Button, Checkbox, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getRooms, getRoomTypes} from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {getSortedDurations} from "@/app/_db/duration";
-import {Duration, Prisma} from "@prisma/client";
+import {Prisma} from "@prisma/client";
 import {ZodFormattedError} from "zod";
 import {BookingsIncludeAll, getBookingStatuses} from "@/app/_db/bookings";
 import {getTenants} from "@/app/_db/tenant";
 import {DatePicker} from "@/app/_components/DateRangePicker";
-import {formatToDateTime, generateDatesBetween, generateDatesFromBooking, getLastDateOfBooking} from "@/app/_lib/util";
+import {getLastDateOfBooking} from "@/app/_lib/util";
 import {getAllBookingsAction, UpsertBookingPayload,} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
-import {DateSet} from "@/app/_lib/customSet";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {getAddonsByLocation} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
@@ -210,11 +209,11 @@ export function BookingForm(props: BookingFormProps) {
     // Helper function to check if a booking period overlaps with existing bookings
     const checkBookingOverlap = (startDate: Date, endDate?: Date): boolean => {
         if (!existingBookings) return false;
-        
+
         return existingBookings.some(existingBooking => {
             // Skip current booking if editing
             if (existingBooking.id === props.contentData?.id) return false;
-            
+
             // For rolling bookings, check if they would overlap
             if (existingBooking.is_rolling) {
                 // If existing booking is rolling, any new booking that starts before its end date (if any) would overlap
@@ -228,18 +227,18 @@ export function BookingForm(props: BookingFormProps) {
                     return true;
                 }
             }
-            
+
             // For fixed duration bookings, check if periods overlap
             if (existingBooking.durations) {
                 const existingEndDate = getLastDateOfBooking(existingBooking.start_date, existingBooking.durations);
                 // Check if the new booking period overlaps with the existing booking period
                 // Two periods overlap if: new start <= existing end AND new end >= existing start
-                
+
                 // Normalize dates to remove time components for accurate comparison
                 const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
                 const normalizedExistingStartDate = new Date(existingBooking.start_date.getFullYear(), existingBooking.start_date.getMonth(), existingBooking.start_date.getDate());
                 const normalizedExistingEndDate = new Date(existingEndDate.getFullYear(), existingEndDate.getMonth(), existingEndDate.getDate());
-                
+
                 if (endDate) {
                     const normalizedEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
                     return normalizedStartDate <= normalizedExistingEndDate && normalizedEndDate >= normalizedExistingStartDate;
@@ -247,14 +246,14 @@ export function BookingForm(props: BookingFormProps) {
                     return normalizedStartDate <= normalizedExistingEndDate;
                 }
             }
-            
+
             // Handle rolling bookings that have been converted to fixed end date (is_rolling = false, end_date set, duration_id = null)
             if (existingBooking.end_date && !existingBooking.durations) {
                 // Normalize dates to remove time components for accurate comparison
                 const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
                 const normalizedExistingStartDate = new Date(existingBooking.start_date.getFullYear(), existingBooking.start_date.getMonth(), existingBooking.start_date.getDate());
                 const normalizedExistingEndDate = new Date(existingBooking.end_date.getFullYear(), existingBooking.end_date.getMonth(), existingBooking.end_date.getDate());
-                
+
                 if (endDate) {
                     const normalizedEndDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
                     return normalizedStartDate <= normalizedExistingEndDate && normalizedEndDate >= normalizedExistingStartDate;
@@ -262,7 +261,7 @@ export function BookingForm(props: BookingFormProps) {
                     return normalizedStartDate <= normalizedExistingEndDate;
                 }
             }
-            
+
             return false;
         });
     };
@@ -272,13 +271,13 @@ export function BookingForm(props: BookingFormProps) {
         if (bookingData.start_date) {
             const newDurationData = structuredClone(durationDataMapped);
             let hasChange = false;
-            
+
             // Check if there's already a rolling booking for this room
-            const hasExistingRollingBooking = existingBookings?.some(booking => 
-                booking.is_rolling && 
+            const hasExistingRollingBooking = existingBookings?.some(booking =>
+                booking.is_rolling &&
                 booking.id !== props.contentData?.id // Exclude current booking if editing
             ) ?? false;
-            
+
             // Disable rolling option if there's already a rolling booking or if it would overlap with existing bookings
             if (newDurationData[0]) { // Rolling option is at index 0
                 const wouldOverlap = checkBookingOverlap(bookingData.start_date!);
@@ -286,7 +285,7 @@ export function BookingForm(props: BookingFormProps) {
                 hasChange = hasChange || newDurationData[0].isDisabled != shouldDisableRolling;
                 newDurationData[0].isDisabled = shouldDisableRolling;
             }
-            
+
             // Check fixed duration bookings
             durationsData?.forEach((val, index) => {
                 // Adjust index because durationDataMapped has rolling option at index 0
@@ -294,7 +293,7 @@ export function BookingForm(props: BookingFormProps) {
                 if (newDurationData[mappedIndex]) {
                     let lastDate = getLastDateOfBooking(bookingData.start_date!, val);
                     const wouldOverlap = checkBookingOverlap(bookingData.start_date!, lastDate);
-                    
+
                     hasChange = hasChange || newDurationData[mappedIndex].isDisabled != wouldOverlap;
                     newDurationData[mappedIndex].isDisabled = wouldOverlap;
                 }
@@ -470,19 +469,19 @@ export function BookingForm(props: BookingFormProps) {
                                                     ...p,
                                                     duration_id: null,
                                                     is_rolling: true
-                                                }))
+                                                }));
                                             } else {
                                                 setBookingData(p => ({
                                                     ...p,
                                                     duration_id: v,
                                                     is_rolling: false
-                                                }))
+                                                }));
                                             }
                                         }}
                                         options={durationDataMapped}
                                         selectedOption={
                                             bookingData.is_rolling ? durationDataMapped[0] :
-                                            (bookingData.duration_id !== undefined && bookingData.duration_id !== null) 
+                                            (bookingData.duration_id !== undefined && bookingData.duration_id !== null)
                                                 ? durationDataMapped.find(r => r.value === bookingData.duration_id)
                                                 : undefined
                                         }

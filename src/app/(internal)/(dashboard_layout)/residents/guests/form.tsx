@@ -29,7 +29,7 @@ export function GuestForm(props: GuestFormProps) {
     if (bookingDataSuccess) {
       setBookingDataMapped(bookingData.map(e => ({
         value: e.id,
-        label: `#-${e.id} | ${formatToDateTime(e.start_date, false)} - ${formatToDateTime(e.end_date, false)}`,
+        label: `#-${e.id} | ${formatToDateTime(e.start_date, false)} - ${e.end_date ? formatToDateTime(e.end_date, false) : "Rolling"}`,
       })));
     }
   }, [bookingData, bookingDataSuccess]);

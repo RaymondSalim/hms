@@ -20,6 +20,7 @@ import {updateDepositStatus} from "@/app/_db/deposit";
 import {revalidateTag} from "next/cache";
 import {endOfMonth, format, getDaysInMonth, startOfMonth} from "date-fns";
 import {id as indonesianLocale} from "date-fns/locale";
+import BillItemUncheckedCreateWithoutBillInput = Prisma.BillItemUncheckedCreateWithoutBillInput;
 
 export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
 
@@ -54,6 +55,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
             if (data.id) {
                 const res = await prisma.booking.update({
                     where: { id: data.id },
+                    // @ts-expect-error type
                     data: {
                         ...data,
                         duration_id: null,
@@ -379,7 +381,7 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
     const proratedDays = daysInFirstMonth - start_date.getDate() + 1;
     const proratedAmount = (proratedDays / daysInFirstMonth) * Number(fee);
 
-    const firstBillItems = [{
+    const firstBillItems: BillItemUncheckedCreateWithoutBillInput[] = [{
         description: `Sewa Kamar (${format(start_date, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(firstBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
         amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
         type: BillType.GENERATED
