@@ -1,25 +1,24 @@
 "use server";
 
 import {OmitTimestamp, PartialBy} from "@/app/_db/db";
-import {
-    Bill,
-    BillItem,
-    CheckInOutLog,
-    Booking,
-    DepositStatus,
-    Prisma,
-} from "@prisma/client";
+import {Bill, BillItem, BillType, Booking, BookingAddOn, CheckInOutLog, DepositStatus, Prisma,} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 import {bookingSchema} from "@/app/_lib/zod/booking/zod";
 import {number, object} from "zod";
 import {getLastDateOfBooking} from "@/app/_lib/util";
-import {BookingsIncludeAll, createBooking, getAllBookings, getBookingsWithUnpaidBills, updateBookingByID} from "@/app/_db/bookings";
+import {
+    BookingsIncludeAll,
+    createBooking,
+    getAllBookings,
+    getBookingsWithUnpaidBills,
+    updateBookingByID
+} from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {updateDepositStatus} from "@/app/_db/deposit";
 import {revalidateTag} from "next/cache";
-import {endOfMonth, getDaysInMonth, startOfMonth, format} from "date-fns";
+import {endOfMonth, format, getDaysInMonth, startOfMonth} from "date-fns";
 import {id as indonesianLocale} from "date-fns/locale";
 
 export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
@@ -367,8 +366,11 @@ export async function scheduleEndOfStayAction(data: {
  * @param booking - The booking object for which to generate bills.
  * @returns A promise that resolves to an array of the newly created bills.
  */
-export async function generateInitialBillsForRollingBooking(booking: Pick<Booking, 'start_date' | 'fee'>): Promise<PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[]> {
-    const { start_date, fee } = booking;
+export async function generateInitialBillsForRollingBooking(booking: Pick<Booking, 'start_date' | 'fee' | 'second_resident_fee'> & {
+    deposit?: { amount: Prisma.Decimal },
+    addOns?: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[]
+}): Promise<PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[]> {
+    const { start_date, fee, second_resident_fee, deposit, addOns } = booking;
     const bills: PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[] = [];
 
     // First bill (prorated)
@@ -377,15 +379,37 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
     const proratedDays = daysInFirstMonth - start_date.getDate() + 1;
     const proratedAmount = (proratedDays / daysInFirstMonth) * Number(fee);
 
+    const firstBillItems = [{
+        description: `Sewa Kamar (${format(start_date, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(firstBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+        amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
+        type: BillType.GENERATED
+    }];
+
+    // Add second resident fee if exists
+    if (second_resident_fee) {
+        const proratedSecondResidentFee = (proratedDays / daysInFirstMonth) * Number(second_resident_fee);
+        firstBillItems.push({
+            description: `Biaya Penghuni Kedua (${format(start_date, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(firstBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+            amount: new Prisma.Decimal(proratedSecondResidentFee.toFixed(2)),
+            type: BillType.GENERATED
+        });
+    }
+
+    // Add deposit to first bill if exists
+    if (deposit) {
+        firstBillItems.push({
+            description: 'Deposit Kamar',
+            amount: deposit.amount,
+            type: BillType.CREATED,
+            related_id: { deposit_id: null } // Will be updated when deposit is created
+        });
+    }
+
     bills.push({
         description: `Tagihan untuk Bulan ${format(start_date, 'MMMM yyyy', { locale: indonesianLocale })}`,
         due_date: firstBillEndDate,
         bill_item: {
-            create: [{
-                description: `Sewa Kamar (${format(start_date, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(firstBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
-                amount: new Prisma.Decimal(proratedAmount.toFixed(2)),
-                type: 'GENERATED'
-            }]
+            create: firstBillItems
         }
     });
 
@@ -393,18 +417,29 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
     const secondBillStartDate = startOfMonth(new Date(start_date.getFullYear(), start_date.getMonth() + 1, 1));
     const secondBillEndDate = endOfMonth(secondBillStartDate);
 
+    const secondBillItems = [{
+        description: `Sewa Kamar (${format(secondBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(secondBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+        amount: fee,
+        type: BillType.GENERATED
+    }];
+
+    // Add second resident fee if exists
+    if (second_resident_fee) {
+        secondBillItems.push({
+            description: `Biaya Penghuni Kedua (${format(secondBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(secondBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+            amount: second_resident_fee,
+            type: BillType.GENERATED
+        });
+    }
+
     bills.push({
         description: `Tagihan untuk Bulan ${format(secondBillStartDate, 'MMMM yyyy', { locale: indonesianLocale })}`,
         due_date: secondBillEndDate,
         bill_item: {
-            create: [{
-                description: `Sewa Kamar (${format(secondBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(secondBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
-                amount: fee,
-                type: 'GENERATED'
-            }]
+            create: secondBillItems
         }
     });
-    
+
     return bills;
 }
 
@@ -416,7 +451,9 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
  * @param date - The current date, used to determine which month's bill to create.
  * @returns The new bill object if one was created, otherwise null.
  */
-export async function generateNextMonthlyBill(booking: Booking, existingBills: Bill[], date: Date): Promise<Prisma.BillCreateInput | null> {
+export async function generateNextMonthlyBill(booking: Booking & {
+    addOns?: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[]
+}, existingBills: Bill[], date: Date): Promise<Prisma.BillCreateInput | null> {
     if (booking.end_date && date > booking.end_date) {
         return null;
     }
@@ -433,23 +470,31 @@ export async function generateNextMonthlyBill(booking: Booking, existingBills: B
     if (nextBillStartDate.getMonth() !== date.getMonth() || nextBillStartDate.getFullYear() !== date.getFullYear()) {
         return null;
     }
-    
+
     const nextBillEndDate = endOfMonth(nextBillStartDate);
     const billDescription = `Tagihan untuk Bulan ${format(nextBillStartDate, 'MMMM yyyy', { locale: indonesianLocale })}`;
-    const billItemDescription = `Sewa Kamar (${format(nextBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(nextBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`;
+
+    const billItems = [{
+        description: `Sewa Kamar (${format(nextBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(nextBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+        amount: booking.fee,
+        type: BillType.GENERATED
+    }];
+
+    // Add second resident fee if exists
+    if (booking.second_resident_fee) {
+        billItems.push({
+            description: `Biaya Penghuni Kedua (${format(nextBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(nextBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+            amount: booking.second_resident_fee,
+            type: BillType.GENERATED
+        });
+    }
 
     return {
         description: billDescription,
         due_date: nextBillEndDate,
         bookings: { connect: { id: booking.id } },
         bill_item: {
-            create: [
-                {
-                    description: billItemDescription,
-                    amount: booking.fee,
-                    type: 'GENERATED'
-                }
-            ]
+            create: billItems
         }
     };
 }

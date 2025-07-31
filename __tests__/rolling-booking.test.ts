@@ -3,7 +3,7 @@ import {
     generateNextMonthlyBill,
     scheduleEndOfRollingBooking
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
-import {Bill, Booking, Prisma} from "@prisma/client";
+import {Bill, BillType, Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
 
 jest.mock('@/app/_lib/primsa', () => ({
@@ -24,6 +24,24 @@ describe("Rolling Booking Feature", () => {
         fee: new Prisma.Decimal(2000000),
         is_rolling: true,
         end_date: null
+    };
+
+    const mockBookingWithSecondResident: Partial<Booking> = {
+        id: 2,
+        start_date: new Date("2024-07-05T00:00:00.000Z"),
+        fee: new Prisma.Decimal(2000000),
+        second_resident_fee: new Prisma.Decimal(500000),
+        is_rolling: true,
+        end_date: null
+    };
+
+    const mockBookingWithDeposit: Partial<Booking> & { deposit?: { amount: Prisma.Decimal } } = {
+        id: 3,
+        start_date: new Date("2024-07-05T00:00:00.000Z"),
+        fee: new Prisma.Decimal(2000000),
+        is_rolling: true,
+        end_date: null,
+        deposit: { amount: new Prisma.Decimal(1000000) }
     };
 
     describe("generateInitialBillsForRollingBooking", () => {
@@ -51,6 +69,58 @@ describe("Rolling Booking Feature", () => {
             // @ts-expect-error due_date toISOString type
             expect(bills[1].due_date.toISOString().split('T')[0]).toBe(new Date("2024-08-31T00:00:00.000Z").toISOString().split('T')[0]);
         });
+
+        it("should include second resident fee in bills when present", async () => {
+            const bills = await generateInitialBillsForRollingBooking(mockBookingWithSecondResident as Booking);
+            expect(bills).toHaveLength(2);
+
+            // First bill should have both room fee and second resident fee
+            const firstBillItems = bills[0].bill_item?.create;
+            expect(firstBillItems).toHaveLength(2);
+            // @ts-expect-error type
+            expect(firstBillItems?.[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
+            // @ts-expect-error type
+            expect(firstBillItems?.[1].description).toBe("Biaya Penghuni Kedua (5 Juli 2024 - 31 Juli 2024)");
+            // @ts-expect-error type
+            expect(Number(firstBillItems?.[0].amount)).toBeCloseTo(1741935.48);
+            // @ts-expect-error type
+            expect(Number(firstBillItems?.[1].amount)).toBeCloseTo(435483.87); // prorated second resident fee
+
+            // Second bill should have both room fee and second resident fee
+            const secondBillItems = bills[1].bill_item?.create;
+            expect(secondBillItems).toHaveLength(2);
+            // @ts-expect-error type
+            expect(secondBillItems?.[0].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
+            // @ts-expect-error type
+            expect(secondBillItems?.[1].description).toBe("Biaya Penghuni Kedua (1 Agustus 2024 - 31 Agustus 2024)");
+            // @ts-expect-error type
+            expect(Number(secondBillItems?.[0].amount)).toBe(2000000);
+            // @ts-expect-error type
+            expect(Number(secondBillItems?.[1].amount)).toBe(500000);
+        });
+
+        it("should include deposit in the first bill when present", async () => {
+            const bills = await generateInitialBillsForRollingBooking(mockBookingWithDeposit);
+            expect(bills).toHaveLength(2);
+
+            // First bill should have room fee and deposit
+            const firstBillItems = bills[0].bill_item?.create;
+            expect(firstBillItems).toHaveLength(2);
+            // @ts-expect-error type
+            expect(firstBillItems?.[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
+            // @ts-expect-error type
+            expect(firstBillItems?.[1].description).toBe("Deposit Kamar");
+            // @ts-expect-error type
+            expect(Number(firstBillItems?.[1].amount)).toBe(1000000);
+            // @ts-expect-error type
+            expect(firstBillItems?.[1].type).toBe(BillType.CREATED);
+
+            // Second bill should only have room fee
+            const secondBillItems = bills[1].bill_item?.create;
+            expect(secondBillItems).toHaveLength(1);
+            // @ts-expect-error type
+            expect(secondBillItems?.[0].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
+        });
     });
 
     describe("generateNextMonthlyBill (Cron Job Simulation)", () => {
@@ -75,6 +145,22 @@ describe("Rolling Booking Feature", () => {
             expect(Number(newBill?.bill_item?.create?.[0].amount)).toBe(2000000);
             // @ts-expect-error due_date toISOString type
             expect(newBill?.due_date.toISOString().split('T')[0]).toBe(new Date("2024-09-30T00:00:00.000Z").toISOString().split('T')[0]);
+        });
+
+        it("should include second resident fee in generated bills when present", async () => {
+            const existingBills: Partial<Bill>[] = [{
+                description: "Tagihan untuk Bulan Agustus 2024",
+                due_date: new Date("2024-08-31T00:00:00.000Z")
+            }];
+            const newBill = await generateNextMonthlyBill(mockBookingWithSecondResident as Booking, existingBills as Bill[], new Date("2024-09-01T00:00:00.000Z"));
+            expect(newBill).not.toBeNull();
+
+            const billItems = newBill?.bill_item?.create;
+            expect(billItems).toHaveLength(2);
+            expect(billItems?.[0].description).toBe("Sewa Kamar (1 September 2024 - 30 September 2024)");
+            expect(billItems?.[1].description).toBe("Biaya Penghuni Kedua (1 September 2024 - 30 September 2024)");
+            expect(Number(billItems?.[0].amount)).toBe(2000000);
+            expect(Number(billItems?.[1].amount)).toBe(500000);
         });
 
         it("should not generate a bill if no existing bills are found", async () => {
