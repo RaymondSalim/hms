@@ -71,7 +71,21 @@ export function generateDatesBetween(d1: Date, d2: Date, callback?: (d: Date) =>
   return dates;
 }
 
+/**
+ * Generates an array of dates for a given booking.
+ * For fixed-term bookings, it calculates the range based on the duration.
+ * For rolling bookings without an end date, it projects availability for the next 5 years.
+ * If a rolling booking has an end date, it uses that as the final date.
+ * @param bookings - The booking object.
+ * @param callback - An optional callback to execute for each generated date.
+ * @returns An array of dates representing the booking's span, or null if it cannot be determined.
+ */
 export function generateDatesFromBooking(bookings: BookingsIncludeAll, callback?: (d: Date) => void): Date[] | null {
+  if (bookings.is_rolling) {
+    const endDate = bookings.end_date ?? new Date(new Date().setFullYear(new Date().getFullYear() + 5));
+    return generateDatesBetween(bookings.start_date, endDate, callback);
+  }
+  
   if (bookings.durations) {
     const lastDate = getLastDateOfBooking(bookings.start_date, bookings.durations);
     return generateDatesBetween(bookings.start_date, lastDate, callback);
