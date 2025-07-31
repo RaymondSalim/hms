@@ -7,9 +7,8 @@ import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {ZodFormattedError} from "zod";
-import {DayPicker} from "react-day-picker";
+import {DatePicker} from "@/app/_components/DateRangePicker";
 import {fileToBase64, formatToDateTime, formatToIDR} from "@/app/_lib/util";
-import "react-day-picker/style.css";
 import {getBookingsWithUnpaidBillsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {PaymentIncludeAll} from "@/app/_db/payment";
@@ -56,7 +55,7 @@ export function PaymentForm(props: PaymentForm) {
     const [data, setData] = useState<DataType>({});
     const [fieldErrors, setFieldErrors] = useState<ZodFormattedError<DataType> | undefined>(props.mutationResponse?.errors);
     const [locationID, setLocationID] = useState<number | undefined>(undefined);
-    const [popoverOpen, setIsPopoverOpen] = useState(false);
+
 
     const today = new Date();
 
@@ -443,43 +442,16 @@ export function PaymentForm(props: PaymentForm) {
                                             Tanggal Pembayaran
                                         </Typography>
                                     </label>
-                                    <Popover
-                                        open={popoverOpen}
-                                        handler={() => setIsPopoverOpen(p => !p)}
-                                        placement="bottom-end"
-                                    >
-                                        <PopoverHandler>
-                                            <Input
-                                                variant="outlined"
-                                                size="lg"
-                                                onChange={() => null}
-                                                value={data.payment_date ? formatToDateTime(data.payment_date, true, true) : ""}
-                                                error={!!fieldErrors?.payment_date}
-                                                className={`relative ${!!fieldErrors?.payment_date ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                labelProps={{
-                                                    className: "before:content-none after:content-none",
-                                                }}
-                                            />
-                                        </PopoverHandler>
-                                        <PopoverContent className={"z-[99999]"}>
-                                            <DayPicker
-                                                captionLayout="dropdown"
-                                                mode="single"
-                                                fixedWeeks={true}
-                                                selected={data.payment_date ? data.payment_date : new Date()}
-                                                onSelect={(d) => {
-                                                    setIsPopoverOpen(false);
-                                                    setData(p => ({...p, payment_date: d}));
-                                                }}
-                                                showOutsideDays
-                                                classNames={{
-                                                    disabled: "rdp-disabled cursor-not-allowed",
-                                                }}
-                                                startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
-                                                endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <DatePicker
+                                        mode="single"
+                                        placeholder="Pilih tanggal pembayaran"
+                                        showSearchButton={false}
+                                        onUpdate={(dateData) => {
+                                            if (dateData.singleDate) {
+                                                setData(p => ({...p, payment_date: dateData.singleDate}));
+                                            }
+                                        }}
+                                    />
                                     {
                                         fieldErrors?.payment_date &&
                                         <Typography color="red">{fieldErrors?.payment_date._errors}</Typography>

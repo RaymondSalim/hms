@@ -36,8 +36,7 @@ import CurrencyInput from "@/app/_components/input/currencyInput";
 import {MdAdd, MdDelete, MdEdit} from "react-icons/md";
 import {useMutation} from "@tanstack/react-query";
 import {toast, ToastOptions} from "react-toastify";
-import {DayPicker} from "react-day-picker";
-import "react-day-picker/style.css";
+import {DatePicker} from "@/app/_components/DateRangePicker";
 
 
 export interface GuestsContentProps {
@@ -302,47 +301,18 @@ export function GuestInfo({guest}: GuestInfoProps) {
                                         <tr key={index}>
                                             <td className="border border-gray-300 px-4 py-2">
                                                 {editingIndex === index ? (
-                                                        <Popover
-                                                            open={popoverOpenMap["GUESTSTAY_SD"]}
-                                                            handler={() => togglePopover("GUESTSTAY_SD")}
-                                                            placement="bottom-end"
-                                                        >
-                                                            <PopoverHandler>
-                                                                <Input
-                                                                    variant="outlined"
-                                                                    containerProps={{
-                                                                        className: "w-28 !min-w-28"
-                                                                    }}
-                                                                    labelProps={{
-                                                                        className: "before:content-none after:content-none",
-                                                                    }}
-                                                                    className={`relative ${false ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                                    value={stay.start_date ? formatToDateTime(stay.start_date, false) : ""}
-                                                                    onChange={() => null}
-                                                                />
-                                                            </PopoverHandler>
-                                                            <PopoverContent className={"z-[99999]"}>
-                                                                <DayPicker
-                                                                    timeZone={"UTC"}
-                                                                    captionLayout="dropdown"
-                                                                    mode="single"
-                                                                    fixedWeeks={true}
-                                                                    selected={stay.start_date}
-                                                                    onSelect={(d) => {
-                                                                        const newStays = [...editedStays];
-                                                                        newStays[index].start_date = d;
-                                                                        setEditedStays(newStays);
-                                                                        togglePopover("GUESTSTAY_SD", false);
-                                                                    }}
-                                                                    showOutsideDays
-                                                                    classNames={{
-                                                                        disabled: "rdp-disabled cursor-not-allowed",
-                                                                    }}
-                                                                    startMonth={new Date(today.getFullYear() - 2, today.getMonth())}
-                                                                    endMonth={new Date(today.getFullYear() + 2, today.getMonth())}
-                                                                />
-                                                            </PopoverContent>
-                                                        </Popover>
+                                                                                                            <DatePicker
+                                                        mode="single"
+                                                        placeholder=""
+                                                        showSearchButton={false}
+                                                        onUpdate={(data) => {
+                                                            if (data.singleDate) {
+                                                                const newStays = [...editedStays];
+                                                                newStays[index].start_date = data.singleDate;
+                                                                setEditedStays(newStays);
+                                                            }
+                                                        }}
+                                                    />
                                                 ) : (
                                                     stay.start_date ? formatToDateTime(stay.start_date, false) : "-"
                                                 )}
@@ -350,47 +320,18 @@ export function GuestInfo({guest}: GuestInfoProps) {
 
                                             <td className="border border-gray-300 px-4 py-2">
                                                 {editingIndex === index ? (
-                                                    <Popover
-                                                        open={popoverOpenMap["GUESTSTAY_ED"]}
-                                                        handler={() => togglePopover("GUESTSTAY_ED")}
-                                                        placement="bottom-end"
-                                                    >
-                                                        <PopoverHandler>
-                                                            <Input
-                                                                variant="outlined"
-                                                                containerProps={{
-                                                                    className: "w-28 !min-w-28"
-                                                                }}
-                                                                labelProps={{
-                                                                    className: "before:content-none after:content-none",
-                                                                }}
-                                                                className={`relative ${false ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
-                                                                value={stay.end_date ? formatToDateTime(stay.end_date, false) : ""}
-                                                                onChange={() => null}
-                                                            />
-                                                        </PopoverHandler>
-                                                        <PopoverContent className={"z-[99999]"}>
-                                                            <DayPicker
-                                                                timeZone={"UTC"}
-                                                                captionLayout="dropdown"
-                                                                mode="single"
-                                                                fixedWeeks={true}
-                                                                selected={stay.end_date}
-                                                                onSelect={(d) => {
-                                                                    const newStays = [...editedStays];
-                                                                    newStays[index].end_date = d;
-                                                                    setEditedStays(newStays);
-                                                                    togglePopover("GUESTSTAY_ED", false);
-                                                                }}
-                                                                showOutsideDays
-                                                                classNames={{
-                                                                    disabled: "rdp-disabled cursor-not-allowed",
-                                                                }}
-                                                                startMonth={new Date(today.getFullYear() - 2, today.getMonth())}
-                                                                endMonth={new Date(today.getFullYear() + 2, today.getMonth())}
-                                                            />
-                                                        </PopoverContent>
-                                                    </Popover>
+                                                    <DatePicker
+                                                        mode="single"
+                                                        placeholder=""
+                                                        showSearchButton={false}
+                                                        onUpdate={(data) => {
+                                                            if (data.singleDate) {
+                                                                const newStays = [...editedStays];
+                                                                newStays[index].end_date = data.singleDate;
+                                                                setEditedStays(newStays);
+                                                            }
+                                                        }}
+                                                    />
                                                 ) : (
                                                     stay.end_date ? formatToDateTime(stay.end_date, false) : "-"
                                                 )}
