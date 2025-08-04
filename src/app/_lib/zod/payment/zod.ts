@@ -1,10 +1,11 @@
-import {date, number, object, string, z} from "zod";
+import {date, number, object, string, union, z} from "zod";
+import {isoDateStringToDate} from "@/app/_lib/zod/base/zod";
 
 export const paymentSchema = object({
   id: number().min(1, "ID should be greater than 0").optional(),
   booking_id: number().min(1, "Booking ID is required"),
   amount: z.coerce.number().positive("Amount must be a positive number"),
-  payment_date: date({required_error: "Payment date is required"}),
+  payment_date: union([isoDateStringToDate({required_error: "Start date is required"}), date({required_error: "Start date is required"})]),
   // TODO! Payment Proof
   payment_proof_file: object({
     fileName: string(),
