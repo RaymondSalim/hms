@@ -78,15 +78,15 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
         }
     };
 
-    const handleDelete = (data: any) => {
+    const handleDelete = (data: number) => {
         return new Promise((resolve, reject) => {
             setConfirmationDialogContent({
                 title: "Konfirmasi Hapus",
-                body: "Menghapus tagihan ini akan menyebabkan alokasi pembayaran yang ada dihitung ulang secara otomatis. Harap tinjau kembali alokasi pembayaran setelah menghapus."
+                body: "Menghapus tagihan ini akan menghapus tagihan dan item tagihan, serta menghapus alokasi pembayaran yang terkait. Pembayaran dan transaksi pendapatan akan tetap ada. Tindakan ini tidak dapat dibatalkan. Harap pastikan Anda benar-benar ingin menghapus tagihan ini."
             });
             setOnConfirm(() => async () => {
                 try {
-                    const result = await deleteBillAction(data.id);
+                    const result = await deleteBillAction(data);
                     resolve(result);
                 } catch (e: any) {
                     toast.error(e.message || "Gagal menghapus tagihan.");
