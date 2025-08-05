@@ -9,8 +9,7 @@ import Link from "next/link";
 import {
     checkInOutAction,
     deleteBookingAction,
-    upsertBookingAction,
-    UpsertBookingPayload
+    upsertBookingAction
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {BookingForm} from "@/app/(internal)/(dashboard_layout)/bookings/form";
 import {
@@ -140,15 +139,15 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         }
     };
 
-    const handleDelete = (data: any) => {
+    const handleDelete = (data: number) => {
         return new Promise((resolve, reject) => {
             setConfirmationDialogContent({
                 title: "Konfirmasi Hapus",
-                body: "Menghapus pemesanan ini akan menyebabkan alokasi pembayaran yang ada dihitung ulang secara otomatis. Harap tinjau kembali alokasi pembayaran setelah menghapus."
+                body: "Menghapus pemesanan ini akan menghapus semua pembayaran dan tagihan yang terkait (termasuk yang sudah lampau). Tindakan ini tidak dapat dibatalkan. Harap pastikan Anda benar-benar ingin menghapus pemesanan ini."
             });
             setOnConfirm(() => async () => {
                 try {
-                    const result = await deleteBookingAction(data.id);
+                    const result = await deleteBookingAction(data);
                     resolve(result);
                 } catch (e: any) {
                     toast.error(e.message || "Gagal menghapus pemesanan.");
@@ -182,7 +181,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         if (endDate) {
             isWithinRange = isWithinRange && today <= endDate;
         }
-        
+
         if (isWithinRange) {
             setEventDate(today);
         } else {
