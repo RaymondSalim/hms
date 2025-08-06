@@ -1,8 +1,18 @@
 "use client";
 
 import React, {useState} from 'react';
-import {Dialog, DialogHeader, DialogBody, DialogFooter, Button, Input, Select, Option, Typography} from '@material-tailwind/react';
-import {DepositStatus, Booking} from '@prisma/client';
+import {
+    Button,
+    Dialog,
+    DialogBody,
+    DialogFooter,
+    DialogHeader,
+    Input,
+    Option,
+    Select,
+    Typography
+} from '@material-tailwind/react';
+import {Booking, DepositStatus} from '@prisma/client';
 import {useMutation} from "@tanstack/react-query";
 import {toast} from "react-toastify";
 import {scheduleEndOfStayAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
@@ -40,11 +50,12 @@ export function EndOfStayForm({ booking, open, onClose }: EndOfStayFormProps) {
 
         const oneMonthFromNow = new Date(today.setMonth(today.getMonth() + 1));
 
-        if (selectedDate < oneMonthFromNow) {
-            setShowWarning(true);
-        } else {
-            setShowWarning(false);
-        }
+        // TODO! Improve warning
+        // if (selectedDate < oneMonthFromNow) {
+        //     setShowWarning(true);
+        // } else {
+        //     setShowWarning(false);
+        // }
         setEndDate(e.target.value);
     };
 
@@ -74,7 +85,7 @@ export function EndOfStayForm({ booking, open, onClose }: EndOfStayFormProps) {
                         label="Tanggal Berhenti"
                         value={endDate}
                         onChange={handleDateChange}
-                        min={new Date().toISOString().split('T')[0]}
+                        min={booking.start_date.toISOString().split('T')[0]}
                     />
                     {showWarning && (
                         <Typography color="amber">
@@ -102,4 +113,4 @@ export function EndOfStayForm({ booking, open, onClose }: EndOfStayFormProps) {
             </DialogFooter>
         </Dialog>
     );
-} 
+}

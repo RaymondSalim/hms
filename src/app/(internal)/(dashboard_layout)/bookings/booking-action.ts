@@ -335,6 +335,30 @@ export async function scheduleEndOfStayAction(data: {
 }) {
     const { bookingId, endDate, depositStatus } = data;
 
+    const booking = await prisma.booking.findFirst({
+        where: {
+            id: bookingId,
+        }
+    });
+
+    if (!booking) {
+        return {
+            failure: "Booking tidak ditemukan",
+        };
+    }
+
+    if (!booking.is_rolling) {
+        return {
+            failure: "Booking bukan rolling",
+        };
+    }
+
+    if (endDate < booking.start_date) {
+        return {
+            failure: "Tanggal selesai harus setelah tanggal mulai",
+        };
+    }
+
     try {
         await prisma.$transaction(async (tx) => {
             await tx.booking.update({
