@@ -344,19 +344,19 @@ export async function scheduleEndOfStayAction(data: {
     if (!booking) {
         return {
             failure: "Booking tidak ditemukan",
-        }
+        };
     }
 
     if (!booking.is_rolling) {
         return {
             failure: "Booking bukan rolling",
-        }
+        };
     }
 
     if (endDate < booking.start_date) {
         return {
             failure: "Tanggal selesai harus setelah tanggal mulai",
-        }
+        };
     }
 
     try {
