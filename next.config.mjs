@@ -4,6 +4,10 @@ const nextConfig = {
         serverActions: {
             bodySizeLimit: '15mb',
         },
+        staleTimes: {
+            dynamic: 30,
+            static: 180,
+        }
     },
     env: {
         // Vercel automatically provides these
