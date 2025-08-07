@@ -15,6 +15,8 @@ export type BillPageQueryParams = {
     room_number?: string
 }
 
+export const fetchCache = 'default-cache';
+
 export default function BillPage(props: {
     params?: Promise<any>,
     searchParams?: Promise<BillPageQueryParams>
