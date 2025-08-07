@@ -1,7 +1,7 @@
 "use client";
 
 import {useHeader} from "@/app/_context/HeaderContext";
-import React, {useEffect} from "react";
+import React, {use, useEffect} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -17,9 +17,10 @@ export type PaymentPageQueryParams = {
 }
 
 export default function PaymentPage(props: {
-  params?: any,
-  searchParams?: PaymentPageQueryParams
+  params?: Promise<any>,
+  searchParams?: Promise<PaymentPageQueryParams>
 }) {
+  const searchParams = use(props.searchParams ?? Promise.resolve(undefined));
   const headerContext = useHeader();
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function PaymentPage(props: {
         isSuccess &&
         // @ts-ignore
           <PaymentsContent
-              queryParams={props.searchParams}
+              queryParams={searchParams}
               payments={payments}
           />
       }

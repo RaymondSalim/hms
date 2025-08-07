@@ -1,7 +1,7 @@
 "use client";
 
 import {useHeader} from "@/app/_context/HeaderContext";
-import React, {useEffect} from "react";
+import React, {use, useEffect} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
@@ -16,9 +16,10 @@ export type BillPageQueryParams = {
 }
 
 export default function BillPage(props: {
-    params?: any,
-    searchParams?: BillPageQueryParams
+    params?: Promise<any>,
+    searchParams?: Promise<BillPageQueryParams>
 }) {
+    const searchParams = use(props.searchParams ?? Promise.resolve(undefined));
     const headerContext = useHeader();
 
     useEffect(() => {
@@ -49,7 +50,7 @@ export default function BillPage(props: {
                 <BillsContent
                     // @ts-expect-error
                     bills={bills}
-                    queryParams={props.searchParams}
+                    queryParams={searchParams}
                 />
             }
         </>
