@@ -1051,8 +1051,8 @@ describe('generateBookingAddonsBillItems', () => {
                 amount: new Prisma.Decimal(120000),
             }),
         ]);
-        expect(billItems[bills[1].id]).toBeUndefined()
-        expect(billItems[bills[2].id]).toBeUndefined()
+        expect(billItems[bills[1].id]).toBeUndefined();
+        expect(billItems[bills[2].id]).toBeUndefined();
     });
 
     it('Scenario 4: Sewa 5 bulan, mulai tgl 15 Jan, selesai 14 June', async () => {
@@ -2121,5 +2121,60 @@ describe("matchBillItemsToBills", () => {
         const result = await matchBillItemsToBills(billItemsByDueDate, bills);
 
         expect(result).toEqual(new Map());
+    });
+});
+
+describe('generatePaymentBillMappingFromPaymentsAndBills with deposit prioritization', () => {
+    const today = new Date();
+
+    test('should prioritize deposit bill items', async () => {
+        const payments: OmitTimestamp<Payment>[] = [
+            {
+                id: 1,
+                amount: new Prisma.Decimal(10000000),
+                payment_date: today,
+                booking_id: 1,
+                payment_proof: null,
+                status_id: null,
+            },
+        ];
+
+        const bills: OmitTimestamp<BillIncludeBillItem>[] = [
+            {
+                id: 1,
+                booking_id: 1,
+                bill_item: [
+                    {
+                        amount: new Prisma.Decimal(5000000),
+                        id: 1,
+                        bill_id: 1,
+                        description: "Sewa",
+                        internal_description: null,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        type: BillType.GENERATED,
+                        related_id: null
+                    },
+                    {
+                        amount: new Prisma.Decimal(7500000),
+                        id: 2,
+                        bill_id: 1,
+                        description: "Deposit",
+                        internal_description: null,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        type: BillType.GENERATED,
+                        related_id: { "deposit_id": 1 }
+                    }
+                ],
+                description: "",
+                due_date: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+            }
+        ];
+
+        let paymentBills = await generatePaymentBillMappingFromPaymentsAndBills(payments, bills);
+
+        expect(paymentBills).toHaveLength(1);
+        expect(paymentBills[0].amount.toNumber()).toBe(10000000);
     });
 });

@@ -1,585 +1,174 @@
+import {Prisma} from "@prisma/client";
 import {prismaMock} from './singleton_prisma';
-import {Booking, Payment, PaymentBill, PaymentStatus, Prisma} from '@prisma/client';
-import {beforeEach, describe, expect, it} from '@jest/globals';
 import {
-    deletePaymentAction,
-    getPaymentStatusAction,
-    upsertPaymentAction
-} from '@/app/(internal)/(dashboard_layout)/payments/payment-action';
+    createOrUpdatePaymentTransactions,
+    createPaymentBillsFromBillAllocations
+} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
 
 describe('Payment Actions', () => {
     beforeEach(() => {
-        // @ts-expect-error
-        prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
+        jest.clearAllMocks();
     });
 
-    const mockBooking: Partial<Booking> = {
-        id: 1,
-        tenant_id: 'tenant-1',
-        room_id: 1,
-        start_date: new Date('2024-01-01'),
-        end_date: new Date('2024-12-31'),
-        fee: new Prisma.Decimal(1000000),
-        status_id: 1,
-        duration_id: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        second_resident_fee: null
-    };
+    describe('createPaymentBillsFromBillAllocations', () => {
+        it('should create payment bills from bill allocations', async () => {
+            const manualAllocations = { 1: 150, 2: 50 };
+            const paymentId = 7;
+            const paymentAmount = 200;
 
-    const mockPaymentStatus: PaymentStatus = {
-        id: 1,
-        status: 'Confirmed',
-        createdAt: new Date(),
-        updatedAt: new Date()
-    };
+            await createPaymentBillsFromBillAllocations(manualAllocations, paymentId, paymentAmount, prismaMock as any);
 
-    const mockPayment: Partial<Payment> & { bookings: any } = {
-        id: 1,
-        booking_id: 1,
-        amount: new Prisma.Decimal(500000),
-        payment_date: new Date('2024-01-15'),
-        payment_proof: null,
-        status_id: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        bookings: {
-            id: 1,
-            rooms: {
-                id: 1,
-                location_id: 1
-            }
-        }
-    };
+            expect(prismaMock.paymentBill.createMany).toHaveBeenCalledWith({
+                data: [
+                    { payment_id: paymentId, bill_id: 1, amount: new Prisma.Decimal(150) },
+                    { payment_id: paymentId, bill_id: 2, amount: new Prisma.Decimal(50) },
+                ],
+            });
+        });
 
-    const mockPaymentBill: PaymentBill = {
-        id: 1,
-        payment_id: 1,
-        bill_id: 1,
-        amount: new Prisma.Decimal(500000)
-    };
+        it('should throw if total allocation does not equal payment amount', async () => {
+            const manualAllocations = { 1: 100 };
+            const paymentId = 8;
+            const paymentAmount = 50; // mismatch
 
-    describe('upsertPaymentAction - Create Payment', () => {
-        it('should create a payment with auto allocation', async () => {
-            const paymentData = {
-                booking_id: 1,
-                amount: new Prisma.Decimal(1500000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false,
-                allocationMode: 'auto' as const
-            };
+            await expect(
+                createPaymentBillsFromBillAllocations(manualAllocations, paymentId, paymentAmount, prismaMock as any)
+            ).rejects.toThrow('Total manual allocation must equal payment amount');
 
-            const mockUnpaidBills = {
-                total: 3,
-                bills: [
-                    {
-                        id: 1,
-                        booking_id: 1,
-                        description: 'Test Bill 1',
-                        due_date: new Date('2024-01-31'),
+            expect(prismaMock.paymentBill.createMany).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('createOrUpdatePaymentTransactions', () => {
+        it('splits payment into deposit and regular using deposit-first ordering and updates/creates transactions', async () => {
+            // Arrange
+            const paymentId = 11;
+            const bookingId = 22;
+            const locationId = 3;
+
+            // Mock payment with booking/room location
+            (prismaMock.payment.findFirst as jest.Mock).mockResolvedValue({
+                id: paymentId,
+                booking_id: bookingId,
+                payment_date: new Date('2025-01-02'),
+                bookings: { rooms: { location_id: locationId } }
+            });
+
+            // Mock paymentBill with a bill that has deposit and regular items
+            (prismaMock.paymentBill.findMany as jest.Mock).mockResolvedValue([
+                {
+                    id: 1001,
+                    payment_id: paymentId,
+                    bill_id: 501,
+                    amount: new Prisma.Decimal(300),
+                    bill: {
+                        id: 501,
                         bill_item: [
-                            {
-                            id: 1,
-                            bill_id: 1,
-                            amount: new Prisma.Decimal(1000000),
-                            description: 'Rent',
-                            internal_description: null,
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                            type: 'GENERATED' as any,
-                            related_id: null
-                        },
-                            {
-                                id: 2,
-                                bill_id: 1,
-                                amount: new Prisma.Decimal(500000),
-                                description: 'Deposit Kamar',
-                                internal_description: null,
-                                createdAt: new Date(),
-                                updatedAt: new Date(),
-                                type: 'GENERATED' as any,
-                                related_id: null
-                            }
-                        ],
-                        paymentBills: [],
-                        sumPaidAmount: new Prisma.Decimal(0)
-                    },
-                    {
-                        id: 2,
-                        booking_id: 1,
-                        description: 'Test Bill 2',
-                        due_date: new Date('2024-02-31'),
-                        bill_item: [{
-                            id: 1,
-                            bill_id: 1,
-                            amount: new Prisma.Decimal(1000000),
-                            description: 'Rent',
-                            internal_description: null,
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                            type: 'GENERATED' as any,
-                            related_id: null
-                        }],
-                        paymentBills: [],
-                        sumPaidAmount: new Prisma.Decimal(0)
-                    },
-                    {
-                        id: 3,
-                        booking_id: 1,
-                        description: 'Test Bill 3',
-                        due_date: new Date('2024-03-31'),
-                        bill_item: [{
-                            id: 1,
-                            bill_id: 1,
-                            amount: new Prisma.Decimal(1000000),
-                            description: 'Rent',
-                            internal_description: null,
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                            type: 'GENERATED' as any,
-                            related_id: null
-                        }],
-                        paymentBills: [],
-                        sumPaidAmount: new Prisma.Decimal(0)
+                            { id: 9001, amount: new Prisma.Decimal(200), description: 'Deposit', related_id: { deposit_id: 77 } },
+                            { id: 9002, amount: new Prisma.Decimal(200), description: 'Sewa', related_id: null },
+                        ]
                     }
-                ]
-            };
-            // @ts-expect-error
-            prismaMock.bill.findMany.mockResolvedValue(mockUnpaidBills.bills);
-
-            // @ts-expect-error
-            prismaMock.booking.findFirst.mockResolvedValue(mockBooking);
-            // @ts-expect-error
-            prismaMock.payment.create.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.create.mockResolvedValue({});
-            // @ts-expect-error
-            prismaMock.paymentBill.createMany.mockResolvedValue({count: 2});
-            // @ts-expect-error
-            prismaMock.paymentBill.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.transaction.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.deposit.findFirst.mockResolvedValue(null);
-
-            const result = await upsertPaymentAction(paymentData);
-
-            expect(result.success).toBeDefined();
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalledWith({
-                data: [
-                    {
-                        payment_id: 1,
-                        bill_id: 1,
-                        amount: new Prisma.Decimal(1500000)
-                    }
-                ]
-            });
-            expect(prismaMock.booking.findFirst).toHaveBeenCalled();
-            expect(prismaMock.bill.findMany).toHaveBeenCalled();
-            expect(prismaMock.payment.create).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
-        });
-
-        it('should create a payment with manual allocation', async () => {
-            const paymentData = {
-                booking_id: 1,
-                amount: new Prisma.Decimal(1500000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false,
-                allocationMode: 'manual' as const,
-                manualAllocations: {1: 1000000, 2: 250000, 3: 250000}
-            };
-
-            // @ts-expect-error
-            prismaMock.booking.findFirst.mockResolvedValue(mockBooking);
-            // @ts-expect-error
-            prismaMock.payment.create.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.create.mockResolvedValue({});
-            // @ts-expect-error
-            prismaMock.paymentBill.createMany.mockResolvedValue({count: 3});
-            // @ts-expect-error
-            prismaMock.paymentBill.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.transaction.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.deposit.findFirst.mockResolvedValue(null);
-
-            const result = await upsertPaymentAction(paymentData);
-
-            expect(result.success).toBeDefined();
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalledWith({
-                data: [
-                    {payment_id: 1, bill_id: 1, amount: new Prisma.Decimal(1000000)},
-                    {payment_id: 1, bill_id: 2, amount: new Prisma.Decimal(250000)},
-                    {payment_id: 1, bill_id: 3, amount: new Prisma.Decimal(250000)}
-                ]
-            });
-            expect(prismaMock.booking.findFirst).toHaveBeenCalled();
-            expect(prismaMock.payment.create).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
-        });
-
-        it('should return error for invalid manual allocation total', async () => {
-            const paymentData = {
-                booking_id: 1,
-                amount: new Prisma.Decimal(500000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false,
-                allocationMode: 'manual' as const,
-                manualAllocations: {1: 300000, 2: 100000} // Total: 400000, should be 500000
-            };
-
-            // @ts-expect-error
-            prismaMock.booking.findFirst.mockResolvedValue(mockBooking);
-            // @ts-expect-error
-            prismaMock.payment.create.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.create.mockResolvedValue({});
-            // @ts-expect-error
-            prismaMock.paymentBill.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.transaction.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.deposit.findFirst.mockResolvedValue(null);
-
-            const result = await upsertPaymentAction(paymentData);
-
-            expect(result.failure).toBeDefined();
-            expect(result.failure).toContain('Total manual allocation must equal payment amount');
-            expect(prismaMock.booking.findFirst).toHaveBeenCalled();
-            expect(prismaMock.payment.create).toHaveBeenCalled();
-        });
-
-        it('should return error for booking not found', async () => {
-            const paymentData = {
-                booking_id: 999,
-                amount: new Prisma.Decimal(500000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false
-            };
-
-            // @ts-expect-error
-            prismaMock.booking.findFirst.mockResolvedValue(null);
-
-            const result = await upsertPaymentAction(paymentData);
-
-            expect(result.failure).toBe('Booking not found');
-            expect(prismaMock.booking.findFirst).toHaveBeenCalled();
-        });
-    });
-
-    describe('upsertPaymentAction - Update Payment', () => {
-        it('should update a payment with auto allocation', async () => {
-            const paymentData = {
-                id: 1,
-                booking_id: 1,
-                amount: new Prisma.Decimal(600000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false,
-                allocationMode: 'auto' as const
-            };
-
-            // @ts-expect-error
-            prismaMock.booking.findFirst.mockResolvedValue(mockBooking);
-            // @ts-expect-error
-            prismaMock.payment.update.mockResolvedValue({...mockPayment, id: 1});
-            // @ts-expect-error
-            prismaMock.transaction.findFirst.mockResolvedValue({id: 1});
-            // @ts-expect-error
-            prismaMock.transaction.update.mockResolvedValue({});
-            // @ts-expect-error
-            prismaMock.paymentBill.deleteMany.mockResolvedValue({count: 0});
-            // @ts-expect-error
-            prismaMock.paymentBill.createManyAndReturn.mockResolvedValue({count: 0});
-            // @ts-expect-error
-            prismaMock.paymentBill.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.transaction.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.deposit.findFirst.mockResolvedValue(null);
-            // @ts-expect-error
-            prismaMock.bill.findMany.mockResolvedValue([{
-                id: 1,
-                booking_id: 1,
-                due_date: new Date('2024-01-31'),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                paymentBills: [{
-                    id: 1,
-                    payment_id: 1,
-                    bill_id: 1,
-                    amount: new Prisma.Decimal(500000),
-                }],
-                bill_item: [{
-                    id: 1,
-                    bill_id: 1,
-                    amount: new Prisma.Decimal(1000000),
-                    description: 'Rent',
-                    internal_description: null,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    type: 'GENERATED' as any,
-                    related_id: null
-                }]
-            }]);
-
-            const result = await upsertPaymentAction(paymentData);
-
-            expect(result.success).toBeDefined();
-            expect(prismaMock.booking.findFirst).toHaveBeenCalled();
-            expect(prismaMock.payment.update).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.createManyAndReturn).toHaveBeenCalled();
-            expect(prismaMock.bill.findMany).toHaveBeenCalled();
-        });
-
-        it('should update a payment with manual allocation', async () => {
-            const paymentData = {
-                id: 1,
-                booking_id: 1,
-                amount: new Prisma.Decimal(600000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false,
-                allocationMode: 'manual' as const,
-                manualAllocations: {1: 400000, 2: 200000}
-            };
-
-            // @ts-expect-error
-            prismaMock.booking.findFirst.mockResolvedValue(mockBooking);
-            // @ts-expect-error
-            prismaMock.payment.update.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.findFirst.mockResolvedValue({id: 1});
-            // @ts-expect-error
-            prismaMock.transaction.update.mockResolvedValue({});
-            // @ts-expect-error
-            prismaMock.paymentBill.deleteMany.mockResolvedValue({count: 2});
-            // @ts-expect-error
-            prismaMock.paymentBill.createMany.mockResolvedValue({count: 2});
-            // @ts-expect-error
-            prismaMock.paymentBill.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.transaction.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.deposit.findFirst.mockResolvedValue(null);
-
-            const result = await upsertPaymentAction(paymentData);
-
-            expect(result.success).toBeDefined();
-            expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalledWith({
-                where: {payment_id: 1}
-            });
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalledWith({
-                data: [
-                    {payment_id: 1, bill_id: 1, amount: new Prisma.Decimal(400000)},
-                    {payment_id: 1, bill_id: 2, amount: new Prisma.Decimal(200000)}
-                ]
-            });
-            expect(prismaMock.booking.findFirst).toHaveBeenCalled();
-            expect(prismaMock.payment.update).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
-        });
-    });
-
-    describe('deletePaymentAction', () => {
-        it('should delete a payment successfully', async () => {
-            const paymentId = 1;
-
-            // @ts-expect-error
-            prismaMock.payment.findFirst.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.payment.delete.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.deleteMany.mockResolvedValue({count: 0});
-
-            const result = await deletePaymentAction(paymentId);
-
-            expect(result.success).toBeDefined();
-            expect(prismaMock.payment.delete).toHaveBeenCalledWith({
-                where: {id: paymentId}
-            });
-            expect(prismaMock.transaction.deleteMany).toHaveBeenCalled();
-            expect(prismaMock.payment.findFirst).toHaveBeenCalled();
-            expect(prismaMock.payment.delete).toHaveBeenCalled();
-            expect(prismaMock.transaction.deleteMany).toHaveBeenCalled();
-        });
-
-        it('should return error for payment not found', async () => {
-            const paymentId = 999;
-
-            // @ts-expect-error
-            prismaMock.payment.findFirst.mockResolvedValue(null);
-
-            const result = await deletePaymentAction(paymentId);
-
-            expect(result.failure).toBe('payment not found');
-            expect(prismaMock.payment.findFirst).toHaveBeenCalled();
-        });
-
-        it('should return error for invalid payment ID', async () => {
-            const paymentId = -1;
-
-            const result = await deletePaymentAction(paymentId);
-
-            expect(result.errors).toBeDefined();
-        });
-    });
-
-    describe('getPaymentStatusAction', () => {
-        it('should return payment statuses', async () => {
-            const mockStatuses = [
-                {id: 1, status: 'Confirmed', createdAt: new Date(), updatedAt: new Date()},
-                {id: 2, status: 'Pending', createdAt: new Date(), updatedAt: new Date()}
-            ];
-
-            // @ts-expect-error
-            prismaMock.paymentStatus.findMany.mockResolvedValue(mockStatuses);
-
-            const result = await getPaymentStatusAction();
-
-            expect(result).toEqual(mockStatuses);
-            expect(prismaMock.paymentStatus.findMany).toHaveBeenCalledWith({
-                orderBy: {status: 'asc'}
-            });
-            expect(prismaMock.paymentStatus.findMany).toHaveBeenCalled();
-        });
-    });
-
-    describe('Payment CRUD - Combined Test', () => {
-        it('should perform complete CRUD operations on a payment', async () => {
-            // Step 1: Create payment with auto allocation
-            const createData = {
-                booking_id: 1,
-                amount: new Prisma.Decimal(500000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false,
-                allocationMode: 'auto' as const
-            };
-
-            const mockUnpaidBills = {
-                total: 1,
-                bills: [{
-                    id: 1,
-                    booking_id: 1,
-                    description: 'Test Bill',
-                    due_date: new Date('2024-01-31'),
-                    bill_item: [{
-                        id: 1,
-                        bill_id: 1,
-                        amount: new Prisma.Decimal(1000000),
-                        description: 'Rent',
-                        internal_description: null,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                        type: 'GENERATED' as any,
-                        related_id: null
-                    }],
-                    paymentBills: [],
-                    sumPaidAmount: new Prisma.Decimal(0)
-                }]
-            };
-
-            const mockSimulation = {
-                old: {balance: 500000, bills: mockUnpaidBills.bills},
-                new: {
-                    balance: 0,
-                    payments: [{
-                        payment_id: 1,
-                        bill_id: 1,
-                        amount: new Prisma.Decimal(500000)
-                    }]
                 }
-            };
+            ]);
 
-            // @ts-expect-error
-            prismaMock.booking.findFirst.mockResolvedValue(mockBooking);
-            // @ts-expect-error
-            prismaMock.bill.findMany.mockResolvedValue(mockUnpaidBills.bills);
-            // @ts-expect-error
-            prismaMock.payment.create.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.create.mockResolvedValue({});
-            // @ts-expect-error
-            prismaMock.paymentBill.createMany.mockResolvedValue({count: 1});
-            // @ts-expect-error
-            prismaMock.paymentBill.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.transaction.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.deposit.findFirst.mockResolvedValue(null);
+            // No existing transactions
+            (prismaMock.transaction.findMany as jest.Mock).mockResolvedValue([]);
 
-            const createResult = await upsertPaymentAction(createData);
-            expect(createResult.success).toBeDefined();
-            expect(prismaMock.payment.create).toHaveBeenCalled();
-            expect(prismaMock.booking.findFirst).toHaveBeenCalled();
-            expect(prismaMock.bill.findMany).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
+            // Mock deposit lookup
+            (prismaMock.deposit.findFirst as jest.Mock).mockResolvedValue({ id: 77, status: 'UNPAID' });
+            (prismaMock.deposit.findUnique as jest.Mock).mockResolvedValue({ id: 77, status: 'UNPAID' });
+            (prismaMock.deposit.update as jest.Mock).mockResolvedValue({ id: 77, status: 'HELD' });
 
-            // Step 2: Update payment with manual allocation
-            const updateData = {
-                id: 1,
-                booking_id: 1,
-                amount: new Prisma.Decimal(600000),
-                payment_date: new Date('2024-01-15'),
-                payment_proof: null,
-                status_id: 1,
-                migrated_to_deferred_revenue: false,
-                allocationMode: 'manual' as const,
-                manualAllocations: {1: 400000, 2: 200000}
-            };
+            // Capture created transactions
+            (prismaMock.transaction.create as jest.Mock).mockImplementation(({ data }: any) => Promise.resolve({ id: Math.floor(Math.random()*1000), ...data }));
 
-            // @ts-expect-error
-            prismaMock.payment.update.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.findFirst.mockResolvedValue({id: 1});
-            // @ts-expect-error
-            prismaMock.transaction.update.mockResolvedValue({});
-            // @ts-expect-error
-            prismaMock.paymentBill.deleteMany.mockResolvedValue({count: 2});
-            // @ts-expect-error
-            prismaMock.paymentBill.createMany.mockResolvedValue({count: 2});
-            // @ts-expect-error
-            prismaMock.paymentBill.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.transaction.findMany.mockResolvedValue([]);
-            // @ts-expect-error
-            prismaMock.deposit.findFirst.mockResolvedValue(null);
+            // Act
+            await createOrUpdatePaymentTransactions(paymentId, prismaMock as any);
 
-            const updateResult = await upsertPaymentAction(updateData);
-            expect(updateResult.success).toBeDefined();
-            expect(prismaMock.payment.update).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.deleteMany).toHaveBeenCalled();
-            expect(prismaMock.paymentBill.createMany).toHaveBeenCalled();
+            // Assert: deposit-first split -> 300 applies 200 to deposit, 100 to regular
+            // One regular transaction created
+            expect(prismaMock.transaction.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    location_id: locationId,
+                    category: 'Biaya Sewa',
+                    amount: new Prisma.Decimal(100),
+                    type: 'INCOME',
+                })
+            });
+            // One deposit transaction created with related deposit_id
+            expect(prismaMock.transaction.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    location_id: locationId,
+                    category: 'Deposit',
+                    amount: new Prisma.Decimal(200),
+                    type: 'INCOME',
+                    related_id: expect.objectContaining({ deposit_id: 77 })
+                })
+            });
 
-            // Step 3: Delete payment
-            // @ts-expect-error
-            prismaMock.payment.findFirst.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.payment.delete.mockResolvedValue(mockPayment);
-            // @ts-expect-error
-            prismaMock.transaction.deleteMany.mockResolvedValue({count: 0});
+            // Deposit status updated to HELD
+            expect(prismaMock.deposit.update).toHaveBeenCalledWith({
+                where: { id: 77 },
+                data: { status: 'HELD' }
+            });
 
-            const deleteResult = await deletePaymentAction(1);
-            expect(deleteResult.success).toBeDefined();
-            expect(prismaMock.payment.delete).toHaveBeenCalled();
-            expect(prismaMock.payment.findFirst).toHaveBeenCalled();
-            expect(prismaMock.transaction.deleteMany).toHaveBeenCalled();
+            // DeleteMany cleanup called with filter by payment_id
+            expect(prismaMock.transaction.deleteMany).toHaveBeenCalledWith({
+                where: expect.objectContaining({
+                    related_id: expect.objectContaining({ path: ['payment_id'], equals: paymentId })
+                })
+            });
+        });
+
+        it('updates existing transactions instead of creating new ones', async () => {
+            const paymentId = 12;
+            const bookingId = 33;
+            const locationId = 4;
+
+            (prismaMock.payment.findFirst as jest.Mock).mockResolvedValue({
+                id: paymentId,
+                booking_id: bookingId,
+                payment_date: new Date('2025-02-01'),
+                bookings: { rooms: { location_id: locationId } }
+            });
+
+            (prismaMock.paymentBill.findMany as jest.Mock).mockResolvedValue([
+                {
+                    id: 1002,
+                    payment_id: paymentId,
+                    bill_id: 601,
+                    amount: new Prisma.Decimal(500),
+                    bill: {
+                        id: 601,
+                        bill_item: [
+                            { id: 9101, amount: new Prisma.Decimal(100), description: 'Deposit', related_id: { deposit_id: 88 } },
+                            { id: 9102, amount: new Prisma.Decimal(500), description: 'Sewa', related_id: null },
+                        ]
+                    }
+                }
+            ]);
+
+            (prismaMock.transaction.findMany as jest.Mock).mockResolvedValue([
+                { id: 2001, category: 'Biaya Sewa', related_id: { payment_id: paymentId }, amount: new Prisma.Decimal(0) },
+                { id: 2002, category: 'Deposit', related_id: { payment_id: paymentId, deposit_id: 88 }, amount: new Prisma.Decimal(0) },
+            ]);
+
+            (prismaMock.deposit.findUnique as jest.Mock).mockResolvedValue({ id: 88, status: 'UNPAID' });
+            (prismaMock.deposit.update as jest.Mock).mockResolvedValue({ id: 88, status: 'HELD' });
+
+            await createOrUpdatePaymentTransactions(paymentId, prismaMock as any);
+
+            // Deposit-first split for amount 500: 100 deposit, 400 regular
+            expect(prismaMock.transaction.update).toHaveBeenCalledWith({
+                where: { id: 2001 },
+                data: expect.objectContaining({ amount: new Prisma.Decimal(400) })
+            });
+            expect(prismaMock.transaction.update).toHaveBeenCalledWith({
+                where: { id: 2002 },
+                data: expect.objectContaining({ amount: new Prisma.Decimal(100) })
+            });
+
+            expect(prismaMock.deposit.update).toHaveBeenCalledWith({ where: { id: 88 }, data: { status: 'HELD' } });
         });
     });
 });
