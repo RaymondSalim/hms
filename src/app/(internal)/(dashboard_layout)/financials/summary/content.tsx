@@ -98,27 +98,39 @@ export default function FinancialSummaryPage() {
 
                 {/* Quick Summary Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Card className="bg-green-100 shadow-md p-4 rounded">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <CardBody>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h6" className="font-semibold">
                                 Total Pemasukan
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h4">{totalIncome ? formatToIDR(totalIncome) : "-"}</Typography>
                         </CardBody>
                     </Card>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Card className="bg-red-100 shadow-md p-4 rounded">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <CardBody>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h6" className="font-semibold">
                                 Total Pengeluaran
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h4">{totalExpense ? formatToIDR(totalExpense) : "-"}</Typography>
                         </CardBody>
                     </Card>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Card className="bg-blue-100 shadow-md p-4 rounded">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <CardBody>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h6" className="font-semibold">
                                 Pendapatan Bersih
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h4">{netIncome ? formatToIDR(netIncome) : "-"}</Typography>
                         </CardBody>
                     </Card>
@@ -126,8 +138,11 @@ export default function FinancialSummaryPage() {
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
                     <div className="flex flex-col gap-4">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <CardBody className="p-8 overflow-x-auto">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h5" className="font-semibold">Pemasukan & Pengeluaran</Typography>
                                 {
                                     isTransactionsSuccess &&
@@ -158,26 +173,32 @@ export default function FinancialSummaryPage() {
                                     </div>
                                 }
                             </CardBody>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <CardFooter className="p-4">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="small" className="text-gray-600">
                                     Data per tanggal: {formatToDateTime(new Date())}
                                 </Typography>
                             </CardFooter>
                         </Card>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <CardBody className="p-8 overflow-x-auto flex flex-col gap-y-6">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h5" className="font-semibold">Rincian Kategori</Typography>
                                 <div className={"flex gap-x-2 overflow-x-auto flex-shrink-0"}>
-                                    {
-                                        Object.keys(TransactionType).map(t => (
+                                    {Object.keys(TransactionType).map(t => (
+                                        <>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Button key={t} variant={selectedCategory == t ? 'filled' : 'outlined'}
                                                     size={"sm"}
                                                     className={"min-h-fit min-w-fit rounded-full whitespace-nowrap"}
                                                     onClick={() => setSelectedCategory(t as TransactionType)}>
                                                 {t}
                                             </Button>
-                                        ))
-                                    }
+                                        </>
+                                    ))}
 
                                 </div>
                                 <div className={"flex flex-shrink items-center justify-center px-8"}>
@@ -227,7 +248,8 @@ export default function FinancialSummaryPage() {
                                                             categoryBreakdownData.INCOME
                                                     }
                                                 />
-                                                : <Typography>Tidak ada data kategori.</Typography>
+                                                : /* @ts-expect-error weird react 19 types error */
+                                                <Typography>Tidak ada data kategori.</Typography>
                                         )
                                     }
                                     {
@@ -241,8 +263,11 @@ export default function FinancialSummaryPage() {
                         </Card>
                     </div>
                     <div className="flex flex-col gap-4">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <CardBody className="overflow-x-auto">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h5" className="font-semibold p-2">Grafik Pemasukan &
                                     Pengeluaran</Typography>
                                 <IncomeExpenseGraph
@@ -255,8 +280,11 @@ export default function FinancialSummaryPage() {
                                 />
                             </CardBody>
                         </Card>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <CardBody className="p-8 w-full">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h5" className="font-semibold">Transaksi Terbaru</Typography>
                                 <div className={"overflow-auto"}>
                                     {
@@ -283,7 +311,8 @@ export default function FinancialSummaryPage() {
                                                     ))}
                                                     </tbody>
                                                 </table>
-                                                : <Typography>Tidak ada transaksi baru.</Typography>
+                                                : /* @ts-expect-error weird react 19 types error */
+                                                <Typography>Tidak ada transaksi baru.</Typography>
                                         )
                                     }
                                     {

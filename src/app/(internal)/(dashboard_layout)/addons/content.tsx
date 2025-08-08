@@ -108,6 +108,7 @@ export default function AddonContent({addons, queryParams}: AddonContentProps) {
                 mutationFn: deleteAddOnAction,
             }}
             customDialog={
+                // @ts-expect-error weird react 19 types error
                 <Dialog
                     open={showDialog}
                     size={"md"}
@@ -118,6 +119,7 @@ export default function AddonContent({addons, queryParams}: AddonContentProps) {
                         {dialogContent}
                     </div>
                     <div className={"flex gap-x-4 justify-end"}>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
                             Tutup
                         </Button>
@@ -136,23 +138,30 @@ function AddonInfo({addon}: AddonInfoProps) {
     return (
         <div className="container mx-auto p-6 h-full">
             <h1 className="text-xl font-semibold text-black">Informasi Layanan Tambahan</h1>
+            {/*@ts-expect-error weird react 19 types error*/}
             <Card className="shadow-none">
+                {/*@ts-expect-error weird react 19 types error*/}
                 <CardBody className="mt-4 p-0 space-y-4">
-            {/* Basic Information */}
+                    {/* Basic Information */}
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold">Informasi Dasar</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography>
                         <strong>Nama:</strong> {addon.name}
                     </Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography>
                         <strong>Deskripsi:</strong> {addon.description || "Tidak ada deskripsi yang diberikan."}
                     </Typography>
                     {addon.parent_addon_id && (
+                        // @ts-expect-error weird react 19 types error
                         <Typography>
                             <strong>Parent Add-on:</strong> {addon.parent_addon_id}
                         </Typography>
                     )}
 
-            {/* Pricing Information */}
+                    {/* Pricing Information */}
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Harga</Typography>
                     <table className="table-auto w-full border-collapse border border-gray-200">
                         <thead>
@@ -178,43 +187,53 @@ function AddonInfo({addon}: AddonInfoProps) {
                     </table>
 
                     {/* Active Bookings Information */}
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Pemesanan Aktif</Typography>
                     {addon.bookings && addon.bookings.length > 0 ? (
                         <div className="space-y-2">
                             {addon.bookings.map((bookingAddon, index) => (
                                 <div key={index} className="border-l-4 border-blue-500 pl-3 bg-gray-50 p-3 rounded">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" className="font-medium">
                                         Pemesanan #{bookingAddon.booking.id}
                                     </Typography>
                                     <div className="grid grid-cols-2 gap-4 mt-2">
                                         <div>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="font-medium text-gray-700">
                                                 Penyewa:
                                             </Typography>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="text-gray-600">
                                                 {bookingAddon.booking.tenants?.name || "N/A"}
                                             </Typography>
                                         </div>
                                         <div>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="font-medium text-gray-700">
                                                 Kamar:
                                             </Typography>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="text-gray-600">
                                                 {bookingAddon.booking.rooms?.room_number || "N/A"}
                                             </Typography>
                                         </div>
                                         <div>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="font-medium text-gray-700">
                                                 Tanggal Mulai Addon:
                                             </Typography>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="text-gray-600">
                                                 {formatToDateTime(bookingAddon.start_date, false)}
                                             </Typography>
                                         </div>
                                         <div>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="font-medium text-gray-700">
                                                 Tanggal Selesai Addon:
                                             </Typography>
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="text-gray-600">
                                                 {formatToDateTime(bookingAddon.end_date, false)}
                                             </Typography>
@@ -224,16 +243,20 @@ function AddonInfo({addon}: AddonInfoProps) {
                             ))}
                         </div>
                     ) : (
+                        // @ts-expect-error weird react 19 types error
                         <Typography variant="small" className="text-gray-500 italic">
                             Tidak ada pemesanan aktif untuk layanan tambahan ini.
                         </Typography>
                     )}
                 </CardBody>
 
+                {/*@ts-expect-error weird react 19 types error*/}
                 <CardFooter divider className="flex items-center justify-between py-3">
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="small" color="gray">
                         Dibuat Pada: {new Date(addon.createdAt).toLocaleDateString()}
                     </Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="small" color="gray">
                         Terakhir Diubah: {new Date(addon.updatedAt).toLocaleDateString()}
                     </Typography>

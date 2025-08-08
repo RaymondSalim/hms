@@ -65,6 +65,7 @@ export default function Header({companyInfo}: HeaderProps) {
                         {/* Desktop header */}
                         <div className="w-full hidden md:block p-4 md:p-6 lg:p-8 ">
                             <div className={styles.breadcrumbsLocationContainer}>
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Breadcrumbs className={styles.breadcrumbs}>
                                     <Link href={"/"} className={styles.homeLink}>
                                         <IoHome className={styles.homeIcon}/>

@@ -2,7 +2,8 @@ import {NextResponse} from "next/server";
 import * as process from "node:process";
 import {getObject} from "@/app/_lib/s3";
 
-export async function GET(request: Request, { params }: { params: { s3Path: string[] } }) {
+export async function GET(request: Request, props: { params: Promise<{ s3Path: string[] }> }) {
+    const params = await props.params;
     const fullPath = params.s3Path.join('/');
 
     let imgObj = await getObject(process.env.S3_BUCKET!, fullPath);

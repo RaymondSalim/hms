@@ -7,16 +7,7 @@ import {useMutation, useQuery} from "@tanstack/react-query";
 import {useRouter, useSearchParams} from "next/navigation";
 import {toast} from "react-toastify";
 import {MotionConfig} from "framer-motion";
-import {
-    Button,
-    Checkbox,
-    Input,
-    Popover,
-    PopoverContent,
-    PopoverHandler,
-    Textarea,
-    Typography
-} from "@material-tailwind/react";
+import {Button, Checkbox, Input, Textarea, Typography} from "@material-tailwind/react";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {Event, Prisma} from "@prisma/client";
 import type {z} from "zod";
@@ -24,11 +15,10 @@ import {ZodFormattedError} from "zod";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {upsertEventAction} from "@/app/(internal)/(dashboard_layout)/schedule/create/event-action";
 import {getEventByID} from "@/app/_db/event";
-import {formatToDateTime} from "@/app/_lib/util";
 import {DatePicker} from "@/app/_components/DateRangePicker";
 import {eventSchema} from "@/app/_lib/zod/event/zod";
 
-import {FaRegCalendar, FaRegClock} from "react-icons/fa6";
+import {FaRegClock} from "react-icons/fa6";
 import "./styles/create.css";
 
 type EventPageQueryParam = {
@@ -212,10 +202,12 @@ export default function CreateEventPage() {
                     >
                         <div>
                             <label htmlFor="title">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Judul
                                 </Typography>
                             </label>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Input
                                 variant="outlined"
                                 name="title"
@@ -233,11 +225,13 @@ export default function CreateEventPage() {
                             />
                             {
                                 fieldErrors?.title &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.title._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="start_date">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Tanggal Mulai
                                 </Typography>
@@ -253,6 +247,7 @@ export default function CreateEventPage() {
                                         }
                                     }}
                                 />
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Input
                                     disabled={!eventData.start || eventData.allDay === true}
                                     size="lg"
@@ -270,8 +265,10 @@ export default function CreateEventPage() {
                                         className: "before:content-none after:content-none",
                                     }}
                                 />
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Checkbox
                                     label={
+                                        /* @ts-expect-error weird react 19 types error */
                                         <Typography color="blue-gray" className="font-medium">
                                             Seharian
                                         </Typography>
@@ -288,11 +285,13 @@ export default function CreateEventPage() {
                             </div>
                             {
                                 fieldErrors?.start &&
+                                /* @ts-expect-error weird react 19 types error */
                                 <Typography color="red">{fieldErrors?.start._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="end_date">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Tanggal Selesai
                                 </Typography>
@@ -309,6 +308,7 @@ export default function CreateEventPage() {
                                         }
                                     }}
                                 />
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Input
                                     disabled={!eventData.end || eventData.allDay === true}
                                     size="lg"
@@ -329,15 +329,18 @@ export default function CreateEventPage() {
                             </div>
                             {
                                 fieldErrors?.end &&
+                                /* @ts-expect-error weird react 19 types error */
                                 <Typography color="red">{fieldErrors?.end._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="description">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Deskripsi
                                 </Typography>
                             </label>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Textarea
                                 value={eventData.description ?? undefined}
                                 onChange={(e) => setEventData(prevEvent => ({
@@ -353,11 +356,13 @@ export default function CreateEventPage() {
                             />
                             {
                                 fieldErrors?.description &&
+                                /* @ts-expect-error weird react 19 types error */
                                 <Typography color="red">{fieldErrors?.description._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="color">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Warna
                                 </Typography>
@@ -383,6 +388,7 @@ export default function CreateEventPage() {
                                                     backgroundColor: data.value
                                                 }}
                                             />
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Typography
                                                 color={"black"}
                                                 className={"leading-none"}
@@ -395,12 +401,15 @@ export default function CreateEventPage() {
                             />
                             {
                                 fieldErrors?.borderColor &&
+                                /* @ts-expect-error weird react 19 types error */
                                 <Typography color="red">{fieldErrors?.borderColor._errors}</Typography>
                             }
                         </div>
                         <div className="flex items-center gap-x-2">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Checkbox
                                 label={
+                                    /* @ts-expect-error weird react 19 types error */
                                     <Typography color="blue-gray" className="font-medium">
                                         Jadwal Berulang
                                     </Typography>
@@ -429,6 +438,7 @@ export default function CreateEventPage() {
                         {eventData.recurring && eventData.extendedProps?.recurrence != null && (
                             <div className="space-y-4 pl-6 border-l-2 border-gray-200">
                                 <div className="space-y-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">
                                         Pengulangan
                                     </Typography>
@@ -436,6 +446,7 @@ export default function CreateEventPage() {
                                         {['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map((day, index) => {
                                             const extendedProps = eventData.extendedProps as ExtendedProps;
                                             return (
+                                                /* @ts-expect-error weird react 19 types error */
                                                 <Button
                                                     key={day}
                                                     size="sm"
@@ -465,6 +476,7 @@ export default function CreateEventPage() {
                                 </div>
 
                                 <div className="space-y-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">Mulai Pada</Typography>
                                     <DatePicker
                                         mode="single"
@@ -489,6 +501,7 @@ export default function CreateEventPage() {
                                 </div>
 
                                 <div className="space-y-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">Selesai Pada</Typography>
                                     <DatePicker
                                         mode="single"
@@ -516,12 +529,14 @@ export default function CreateEventPage() {
 
                         {
                             mutationResponse?.failure &&
+                            /* @ts-expect-error weird react 19 types error */
                             <Typography variant="h6" color="red" className="-mb-4">
                                 {mutationResponse.failure}
                             </Typography>
                         }
                         {
                             mutationResponse?.errors &&
+                            /* @ts-expect-error weird react 19 types error */
                             <Typography variant="h6" color="red" className="-mb-4">
                                 Ada masalah di data yang anda masukan. Mohon periksa kembali.
                             </Typography>
@@ -533,6 +548,7 @@ export default function CreateEventPage() {
                     {/*<Button variant={"outlined"} className="mt-6">*/}
                     {/*    Hapus*/}
                     {/*</Button>*/}
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button
                         // @ts-expect-error type error
                         onClick={() => eventMutation.mutate(eventData)}

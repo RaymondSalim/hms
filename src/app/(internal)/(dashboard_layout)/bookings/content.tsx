@@ -349,6 +349,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             const checkInExists = rowData.checkInOutLogs?.find(l => l.event_type == CheckInOutType.CHECK_IN);
 
                             return (
+                                // @ts-expect-error weird react 19 types error
                                 <Button
                                     key={`${rowData.id}_in`}
                                     size={"sm"}
@@ -371,6 +372,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             let disabled = !checkInExists || (checkInExists && checkOutExists);
 
                             return (
+                                // @ts-expect-error weird react 19 types error
                                 <Button
                                     key={`${rowData.id}_out`}
                                     size={"sm"}
@@ -391,6 +393,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                 return <></>;
                             }
                             return (
+                                // @ts-expect-error weird react 19 types error
                                 <Button
                                     key={`${rowData.id}_end_of_stay`}
                                     size={"sm"}
@@ -451,6 +454,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             }}
             customDialog={
                 <>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Dialog
                         open={showDialog}
                         size={"md"}
@@ -461,23 +465,30 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             {dialogContent}
                         </div>
                         <div className={"flex gap-x-4 justify-end"}>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
                                 Tutup
                             </Button>
                         </div>
                     </Dialog>
 
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Dialog
                         key={"confirmation-dialog"}
                         open={showConfirmationDialog}
                         handler={() => setShowConfirmationDialog(prev => !prev)}
                         className={"p-4"}
                     >
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <DialogHeader>{confirmationDialogContent.title}</DialogHeader>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <DialogBody>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Typography>{confirmationDialogContent.body}</Typography>
                         </DialogBody>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <DialogFooter>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Button
                                 variant="text"
                                 color="red"
@@ -486,6 +497,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             >
                                 <span>Batal</span>
                             </Button>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Button variant="gradient" color="green" onClick={onConfirm}>
                                 <span>Konfirmasi</span>
                             </Button>
@@ -503,6 +515,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                         />
                     )}
 
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Dialog
                         key={"check-in-out-dialog"}
                         open={showCheckInOutDialog}
@@ -510,11 +523,14 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                         className={"p-4"}
                         size="md"
                     >
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <DialogHeader>
                             {checkInOutData?.action === CheckInOutType.CHECK_IN ? "Konfirmasi Check In" : "Konfirmasi Check Out"}
                         </DialogHeader>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <DialogBody>
                             <div className="space-y-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography>
                                     {checkInOutData?.action === CheckInOutType.CHECK_IN
                                         ? "Apakah Anda yakin ingin melakukan check in untuk pemesanan ini?"
@@ -522,6 +538,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                 </Typography>
 
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="small" className="text-yellow-800 font-medium">
                                         ⚠️ Peringatan: Tindakan ini tidak dapat dibatalkan setelah dikonfirmasi.
                                     </Typography>
@@ -530,12 +547,15 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                 {/* Unpaid bills warning for checkout */}
                                 {checkInOutData?.action === CheckInOutType.CHECK_OUT && unpaidBillsData && unpaidBillsData.bills.length > 0 && (
                                     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="small" className="text-red-800 font-medium mb-2">
                                             ⚠️ Peringatan: Ada tagihan yang belum dibayar!
                                         </Typography>
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="small" className="text-red-700">
                                             Total tagihan yang belum dibayar: {formatToIDR(unpaidBillsData.total || 0)}
                                         </Typography>
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="small" className="text-red-700">
                                             Jumlah tagihan: {unpaidBillsData.bills.length} tagihan
                                         </Typography>
@@ -543,9 +563,11 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                 )}
 
                                 <div className="space-y-2">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="small" className="font-medium">
                                         Tanggal:
                                     </Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Input
                                         type="date"
                                         value={eventDate}
@@ -559,6 +581,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                 {checkInOutData?.action === CheckInOutType.CHECK_OUT && (
                                     <div className="space-y-4">
                                         <div className="border-t pt-4">
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="h6" className="mb-2">
                                                 Informasi Deposit
                                             </Typography>
@@ -578,9 +601,11 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                                     </div>
 
                                                     <div className="space-y-2">
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Typography variant="small" className="font-medium">
                                                             Update Status Deposit:
                                                         </Typography>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Select
                                                             value={selectedDepositStatus || ""}
                                                             onChange={(val) => setSelectedDepositStatus(val as DepositStatus)}
@@ -589,12 +614,14 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                                             <Option value="HELD">HELD</Option>
                                                             <Option value="APPLIED">APPLIED</Option>
                                                             <Option value="REFUNDED">REFUNDED</Option>
-                                                            <Option value="PARTIALLY_REFUNDED">PARTIALLY_REFUNDED</Option>
+                                                            <Option
+                                                                value="PARTIALLY_REFUNDED">PARTIALLY_REFUNDED</Option>
                                                         </Select>
                                                     </div>
 
                                                     {(selectedDepositStatus === 'REFUNDED' || selectedDepositStatus === 'PARTIALLY_REFUNDED') && (
                                                         <div className="space-y-2">
+                                                            {/*@ts-expect-error weird react 19 types error*/}
                                                             <Typography variant="small" className="font-medium">
                                                                 Jumlah Pengembalian:
                                                             </Typography>
@@ -607,6 +634,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                                     )}
                                                 </div>
                                             ) : (
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography variant="small" className="text-gray-600">
                                                     Tidak ada deposit untuk pemesanan ini.
                                                 </Typography>
@@ -616,7 +644,9 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                 )}
                             </div>
                         </DialogBody>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <DialogFooter>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Button
                                 variant="text"
                                 color="red"
@@ -626,6 +656,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             >
                                 <span>Batal</span>
                             </Button>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Button
                                 variant="gradient"
                                 color={checkInOutData?.action === CheckInOutType.CHECK_IN ? "blue" : "red"}
@@ -634,7 +665,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             >
                                 <span>
                                     {checkIncCheckOutMutation.isPending ? "Memproses..." :
-                                     checkInOutData?.action === CheckInOutType.CHECK_IN ? "Check In" : "Check Out"
+                                        checkInOutData?.action === CheckInOutType.CHECK_IN ? "Check In" : "Check Out"
                                     }
                                 </span>
                             </Button>
@@ -654,35 +685,60 @@ function BookingInfo({booking}: BookingInfoProps) {
     return (
         <div className="container mx-auto p-6 h-full">
             <h1 className="text-xl font-semibold text-black">Informasi Pemesanan</h1>
+            {/*@ts-expect-error weird react 19 types error*/}
             <Card className="shadow-none">
+                {/*@ts-expect-error weird react 19 types error*/}
                 <CardBody className="mt-4 p-0 space-y-4">
                     {/* Basic Information */}
+                    {/*            @ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold">Informasi Dasar</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>ID Pemesanan:</strong> {booking.id}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Status:</strong> {booking.bookingstatuses?.status || "N/A"}</Typography>
-                    <Typography><strong>Biaya:</strong> {formatToIDR(new Prisma.Decimal(booking.fee).toNumber())}</Typography>
-                    <Typography><strong>Biaya Penghuni Kedua:</strong> {booking.second_resident_fee ? formatToIDR(new Prisma.Decimal(booking.second_resident_fee).toNumber()) : "N/A"}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
+                    <Typography><strong>Biaya:</strong> {formatToIDR(new Prisma.Decimal(booking.fee).toNumber())}
+                    </Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
+                    <Typography><strong>Biaya Penghuni
+                        Kedua:</strong> {booking.second_resident_fee ? formatToIDR(new Prisma.Decimal(booking.second_resident_fee).toNumber()) : "N/A"}
+                    </Typography>
 
                     {/* Tenant Information */}
+                    {/*            @ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Penyewa</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Nama:</strong> {booking.tenants?.name || "N/A"}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Email:</strong> {booking.tenants?.email || "N/A"}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Nomor Telepon:</strong> {booking.tenants?.phone || "N/A"}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Nomor Identitas:</strong> {booking.tenants?.id_number || "N/A"}</Typography>
 
                     {/* Room Information */}
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Kamar</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Nomor Kamar:</strong> {booking.rooms?.room_number || "N/A"}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Lokasi:</strong> {(booking.rooms as any)?.locations?.name || "N/A"}</Typography>
 
                     {/* Duration Information */}
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Durasi</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Durasi:</strong> {booking.durations?.duration || "N/A"}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Jumlah Bulan:</strong> {booking.durations?.month_count || "N/A"}</Typography>
 
                     {/* Date Information */}
+                    {/*            @ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Tanggal</Typography>
-                    <Typography><strong>Tanggal Mulai:</strong> {formatToDateTime(booking.start_date, false)}</Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
+                    <Typography><strong>Tanggal Mulai:</strong> {formatToDateTime(booking.start_date, false)}
+                    </Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography><strong>Tanggal Selesai:</strong> {
                         booking.is_rolling ?
                             "Rolling (Tiap bulan)" :
@@ -690,54 +746,80 @@ function BookingInfo({booking}: BookingInfoProps) {
                     }</Typography>
 
                     {/* Deposit Information */}
+                    {/*            @ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Deposit</Typography>
                     {booking.deposit ? (
                         <>
-                            <Typography><strong>Jumlah Deposit:</strong> {formatToIDR(new Prisma.Decimal(booking.deposit.amount).toNumber())}</Typography>
+                            {/*@ts-expect-error weird react 19 types error*/}
+                            <Typography><strong>Jumlah
+                                Deposit:</strong> {formatToIDR(new Prisma.Decimal(booking.deposit.amount).toNumber())}
+                            </Typography>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Typography><strong>Status Deposit:</strong> {booking.deposit.status}</Typography>
                         </>
                     ) : (
+                        // @ts-expect-error weird react 19 types error
                         <Typography>Tidak ada deposit</Typography>
                     )}
 
                     {/* Add-ons Information */}
+                    {/*            @ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Layanan Tambahan</Typography>
                     {booking.addOns && booking.addOns.length > 0 ? (
                         <div className="space-y-2">
                             {booking.addOns.map((addon, index) => (
                                 <div key={index} className="border-l-4 border-blue-500 pl-3">
-                                    <Typography><strong>Nama:</strong> {(addon as any).addOn?.name || "N/A"}</Typography>
-                                    <Typography><strong>Deskripsi:</strong> {(addon as any).addOn?.description || "N/A"}</Typography>
-                                    <Typography><strong>Tanggal Mulai:</strong> {formatToDateTime(addon.start_date, false)}</Typography>
-                                    <Typography><strong>Tanggal Selesai:</strong> {formatToDateTime(addon.end_date, false)}</Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography><strong>Nama:</strong> {(addon as any).addOn?.name || "N/A"}
+                                    </Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography><strong>Deskripsi:</strong> {(addon as any).addOn?.description || "N/A"}
+                                    </Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography><strong>Tanggal
+                                        Mulai:</strong> {formatToDateTime(addon.start_date, false)}</Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography><strong>Tanggal
+                                        Selesai:</strong> {formatToDateTime(addon.end_date, false)}</Typography>
                                 </div>
                             ))}
                         </div>
                     ) : (
+                        // @ts-expect-error weird react 19 types error
                         <Typography>Tidak ada layanan tambahan</Typography>
                     )}
 
                     {/* Check In/Out Logs */}
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="h5" className="font-semibold mt-4">Riwayat Check In/Out</Typography>
                     {booking.checkInOutLogs && booking.checkInOutLogs.length > 0 ? (
                         <div className="space-y-2">
                             {booking.checkInOutLogs.map((log, index) => (
                                 <div key={index} className="border-l-4 border-green-500 pl-3">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography><strong>Tipe:</strong> {log.event_type}</Typography>
-                                    <Typography><strong>Tanggal:</strong> {formatToDateTime(log.event_date)}</Typography>
-                                    <Typography><strong>Dibuat Pada:</strong> {formatToDateTime(log.createdAt)}</Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography><strong>Tanggal:</strong> {formatToDateTime(log.event_date)}
+                                    </Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography><strong>Dibuat Pada:</strong> {formatToDateTime(log.createdAt)}
+                                    </Typography>
                                 </div>
                             ))}
                         </div>
                     ) : (
+                        // @ts-expect-error weird react 19 types error
                         <Typography>Belum ada riwayat check in/out</Typography>
                     )}
                 </CardBody>
 
+                {/*@ts-expect-error weird react 19 types error*/}
                 <CardFooter divider className="flex items-center justify-between py-3">
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="small" color="gray">
                         Dibuat Pada: {formatToDateTime(booking.createdAt)}
                     </Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography variant="small" color="gray">
                         Terakhir Diubah: {formatToDateTime(booking.updatedAt)}
                     </Typography>

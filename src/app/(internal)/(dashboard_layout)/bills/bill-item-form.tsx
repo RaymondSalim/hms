@@ -51,7 +51,7 @@ export function BillItemForm({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         const submitData = {
             ...(isEdit && billItem ? { id: billItem.id } : {}),
             description: data.description,
@@ -67,9 +67,11 @@ export function BillItemForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Typography variant="h6" color="blue-gray" className="mb-2">
                     Deskripsi
                 </Typography>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Input
                     type="text"
                     placeholder="Masukkan deskripsi rincian tagihan"
@@ -83,6 +85,7 @@ export function BillItemForm({
                     containerProps={{ className: "min-w-[100px]" }}
                 />
                 {fieldErrors?.description?._errors?.length && (
+                    // @ts-expect-error weird react 19 types error
                     <Typography variant="small" color="red" className="mt-1">
                         {fieldErrors.description._errors.join(', ')}
                     </Typography>
@@ -90,9 +93,11 @@ export function BillItemForm({
             </div>
 
             <div>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Typography variant="h6" color="blue-gray" className="mb-2">
                     Jumlah (Rp)
                 </Typography>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Input
                     type="number"
                     placeholder="0"
@@ -105,10 +110,12 @@ export function BillItemForm({
                     }}
                     containerProps={{ className: "min-w-[100px]" }}
                 />
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Typography variant="small" color="gray" className="mt-1">
                     {formatToIDR(data.amount)}
                 </Typography>
                 {fieldErrors?.amount?._errors?.length && (
+                    // @ts-expect-error weird react 19 types error
                     <Typography variant="small" color="red" className="mt-1">
                         {fieldErrors.amount._errors.join(', ')}
                     </Typography>
@@ -116,9 +123,11 @@ export function BillItemForm({
             </div>
 
             <div>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Typography variant="h6" color="blue-gray" className="mb-2">
                     Deskripsi Internal (Opsional)
                 </Typography>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Input
                     type="text"
                     placeholder="Masukkan deskripsi internal (opsional)"
@@ -132,6 +141,7 @@ export function BillItemForm({
                     containerProps={{ className: "min-w-[100px]" }}
                 />
                 {fieldErrors?.internal_description?._errors?.length && (
+                    // @ts-expect-error weird react 19 types error
                     <Typography variant="small" color="red" className="mt-1">
                         {fieldErrors.internal_description._errors.join(', ')}
                     </Typography>
@@ -139,24 +149,27 @@ export function BillItemForm({
             </div>
 
             {mutationResponse?.failure && (
+                // @ts-expect-error weird react 19 types error
                 <Typography variant="h6" color="red" className="mt-2">
                     {mutationResponse.failure}
                 </Typography>
             )}
 
             <div className="flex gap-x-4 justify-end pt-4">
-                <Button 
-                    onClick={onCancel} 
-                    variant="outlined" 
+                {/*@ts-expect-error weird react 19 types error*/}
+                <Button
+                    onClick={onCancel}
+                    variant="outlined"
                     className="mt-2"
                     disabled={isPending}
                 >
                     Batal
                 </Button>
-                <Button 
+                {/*@ts-expect-error weird react 19 types error*/}
+                <Button
                     type="submit"
                     disabled={!isFormValid || isPending}
-                    color="blue" 
+                    color="blue"
                     className="mt-2"
                     loading={isPending}
                 >
@@ -165,4 +178,4 @@ export function BillItemForm({
             </div>
         </form>
     );
-} 
+}

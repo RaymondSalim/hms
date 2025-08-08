@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect} from "react";
+import React, {use, useEffect} from "react";
 import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
@@ -20,9 +20,10 @@ export type RoomsPageQueryParams = {
 
 // Accept searchParams in props
 export default function RoomsPage(props: {
-  params?: any,
-  searchParams?: RoomsPageQueryParams,
+  params?: Promise<any>,
+  searchParams?: Promise<RoomsPageQueryParams>,
 }) {
+  const searchParams = use(props.searchParams ?? Promise.resolve(undefined));
   const headerContext = useHeader();
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function RoomsPage(props: {
       }
       {
         isSuccess &&
-          <RoomsContent rooms={rooms} queryParams={props.searchParams} />
+          <RoomsContent rooms={rooms} queryParams={searchParams} />
       }
     </>
   );

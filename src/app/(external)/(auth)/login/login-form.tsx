@@ -1,8 +1,7 @@
 "use client";
 
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useActionState, useCallback, useEffect, useState} from "react";
 import styles from "./signinpage.module.css";
-import {useFormState} from "react-dom";
 import {loginUser, LoginUserType} from "@/app/(external)/(auth)/login/login-action";
 import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
 import {useSession} from "next-auth/react";
@@ -15,7 +14,7 @@ const initialState: LoginUserType = {};
 export default function LoginForm() {
   const searchParams = useSearchParams();
 
-  const [state, formAction ] = useFormState(loginUser, initialState);
+  const [state, formAction] = useActionState(loginUser, initialState);
   const { status } = useSession();
 
   const [shouldRedirect, setIsShouldRedirect] = useState(false);

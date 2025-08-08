@@ -51,6 +51,7 @@ export default function CurrencyInput({setValue, ...props}: CurrencyInputProps) 
     }
 
     return (
+        // @ts-expect-error weird react 19 types error
         <Input
             {...props}
             value={displayValue}

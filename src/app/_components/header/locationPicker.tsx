@@ -33,12 +33,13 @@ export default function LocationPicker(props: LocationPickerProps) {
                 isSuccess &&
                 <Menu open={openMenu} handler={setOpenMenu} placement="bottom-end">
                     <MenuHandler>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button type="button" variant="text" className={styles.button}>
                             {
                                 props.type == "full" && <Location location={activeLocation}/>
                             }
                             {
-                                props.type == "compact" && <FaLocationDot />
+                                props.type == "compact" && <FaLocationDot/>
                             }
                             <FaChevronDown
                                 strokeWidth={2.5}
@@ -48,7 +49,9 @@ export default function LocationPicker(props: LocationPickerProps) {
                             />
                         </Button>
                     </MenuHandler>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <MenuList className={"max-h-64"}>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <MenuItem
                             onClick={() => props.setLocationID(undefined)}
                             className={"flex gap-x-4"}
@@ -71,6 +74,7 @@ export default function LocationPicker(props: LocationPickerProps) {
                             data
                                 // .filter(e => e.id != props.locationID)
                                 .map(l =>
+                                    // @ts-expect-error weird react 19 types error
                                     <MenuItem
                                         key={l.id}
                                         onClick={() => props.setLocationID(l.id)}

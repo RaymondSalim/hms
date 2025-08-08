@@ -65,10 +65,10 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
             values: any
 
         } | {
-            action: "create",
-            initialActiveContent: T,
-        }
-    )
+        action: "create",
+        initialActiveContent: T,
+    }
+        )
 
     upsert: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
     delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
@@ -102,9 +102,9 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
         searchType: "smart",
         filterKeys: SelectOption<string>[]
     } | {
-        searchType: "default" | undefined
-    }
-);
+    searchType: "default" | undefined
+}
+    );
 
 
 const useAutoHidden = (cols: ColumnDef<any>[]) => {
@@ -338,6 +338,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             <div className="flex align-middle gap-2">
                 {props.groupByOptions && (
                     <>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button
                             variant={grouping.length === 0 ? 'filled' : 'outlined'}
                             size="sm"
@@ -347,6 +348,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                             Tanpa Pengelompokan
                         </Button>
                         {props.groupByOptions.map(option => (
+                            // @ts-expect-error weird react 19 types error
                             <Button
                                 key={option.value}
                                 variant={grouping.includes(option.value) ? 'filled' : 'outlined'}
@@ -362,21 +364,27 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 {/* FilterByOptions chips */}
                 {props.filterByOptions && filterColumn && (
                     <div className="flex gap-2 ml-4">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button
                             variant={!filterColumn.getFilterValue() ? 'filled' : 'outlined'}
                             size="sm"
                             className="min-w-[100px] rounded-full"
-                            onClick={() => { filterColumn.setFilterValue(undefined); }}
+                            onClick={() => {
+                                filterColumn.setFilterValue(undefined);
+                            }}
                         >
                             {props.filterByOptions.allLabel || 'Semua'}
                         </Button>
                         {props.filterByOptions.options.map(opt => (
+                            // @ts-expect-error weird react 19 types error
                             <Button
                                 key={opt.value}
                                 variant={filterColumn.getFilterValue() === opt.value ? 'filled' : 'outlined'}
                                 size="sm"
                                 className="min-w-[100px] rounded-full"
-                                onClick={() => { filterColumn.setFilterValue(opt.value); }}
+                                onClick={() => {
+                                    filterColumn.setFilterValue(opt.value);
+                                }}
                             >
                                 {opt.label}
                             </Button>
@@ -390,6 +398,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                         props.searchType == undefined ||
                         props.searchType == "default"
                     ) &&
+                    // @ts-expect-error weird react 19 types error
                     <Input
                         value={globalFilter}
                         onChange={e => setGlobalFilter(e.target.value)}
@@ -403,22 +412,24 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 }
                 {
                     props.searchType == "smart" &&
-                        <SmartSearchInput
+                    <SmartSearchInput
                         initialValues={smartSearchInputInitialValues}
                         suggestions={props.filterKeys}
-                            onSubmit={handleSearchSubmit}
-                        />
+                        onSubmit={handleSearchSubmit}
+                    />
                 }
+                {/* @ts-expect-error weird react 19 types error */}
                 <Button onClick={() => setDialogOpen(true)} color={"blue"} className={styles.btn}>
                     <FaPlus/>
                     <span>Buat</span>
-                    </Button>
-                </div>
+                </Button>
+            </div>
             <div className="w-full flex-1 min-h-0 overflow-auto" style={{height: '400px', overflowY: 'auto'}}>
                 <TanTable tanTable={tanTable} valueLabelMapping={props.valueLabelMapping}/>
             </div>
             <div className="flex flex-col md:flex-row items-center mt-4 gap-x-8 gap-y-8">
                 <div className={"w-full md:w-auto md:ml-auto"}>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Select
                         onChange={(value) => {
                             tanTable.setPageSize(Number(value));
@@ -437,6 +448,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     </Select>
                 </div>
                 <div className={"w-full md:w-auto flex flex-row justify-between gap-x-8"}>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <IconButton
                         size="sm"
                         variant="outlined"
@@ -445,11 +457,13 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     >
                         <FaArrowLeft strokeWidth={2} className="h-4 w-4"/>
                     </IconButton>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography color="gray" className="font-normal">
                         Page <strong
                         className="text-gray-900">{tanTable.getState().pagination.pageIndex + 1}</strong> of{" "}
                         <strong className="text-gray-900">{tanTable.getPageCount()}</strong>
                     </Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <IconButton
                         size="sm"
                         variant="outlined"
@@ -460,6 +474,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     </IconButton>
                 </div>
             </div>
+            {/* @ts-expect-error weird react 19 types error */}
             <Dialog
                 key={"tbc-form"}
                 open={dialogOpen}
@@ -480,6 +495,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                     })
                 }
             </Dialog>
+            {/* @ts-expect-error weird react 19 types error */}
             <Dialog
                 open={deleteDialogOpen}
                 size={"md"}
@@ -490,13 +506,16 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 <span>Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.</span>
                 {
                     deleteMutationResponse?.failure &&
+                    // @ts-expect-error weird react 19 types error
                     <Typography className="whitespace-pre-wrap"
                                 color="red">{deleteMutationResponse.failure}</Typography>
                 }
                 <div className={"flex gap-x-4 justify-end"}>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button onClick={() => setDeleteDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button
                         onClick={() => activeContent && deleteContentMutation.mutate(activeContent.id)}
                         color={"red"}

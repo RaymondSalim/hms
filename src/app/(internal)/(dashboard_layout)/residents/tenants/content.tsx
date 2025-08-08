@@ -104,6 +104,7 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
                 mutationFn: deleteTenantAction,
             }}
             customDialog={
+                // @ts-expect-error weird react 19 types error
                 <Dialog
                     open={showDialog}
                     size={"md"}
@@ -114,6 +115,7 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
                         {dialogContent}
                     </div>
                     <div className={"flex gap-x-4 justify-end"}>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
                             Tutup
                         </Button>
@@ -141,45 +143,64 @@ function TenantInfo({tenant}: TenantInfoProps) {
     return (
         <div className="container mx-auto p-6 h-full">
             <h1 className="text-xl font-semibold text-black">Informasi Penghuni</h1>
+            {/* @ts-expect-error weird react 19 types error */}
             <Card className="shadow-none">
+                {/* @ts-expect-error weird react 19 types error */}
                 <CardBody className="mt-4 p-0 space-y-4">
                     {/* Basic Information */}
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="h5" className="font-semibold">Informasi Dasar</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography><strong>Nama Lengkap:</strong> {tenant.name}</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography><strong>Nomor Identitas:</strong> {tenant.id_number}</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography><strong>Email:</strong> {tenant.email || "N/A"}</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography><strong>Nomor Telepon:</strong> {tenant.phone || "N/A"}</Typography>
 
                     {/* Address */}
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="h5" className="font-semibold mt-4">Alamat</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography>
                         <strong>Alamat Terkini:</strong> {tenant.current_address || "N/A"}
                     </Typography>
 
                     {/* Emergency Contact */}
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="h5" className="font-semibold mt-4">Kontak Darurat</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography><strong>Nama:</strong> {tenant.emergency_contact_name || "N/A"}</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography><strong>Nomor Telepon:</strong> {tenant.emergency_contact_phone || "N/A"}</Typography>
 
                     {/* Second Resident */}
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="h5" className="font-semibold mt-4">Penghuni Kedua</Typography>
                     {tenant.second_resident_name ? (
                         <>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography>
                                 <strong>Nama:</strong> {tenant.second_resident_name}
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography>
                                 <strong>Nomor Identitas:</strong> {tenant.second_resident_id_number || "N/A"}
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography>
                                 <strong>Hubungan:</strong> {tenant.second_resident_relation || "N/A"}
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography>
                                 <strong>Email:</strong> {tenant.second_resident_email || "N/A"}
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography>
                                 <strong>Nomor Telepon:</strong> {tenant.second_resident_phone || "N/A"}
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography>
                                 <strong>Dokumen Identitas:</strong>{" "}
                                 {tenant.second_resident_id_file ? (
@@ -197,17 +218,22 @@ function TenantInfo({tenant}: TenantInfoProps) {
                             </Typography>
                         </>
                     ) : (
+                         // @ts-expect-error weird react 19 types error
                         <Typography>Tidak ada penghuni kedua</Typography>
                     )}
 
                     {/* Additional Information */}
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="h5" className="font-semibold mt-4">Informasi Tambahan</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography>
                         <strong>Sumber Referral:</strong> {tenant.referral_source || "N/A"}
                     </Typography>
 
                     {/* Documents */}
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="h5" className="font-semibold mt-4">Dokumen</Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography>
                         <strong>KTP/SIM:</strong>{" "}
                         {tenant.id_file ? (
@@ -221,6 +247,7 @@ function TenantInfo({tenant}: TenantInfoProps) {
                             "N/A"
                         )}
                     </Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography>
                         <strong>Kartu Keluarga:</strong>{" "}
                         {tenant.family_certificate_file ? (
@@ -236,10 +263,13 @@ function TenantInfo({tenant}: TenantInfoProps) {
                     </Typography>
                 </CardBody>
 
+                {/* @ts-expect-error weird react 19 types error */}
                 <CardFooter divider className="flex items-center justify-between py-3">
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="small" color="gray">
                         Dibuat Pada: {new Date(tenant.createdAt).toLocaleDateString()}
                     </Typography>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="small" color="gray">
                         Terakhir Diubah: {new Date(tenant.updatedAt).toLocaleDateString()}
                     </Typography>

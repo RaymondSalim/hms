@@ -113,13 +113,17 @@ export default function Setup() {
     return (
         <div className="flex w-full h-screen items-center justify-center overflow-auto">
             <div className="max-w-md w-full bg-white p-8 shadow-lg rounded-lg">
+                {/* @ts-expect-error weird react 19 types error */}
                 <Stepper
                     activeStep={activeStep}
                     isLastStep={(value) => setIsLastStep(value)}
                     isFirstStep={(value) => setIsFirstStep(value)}
                 >
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Step onClick={() => setActiveStep(0)}>0</Step>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Step onClick={() => setActiveStep(1)}>1</Step>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Step onClick={() => setActiveStep(1)}>2</Step>
                 </Stepper>
 
@@ -137,11 +141,13 @@ export default function Setup() {
 
                 <div className="flex justify-between mt-6">
                     {activeStep > 0 && (
+                        /* @ts-expect-error weird react 19 types error */
                         <Button color="gray" onClick={handlePrev}>
                             Sebelumnya
                         </Button>
                     )}
                     {activeStep < 2 ? (
+                        /* @ts-expect-error weird react 19 types error */
                         <Button
                             loading={isLoading}
                             color="blue"
@@ -154,6 +160,7 @@ export default function Setup() {
                             Selanjutnya
                         </Button>
                     ) : (
+                        /* @ts-expect-error weird react 19 types error */
                         <Button
                             loading={isLoading || finalMutation.isPending}
                             color="green"
@@ -173,10 +180,12 @@ const Introduction = () => {
     return (
         <div className="flex flex-col gap-6 text-center">
             <h2 className="text-2xl font-semibold">Selamat Datang!</h2>
+            {/* @ts-expect-error weird react 19 types error */}
             <Typography color={"gray"}>
                 Sepertinya ini adalah pertama kalinya Anda menjalankan aplikasi ini. Kami akan memandu Anda melalui
                 proses pengaturan awal.
             </Typography>
+            {/* @ts-expect-error weird react 19 types error */}
             <Typography color={"gray"}>
                 Jangan khawatir, proses ini cepat dan mudah. Cukup klik &quot;Selanjutnya&quot; untuk memulai.
             </Typography>
@@ -215,6 +224,7 @@ const Step1 = ({formData, setFormData}: StepProps) => {
     return (
         <div className="flex flex-col gap-6">
             <h2 className="text-xl font-semibold">Langkah 1: Informasi Perusahaan</h2>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
                 label="Nama Perusahaan"
                 value={formData.companyName}
@@ -225,6 +235,7 @@ const Step1 = ({formData, setFormData}: StepProps) => {
                     }));
                 }}
             />
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
                 label={"Logo Perusahaan"}
                 type="file"
@@ -248,6 +259,7 @@ const Step2 = ({formData, setFormData}: StepProps) => {
     return (
         <div className="flex flex-col gap-6">
             <h2 className="text-xl font-semibold">Langkah 2: Informasi Lokasi</h2>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
                 label="Nama Lokasi"
                 value={formData.locationName}
@@ -258,6 +270,7 @@ const Step2 = ({formData, setFormData}: StepProps) => {
                     }))
                 }
             />
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
                 label="Alamat Lokasi"
                 value={formData.locationAddress}

@@ -148,7 +148,8 @@ export default function SmartSearchInput({suggestions, onSubmit, initialValues}:
                     </div>
 
                     {/* Search Input Container */}
-                    <div className={`${pills.length > 0 ? "min-w-1/2" : "-ml-2 min-w-0"} flex items-center flex-1 gap-x-2 min-w-0`}>
+                    <div
+                        className={`${pills.length > 0 ? "min-w-1/2" : "-ml-2 min-w-0"} flex items-center flex-1 gap-x-2 min-w-0`}>
                         <input
                             ref={inputRef}
                             type="text"
@@ -165,8 +166,10 @@ export default function SmartSearchInput({suggestions, onSubmit, initialValues}:
             </MenuHandler>
 
             {/* Dropdown Suggestions */}
+            {/* @ts-expect-error weird react 19 types error */}
             <MenuList style={menuRef.current ? {width: menuRef.current.clientWidth} : undefined}>
                 {formattedSuggestions.map(s => (
+                    // @ts-expect-error weird react 19 types error
                     <MenuItem
                         disabled={pills.find(p => p.key == s.value) != undefined}
                         className="w-full"
