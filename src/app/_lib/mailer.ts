@@ -1,5 +1,3 @@
-"use server";
-
 import * as aws from "@aws-sdk/client-ses";
 import {SESServiceException} from "@aws-sdk/client-ses";
 import nodemailer from 'nodemailer';
