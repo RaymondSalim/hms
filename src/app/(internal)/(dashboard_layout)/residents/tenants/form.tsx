@@ -124,10 +124,12 @@ export function TenantForm(props: TenantFormProps) {
                     >
                         <div>
                             <label htmlFor="name">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Nama
                                 </Typography>
                             </label>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Input
                                 variant="outlined"
                                 name="name"
@@ -146,15 +148,18 @@ export function TenantForm(props: TenantFormProps) {
                             />
                             {
                                 fieldErrors?.name &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.name._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="id">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Nomor Identitas
                                 </Typography>
                             </label>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Input
                                 variant="outlined"
                                 name="id"
@@ -172,11 +177,13 @@ export function TenantForm(props: TenantFormProps) {
                             />
                             {
                                 fieldErrors?.id_number &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.id_number._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="email">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Alamat Email
                                 </Typography>
@@ -201,11 +208,13 @@ export function TenantForm(props: TenantFormProps) {
                             />
                             {
                                 fieldErrors?.email &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.email._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="phone">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Nomor Telepon
                                 </Typography>
@@ -226,15 +235,18 @@ export function TenantForm(props: TenantFormProps) {
                             />
                             {
                                 fieldErrors?.phone &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.phone._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="id">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Alamat
                                 </Typography>
                             </label>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Textarea
                                 value={tenantData.current_address ?? undefined}
                                 onChange={(e) => setTenantData(prevTenant => ({
@@ -250,11 +262,13 @@ export function TenantForm(props: TenantFormProps) {
                             />
                             {
                                 fieldErrors?.current_address &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.current_address._errors}</Typography>
                             }
                         </div>
                         <div>
                             <label htmlFor="id">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     KTP/SIM
                                 </Typography>
@@ -274,13 +288,16 @@ export function TenantForm(props: TenantFormProps) {
                                 gambar adalah 5MB</p>
                             {
                                 fieldErrors?.id_file_data &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.id_file_data._errors}</Typography>
                             }
                         </div>
                         <div>
                             <AnimatePresence>
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Checkbox
                                     label={
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="blue-gray" className="font-medium">
                                             Tambahkan Kontak Darurat
                                         </Typography>
@@ -300,15 +317,18 @@ export function TenantForm(props: TenantFormProps) {
                                         exit={{opacity: 0, height: 0}}
                                         className={"mt-4 flex flex-col gap-6"}
                                     >
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography className={"-mb-4"} variant="h5" color="blue-gray">
                                             Kontak Darurat
                                         </Typography>
                                         <div>
                                             <label htmlFor="name">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Nama
                                                 </Typography>
                                             </label>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Input
                                                 variant="outlined"
                                                 name="name"
@@ -327,12 +347,14 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.emergency_contact_name &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.emergency_contact_name._errors}</Typography>
                                             }
                                         </div>
                                         <div>
                                             <label htmlFor="phone">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Nomor Telepon
                                                 </Typography>
@@ -355,6 +377,7 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.emergency_contact_phone &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.emergency_contact_phone._errors}</Typography>
                                             }
@@ -365,9 +388,11 @@ export function TenantForm(props: TenantFormProps) {
                         </div>
                         <div>
                             <AnimatePresence>
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Checkbox
                                     label={
                                         <div>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Typography color="blue-gray" className="font-medium">
                                                 Ada Penghuni Kedua
                                             </Typography>
@@ -389,15 +414,18 @@ export function TenantForm(props: TenantFormProps) {
                                         className={"mt-4 flex flex-col gap-6"}
                                     >
 
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography className={"-mb-4"} variant="h5" color="blue-gray">
                                             Penghuni Kedua
                                         </Typography>
                                         <div>
                                             <label htmlFor="second_tenant_name">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Nama
                                                 </Typography>
                                             </label>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Input
                                                 variant="outlined"
                                                 name="second_tenant_name"
@@ -416,16 +444,19 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_name &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.second_resident_name._errors}</Typography>
                                             }
                                         </div>
                                         <div>
                                             <label htmlFor="second_tenant_relation">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Relasi
                                                 </Typography>
                                             </label>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Input
                                                 variant="outlined"
                                                 name="second_tenant_relation"
@@ -444,16 +475,19 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_relation &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.second_resident_relation._errors}</Typography>
                                             }
                                         </div>
                                         <div>
                                             <label htmlFor="second_resident_id">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Nomor Identitas
                                                 </Typography>
                                             </label>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Input
                                                 variant="outlined"
                                                 name="second_resident_id_number"
@@ -471,12 +505,14 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_id_number &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.second_resident_id_number._errors}</Typography>
                                             }
                                         </div>
                                         <div>
                                             <label htmlFor="second_resident_email">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Alamat Email
                                                 </Typography>
@@ -501,12 +537,14 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_email &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.second_resident_email._errors}</Typography>
                                             }
                                         </div>
                                         <div>
                                             <label htmlFor="second_resident_phone">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Nomor Telepon
                                                 </Typography>
@@ -530,12 +568,14 @@ export function TenantForm(props: TenantFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_phone &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.second_resident_phone._errors}</Typography>
                                             }
                                         </div>
                                         <div>
                                             <label htmlFor="second_resident_id_file">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     KTP/SIM
                                                 </Typography>
@@ -556,12 +596,14 @@ export function TenantForm(props: TenantFormProps) {
                                                 gambar adalah 5MB</p>
                                             {
                                                 fieldErrors?.second_resident_id_file &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.second_resident_id_file._errors}</Typography>
                                             }
                                         </div>
                                         <div>
                                             <label htmlFor="family_id">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Kartu Keluarga
                                                 </Typography>
@@ -582,6 +624,7 @@ export function TenantForm(props: TenantFormProps) {
                                                 gambar adalah 5MB</p>
                                             {
                                                 fieldErrors?.family_certificate_file_data &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography
                                                     color="red">{fieldErrors?.family_certificate_file_data._errors}</Typography>
                                             }
@@ -592,10 +635,12 @@ export function TenantForm(props: TenantFormProps) {
                         </div>
                         <div>
                             <label htmlFor="referral_source">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography variant="h6" color="blue-gray">
                                     Bagaimana anda mengetahui tentang MICASA Suites?
                                 </Typography>
                             </label>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Textarea
                                 value={tenantData.referral_source ?? undefined}
                                 onChange={(e) => setTenantData(prevTenant => ({
@@ -611,17 +656,20 @@ export function TenantForm(props: TenantFormProps) {
                             />
                             {
                                 fieldErrors?.referral_source &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography color="red">{fieldErrors?.referral_source._errors}</Typography>
                             }
                         </div>
                         {
                             props.mutationResponse?.failure &&
+                            // @ts-expect-error weird react 19 types error
                             <Typography variant="h6" color="red" className="-mb-4">
                                 {props.mutationResponse.failure}
                             </Typography>
                         }
                         {
                             props.mutationResponse &&
+                            // @ts-expect-error weird react 19 types error
                             <Typography variant="h6" color="red" className="-mb-4">
                                 Ada masalah di data yang anda masukan. Mohon periksa kembali.
                             </Typography>
@@ -629,9 +677,11 @@ export function TenantForm(props: TenantFormProps) {
                     </MotionConfig>
                 </div>
                 <div className={"flex gap-x-4 justify-end"}>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button onClick={() => props.mutation.mutate(tenantData)} color={"blue"} className="mt-6"
                             loading={props.mutation.isPending}>
                         {(props.contentData && props.contentData.id) ? "Ubah" : "Buat"}

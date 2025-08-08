@@ -2,7 +2,7 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Input, Popover, PopoverContent, PopoverHandler, Radio, Typography} from "@material-tailwind/react";
+import {Button, Input, Radio, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
@@ -279,6 +279,7 @@ export function PaymentForm(props: PaymentForm) {
                         <AnimatePresence key={"payment_form_animate_presence"}>
                             <div key={"location"}>
                                 <label htmlFor="location">
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">
                                         Lokasi
                                     </Typography>
@@ -295,6 +296,7 @@ export function PaymentForm(props: PaymentForm) {
                             </div>
                             <div key={"status_id"}>
                                 <label htmlFor="status_id">
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">
                                         Status
                                     </Typography>
@@ -308,6 +310,7 @@ export function PaymentForm(props: PaymentForm) {
                                 />
                                 {
                                     fieldErrors?.status_id &&
+                                    // @ts-expect-error weird react 19 types error
                                     <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
                                 }
                             </div>
@@ -321,6 +324,7 @@ export function PaymentForm(props: PaymentForm) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="booking_id">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Pemesanan (Hanya yang memiliki tagihan belum lunas)
                                         </Typography>
@@ -332,10 +336,12 @@ export function PaymentForm(props: PaymentForm) {
                                         placeholder={"Pilih Pemesanan dengan tagihan belum lunas"}
                                         isError={!!fieldErrors?.booking_id}
                                     />
-                                    {
-                                        fieldErrors?.booking_id &&
-                                        <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
-                                    }
+                                    {fieldErrors?.booking_id && (
+                                        <>
+                                            {/* @ts-expect-error weird react 19 types error */}
+                                            <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
+                                        </>
+                                    )}
                                 </motion.div>
 
                             }
@@ -348,13 +354,15 @@ export function PaymentForm(props: PaymentForm) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="tenant_id">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Penyewa
                                         </Typography>
                                     </label>
-                                    {
-                                        data.booking_id &&
-                                        <Input
+                                    {data.booking_id && (
+                                        <>
+                                            {/* @ts-expect-error weird react 19 types error */}
+                                            <Input
                                             value={((): string => {
                                                 let tenant = bookingData?.find(b => b.id == data.booking_id)?.tenants;
                                                 if (tenant) {
@@ -369,8 +377,9 @@ export function PaymentForm(props: PaymentForm) {
                                             labelProps={{
                                                 className: "before:content-none after:content-none",
                                             }}
-                                        />
-                                    }
+                                            />
+                                        </>
+                                    )}
                                 </motion.div>
                             }
                             {
@@ -382,12 +391,15 @@ export function PaymentForm(props: PaymentForm) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <div className="mt-4">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">Metode Alokasi
                                             Pembayaran</Typography>
                                         <div className="flex gap-4 mt-2">
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Radio id="auto" name="allocationMode" label="Otomatis"
                                                    checked={allocationMode === 'auto'}
                                                    onChange={() => setAllocationMode('auto')}/>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Radio id="manual" name="allocationMode" label="Manual"
                                                    checked={allocationMode === 'manual'}
                                                    onChange={() => setAllocationMode('manual')}/>
@@ -404,6 +416,7 @@ export function PaymentForm(props: PaymentForm) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="payment_amount">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Jumlah Pembayaran
                                         </Typography>
@@ -423,10 +436,12 @@ export function PaymentForm(props: PaymentForm) {
                                             className: "before:content-none after:content-none",
                                         }}
                                     />
-                                    {
-                                        data.amount?.greaterThan(unpaidBillsData?.total || Infinity) &&
-                                        <Typography color="red">Jumlah Pembayaran Melebihi Total Tagihan</Typography>
-                                    }
+                                    {data.amount?.greaterThan(unpaidBillsData?.total || Infinity) && (
+                                        <>
+                                            {/* @ts-expect-error weird react 19 types error */}
+                                            <Typography color="red">Jumlah Pembayaran Melebihi Total Tagihan</Typography>
+                                        </>
+                                    )}
                                 </motion.div>
                             }
                             {
@@ -438,6 +453,7 @@ export function PaymentForm(props: PaymentForm) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="payment_date">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Tanggal Pembayaran
                                         </Typography>
@@ -452,10 +468,12 @@ export function PaymentForm(props: PaymentForm) {
                                             }
                                         }}
                                     />
-                                    {
-                                        fieldErrors?.payment_date &&
-                                        <Typography color="red">{fieldErrors?.payment_date._errors}</Typography>
-                                    }
+                                    {fieldErrors?.payment_date && (
+                                        <>
+                                            {/* @ts-expect-error weird react 19 types error */}
+                                            <Typography color="red">{fieldErrors?.payment_date._errors}</Typography>
+                                        </>
+                                    )}
                                 </motion.div>
                             }
                             {
@@ -466,12 +484,14 @@ export function PaymentForm(props: PaymentForm) {
                                     animate={{opacity: 1, height: "auto"}}
                                     exit={{opacity: 0, height: 0}}
                                 >
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">
                                         Tagihan
                                     </Typography>
                                     {
                                         (unpaidBillsDataIsLoading || simulationDataIsLoading) &&
-                                        <span className={"mx-auto h-8 w-8"}><AiOutlineLoading className="animate-spin"/></span>
+                                        <span className={"mx-auto h-8 w-8"}><AiOutlineLoading
+                                            className="animate-spin"/></span>
                                     }
                                     {
                                         allocationMode === 'auto' && simulationDataSuccess &&
@@ -497,6 +517,7 @@ export function PaymentForm(props: PaymentForm) {
                                                         </div>
                                                         <div
                                                             className="flex justify-center items-center row-start-2 text-gray-400">
+                                                            {/* @ts-expect-error weird react 19 types error */}
                                                             <Typography variant={"h4"}>&gt;</Typography>
                                                         </div>
                                                         <div
@@ -530,6 +551,7 @@ export function PaymentForm(props: PaymentForm) {
                                                 </div>
                                                 <div
                                                     className="flex justify-center items-center text-gray-400 row-start-2">
+                                                    {/* @ts-expect-error weird react 19 types error */}
                                                     <Typography variant={"h4"}>&gt;</Typography>
                                                 </div>
                                                 <div className="flex flex-col text-sm self-end col-span-3 row-start-2">
@@ -568,6 +590,7 @@ export function PaymentForm(props: PaymentForm) {
                                                         </div>
                                                         <div
                                                             className="flex justify-center items-center row-start-2 text-gray-400">
+                                                            {/* @ts-expect-error weird react 19 types error */}
                                                             <Typography variant={"h4"}>&gt;</Typography>
                                                         </div>
                                                         <div
@@ -588,6 +611,7 @@ export function PaymentForm(props: PaymentForm) {
                                                                 />
                                                             </div>
                                                             {overAllocated && (
+                                                                // @ts-expect-error weird react 19 types error
                                                                 <Typography color="red" variant="small">Nilai melebihi
                                                                     sisa tagihan!</Typography>
                                                             )}
@@ -599,11 +623,14 @@ export function PaymentForm(props: PaymentForm) {
                                                 );
                                             })}
                                             <div className="mt-2">
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="small">Total Dialokasikan: <span
                                                     className="font-bold">{formatToIDR(Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0))}</span></Typography>
+                                                {/* @ts-expect-error weird react 19 types error */}
                                                 <Typography variant="small">Jumlah Pembayaran: <span
                                                     className="font-bold">{formatToIDR(Number(data.amount) || 0)}</span></Typography>
                                                 {Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0) !== Number(data.amount) && (
+                                                    // @ts-expect-error weird react 19 types error
                                                     <Typography color="red">Total alokasi harus sama dengan jumlah
                                                         pembayaran!</Typography>
                                                 )}
@@ -623,6 +650,7 @@ export function PaymentForm(props: PaymentForm) {
                                         exit={{opacity: 0, height: 0}}
                                     >
                                         <label htmlFor="payment_date">
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <Typography variant="h6" color="blue-gray">
                                                 Payment Proof Upload (Optional)
                                             </Typography>
@@ -642,20 +670,24 @@ export function PaymentForm(props: PaymentForm) {
                                             gambar adalah 2MB</p>
                                     </motion.div>
                             }
-                            {
-                                props.mutationResponse?.failure &&
-                                <Typography variant="h6" color="red" className="-mb-4">
-                                    {props.mutationResponse.failure}
-                                </Typography>
-                            }
+                            {props.mutationResponse?.failure && (
+                                <>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Typography variant="h6" color="red" className="-mb-4">
+                                        {props.mutationResponse.failure}
+                                    </Typography>
+                                </>
+                            )}
                         </AnimatePresence>
                     </MotionConfig>
                 </div>
 
                 <div className={"flex gap-x-4 justify-end"}>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button
                         disabled={
                             !isFormComplete ||
@@ -681,6 +713,7 @@ export function PaymentForm(props: PaymentForm) {
                 </div>
             </form>
         </div>
-    );
+    )
+        ;
 }
 

@@ -2,14 +2,13 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
+import {Button, Input, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {ZodFormattedError} from "zod";
 import {DatePicker} from "@/app/_components/DateRangePicker";
-import {formatToDateTime} from "@/app/_lib/util";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {NonUndefined} from "@/app/_lib/types";
 import {Prisma, Transaction, TransactionType} from "@prisma/client";
@@ -138,6 +137,7 @@ export function IncomeForm(props: IncomeFormProps) {
                         <AnimatePresence>
                             <div>
                                 <label htmlFor="location">
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">
                                         Lokasi
                                     </Typography>
@@ -165,6 +165,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="booking">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Booking (Opsional)
                                         </Typography>
@@ -183,6 +184,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                     />
                                     {
                                         fieldErrors?.booking_id &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
                                     }
                                 </motion.div>
@@ -194,6 +196,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                 exit={{opacity: 0, height: 0}}
                             >
                                 <label htmlFor="amount">
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography variant="h6" color="blue-gray">
                                         Jumlah
                                     </Typography>
@@ -216,6 +219,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                 />
                                 {
                                     fieldErrors?.amount &&
+                                    // @ts-expect-error weird react 19 types error
                                     <Typography color="red">{fieldErrors?.amount._errors}</Typography>
                                 }
                             </motion.div>
@@ -228,6 +232,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="kategori">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Kategori
                                         </Typography>
@@ -244,6 +249,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                     />
                                     {
                                         fieldErrors?.category &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.category._errors}</Typography>
                                     }
                                 </motion.div>
@@ -257,10 +263,12 @@ export function IncomeForm(props: IncomeFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="description">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Deskripsi
                                         </Typography>
                                     </label>
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Input
                                         variant="outlined"
                                         name="description"
@@ -278,6 +286,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                     />
                                     {
                                         fieldErrors?.description &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.description._errors}</Typography>
                                     }
                                 </motion.div>
@@ -291,6 +300,7 @@ export function IncomeForm(props: IncomeFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="date">
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Typography variant="h6" color="blue-gray">
                                             Tanggal
                                         </Typography>
@@ -307,24 +317,29 @@ export function IncomeForm(props: IncomeFormProps) {
                                     />
                                     {
                                         fieldErrors?.date &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.date._errors}</Typography>
                                     }
                                 </motion.div>
                             }
-                            {
-                                props.mutationResponse?.failure &&
-                                <Typography variant="h6" color="red" className="-mb-4">
-                                    {props.mutationResponse.failure}
-                                </Typography>
-                            }
+                            {props.mutationResponse?.failure && (
+                                <>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Typography variant="h6" color="red" className="-mb-4">
+                                        {props.mutationResponse.failure}
+                                    </Typography>
+                                </>
+                            )}
                         </AnimatePresence>
                     </MotionConfig>
                 </div>
 
                 <div className={"flex gap-x-4 justify-end"}>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Button disabled={!isFormComplete || !hasChanges(initialData, data)}
                             onClick={() => props.mutation.mutate(data)}
                             color={"blue"} className="mt-6"

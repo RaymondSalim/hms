@@ -32,10 +32,12 @@ export function UserForm(props: UserFormProps) {
         <div className="mb-1 flex flex-col gap-6">
           <div>
             <label htmlFor="name">
+              {/* @ts-expect-error weird react 19 types error */}
               <Typography variant="h6" color="blue-gray">
                 Nama
               </Typography>
             </label>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
               variant="outlined"
               name="name"
@@ -51,15 +53,18 @@ export function UserForm(props: UserFormProps) {
             />
             {
               fieldErrors?.name &&
+                 // @ts-expect-error weird react 19 types error
                 <Typography color="red">{fieldErrors?.name._errors}</Typography>
             }
           </div>
           <div>
             <label htmlFor="email">
+              {/* @ts-expect-error weird react 19 types error */}
               <Typography variant="h6" color="blue-gray">
                 Alamat Email
               </Typography>
             </label>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
               variant="outlined"
               name="email"
@@ -84,10 +89,12 @@ export function UserForm(props: UserFormProps) {
             isSuccess &&
               <div>
                   <label htmlFor="role">
+                      {/* @ts-expect-error weird react 19 types error */}
                       <Typography variant="h6" color="blue-gray">
                           Peran
                       </Typography>
                   </label>
+                  {/* @ts-expect-error weird react 19 types error */}
                   <Select
                       value={userData.role_id?.toString()}
                       name="role"
@@ -108,10 +115,12 @@ export function UserForm(props: UserFormProps) {
             props.contentData == undefined &&
               <div>
                   <label htmlFor="password">
+                      {/* @ts-expect-error weird react 19 types error */}
                       <Typography variant="h6" color="blue-gray">
                           Kata Sandi
                       </Typography>
                   </label>
+                  {/* @ts-expect-error weird react 19 types error */}
                   <Input
                       variant="outlined"
                       name="password"
@@ -130,15 +139,18 @@ export function UserForm(props: UserFormProps) {
           }
           {
             props.mutationResponse?.failure &&
+               // @ts-expect-error weird react 19 types error
               <Typography variant="h6" color="blue-gray" className="-mb-4">
                 {props.mutationResponse.failure}
               </Typography>
           }
         </div>
         <div className={"flex gap-x-4 justify-end"}>
+          {/* @ts-expect-error weird react 19 types error */}
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
             Batal
           </Button>
+          {/* @ts-expect-error weird react 19 types error */}
           <Button onClick={() => props.mutation.mutate(userData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
             {(props.contentData && props.contentData.id) ? "Ubah" : "Buat"}

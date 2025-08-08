@@ -1,8 +1,7 @@
 "use client";
 
-import React, {FormEvent, useState} from "react";
+import React, {FormEvent, useActionState, useState} from "react";
 import styles from "./resetpage.module.css";
-import {useFormState} from "react-dom";
 import AuthFormButton from "@/app/(external)/(auth)/_components/auth-form-button";
 import {ResetUserType} from "@/app/(external)/(auth)/register/register-action";
 import {resetSchema} from "@/app/_lib/zod/auth/zod";
@@ -15,7 +14,7 @@ import {useRouter} from "next/navigation";
 const initialState: ResetUserType = {};
 
 export default function ResetForm() {
-  const [state, formAction ] = useFormState(resetPasswordAction, initialState);
+  const [state, formAction ] = useActionState(resetPasswordAction, initialState);
   const [error, setError] = useState<typeToFlattenedError<typeof resetSchema.shape> | undefined>(undefined);
   const router = useRouter();
 

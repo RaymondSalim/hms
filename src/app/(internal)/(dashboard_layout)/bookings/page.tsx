@@ -1,7 +1,7 @@
 "use client";
 
 import {useHeader} from "@/app/_context/HeaderContext";
-import React, {useEffect, useState} from "react";
+import React, {use, useEffect, useState} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
@@ -21,9 +21,10 @@ export type BookingPageQueryParams = {
 }
 
 export default function BookingPage(props: {
-  params?: any,
-  searchParams?: BookingPageQueryParams,
+  params?: Promise<any>,
+  searchParams?: Promise<BookingPageQueryParams>,
 }) {
+  const searchParams = use(props.searchParams ?? Promise.resolve(undefined));
   const headerContext = useHeader();
   const [locationID, setLocationID] = useState(headerContext.locationID);
 
@@ -53,7 +54,7 @@ export default function BookingPage(props: {
       {
         isSuccess &&
           <BookingsContent
-              queryParams={props.searchParams}
+              queryParams={searchParams}
               // @ts-expect-error bookings mismatch
               bookings={bookings}
           />

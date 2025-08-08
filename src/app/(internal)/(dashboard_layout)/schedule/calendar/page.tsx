@@ -50,7 +50,7 @@ export default function CalendarPage() {
         ]);
     }, []);
 
-    const calendarApi = useRef<CalendarApi>();
+    const calendarApi = useRef<CalendarApi>(undefined);
     const [range, setRange] = useState<CalenderEventRange | undefined>();
 
     const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -107,7 +107,7 @@ export default function CalendarPage() {
     });
 
     const handleDelete = (id: number, calendarID: string) => {
-        setDeleteEventData({ id, calendarID });
+        setDeleteEventData({id, calendarID});
         setDeleteDialogOpen(true);
     };
 
@@ -227,17 +227,21 @@ export default function CalendarPage() {
                     />
                 </div>
                 <div className={"absolute left-0 top-0"}>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <ButtonGroup className={"h-[44px]"}>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button disabled={isLoading} onClick={() => {
                             calendarApi?.current?.prev();
                         }}>
                             <FaChevronLeft/>
                         </Button>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button disabled={isLoading} onClick={() => {
                             calendarApi?.current?.next();
                         }}>
                             <FaChevronRight/>
                         </Button>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button disabled={isLoading} onClick={() => {
                             calendarApi?.current?.today();
                         }}>
@@ -248,24 +252,30 @@ export default function CalendarPage() {
                 <div className={"absolute right-0 top-0 h-[44px]"}>
                     <Menu>
                         <MenuHandler>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Button color={"black"}
                                     className="flex justify-center items-center gap-x-2 py-3 px-6 h-[44px]">
                                 <span className={"text-xs uppercase leading-none"}>Tipe</span>
                                 <FaChevronDown/>
                             </Button>
                         </MenuHandler>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <MenuList>
                             <div
                                 className="px-3 py-2 text-gray-500 font-semibold focus-visible:outline-none cursor-default">Kalender
                             </div>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <MenuItem className={"px-5"} onClick={handleMenuClick}
                                       data-id={"dayGridMonth"}>Bulan</MenuItem>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <MenuItem className={"px-5"} onClick={handleMenuClick}
                                       data-id={"timeGridWeek"}>Minggu</MenuItem>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <MenuItem className={"px-5"} onClick={handleMenuClick}
                                       data-id={"timeGridDay"}>Hari</MenuItem>
                             <hr onClick={(e) => e.stopPropagation()}
                                 className="my-2 border-gray-300 focus-visible:outline-none"/>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <MenuItem onClick={handleMenuClick} data-id={"listWeek"}>Agenda Mingguan</MenuItem>
                             {/*<MenuItem onClick={handleMenuClick} data-id={"resourceTimeline"}>Gantt Chart</MenuItem>*/}
                         </MenuList>
@@ -284,6 +294,7 @@ export default function CalendarPage() {
                                 closeTooltip={() => setTooltipOpen(false)}
                             />
                             <div className="mt-3 flex justify-end">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Button onClick={() => setTooltipOpen(false)} variant={"text"}
                                         className={"absolute right-2 top-2 flex justify-center items-center p-2"}>
                                     <MdOutlineClose className={"h-4 w-4 rounded-full"} size={"sm"}/>
@@ -345,27 +356,34 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
                                 <TbDoorEnter className={"text-blue-600 h-6 w-6"}/> :
                                 <TbDoorExit className={"text-red-600 h-6 w-6"}/>
                         }
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant={"h5"} color={"black"}>{event.title}</Typography>
                         <div className={"w-10 h-1"}></div>
                     </div>
                     <div className="text-gray-700 text-sm">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant={"lead"}>
                             Kontrak
                         </Typography>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography className="mb-1">
                             <strong>Mulai:</strong> {formatToDateTime(bookingData.start_date, false)}
                         </Typography>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography>
                             <strong>Selesai:</strong> {bookingData.end_date ? formatToDateTime(bookingData.end_date, false) : "Rolling"}
                         </Typography>
                     </div>
                     <div className="text-gray-700 text-sm mb-4">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant={"lead"}>
                             Penghuni
                         </Typography>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography className="mb-1">
                             <strong>Nama:</strong> {tenantData.name}
                         </Typography>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography>
                             <strong>Nomor Telepon:</strong> {tenantData.phone}
                         </Typography>
@@ -395,12 +413,14 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
                                 backgroundColor: eventData.borderColor ?? undefined,
                             }}
                         />
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant="h5" color="black">
                             {eventData.title}
                         </Typography>
                         <div className="w-10 h-1"></div>
                     </div>
                     <div className="mb-4">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant="small" className="text-gray-600">
                             {`${formatToDateTime(eventData.start!, !eventData.allDay)} ${
                                 eventData.end ? `- ${formatToDateTime(eventData.end!, !eventData.allDay)}` : ""
@@ -410,20 +430,24 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
 
                     {eventData.recurring && recurrence && (
                         <div className="mb-4">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h6" className="text-gray-800 mb-2">
                                 Pengulangan
                             </Typography>
                             <div className="space-y-2">
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography className="text-gray-700">
                                     <strong>Hari:</strong> {recurrence.daysOfWeek?.map((day: number) => {
-                                        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                                        return days[day];
-                                    }).join(', ')}
+                                    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                                    return days[day];
+                                }).join(', ')}
                                 </Typography>
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Typography className="text-gray-700">
                                     <strong>Mulai:</strong> {formatToDateTime(new Date(recurrence.startRecur), false)}
                                 </Typography>
                                 {recurrence.endRecur && (
+                                    // @ts-expect-error weird react 19 types error
                                     <Typography className="text-gray-700">
                                         <strong>Selesai:</strong> {formatToDateTime(new Date(recurrence.endRecur), false)}
                                     </Typography>
@@ -434,14 +458,17 @@ function TooltipContent({onDelete, event, closeTooltip}: TooltipContentProps) {
 
                     {eventData.description && (
                         <div className="mb-4">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h6" className="text-gray-800 mb-2">
                                 Deskripsi
                             </Typography>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography className="text-gray-700">{eventData.description}</Typography>
                         </div>
                     )}
 
                     <div className="mt-4 border-t pt-4">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant="small" className="text-gray-500 mb-4 block">
                             Last updated: {formatToDateTime(eventData.updatedAt!)}
                         </Typography>
@@ -497,6 +524,7 @@ function DeleteDialog({
     isPending?: boolean;
 }) {
     return (
+        // @ts-expect-error weird react 19 types error
         <Dialog
             open={open}
             size={"md"}
@@ -506,9 +534,11 @@ function DeleteDialog({
             <h2 className={"text-xl font-semibold text-black mb-4"}>Hapus Jadwal</h2>
             <span>Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.</span>
             <div className={"flex gap-x-4 justify-end"}>
+                {/* @ts-expect-error weird react 19 types error */}
                 <Button onClick={onClose} variant={"outlined"} className="mt-6">
                     Batal
                 </Button>
+                {/* @ts-expect-error weird react 19 types error */}
                 <Button onClick={onDelete}
                         color={"red"}
                         className="mt-6"
@@ -518,5 +548,6 @@ function DeleteDialog({
                 </Button>
             </div>
         </Dialog>
-    );
+    )
+        ;
 }

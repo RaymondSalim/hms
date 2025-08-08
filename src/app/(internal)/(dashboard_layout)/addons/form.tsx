@@ -1,7 +1,7 @@
 "use client";
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
-import React, {useEffect, useMemo, useState} from "react";
+import React, {ReactElement, useEffect, useMemo, useState} from "react";
 import {
     Accordion,
     AccordionBody,
@@ -127,10 +127,12 @@ export function AddonForm(props: AddonFormProps) {
                         <AnimatePresence key={"addon_form"}>
                             <div key={"name"}>
                                 <label htmlFor="name">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" color="blue-gray">
                                         Nama
                                     </Typography>
                                 </label>
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Input
                                     variant="outlined"
                                     name="name"
@@ -146,11 +148,13 @@ export function AddonForm(props: AddonFormProps) {
                                 />
                                 {
                                     fieldErrors?.name &&
+                                    // @ts-expect-error weird react 19 types error
                                     <Typography color="red">{fieldErrors?.name._errors}</Typography>
                                 }
                             </div>
                             <div key={"location"}>
                                 <label htmlFor="location">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" color="blue-gray">
                                         Lokasi
                                     </Typography>
@@ -167,10 +171,12 @@ export function AddonForm(props: AddonFormProps) {
                             </div>
                             <div key={"description"}>
                                 <label htmlFor="description">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" color="blue-gray">
                                         Deskripsi
                                     </Typography>
                                 </label>
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Input
                                     variant="outlined"
                                     name="description"
@@ -188,18 +194,23 @@ export function AddonForm(props: AddonFormProps) {
                                 />
                                 {
                                     fieldErrors?.description &&
+                                    // @ts-expect-error weird react 19 types error
                                     <Typography color="red">{fieldErrors?.description._errors}</Typography>
                                 }
                             </div>
                             <div key={"pricings"}>
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography variant="h6" color="blue-gray">
                                     Harga
                                 </Typography>
                                 {pricingData.map((pricing, index, arr) => (
+                                    // @ts-expect-error weird react 19 types error
                                     <Card key={index} className="shadow-md mt-2">
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <CardBody>
                                             <div className="flex flex-col gap-4 items-center *:w-full">
                                                 <div>
+                                                    {/*@ts-expect-error weird react 19 types error*/}
                                                     <Typography>Harga:</Typography>
                                                     <CurrencyInput
                                                         error={!!fieldErrors?.pricing?.[index]?.price}
@@ -212,14 +223,18 @@ export function AddonForm(props: AddonFormProps) {
                                                     />
                                                     {
                                                         fieldErrors?.pricing?.[index]?.price &&
+                                                        // @ts-expect-error weird react 19 types error
                                                         <Typography
                                                             color="red">{fieldErrors?.pricing?.[index]?.price?._errors}</Typography>
                                                     }
                                                 </div>
                                                 <div>
+                                                    {/*@ts-expect-error weird react 19 types error*/}
                                                     <Typography variant={"h6"}>Jangka Waktu</Typography>
                                                     <div>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Typography>Mulai:</Typography>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Input
                                                             error={!!fieldErrors?.pricing?.[index]?.interval_start}
                                                             className={`${!!fieldErrors?.pricing?.[index]?.interval_start ? "!border-t-red-500" : "!border-t-blue-gray-200 focus:!border-t-gray-900"}`}
@@ -233,12 +248,15 @@ export function AddonForm(props: AddonFormProps) {
                                                         />
                                                         {
                                                             fieldErrors?.pricing?.[index]?.interval_start &&
+                                                            // @ts-expect-error weird react 19 types error
                                                             <Typography
                                                                 color="red">{fieldErrors?.pricing?.[index]?.interval_start?._errors}</Typography>
                                                         }
                                                     </div>
                                                     <div className={"mt-4"}>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Typography>Selesai:</Typography>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Input
                                                             error={!!fieldErrors?.pricing?.[index]?.interval_end}
                                                             required={index != arr.length - 1}
@@ -253,8 +271,10 @@ export function AddonForm(props: AddonFormProps) {
                                                         <p className="text-xs mt-2">
                                                             Biarkan kosong jika selamanya.
                                                         </p>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Checkbox
                                                             label={
+                                                                // @ts-expect-error weird react 19 types error
                                                                 <Typography color="blue-gray" className="font-medium">
                                                                     Pembayaran Penuh di Awal
                                                                 </Typography>
@@ -267,6 +287,7 @@ export function AddonForm(props: AddonFormProps) {
                                                         />
                                                         {
                                                             fieldErrors?.pricing?.[index]?.interval_end &&
+                                                            // @ts-expect-error weird react 19 types error
                                                             <Typography
                                                                 color="red">{fieldErrors?.pricing?.[index]?.interval_end?._errors}</Typography>
                                                         }
@@ -274,6 +295,7 @@ export function AddonForm(props: AddonFormProps) {
                                                 </div>
 
                                                 {/* Remove Pricing */}
+                                                {/*@ts-expect-error weird react 19 types error*/}
                                                 <Button
                                                     color="red"
                                                     variant="outlined"
@@ -286,17 +308,21 @@ export function AddonForm(props: AddonFormProps) {
                                         </CardBody>
                                     </Card>
                                 ))}
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Button color="green" onClick={addPricingEntry}
                                         className="mt-4 w-full flex gap-x-3 items-center justify-center">
                                     <span className={"leading-loose"}>
                                          Tambah Harga
                                     </span>
                                 </Button>
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Accordion
                                     icon={<FaAngleDown className={`transition-all ${showPricingSimulation ? 'rotate-180' : 'rotate-0'}`} />}
                                     open={showPricingSimulation}
                                 >
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <AccordionHeader onClick={() => setShowPricingSimulation(o => !o)}>
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant={"h6"}>Simulasi Tanggal</Typography>
                                     </AccordionHeader>
                                     <AccordionBody>
@@ -306,6 +332,7 @@ export function AddonForm(props: AddonFormProps) {
                             </div>
                             {
                                 props.mutationResponse?.failure &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography key={"failure message"} variant="h6" color="red" className="-mb-4">
                                     {props.mutationResponse.failure}
                                 </Typography>
@@ -315,9 +342,11 @@ export function AddonForm(props: AddonFormProps) {
                 </div>
 
                 <div className={"flex gap-x-4 justify-end"}>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Button disabled={isButtonDisabled || !hasChanges(initialData, addonData)}
                             onClick={() => props.mutation.mutate(addonData)}
                             color={"blue"} className="mt-6"
@@ -331,9 +360,10 @@ export function AddonForm(props: AddonFormProps) {
         ;
 }
 
-function simulateAddonPricing(pricingData: Partial<AddOnPricing>[], maxMonths = 6): JSX.Element {
+function simulateAddonPricing(pricingData: Partial<AddOnPricing>[], maxMonths = 6): ReactElement {
     if (!pricingData || pricingData.length === 0) {
         return (
+            // @ts-expect-error weird react 19 types error
             <Typography color="red">
                 Data harga tidak tersedia untuk simulasi.
             </Typography>
@@ -415,9 +445,10 @@ function simulateAddonPricing(pricingData: Partial<AddOnPricing>[], maxMonths = 
     );
 }
 
-function simulateSinglePricing(pricing: Partial<AddOnPricing>, maxMonths = 6): JSX.Element {
+function simulateSinglePricing(pricing: Partial<AddOnPricing>, maxMonths = 6): ReactElement {
     if (!pricing.price || pricing.interval_start === undefined) {
         return (
+            // @ts-expect-error weird react 19 types error
             <Typography color="red">
                 Data harga tidak lengkap untuk simulasi.
             </Typography>

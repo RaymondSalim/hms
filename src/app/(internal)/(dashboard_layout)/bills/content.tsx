@@ -301,6 +301,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 }}
                 customDialog={
                     <>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <Dialog
                             open={showDialog}
                             size={"lg"}
@@ -309,17 +310,23 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                         >
                             {dialogContent}
                         </Dialog>
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <Dialog
                             key={"confirmation-dialog"}
                             open={showConfirmationDialog}
                             handler={() => setShowConfirmationDialog(prev => !prev)}
                             className={"p-4"}
                         >
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <DialogHeader>{confirmationDialogContent.title}</DialogHeader>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <DialogBody>
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography>{confirmationDialogContent.body}</Typography>
                             </DialogBody>
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <DialogFooter>
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Button
                                     variant="text"
                                     color="red"
@@ -328,6 +335,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                                 >
                                     <span>Batal</span>
                                 </Button>
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Button variant="gradient" color="green" onClick={onConfirm}>
                                     <span>Konfirmasi</span>
                                 </Button>
@@ -457,292 +465,315 @@ const DetailsDialogContent = ({activeData, setShowDialog, onBillUpdate}: {
     };
 
     return (
-    <>
-        <Typography variant="h5" color="black" className="mb-4">Detail Tagihan dan Pembayaran</Typography>
-        <div className="flex justify-between items-center mb-2">
-            <Typography variant="h6" color="blue-gray">Rincian Tagihan</Typography>
-            <Button
-                size="sm"
-                color="blue"
-                onClick={() => setAddingNewBillItem(true)}
-                disabled={addingNewBillItem}
-            >
-                Tambah Rincian
-            </Button>
-        </div>
-
-        <table className="w-full table-auto text-left mb-6">
-            <thead>
-            <tr>
-                {["Deskripsi", "Harga", "Aksi"].map((el) => (
-                    <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                        <Typography variant="small" color="blue-gray"
-                                    className="font-normal leading-none opacity-70">
-                            {el}
-                        </Typography>
-                    </th>
-                ))}
-            </tr>
-            </thead>
-            <tbody>
-            {addingNewBillItem && (
-                <tr key="new-bill-item">
-                    <td className="border-b border-blue-gray-50 p-4">
-                        <Input
-                            type="text"
-                            placeholder="Deskripsi"
-                            value={newBillItemData.description}
-                            className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
-                            labelProps={{ className: "hidden" }}
-                            containerProps={{ className: "min-w-[100px]" }}
-                            onChange={(e) => setNewBillItemData(prev => ({ ...prev, description: e.target.value }))}
-                        />
-                    </td>
-                    <td className="border-b border-blue-gray-50 p-4">
-                        <CurrencyInput
-                            placeholder="0"
-                            value={newBillItemData.amount}
-                            className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
-                            labelProps={{ className: "hidden" }}
-                            containerProps={{ className: "min-w-[100px]" }}
-                            setValue={(value) => setNewBillItemData(prev => ({ ...prev, amount: value || 0 }))}
-                        />
-                    </td>
-                    <td className="border-b border-blue-gray-50 p-4">
-                        <div className="flex gap-2">
-                            <MdSave
-                                className="h-5 w-5 cursor-pointer hover:text-green-500"
-                                onClick={async () => {
-                                    if (newBillItemData.description.trim() && newBillItemData.amount > 0) {
-                                        await handleCreateBillItem({
-                                            description: newBillItemData.description.trim(),
-                                            amount: newBillItemData.amount,
-                                            internal_description: ""
-                                        });
-                                        // Reset form data after successful creation
-                                        setNewBillItemData({ description: "", amount: 0 });
-                                    } else {
-                                        toast.error("Deskripsi dan jumlah harus diisi!");
-                                    }
-                                }}
-                                style={{ opacity: createBillItemMutation.isPending ? 0.5 : 1 }}
-                            />
-                            <MdClose
-                                className="h-5 w-5 cursor-pointer hover:text-gray-500"
-                                onClick={() => {
-                                    setAddingNewBillItem(false);
-                                    setNewBillItemData({ description: "", amount: 0 });
-                                }}
-                            />
-                        </div>
-                    </td>
-                </tr>
-            )}
-            {
-                currentBillData.bill_item && currentBillData.bill_item.length > 0 ?
-                    currentBillData.bill_item.map((item, index) => (
-                        <tr key={item.id}>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                {editingBillItem === item.id ? (
-                                    <Input
-                                        type="text"
-                                        placeholder="Deskripsi"
-                                        value={editingBillItemData[item.id]?.description || ""}
-                                        className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
-                                        labelProps={{ className: "hidden" }}
-                                        containerProps={{ className: "min-w-[100px]" }}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            setEditingBillItemData(prev => ({
-                                                ...prev,
-                                                [item.id]: {
-                                                    ...prev[item.id],
-                                                    description: e.target.value
-                                                }
-                                            }));
-                                        }}
-                                    />
-                                ) : (
-                                    <Typography variant="small" color="blue-gray" className="font-normal">
-                                        {item.description}
-                                    </Typography>
-                                )}
-                            </td>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                {editingBillItem === item.id ? (
-                                    <CurrencyInput
-                                        placeholder="0"
-                                        value={editingBillItemData[item.id]?.amount || 0}
-                                        className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
-                                        labelProps={{ className: "hidden" }}
-                                        containerProps={{ className: "min-w-[100px]" }}
-                                        setValue={(value) => {
-                                            setEditingBillItemData(prev => ({
-                                                ...prev,
-                                                [item.id]: {
-                                                    ...prev[item.id],
-                                                    amount: value || 0
-                                                }
-                                            }));
-                                        }}
-                                    />
-                                ) : (
-                                    <Typography variant="small" color="blue-gray" className="font-normal">
-                                        {formatToIDR(new Prisma.Decimal(item.amount).toNumber())}
-                                    </Typography>
-                                )}
-                            </td>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                <div className="flex gap-2">
-                                    {editingBillItem === item.id ? (
-                                        <>
-                                            <MdSave
-                                                className="h-5 w-5 cursor-pointer hover:text-green-500"
-                                                onClick={async () => {
-                                                    const editData = editingBillItemData[item.id];
-                                                    if (editData && editData.description.trim() && editData.amount > 0) {
-                                                        await handleUpdateBillItem({
-                                                            id: item.id,
-                                                            description: editData.description.trim(),
-                                                            amount: editData.amount,
-                                                            internal_description: item.internal_description
-                                                        });
-                                                    } else {
-                                                        toast.error("Deskripsi dan jumlah harus diisi!");
-                                                    }
-                                                }}
-                                                style={{ opacity: updateBillItemMutation.isPending ? 0.5 : 1 }}
-                                            />
-                                            <MdClose
-                                                className="h-5 w-5 cursor-pointer hover:text-gray-500"
-                                                onClick={() => {
-                                                    setEditingBillItem(null);
-                                                    setEditingBillItemData(prev => {
-                                                        const newData = { ...prev };
-                                                        delete newData[item.id];
-                                                        return newData;
-                                                    });
-                                                }}
-                                            />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <MdEdit
-                                                className="h-5 w-5 cursor-pointer hover:text-blue-500"
-                                                onClick={() => handleStartEdit(item)}
-                                                style={{ opacity: editingBillItem !== null ? 0.5 : 1 }}
-                                            />
-                                            <MdDelete
-                                                className="h-5 w-5 cursor-pointer hover:text-red-500"
-                                                onClick={() => handleDeleteBillItem(item.id)}
-                                                style={{ opacity: deleteBillItemMutation.isPending ? 0.5 : 1 }}
-                                            />
-                                        </>
-                                    )}
-                                </div>
-                            </td>
-                        </tr>
-                    )) :
-                    <tr>
-                        <td colSpan={3} className="p-4">
-                            <Typography>Tidak ada rincian tagihan.</Typography>
-                        </td>
-                    </tr>
-            }
-            </tbody>
-        </table>
-
-        {(addingNewBillItem || editingBillItem !== null) && (
-            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                    </div>
-                    <div className="ml-3">
-                        <Typography variant="h6" color="amber" className="font-medium text-amber-800">
-                            Peringatan Alokasi Pembayaran
-                        </Typography>
-                        <Typography variant="small" color="amber" className="mt-1 text-amber-700">
-                            Mengubah atau menambah rincian tagihan dapat mempengaruhi alokasi pembayaran yang sudah ada.
-                            Harap periksa kembali alokasi pembayaran setelah menyimpan perubahan ini.
-                        </Typography>
-                    </div>
-                </div>
+        <>
+            {/*@ts-expect-error weird react 19 types error*/}
+            <Typography variant="h5" color="black" className="mb-4">Detail Tagihan dan Pembayaran</Typography>
+            <div className="flex justify-between items-center mb-2">
+                {/*@ts-expect-error weird react 19 types error*/}
+                <Typography variant="h6" color="blue-gray">Rincian Tagihan</Typography>
+                {/*@ts-expect-error weird react 19 types error*/}
+                <Button
+                    size="sm"
+                    color="blue"
+                    onClick={() => setAddingNewBillItem(true)}
+                    disabled={addingNewBillItem}
+                >
+                    Tambah Rincian
+                </Button>
             </div>
-        )}
 
-        <Typography variant="h6" color="blue-gray" className="mb-2">Pembayaran</Typography>
-        <table className="w-full table-auto text-left">
-            <thead>
-            <tr>
-                {["ID", "Tanggal", "Jumlah Pembayaran", "Pembayaran yang Dialokasikan", ""].map((el) => (
-                    <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                        <Typography variant="small" color="blue-gray"
-                                    className="font-normal leading-none opacity-70">
-                            {el}
-                        </Typography>
-                    </th>
-                ))}
-            </tr>
-            </thead>
-            <tbody>
-            {
-                currentBillData.paymentBills && currentBillData.paymentBills.length > 0 ?
-                    currentBillData.paymentBills.map((pb, index) => (
-                        <tr key={pb.payment.id}>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                <Typography variant="small" color="blue-gray" className="font-normal">
-                                    {pb.payment.id}
-                                </Typography>
-                            </td>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                <Typography variant="small" color="blue-gray" className="font-normal">
-                                    {formatToDateTime(pb.payment.payment_date)}
-                                </Typography>
-                            </td>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                <Typography variant="small" color="blue-gray" className="font-normal">
-                                    {formatToIDR(new Prisma.Decimal(pb.payment.amount).toNumber())}
-                                </Typography>
-                            </td>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                <Typography variant="small" color="blue-gray" className="font-normal">
-                                    {formatToIDR(new Prisma.Decimal(pb.amount).toNumber())}
-                                </Typography>
-                            </td>
-                            <td className="border-b border-blue-gray-50 p-4">
-                                <Link
-                                    href={{
-                                        pathname: "/payments",
-                                        query: {
-                                            id: pb.payment.id,
+            <table className="w-full table-auto text-left mb-6">
+                <thead>
+                <tr>
+                    {["Deskripsi", "Harga", "Aksi"].map((el) => (
+                        <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
+                            {/*@ts-expect-error weird react 19 types error*/}
+                            <Typography variant="small" color="blue-gray"
+                                        className="font-normal leading-none opacity-70">
+                                {el}
+                            </Typography>
+                        </th>
+                    ))}
+                </tr>
+                </thead>
+                <tbody>
+                {addingNewBillItem && (
+                    <tr key="new-bill-item">
+                        <td className="border-b border-blue-gray-50 p-4">
+                            {/*@ts-expect-error weird react 19 types error*/}
+                            <Input
+                                type="text"
+                                placeholder="Deskripsi"
+                                value={newBillItemData.description}
+                                className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
+                                labelProps={{className: "hidden"}}
+                                containerProps={{className: "min-w-[100px]"}}
+                                onChange={(e) => setNewBillItemData(prev => ({...prev, description: e.target.value}))}
+                            />
+                        </td>
+                        <td className="border-b border-blue-gray-50 p-4">
+                            <CurrencyInput
+                                placeholder="0"
+                                value={newBillItemData.amount}
+                                className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
+                                labelProps={{className: "hidden"}}
+                                containerProps={{className: "min-w-[100px]"}}
+                                setValue={(value) => setNewBillItemData(prev => ({...prev, amount: value || 0}))}
+                            />
+                        </td>
+                        <td className="border-b border-blue-gray-50 p-4">
+                            <div className="flex gap-2">
+                                <MdSave
+                                    className="h-5 w-5 cursor-pointer hover:text-green-500"
+                                    onClick={async () => {
+                                        if (newBillItemData.description.trim() && newBillItemData.amount > 0) {
+                                            await handleCreateBillItem({
+                                                description: newBillItemData.description.trim(),
+                                                amount: newBillItemData.amount,
+                                                internal_description: ""
+                                            });
+                                            // Reset form data after successful creation
+                                            setNewBillItemData({description: "", amount: 0});
+                                        } else {
+                                            toast.error("Deskripsi dan jumlah harus diisi!");
                                         }
                                     }}
-                                    className="font-normal"
-                                >
-                                    <Typography variant="small" color="blue-gray" className="font-normal">
-                                        {"More Info"}
-                                    </Typography>
-                                </Link>
-                            </td>
-                        </tr>
-                    )) :
-                    <tr>
-                        <td colSpan={5} className="p-4">
-                            <Typography>Tidak ada pembayaran yang telah dilakukan</Typography>
+                                    style={{opacity: createBillItemMutation.isPending ? 0.5 : 1}}
+                                />
+                                <MdClose
+                                    className="h-5 w-5 cursor-pointer hover:text-gray-500"
+                                    onClick={() => {
+                                        setAddingNewBillItem(false);
+                                        setNewBillItemData({description: "", amount: 0});
+                                    }}
+                                />
+                            </div>
                         </td>
                     </tr>
-            }
-            </tbody>
-        </table>
+                )}
+                {
+                    currentBillData.bill_item && currentBillData.bill_item.length > 0 ?
+                        currentBillData.bill_item.map((item, index) => (
+                            <tr key={item.id}>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    {editingBillItem === item.id ? (
+                                        // @ts-expect-error weird react 19 types error
+                                        <Input
+                                            type="text"
+                                            placeholder="Deskripsi"
+                                            value={editingBillItemData[item.id]?.description || ""}
+                                            className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
+                                            labelProps={{className: "hidden"}}
+                                            containerProps={{className: "min-w-[100px]"}}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                setEditingBillItemData(prev => ({
+                                                    ...prev,
+                                                    [item.id]: {
+                                                        ...prev[item.id],
+                                                        description: e.target.value
+                                                    }
+                                                }));
+                                            }}
+                                        />
+                                    ) : (
+                                        // @ts-expect-error weird react 19 types error
+                                        <Typography variant="small" color="blue-gray" className="font-normal">
+                                            {item.description}
+                                        </Typography>
+                                    )}
+                                </td>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    {editingBillItem === item.id ? (
+                                        <CurrencyInput
+                                            placeholder="0"
+                                            value={editingBillItemData[item.id]?.amount || 0}
+                                            className="!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10"
+                                            labelProps={{className: "hidden"}}
+                                            containerProps={{className: "min-w-[100px]"}}
+                                            setValue={(value) => {
+                                                setEditingBillItemData(prev => ({
+                                                    ...prev,
+                                                    [item.id]: {
+                                                        ...prev[item.id],
+                                                        amount: value || 0
+                                                    }
+                                                }));
+                                            }}
+                                        />
+                                    ) : (
+                                        // @ts-expect-error weird react 19 types error
+                                        <Typography variant="small" color="blue-gray" className="font-normal">
+                                            {formatToIDR(new Prisma.Decimal(item.amount).toNumber())}
+                                        </Typography>
+                                    )}
+                                </td>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    <div className="flex gap-2">
+                                        {editingBillItem === item.id ? (
+                                            <>
+                                                <MdSave
+                                                    className="h-5 w-5 cursor-pointer hover:text-green-500"
+                                                    onClick={async () => {
+                                                        const editData = editingBillItemData[item.id];
+                                                        if (editData && editData.description.trim() && editData.amount > 0) {
+                                                            await handleUpdateBillItem({
+                                                                id: item.id,
+                                                                description: editData.description.trim(),
+                                                                amount: editData.amount,
+                                                                internal_description: item.internal_description
+                                                            });
+                                                        } else {
+                                                            toast.error("Deskripsi dan jumlah harus diisi!");
+                                                        }
+                                                    }}
+                                                    style={{opacity: updateBillItemMutation.isPending ? 0.5 : 1}}
+                                                />
+                                                <MdClose
+                                                    className="h-5 w-5 cursor-pointer hover:text-gray-500"
+                                                    onClick={() => {
+                                                        setEditingBillItem(null);
+                                                        setEditingBillItemData(prev => {
+                                                            const newData = {...prev};
+                                                            delete newData[item.id];
+                                                            return newData;
+                                                        });
+                                                    }}
+                                                />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MdEdit
+                                                    className="h-5 w-5 cursor-pointer hover:text-blue-500"
+                                                    onClick={() => handleStartEdit(item)}
+                                                    style={{opacity: editingBillItem !== null ? 0.5 : 1}}
+                                                />
+                                                <MdDelete
+                                                    className="h-5 w-5 cursor-pointer hover:text-red-500"
+                                                    onClick={() => handleDeleteBillItem(item.id)}
+                                                    style={{opacity: deleteBillItemMutation.isPending ? 0.5 : 1}}
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        )) :
+                        <tr>
+                            <td colSpan={3} className="p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
+                                <Typography>Tidak ada rincian tagihan.</Typography>
+                            </td>
+                        </tr>
+                }
+                </tbody>
+            </table>
 
-        <div className="flex gap-x-4 justify-end">
-            <Button onClick={() => setShowDialog(false)} variant="outlined" className="mt-6">
-                Tutup
-            </Button>
-        </div>
-    </>
+            {(addingNewBillItem || editingBillItem !== null) && (
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd"
+                                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                      clipRule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            {/*@ts-expect-error weird react 19 types error*/}
+                            <Typography variant="h6" color="amber" className="font-medium text-amber-800">
+                                Peringatan Alokasi Pembayaran
+                            </Typography>
+                            {/*@ts-expect-error weird react 19 types error*/}
+                            <Typography variant="small" color="amber" className="mt-1 text-amber-700">
+                                Mengubah atau menambah rincian tagihan dapat mempengaruhi alokasi pembayaran yang sudah
+                                ada.
+                                Harap periksa kembali alokasi pembayaran setelah menyimpan perubahan ini.
+                            </Typography>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/*@ts-expect-error weird react 19 types error*/}
+            <Typography variant="h6" color="blue-gray" className="mb-2">Pembayaran</Typography>
+            <table className="w-full table-auto text-left">
+                <thead>
+                <tr>
+                    {["ID", "Tanggal", "Jumlah Pembayaran", "Pembayaran yang Dialokasikan", ""].map((el) => (
+                        <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
+                            {/*@ts-expect-error weird react 19 types error*/}
+                            <Typography variant="small" color="blue-gray"
+                                        className="font-normal leading-none opacity-70">
+                                {el}
+                            </Typography>
+                        </th>
+                    ))}
+                </tr>
+                </thead>
+                <tbody>
+                {
+                    currentBillData.paymentBills && currentBillData.paymentBills.length > 0 ?
+                        currentBillData.paymentBills.map((pb, index) => (
+                            <tr key={pb.payment.id}>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography variant="small" color="blue-gray" className="font-normal">
+                                        {pb.payment.id}
+                                    </Typography>
+                                </td>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography variant="small" color="blue-gray" className="font-normal">
+                                        {formatToDateTime(pb.payment.payment_date)}
+                                    </Typography>
+                                </td>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography variant="small" color="blue-gray" className="font-normal">
+                                        {formatToIDR(new Prisma.Decimal(pb.payment.amount).toNumber())}
+                                    </Typography>
+                                </td>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    {/*@ts-expect-error weird react 19 types error*/}
+                                    <Typography variant="small" color="blue-gray" className="font-normal">
+                                        {formatToIDR(new Prisma.Decimal(pb.amount).toNumber())}
+                                    </Typography>
+                                </td>
+                                <td className="border-b border-blue-gray-50 p-4">
+                                    <Link
+                                        href={{
+                                            pathname: "/payments",
+                                            query: {
+                                                id: pb.payment.id,
+                                            }
+                                        }}
+                                        className="font-normal"
+                                    >
+                                        {/*@ts-expect-error weird react 19 types error*/}
+                                        <Typography variant="small" color="blue-gray" className="font-normal">
+                                            {"More Info"}
+                                        </Typography>
+                                    </Link>
+                                </td>
+                            </tr>
+                        )) :
+                        <tr>
+                            <td colSpan={5} className="p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
+                                <Typography>Tidak ada pembayaran yang telah dilakukan</Typography>
+                            </td>
+                        </tr>
+                }
+                </tbody>
+            </table>
+
+            <div className="flex gap-x-4 justify-end">
+                {/*@ts-expect-error weird react 19 types error*/}
+                <Button onClick={() => setShowDialog(false)} variant="outlined" className="mt-6">
+                    Tutup
+                </Button>
+            </div>
+        </>
     );
 };
 
@@ -756,12 +787,16 @@ const EmailConfirmationDialog = ({activeData, sendBillEmailMutation, setShowDial
 }) => {
     return (
         <>
+            {/*@ts-expect-error weird react 19 types error*/}
             <Typography variant="h5" color="black" className="mb-4">Kirim Pengingat Tagihan</Typography>
+            {/*@ts-expect-error weird react 19 types error*/}
             <Typography variant="paragraph" color="black">Apakah anda mau mengirimkan email ini?</Typography>
             <div className={"flex gap-x-4 justify-end"}>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Button onClick={() => setShowDialog(false)} variant={"outlined"} className="mt-6">
                     Tutup
                 </Button>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Button
                     onClick={(e) => {
                         e.currentTarget.disabled = true;

@@ -3,7 +3,6 @@
 import {signInSchema} from "@/app/_lib/zod/auth/zod";
 import {signIn} from "@/app/_lib/auth";
 import {CredentialsSignin} from "next-auth";
-import {isRedirectError} from "next/dist/client/components/redirect";
 
 export type LoginUserType = {
     success?: string,
@@ -46,9 +45,6 @@ export async function loginUser(prevState: LoginUserType, formData: FormData): P
     } catch (error: any) {
         if (error.cause && error.cause.err instanceof CredentialsSignin) {
             return { failure: "Nama pengguna atau kata sandi tidak valid" };
-        }
-        if (isRedirectError(error)) {
-            throw error;
         }
     }
 

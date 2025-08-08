@@ -20,14 +20,10 @@ import {
     CardBody,
     CardFooter,
     Dialog,
-    Input,
     Menu,
     MenuHandler,
     MenuItem,
     MenuList,
-    Popover,
-    PopoverContent,
-    PopoverHandler,
     Typography
 } from "@material-tailwind/react";
 import {FaCheck, FaEnvelope, FaPhone, FaX} from "react-icons/fa6";
@@ -98,7 +94,9 @@ export default function GuestsContent({guests}: GuestsContentProps) {
                 // @ts-ignore
                 mutationFn: deleteGuestAction,
             }}
-            customDialog={
+            customDialog={(
+                <>
+                {/* @ts-expect-error weird react 19 types error */}
                 <Dialog
                     open={showDialog}
                     size={"lg"}
@@ -115,12 +113,14 @@ export default function GuestsContent({guests}: GuestsContentProps) {
                         {dialogContent}
                     </div>
                     <div className={"flex gap-x-4 justify-end"}>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
                             Tutup
                         </Button>
                     </div>
                 </Dialog>
-            }
+                </>
+            )}
             additionalActions={{
                 position: "before",
                 actions: [
@@ -129,13 +129,18 @@ export default function GuestsContent({guests}: GuestsContentProps) {
                             return (
                                 <Menu placement="bottom-end">
                                     <MenuHandler>
+                                        <>
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Button variant={"text"} className={"p-0 hover:bg-transparent"}>
                                             <HiOutlineDotsVertical
                                                 className="h-5 w-5 cursor-pointer text-gray-700 hover:text-blue-500"
                                             />
                                         </Button>
+                                        </>
                                     </MenuHandler>
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <MenuList>
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <MenuItem onClick={() => {
                                             setDialogContent(<GuestInfo guest={rowData}/>);
                                             setShowDialog(true);
@@ -172,9 +177,9 @@ export function GuestInfo({guest}: GuestInfoProps) {
             [index]: forceOpen != undefined ? forceOpen : !prev[index],
         }));
     };
-    
+
     const today = new Date();
-    
+
     const toastSettings: ToastOptions = {
         closeButton: false,
         onClick: (e) => {
@@ -245,14 +250,18 @@ export function GuestInfo({guest}: GuestInfoProps) {
     };
 
     return (
+        // @ts-expect-error weird react 19 types error
         <Card className="p-0 *:px-0 shadow-none flex flex-col h-full">
             <h1 className="text-xl font-semibold text-black">Informasi Tamu</h1>
+            {/* @ts-expect-error weird react 19 types error */}
             <CardBody className="space-y-6 flex-grow">
 
                 {/* Guest Profile */}
                 <div className="flex items-center gap-4 border-b pb-4">
                     <div>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant="h5" className="font-semibold">{guest.name}</Typography>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant="small" color="gray">
                             Tamu dari:{" "}
                             {guest.booking.tenants ? (
@@ -273,16 +282,19 @@ export function GuestInfo({guest}: GuestInfoProps) {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
                         <FaEnvelope className="text-gray-600"/>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography>{guest.email || "N/A"}</Typography>
                     </div>
                     <div className="flex items-center gap-2">
                         <FaPhone className="text-gray-600"/>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography>{guest.phone || "N/A"}</Typography>
                     </div>
                 </div>
 
                 {/* Guest Stay Information */}
                 <div className="mt-6">
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography variant="h6" className="font-semibold">Riwayat Menginap</Typography>
                     {
                         editedStays.length > 0 ? (
@@ -301,7 +313,7 @@ export function GuestInfo({guest}: GuestInfoProps) {
                                         <tr key={index}>
                                             <td className="border border-gray-300 px-4 py-2">
                                                 {editingIndex === index ? (
-                                                                                                            <DatePicker
+                                                    <DatePicker
                                                         mode="single"
                                                         placeholder=""
                                                         showSearchButton={false}
@@ -399,10 +411,12 @@ export function GuestInfo({guest}: GuestInfoProps) {
                                 </table>
                             </div>
                         ) : (
+                            // @ts-expect-error weird react 19 types error
                             <Typography className="text-gray-600 mt-4">Tidak ada riwayat menginap</Typography>
                         )}
                 </div>
 
+                {/* @ts-expect-error weird react 19 types error */}
                 <Button fullWidth color="green" className="mt-4 flex items-center justify-center" onClick={handleAddGuestStay}>
                     <MdAdd className="h-6 w-6"/>
                     <span className={"leading-loose"}>Tambah Menginap</span>
@@ -410,22 +424,32 @@ export function GuestInfo({guest}: GuestInfoProps) {
             </CardBody>
 
             {/* Sticky Footer */}
+            {/* @ts-expect-error weird react 19 types error */}
             <CardFooter divider className="flex items-center justify-between py-3 text-sm text-gray-600 mt-auto">
+                {/* @ts-expect-error weird react 19 types error */}
                 <Typography>
                     Dibuat Pada: {formatToDateTime(guest.createdAt)}
                 </Typography>
+                {/* @ts-expect-error weird react 19 types error */}
                 <Typography>
                     Terakhir Diubah: {formatToDateTime(guest.updatedAt)}
                 </Typography>
             </CardFooter>
 
+            {/* @ts-expect-error weird react 19 types error */}
             <Dialog open={showDialog} handler={setShowDialog}>
+                {/* @ts-expect-error weird react 19 types error */}
                 <Card>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <CardBody className={"flex flex-col gap-4"}>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography variant="h5">Konfirmasi Penghapusan</Typography>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Typography>Apakah Anda yakin ingin menghapus riwayat menginap ini?</Typography>
                         <div className={"flex justify-end gap-x-4"}>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Button color="black" variant={"outlined"} onClick={() => setShowDialog(false)}>Tutup</Button>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Button color="red" onClick={handleConfirmDelete}>Hapus</Button>
                         </div>
                     </CardBody>
