@@ -1,5 +1,7 @@
 import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
-import { Readable } from 'stream';
+import {Readable} from 'stream';
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 const client = new S3Client({region: process.env.AWS_REGION});
 
@@ -16,6 +18,9 @@ export type GetObjectReturnType = {
 }
 
 export async function getObject(bucket: string, key: string): Promise<GetObjectReturnType> {
+    after(() => {
+        serverLogger.flush();
+    });
     const getObjectCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
 
     try {
@@ -41,7 +46,7 @@ export async function getObject(bucket: string, key: string): Promise<GetObjectR
             throw new Error('Response body is not readable');
         }
     } catch (err) {
-        console.error("Error getting object from S3:", err);
+        serverLogger.error("Error getting object from S3:", {err});
         return {
             success: false,
             error: err as Error

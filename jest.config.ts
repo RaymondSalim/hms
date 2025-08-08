@@ -146,6 +146,7 @@ const config: Config = {
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
   setupFilesAfterEnv: [
+    '<rootDir>/__tests__/jest.setup.ts',
     '<rootDir>/__tests__/singleton_prisma.ts'
   ],
 

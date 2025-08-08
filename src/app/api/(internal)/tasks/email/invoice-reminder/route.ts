@@ -3,11 +3,13 @@ import prisma from "@/app/_lib/primsa";
 import {SettingsKey} from "@/app/_enum/setting";
 import pLimit from "p-limit";
 import {generateBillEmailReminders} from "@/app/api/(internal)/tasks/email/invoice-reminder/invoice-reminder-action";
+import {serverLogger, withAxiom} from "@/app/_lib/axiom/server";
+import {after} from "next/server";
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export const GET = withAxiom(async (request: Request) => {
     // Only allows endpoint to be called by vercel cron
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -16,6 +18,10 @@ export async function GET(request: Request) {
         });
     }
 
+    after(() => {
+        serverLogger.flush();
+    });
+
     let emailReminderEnabled = await prisma.setting.findFirst({
         where: {
             setting_key: SettingsKey.MONTHLY_INVOICE_EMAIL_REMINDER_ENABLED
@@ -23,7 +29,7 @@ export async function GET(request: Request) {
     });
 
     if (!emailReminderEnabled || emailReminderEnabled.setting_value?.toLowerCase() === "false") {
-        return new Response('Forbidden', { status: 403 });
+        return new Response('Forbidden', {status: 403});
     }
 
     let allEmailToBeSent = await generateBillEmailReminders();
@@ -43,7 +49,7 @@ export async function GET(request: Request) {
                 });
                 sent++;
             } catch (error) {
-                console.error(`Error sending email to ${email.to}.`, error);
+                serverLogger.error(`[api/tasks/email/invoice-reminder] Error sending email to ${email.to}.`, {error});
             }
         }));
         await Promise.all(emailPromises);
@@ -58,4 +64,4 @@ export async function GET(request: Request) {
     }
 
     return Response.json({success: true, message: "No Emails Sent"});
-}
+});

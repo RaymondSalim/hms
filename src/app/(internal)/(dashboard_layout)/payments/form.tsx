@@ -260,15 +260,6 @@ export function PaymentForm(props: PaymentForm) {
         }) ?? false;
     }, [allocationMode, simulationDataSuccess, simulationData?.old.bills, unpaidBillsData?.bills, manualAllocations]);
 
-    useEffect(() => {
-        console.group(!isFormComplete || !hasChanges || (allocationMode === 'manual' && (Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0) !== Number(data.amount) || anyOverAllocated)));
-        console.log("isFormComplete: ", isFormComplete);
-        console.log("hasChanges: ", hasChanges);
-        console.log("allManual: ", (allocationMode === 'manual' && (Object.values(manualAllocations).reduce((a, b) => a + (Number(b) || 0), 0) !== Number(data.amount))));
-        console.log("anyOverAllocated: ", anyOverAllocated);
-        console.groupEnd();
-    }, [isFormComplete, hasChanges, allocationMode, anyOverAllocated, manualAllocations]);
-
     return (
         <div className={"w-full px-8 py-4"}>
             <h1 className={"text-xl font-semibold text-black"}>{(parsedData && parsedData.id) ? "Perubahan" : "Pembuatan"} Pembayaran</h1>

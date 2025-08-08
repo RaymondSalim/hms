@@ -49,11 +49,11 @@ export function AddonForm(props: AddonFormProps) {
     );
 
     const isButtonDisabled = useMemo(() => {
-        console.log(addonData);
         return !addonData?.name ||
             !addonData?.location_id;/* ||*/
         // !addonData.pricing?.[0]?.price ||
         // !addonData.pricing?.[0]?.interval_start;
+        // TODO! Check
     }, [addonData]);
 
     // Location Data
