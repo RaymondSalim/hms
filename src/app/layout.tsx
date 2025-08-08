@@ -7,6 +7,7 @@ import {SessionProvider} from "next-auth/react";
 import {auth} from "@/app/_lib/auth";
 import {getCompanyInfo} from "@/app/_db/settings";
 import Script from "next/script";
+import {RBACProvider} from "@/app/_context/RBACContext";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -33,17 +34,19 @@ export default async function RootLayout({
 
     return (
         <SessionProvider session={session}>
-            <html lang="en" className={styles.html}>
-                <body className={`${inter.className} ${styles.body}`}>
-                    <div className={styles.container}>
-                        {children}
-                    </div>
-                    <Script
-                        src="https://static.cloudflareinsights.com/beacon.min.js"
-                        data-cf-beacon='{"token": "TOKEN_VALUE", "spa": true}'
-                    />
-                </body>
-            </html>
+            <RBACProvider>
+                <html lang="en" className={styles.html}>
+                    <body className={`${inter.className} ${styles.body}`}>
+                        <div className={styles.container}>
+                            {children}
+                        </div>
+                        <Script
+                            src="https://static.cloudflareinsights.com/beacon.min.js"
+                            data-cf-beacon='{"token": "TOKEN_VALUE", "spa": true}'
+                        />
+                    </body>
+                </html>
+            </RBACProvider>
         </SessionProvider>
     );
 }
