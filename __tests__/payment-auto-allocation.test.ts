@@ -1,12 +1,14 @@
 import {prismaMock} from './singleton_prisma';
 import {beforeEach, describe, expect, it} from '@jest/globals';
 import {BillType, DepositStatus, Prisma} from '@prisma/client';
+import * as paymentActions from '@/app/(internal)/(dashboard_layout)/payments/payment-action';
 import {upsertPaymentAction} from '@/app/(internal)/(dashboard_layout)/payments/payment-action';
 
 // Mock the bill action module
 jest.mock('@/app/(internal)/(dashboard_layout)/bills/bill-action', () => ({
     getUnpaidBillsDueAction: jest.fn(),
     simulateUnpaidBillPaymentAction: jest.fn(),
+    syncBillsWithPaymentDate: jest.fn(),
 }));
 
 describe('Payment Auto-Allocation', () => {
@@ -252,6 +254,104 @@ describe('Payment Auto-Allocation', () => {
                 data: {status: DepositStatus.HELD}
             })
         );
+    });
+
+    it('on update with auto allocation, recomputes transactions for all payments in booking', async () => {
+        // Arrange
+        const requestData = {
+            id: 99,
+            booking_id: 1,
+            amount: new Prisma.Decimal(1000000),
+            payment_date: new Date('2024-02-01'),
+            payment_proof: null,
+            status_id: 1,
+            allocationMode: 'auto' as const,
+        };
+
+        const bookingData = {
+            id: 1,
+            room_id: 1,
+            start_date: new Date(2024, 0, 1),
+            duration_id: 1,
+            status_id: 1,
+            fee: new Prisma.Decimal(1000000),
+            tenant_id: 'tenant-1',
+            end_date: new Date(2024, 2, 31),
+            second_resident_fee: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+
+        // booking lookup
+        prismaMock.booking.findFirst.mockResolvedValueOnce(bookingData);
+
+        // update payment
+        prismaMock.payment.update.mockResolvedValueOnce({
+            id: 99,
+            booking_id: 1,
+            amount: new Prisma.Decimal(1000000),
+            payment_date: new Date('2024-02-01'),
+            payment_proof: null,
+            status_id: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            bookings: {
+                // @ts-expect-error type mismatch
+                id: 1,
+                rooms: { id: 1, location_id: 1 },
+            },
+            paymentstatuses: { id: 1, status: 'Paid', createdAt: new Date(), updatedAt: new Date() }
+        });
+
+        // mock sync to succeed
+        const { syncBillsWithPaymentDate } = require('@/app/(internal)/(dashboard_layout)/bills/bill-action');
+        syncBillsWithPaymentDate.mockResolvedValueOnce(undefined);
+
+        // list all payment ids after sync for this booking (should trigger recompute for each)
+        prismaMock.paymentBill.findMany.mockResolvedValueOnce([
+            { payment_id: 99 },
+            { payment_id: 42 },
+            { payment_id: 99 },
+        ] as any);
+
+        // Prepare downstream mocks for recompute without spying
+        // Subsequent calls inside createOrUpdatePaymentTransactions
+        prismaMock.paymentBill.findMany
+            .mockResolvedValueOnce([]) // for paymentId: 99
+            .mockResolvedValueOnce([]); // for paymentId: 42
+
+        prismaMock.transaction.findMany
+            .mockResolvedValueOnce([]) // for paymentId: 99
+            .mockResolvedValueOnce([]); // for paymentId: 42
+
+        // payment lookup inside recompute, return minimal shape using requested id
+        prismaMock.payment.findFirst.mockImplementation(({ where }: any) => Promise.resolve({
+            id: where?.id,
+            booking_id: 1,
+            payment_date: new Date('2024-02-01'),
+            bookings: { rooms: { location_id: 1 } }
+        }));
+
+        // Act
+        const result = await paymentActions.upsertPaymentAction(requestData as any);
+
+        // Assert
+        expect(result.success).toBeDefined();
+        expect(syncBillsWithPaymentDate).toHaveBeenCalledTimes(1);
+        const firstCall = (syncBillsWithPaymentDate as jest.Mock).mock.calls[0];
+        expect(firstCall[0]).toBe(1);
+        expect(firstCall[2]).toEqual([expect.objectContaining({ id: 99 })]);
+        expect(prismaMock.paymentBill.findMany).toHaveBeenNthCalledWith(1, {
+            where: { bill: { booking_id: 1 } },
+            select: { payment_id: true }
+        });
+        // Verify recompute was executed for both distinct payment ids by checking tx calls
+        expect(prismaMock.transaction.findMany).toHaveBeenNthCalledWith(1, {
+            where: { related_id: { path: ['payment_id'], equals: 99 } }
+        });
+        expect(prismaMock.transaction.findMany).toHaveBeenNthCalledWith(2, {
+            where: { related_id: { path: ['payment_id'], equals: 42 } }
+        });
     });
 
         it('should handle auto-allocation with no unpaid bills', async () => {

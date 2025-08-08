@@ -14,7 +14,35 @@ import {
 import {DeleteObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {getBookingByID} from "@/app/_db/bookings";
 
+export async function createPaymentBillsFromBillAllocations(
+    manualAllocations: Record<number, number>,
+    paymentId: number,
+    paymentAmount: Prisma.Decimal | number,
+    trx: Prisma.TransactionClient
+) {
+    // Validate total equals payment amount
+    const totalAllocated = Object.values(manualAllocations)
+        .reduce((sum, v) => sum + Number(v || 0), 0);
+    const paymentAmt = new Prisma.Decimal(paymentAmount);
+    if (!paymentAmt.eq(new Prisma.Decimal(totalAllocated))) {
+        throw new Error('Total manual allocation must equal payment amount');
+    }
+
+    const paymentBills = Object.entries(manualAllocations)
+        .filter(([, amount]) => Number(amount) > 0)
+        .map(([bill_id, amount]) => ({
+            payment_id: paymentId,
+            bill_id: Number(bill_id),
+            amount: new Prisma.Decimal(amount)
+        }));
+
+    if (paymentBills.length > 0) {
+        await trx.paymentBill.createMany({ data: paymentBills });
+    }
+}
+
 export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & { allocationMode?: 'auto' | 'manual', manualAllocations?: Record<number, number> }) {
+
     const {success, data, error} = paymentSchema.safeParse(reqData);
 
     if (!success) {
@@ -86,45 +114,29 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
                         where: { payment_id: data.id }
                     });
 
-                    // Create new paymentBill records as per manualAllocations
-                    const paymentBills = Object.entries(manualAllocations)
-                        .filter(([_, amount]) => Number(amount) > 0)
-                        .map(([bill_id, amount]) => ({
-                            payment_id: res.id,
-                            bill_id: Number(bill_id),
-                            amount: new Prisma.Decimal(amount)
-                        }));
-                    // Validate total does not exceed payment amount
-                    const totalAllocated = paymentBills.reduce((sum, pb) => sum.add(pb.amount), new Prisma.Decimal(0));
-                    if (!totalAllocated.eq(data.amount)) {
-                        throw new Error('Total manual allocation must equal payment amount');
-                    }
-                    await tx.paymentBill.createMany({ data: paymentBills });
+                    await createPaymentBillsFromBillAllocations(manualAllocations, res.id, dbData.amount, tx);
+
+                    // After paymentBill records are updated, create or update transactions for this payment only
+                    await createOrUpdatePaymentTransactions(res.id, tx);
                 } else {
                     // Auto allocation: sync bills with payment dates
                     await syncBillsWithPaymentDate(booking.id, tx, [res]);
-                }
 
-                // After paymentBill records are updated, create or update transactions
-                await createOrUpdatePaymentTransactions(res.id, tx);
+                    // After global reallocation, recompute transactions for ALL payments in this booking
+                    const paymentIdRows = await tx.paymentBill.findMany({
+                        where: { bill: { booking_id: booking.id } },
+                        select: { payment_id: true }
+                    });
+                    const uniquePaymentIds = Array.from(new Set(paymentIdRows.map(r => r.payment_id)));
+                    for (const paymentId of uniquePaymentIds) {
+                        await createOrUpdatePaymentTransactions(paymentId, tx);
+                    }
+                }
             } else {
                 res = await createPayment(dbData, tx);
 
                 if (allocationMode === 'manual' && manualAllocations) {
-                    // Manual allocation: create paymentBill records as per manualAllocations
-                    const paymentBills = Object.entries(manualAllocations)
-                        .filter(([_, amount]) => Number(amount) > 0)
-                        .map(([bill_id, amount]) => ({
-                            payment_id: res.id,
-                            bill_id: Number(bill_id),
-                            amount: new Prisma.Decimal(amount)
-                        }));
-                    // Validate total does not exceed payment amount
-                    const totalAllocated = paymentBills.reduce((sum, pb) => sum.add(pb.amount), new Prisma.Decimal(0));
-                    if (!totalAllocated.eq(data.amount)) {
-                        throw new Error('Total manual allocation must equal payment amount');
-                    }
-                    await tx.paymentBill.createMany({ data: paymentBills });
+                    await createPaymentBillsFromBillAllocations(manualAllocations, res.id, dbData.amount, tx);
                 } else {
                     // Auto allocation (current logic)
                     const unpaidBills = await getUnpaidBillsDueAction(booking.id);
@@ -246,8 +258,10 @@ async function getDepositIdForBooking(bookingId: number, trx: Prisma.Transaction
 }
 
 // Smart function that creates or updates transactions for a payment
-async function createOrUpdatePaymentTransactions(paymentId: number, trx: Prisma.TransactionClient) {
-    // Get the payment and booking/location
+export const createOrUpdatePaymentTransactions = async function (
+    paymentId: number,
+    trx: Prisma.TransactionClient
+) {
     const payment = await trx.payment.findFirst({
         where: { id: paymentId },
         include: {
@@ -261,7 +275,11 @@ async function createOrUpdatePaymentTransactions(paymentId: number, trx: Prisma.
     if (!payment) return;
     const locationId = payment.bookings?.rooms?.location_id || 1;
 
-    // Calculate deposit and non-deposit amounts from the payment
+    let depositAmount = new Prisma.Decimal(0);
+    let regularAmount = new Prisma.Decimal(0);
+    let depositIdsToUpdate: number[] = [];
+
+    // Compute amounts from actual PaymentBill entries, prioritizing deposit items within each bill
     const paymentBills = await trx.paymentBill.findMany({
         where: { payment_id: paymentId },
         include: {
@@ -273,33 +291,34 @@ async function createOrUpdatePaymentTransactions(paymentId: number, trx: Prisma.
         }
     });
 
-    let depositAmount = new Prisma.Decimal(0);
-    let regularAmount = new Prisma.Decimal(0);
-    let depositIdsToUpdate: number[] = [];
-
     for (const paymentBill of paymentBills) {
-        for (const billItem of paymentBill.bill.bill_item) {
-            // Calculate proportional amount for this bill item
-            const billTotal = paymentBill.bill.bill_item.reduce(
-                (sum, item) => sum.add(item.amount),
-                new Prisma.Decimal(0)
-            );
-            const itemProportion = billItem.amount.div(billTotal);
-            const itemPaymentAmount = paymentBill.amount.mul(itemProportion);
-
+        // Split this paymentBill amount across bill items giving priority to deposit items
+        const items = paymentBill.bill.bill_item.slice().sort((a, b) => {
             // @ts-expect-error JSON field has no type definition
-            if (billItem.related_id?.deposit_id) {
-                // This is a deposit item
-                depositAmount = depositAmount.add(itemPaymentAmount);
+            const aDep = !!a.related_id?.deposit_id;
+            // @ts-expect-error JSON field has no type definition
+            const bDep = !!b.related_id?.deposit_id;
+            if (aDep && !bDep) return -1;
+            if (!aDep && bDep) return 1;
+            return 0;
+        });
+
+        let remaining = new Prisma.Decimal(paymentBill.amount);
+        for (const item of items) {
+            if (remaining.lte(0)) break;
+            const toApply = Prisma.Decimal.min(remaining, item.amount);
+            // @ts-expect-error JSON field has no type definition
+            if (item.related_id?.deposit_id) {
+                depositAmount = depositAmount.add(toApply);
                 // @ts-expect-error JSON field has no type definition
-                const depositId = billItem.related_id.deposit_id;
-                if (depositId && !depositIdsToUpdate.includes(depositId)) {
-                    depositIdsToUpdate.push(depositId);
+                const depId = item.related_id.deposit_id;
+                if (depId && !depositIdsToUpdate.includes(depId)) {
+                    depositIdsToUpdate.push(depId);
                 }
             } else {
-                // This is a regular item
-                regularAmount = regularAmount.add(itemPaymentAmount);
+                regularAmount = regularAmount.add(toApply);
             }
+            remaining = remaining.sub(toApply);
         }
     }
 
@@ -451,7 +470,36 @@ async function createOrUpdatePaymentTransactions(paymentId: number, trx: Prisma.
             }
         }
     });
-}
+
+    // Ensure deposit status stays consistent with presence of deposit income transactions across the booking
+    const bookingDeposit = await trx.deposit.findFirst({
+        where: { booking_id: payment.booking_id }
+    });
+    if (bookingDeposit && (bookingDeposit.status === DepositStatus.UNPAID || bookingDeposit.status === DepositStatus.HELD)) {
+        const depositIncomeCount = await trx.transaction.count({
+            where: {
+                category: "Deposit",
+                type: TransactionType.INCOME,
+                related_id: {
+                    path: ['booking_id'],
+                    equals: payment.booking_id
+                }
+            }
+        });
+
+        if (depositIncomeCount > 0 && bookingDeposit.status === DepositStatus.UNPAID) {
+            await trx.deposit.update({
+                where: { id: bookingDeposit.id },
+                data: { status: DepositStatus.HELD }
+            });
+        } else if (depositIncomeCount === 0 && bookingDeposit.status === DepositStatus.HELD) {
+            await trx.deposit.update({
+                where: { id: bookingDeposit.id },
+                data: { status: DepositStatus.UNPAID }
+            });
+        }
+    }
+};
 
 export async function updatePaymentWithTransaction(id: number, dbData: OmitIDTypeAndTimestamp<Payment>, trx?: Prisma.TransactionClient) {
     const prismaTx = trx ?? prisma;

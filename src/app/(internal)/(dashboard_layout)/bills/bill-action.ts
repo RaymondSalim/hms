@@ -196,44 +196,58 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
         return paymentBills;
     }
 
-    const billsCopy = bills.map(bill => ({...bill}));
+    const billsCopy = bills.map(bill => ({
+        ...bill,
+        bill_item: bill.bill_item.sort((a, b) => {
+            // @ts-expect-error JSON field has no type definition
+            const aIsDeposit = a.related_id?.deposit_id;
+            // @ts-expect-error JSON field has no type definition
+            const bIsDeposit = b.related_id?.deposit_id;
+            if (aIsDeposit && !bIsDeposit) return -1;
+            if (!aIsDeposit && bIsDeposit) return 1;
+            return 0;
+        })
+    }));
 
     billsCopy.sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
     payments.sort((a, b) => a.payment_date.getTime() - b.payment_date.getTime());
 
     let billIndex = 0;
-    let paid = new Prisma.Decimal(0);
+    let paidForBill = new Map<number, Prisma.Decimal>(); // Track paid amount for each bill
 
     for (const currPayment of payments) {
         let balance = currPayment.amount;
 
         while (balance.gt(0) && billIndex < billsCopy.length) {
             const currBill = billsCopy[billIndex];
+            const paid = paidForBill.get(currBill.id) ?? new Prisma.Decimal(0);
 
             const currBillAmount = currBill.bill_item.reduce(
                 (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
             ).minus(paid);
 
-            if (currBillAmount.lte(balance)) {
-                // Full payment of the bill
-                balance = balance.minus(currBillAmount);
-                paymentBills.push({
-                    payment_id: currPayment.id,
-                    bill_id: currBill.id,
-                    amount: currBillAmount
-                });
-                paid = new Prisma.Decimal(0);
+            if (currBillAmount.lte(0)) {
                 billIndex++;
-            } else {
-                // Partial payment of the bill
-                paymentBills.push({
-                    payment_id: currPayment.id,
-                    bill_id: currBill.id,
-                    amount: balance
-                });
-                paid = paid.plus(new Prisma.Decimal(balance));
-                balance = new Prisma.Decimal(0);
+                continue;
+            }
+
+            const amountToPay = Prisma.Decimal.min(balance, currBillAmount);
+
+            paymentBills.push({
+                payment_id: currPayment.id,
+                bill_id: currBill.id,
+                amount: amountToPay
+            });
+
+            balance = balance.minus(amountToPay);
+            paidForBill.set(currBill.id, paid.add(amountToPay));
+
+            if (balance.isZero()) {
                 break;
+            }
+
+            if (paidForBill.get(currBill.id)!.eq(currBill.bill_item.reduce((acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)))) {
+                billIndex++;
             }
         }
     }
