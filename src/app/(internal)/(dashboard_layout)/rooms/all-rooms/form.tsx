@@ -9,7 +9,6 @@ import {
     getRoomTypeDurationsByRoomTypeIDAndLocationID,
     getRoomTypes,
     RoomsWithTypeAndLocation,
-    RoomsWithTypeAndLocationAndBookings,
     RoomTypeDurationWithDuration
 } from "@/app/_db/room";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
@@ -185,10 +184,12 @@ export function RoomForm(props: RoomFormProps) {
                 <div className="mb-1 flex flex-col gap-6">
                     <div>
                         <label htmlFor="room_number">
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography variant="h6" color="blue-gray">
                                 Nomor Kamar
                             </Typography>
                         </label>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Input
                             variant="outlined"
                             name="room_number"
@@ -204,153 +205,166 @@ export function RoomForm(props: RoomFormProps) {
                         />
                         {
                             fieldErrors?.room_number &&
+                             // @ts-expect-error weird react 19 types error
                             <Typography color="red">{fieldErrors?.room_number._errors}</Typography>
-                        }
-                    </div>
-                    <div>
-                        <label htmlFor="room_type">
-                            <Typography variant="h6" color="blue-gray">
-                                Tipe Kamar
-                            </Typography>
-                        </label>
-                        <SelectComponent<number>
-                            // @ts-ignore
-                            setValue={(v) => setRoomData(prevState => ({
-                                ...prevState,
-                                roomtypes: v && {id: v, roomtypedurations: []}
-                            }))}
-                            options={roomTypeDataMapped}
-                            selectedOption={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
-                            placeholder={"Enter room type"}
-                            isError={!!fieldErrors?.roomtypes?.id}
-                        />
-                        {
-                            fieldErrors?.roomtypes &&
-                            <Typography color="red">{fieldErrors?.roomtypes?.id?._errors}</Typography>
-                        }
-                    </div>
-                    <div>
-                        <label htmlFor="status">
-                            <Typography variant="h6" color="blue-gray">
-                                Status
-                            </Typography>
-                        </label>
-                        <SelectComponent<number>
-                            // @ts-ignore
-                            setValue={(v) => setRoomData(prevState => ({...prevState, roomstatuses: {id: v}}))}
-                            options={statusDataMapped}
-                            selectedOption={statusDataMapped.find(r => r.value == roomData.roomstatuses?.id)}
-                            placeholder={"Enter status"}
-                            isError={!!fieldErrors?.roomstatuses}
-                        />
-                        {
-                            fieldErrors?.roomstatuses &&
-                            <Typography color="red">{fieldErrors?.roomstatuses._errors}</Typography>
-                        }
-                    </div>
-                    <div>
-                        <label htmlFor="location">
-                            <Typography variant="h6" color="blue-gray">
-                                Lokasi
-                            </Typography>
-                        </label>
-                        <SelectComponent<number>
-                            setValue={(v) => setRoomData(prevState => {
-                                return structuredClone({...prevState, location_id: v});
-                            })}
-                            options={locationDataMapped}
-                            selectedOption={
-                                locationDataMapped.find(r => r.value == roomData.location_id)
-                            }
-                            placeholder={"Masukan Lokasi"}
-                            isError={!!fieldErrors?.location_id}
-                        />
-                        {
-                            fieldErrors?.location_id &&
-                            <Typography color="red">{fieldErrors?.location_id._errors}</Typography>
-                        }
-                    </div>
-                    {
-                        roomTypeDurationDataLoading &&
-                        <div className={"flex items-center justify-center"}>
-                            <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
-                        </div>
                     }
-                    {
-                        roomData.roomtypes?.roomtypedurations && roomTypeDurationDataSuccess &&
-                        <div>
-                            <Typography variant="h5" color="blue-gray">
-                                Harga
-                            </Typography>
-                            {
-                                roomData.roomtypes?.roomtypedurations
-                                    ?.sort((a, b) => a.durations.month_count - b.durations.month_count)
-                                    .map((d, index) => {
-                                        return (
-                                            <div key={d.id}>
-                                                <label htmlFor={d.durations.duration}>
-                                                    <Typography variant="h6" color="blue-gray">
-                                                        {d.durations.duration}
-                                                    </Typography>
-                                                </label>
-                                                <CurrencyInput
-                                                    disabled={roomData.roomtypes == undefined || roomData.location_id == undefined}
-                                                    name={d.durations.duration}
-                                                    value={Number(roomData.roomtypes?.roomtypedurations[index]?.suggested_price) ?? ""}
-                                                    setValue={(newValue) => {
-                                                        setRoomData(prevRoom => {
-                                                            if (newValue == undefined) {
-                                                                // @ts-ignore
-                                                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = null;
-                                                                return {...prevRoom};
-                                                            }
-
-                                                            if (prevRoom.roomtypes?.roomtypedurations[index]) {
-                                                                prevRoom.roomtypes.roomtypedurations[index].suggested_price = new Prisma.Decimal(newValue);
-                                                            } else {
-                                                                // @ts-ignore
-                                                                prevRoom.roomtypes.roomtypedurations[index] = {
-                                                                    room_type_id: prevRoom.roomtypes!.id,
-                                                                    location_id: prevRoom.location_id!,
-                                                                    durations: d.durations,
-                                                                    suggested_price: new Prisma.Decimal(newValue)
-                                                                };
-                                                            }
-
-                                                            return {...prevRoom};
-                                                        });
-                                                    }}
-                                                    size="lg"
-                                                    className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
-                                                    labelProps={{
-                                                        className: "before:content-none after:content-none",
-                                                    }}
-                                                />
-                                            </div>
-                                        );
-                                    })
-                            }
-                        </div>
-                    }
-                    {
-                        props.mutationResponse?.failure &&
-                        <Typography variant="h6" color="blue-gray" className="-mb-4">
-                            {props.mutationResponse.failure}
+                </div>
+                <div>
+                    <label htmlFor="room_type">
+                        {/* @ts-expect-error weird react 19 types error */}
+                        <Typography variant="h6" color="blue-gray">
+                            Tipe Kamar
                         </Typography>
+                    </label>
+                    <SelectComponent<number>
+                        // @ts-ignore
+                        setValue={(v) => setRoomData(prevState => ({
+                            ...prevState,
+                            roomtypes: v && {id: v, roomtypedurations: []}
+                        }))}
+                        options={roomTypeDataMapped}
+                        selectedOption={roomTypeDataMapped.find(r => r.value == roomData.roomtypes?.id)}
+                        placeholder={"Enter room type"}
+                        isError={!!fieldErrors?.roomtypes?.id}
+                    />
+                    {
+                        fieldErrors?.roomtypes &&
+                        /* @ts-expect-error weird react 19 types error */
+                        <Typography color="red">{fieldErrors?.roomtypes?.id?._errors}</Typography>
                     }
                 </div>
-
-                <div className={"flex gap-x-4 justify-end"}>
-                    <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
-                        Batal
-                    </Button>
-                    <Button onClick={() => props.mutation.mutate(roomData)} color={"blue"} className="mt-6"
-                            loading={props.mutation.isPending}>
-                        {(props.contentData && props.contentData.id) ? "Ubah" : "Buat"}
-                    </Button>
+                <div>
+                    <label htmlFor="status">
+                        {/* @ts-expect-error weird react 19 types error */}
+                        <Typography variant="h6" color="blue-gray">
+                            Status
+                        </Typography>
+                    </label>
+                    <SelectComponent<number>
+                        // @ts-ignore
+                        setValue={(v) => setRoomData(prevState => ({...prevState, roomstatuses: {id: v}}))}
+                        options={statusDataMapped}
+                        selectedOption={statusDataMapped.find(r => r.value == roomData.roomstatuses?.id)}
+                        placeholder={"Enter status"}
+                        isError={!!fieldErrors?.roomstatuses}
+                    />
+                    {
+                        fieldErrors?.roomstatuses &&
+                        /* @ts-expect-error weird react 19 types error */
+                        <Typography color="red">{fieldErrors?.roomstatuses._errors}</Typography>
+                    }
                 </div>
-            </form>
+                <div>
+                    <label htmlFor="location">
+                        {/* @ts-expect-error weird react 19 types error */}
+                        <Typography variant="h6" color="blue-gray">
+                            Lokasi
+                        </Typography>
+                    </label>
+                    <SelectComponent<number>
+                        setValue={(v) => setRoomData(prevState => {
+                            return structuredClone({...prevState, location_id: v});
+                        })}
+                        options={locationDataMapped}
+                        selectedOption={
+                            locationDataMapped.find(r => r.value == roomData.location_id)
+                        }
+                        placeholder={"Masukan Lokasi"}
+                        isError={!!fieldErrors?.location_id}
+                    />
+                    {
+                        fieldErrors?.location_id &&
+                        /* @ts-expect-error weird react 19 types error */
+                        <Typography color="red">{fieldErrors?.location_id._errors}</Typography>
+                    }
+                </div>
+                {
+                    roomTypeDurationDataLoading &&
+                    <div className={"flex items-center justify-center"}>
+                        <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
+                    </div>
+                }
+                {
+                    roomData.roomtypes?.roomtypedurations && roomTypeDurationDataSuccess &&
+                    <div>
+                        {/* @ts-expect-error weird react 19 types error */}
+                        <Typography variant="h5" color="blue-gray">
+                            Harga
+                        </Typography>
+                        {
+                            roomData.roomtypes?.roomtypedurations
+                                ?.sort((a, b) => a.durations.month_count - b.durations.month_count)
+                                .map((d, index) => {
+                                    return (
+                                        <div key={d.id}>
+                                            <label htmlFor={d.durations.duration}>
+                                                {/* @ts-expect-error weird react 19 types error */}
+                                                <Typography variant="h6" color="blue-gray">
+                                                    {d.durations.duration}
+                                                </Typography>
+                                            </label>
+                                            <CurrencyInput
+                                                disabled={roomData.roomtypes == undefined || roomData.location_id == undefined}
+                                                name={d.durations.duration}
+                                                value={Number(roomData.roomtypes?.roomtypedurations[index]?.suggested_price) ?? ""}
+                                                setValue={(newValue) => {
+                                                    setRoomData(prevRoom => {
+                                                        if (newValue == undefined) {
+                                                            // @ts-ignore
+                                                            prevRoom.roomtypes.roomtypedurations[index].suggested_price = null;
+                                                            return {...prevRoom};
+                                                        }
+
+                                                        if (prevRoom.roomtypes?.roomtypedurations[index]) {
+                                                            prevRoom.roomtypes.roomtypedurations[index].suggested_price = new Prisma.Decimal(newValue);
+                                                        } else {
+                                                            // @ts-ignore
+                                                            prevRoom.roomtypes.roomtypedurations[index] = {
+                                                                room_type_id: prevRoom.roomtypes!.id,
+                                                                location_id: prevRoom.location_id!,
+                                                                durations: d.durations,
+                                                                suggested_price: new Prisma.Decimal(newValue)
+                                                            };
+                                                        }
+
+                                                        return {...prevRoom};
+                                                    });
+                                                }}
+                                                size="lg"
+                                                className={"!border-t-blue-gray-200 focus:!border-t-gray-900"}
+                                                labelProps={{
+                                                    className: "before:content-none after:content-none",
+                                                }}
+                                            />
+                                        </div>
+                                    );
+                                })
+                        }
+                    </div>
+                }
+                {
+                    props.mutationResponse?.failure &&
+                    /* @ts-expect-error weird react 19 types error */
+                    <Typography variant="h6" color="blue-gray" className="-mb-4">
+                        {props.mutationResponse.failure}
+                    </Typography>
+                }
         </div>
-    );
+
+    <div className={"flex gap-x-4 justify-end"}>
+        {/* @ts-expect-error weird react 19 types error */}
+        <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
+            Batal
+        </Button>
+        {/* @ts-expect-error weird react 19 types error */}
+        <Button onClick={() => props.mutation.mutate(roomData)} color={"blue"} className="mt-6"
+                loading={props.mutation.isPending}>
+            {(props.contentData && props.contentData.id) ? "Ubah" : "Buat"}
+        </Button>
+    </div>
+</form>
+</div>
+)
+    ;
 }
 

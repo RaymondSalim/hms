@@ -23,7 +23,7 @@ interface EndOfStayFormProps {
     onClose: () => void;
 }
 
-export function EndOfStayForm({ booking, open, onClose }: EndOfStayFormProps) {
+export function EndOfStayForm({booking, open, onClose}: EndOfStayFormProps) {
     const [endDate, setEndDate] = useState('');
     const [depositStatus, setDepositStatus] = useState<DepositStatus | undefined>();
     const [showWarning, setShowWarning] = useState(false);
@@ -73,13 +73,18 @@ export function EndOfStayForm({ booking, open, onClose }: EndOfStayFormProps) {
     };
 
     return (
+        // @ts-expect-error weird react 19 types error
         <Dialog open={open} handler={onClose}>
+            {/*@ts-expect-error weird react 19 types error*/}
             <DialogHeader>Jadwalkan Berhenti Sewa</DialogHeader>
+            {/*@ts-expect-error weird react 19 types error*/}
             <DialogBody divider>
                 <div className="flex flex-col gap-4">
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Typography>
                         Pilih tanggal berhenti untuk pemesanan ini.
                     </Typography>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Input
                         type="date"
                         label="Tanggal Berhenti"
@@ -88,10 +93,13 @@ export function EndOfStayForm({ booking, open, onClose }: EndOfStayFormProps) {
                         min={booking.start_date.toISOString().split('T')[0]}
                     />
                     {showWarning && (
+                        // @ts-expect-error weird react 19 types error
                         <Typography color="amber">
-                            Peringatan: Tanggal yang dipilih kurang dari satu bulan dari sekarang. Ini dapat menyebabkan deposit hangus.
+                            Peringatan: Tanggal yang dipilih kurang dari satu bulan dari sekarang. Ini dapat menyebabkan
+                            deposit hangus.
                         </Typography>
                     )}
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Select
                         label="Status Deposit"
                         value={depositStatus}
@@ -103,10 +111,13 @@ export function EndOfStayForm({ booking, open, onClose }: EndOfStayFormProps) {
                     </Select>
                 </div>
             </DialogBody>
+            {/*@ts-expect-error weird react 19 types error*/}
             <DialogFooter>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Button variant="text" color="red" onClick={onClose} className="mr-1">
                     <span>Batal</span>
                 </Button>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Button variant="gradient" color="green" onClick={handleSubmit}>
                     <span>Simpan</span>
                 </Button>

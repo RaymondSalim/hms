@@ -1,36 +1,32 @@
 "use client";
 
 import {RoomTypeWithRoomCount} from "@/app/_db/room";
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useMemo, useState} from "react";
 import {
     Button,
     Card,
     CardBody,
     CardFooter,
     CardHeader,
+    Checkbox,
     Chip,
-    Input,
     Menu,
     MenuHandler,
     MenuItem,
     MenuList,
-    Popover,
-    PopoverContent,
-    PopoverHandler,
-    Typography,
-    Checkbox
+    Typography
 } from "@material-tailwind/react";
 import {formatToDateTime} from "@/app/_lib/util";
 import {DateRange} from "react-day-picker";
 import {DatePicker} from "@/app/_components/DateRangePicker";
-import {CiCalendarDate, CiSearch} from "react-icons/ci";
 import {FaChevronDown} from "react-icons/fa";
 import {RiErrorWarningLine} from "react-icons/ri";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import Link from "next/link";
-import {AiOutlineLoading} from "react-icons/ai";
 import {useQuery} from "@tanstack/react-query";
-import {getRoomTypeAvailabilityAction} from "@/app/(internal)/(dashboard_layout)/rooms/availability/availability-action";
+import {
+    getRoomTypeAvailabilityAction
+} from "@/app/(internal)/(dashboard_layout)/rooms/availability/availability-action";
 import {useHeader} from "@/app/_context/HeaderContext";
 
 export interface RoomAvailabilityProps {
@@ -114,7 +110,7 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
         } else {
             data = props.roomTypes.map(rt => ({ ...rt, roomLeft: rt._count.rooms }));
         }
-        
+
         // Filter by selected room types
         return data.filter(rt => filteredRoomTypeIDs.has(rt.id));
     }, [props.roomTypes, roomTypesWithAvailability, isSuccess, filteredRoomTypeIDs]);
@@ -128,6 +124,7 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
                     }}
                 >
                     <MenuHandler>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button
                             className={"basis-1/2 md:basis-auto md:flex-grow-0 !px-2 !md:px-4 flex-1 border-[#b0bec5] flex items-center justify-center gap-3"}
                             variant={"outlined"}
@@ -136,12 +133,15 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
                             <FaChevronDown/>
                         </Button>
                     </MenuHandler>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <MenuList>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <MenuItem key={"all-rt"} className="p-0">
                             <label
                                 htmlFor={"all-rt"}
                                 className="flex cursor-pointer items-center gap-2 p-2"
                             >
+                                {/* @ts-expect-error weird react 19 types error */}
                                 <Checkbox
                                     checked={filteredRoomTypeIDs.size == props.roomTypes.length}
                                     onChange={(e) => {
@@ -161,17 +161,18 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
                             </label>
                         </MenuItem>
                         {props.roomTypes.map(rt => (
+                            /* @ts-expect-error weird react 19 types error */
                             <MenuItem key={rt.id} className="p-0">
                                 <label
                                     htmlFor={rt.id.toString()}
                                     className="flex cursor-pointer items-center gap-2 p-2"
                                 >
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Checkbox
                                         checked={filteredRoomTypeIDs.has(rt.id)}
                                         onChange={(e) => {
                                             let newSet: Set<number>;
                                             if (e.target.checked) {
-                                                // @ts-expect-error js version regarding sets
                                                 newSet = new Set([...filteredRoomTypeIDs, rt.id]);
                                             } else {
                                                 filteredRoomTypeIDs.delete(rt.id);
@@ -204,6 +205,7 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
 
             {searchTriggered && dates?.from && !isLoading && (
                 <div className="mt-4 text-center">
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Typography color="blue-gray" className="text-sm">
                         Menampilkan ketersediaan untuk: {formatToDateTime(dates.from, false)}
                         {dates.to && dates.from.getTime() !== dates.to.getTime() &&
@@ -218,6 +220,7 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
                     <div className={"w-full flex gap-4 justify-center"}>
                         <div className={"w-1/2 min-w-[300px] text-center"}>
                             <RiErrorWarningLine color={"gray"} className={"w-14 h-14 mx-auto mb-4"}/>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography color={"gray"}>
                                 {props.roomTypes.length == 0 ?
                                     "Tidak ada kamar yang tersedia pada tanggal tersebut. Mohon pilih tanggal lain." :
@@ -229,14 +232,18 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
             <div className={"grid grid-flow-row gap-4 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]"}>
                 {displayData.map(rt => {
                     return (
+                        /* @ts-expect-error weird react 19 types error */
                         <Card key={rt.id}
                               className="col-span-1 max-w-[26rem] min-w-[250px] shadow-lg transition-all hover:scale-[1.02]">
+                             {/* @ts-expect-error weird react 19 types error */}
                              <CardHeader floated={false} color="blue-gray">
                                  <div
                                      className="to-bg-black-10 absolute inset-0 h-full w-full bg-gradient-to-tr from-transparent via-transparent to-black/60 "/>
                              </CardHeader>
+                             {/* @ts-expect-error weird react 19 types error */}
                              <CardBody>
                                  <div className="mb-3 flex items-center justify-between">
+                                     {/* @ts-expect-error weird react 19 types error */}
                                      <Typography variant="h5" color="blue-gray" className="font-medium">
                                          {rt.type}
                                      </Typography>
@@ -245,10 +252,12 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
                                          className="rounded-full"
                                          value={`${searchTriggered ? rt.roomLeft + '/' : ''}${rt._count.rooms}`}/>
                                  </div>
+                                 {/* @ts-expect-error weird react 19 types error */}
                                  <Typography color="gray">
                                      {rt.description}
                                  </Typography>
                              </CardBody>
+                             {/* @ts-expect-error weird react 19 types error */}
                              <CardFooter className="pt-3 mt-auto">
                                  <Link
                                      href={searchTriggered && dates != undefined ?
@@ -261,6 +270,7 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
                                              }
                                          } : {}}
                                  >
+                                     {/* @ts-expect-error weird react 19 types error */}
                                      <Button
                                          disabled={rt.roomLeft === 0 && searchTriggered}
                                          size="lg"

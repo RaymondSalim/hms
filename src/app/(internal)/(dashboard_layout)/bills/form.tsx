@@ -2,13 +2,12 @@
 
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Checkbox, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
+import {Button, Checkbox, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
 import {ZodFormattedError} from "zod";
 import {DatePicker} from "@/app/_components/DateRangePicker";
-import {formatToDateTime} from "@/app/_lib/util";
 import {getAllBookingsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
 import {NonUndefined} from "@/app/_lib/types";
@@ -113,6 +112,7 @@ export function BillForm(props: BillForm) {
                         <AnimatePresence>
                             <div>
                                 <label htmlFor="location">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" color="blue-gray">
                                         Lokasi
                                     </Typography>
@@ -137,6 +137,7 @@ export function BillForm(props: BillForm) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="booking_id">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="h6" color="blue-gray">
                                             Pemesanan
                                         </Typography>
@@ -151,6 +152,7 @@ export function BillForm(props: BillForm) {
                                     />
                                     {
                                         fieldErrors?.booking_id &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.booking_id._errors}</Typography>
                                     }
                                 </motion.div>
@@ -165,6 +167,7 @@ export function BillForm(props: BillForm) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="due_date">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="h6" color="blue-gray">
                                             Tanggal Jatuh Tempo
                                         </Typography>
@@ -181,6 +184,7 @@ export function BillForm(props: BillForm) {
                                     />
                                     {
                                         fieldErrors?.due_date &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.due_date._errors}</Typography>
                                     }
                                 </motion.div>
@@ -201,9 +205,11 @@ export function BillForm(props: BillForm) {
                                                 </svg>
                                             </div>
                                             <div className="ml-3">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                                 <Typography variant="h6" color="amber" className="font-medium text-amber-800">
                                                     Peringatan Alokasi Pembayaran
                                                 </Typography>
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                                 <Typography variant="small" color="amber" className="mt-1 text-amber-700">
                                                     Mengubah rincian tagihan dapat mempengaruhi alokasi pembayaran yang sudah ada.
                                                     Harap periksa kembali alokasi pembayaran setelah menyimpan perubahan ini.
@@ -218,8 +224,10 @@ export function BillForm(props: BillForm) {
                                         exit={{opacity: 0, height: 0}}
                                         className="mt-1"
                                     >
+                                        {/* @ts-expect-error weird react 19 types error */}
                                         <Checkbox
                                             label={
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography color="amber" className="font-medium text-amber-800">
                                                     Saya memahami bahwa perubahan ini dapat mempengaruhi alokasi pembayaran yang sudah ada
                                                 </Typography>
@@ -235,6 +243,7 @@ export function BillForm(props: BillForm) {
                             )}
                             {
                                 props.mutationResponse?.failure &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography variant="h6" color="red" className="-mb-4">
                                     {props.mutationResponse.failure}
                                 </Typography>
@@ -244,9 +253,11 @@ export function BillForm(props: BillForm) {
                 </div>
 
                 <div className={"flex gap-x-4 justify-end"}>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Button disabled={isButtonDisabled}
                             onClick={() => props.mutation.mutate(data)}
                             color={"blue"} className="mt-6"

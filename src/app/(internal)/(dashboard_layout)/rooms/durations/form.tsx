@@ -26,10 +26,12 @@ export function DurationForm(props: RoomFormProps) {
             durationData.id &&
               <div>
                   <label htmlFor="id">
+                      {/* @ts-expect-error weird react 19 types error */}
                       <Typography variant="h6" color="blue-gray">
                           ID
                       </Typography>
                   </label>
+                  {/* @ts-expect-error weird react 19 types error */}
                   <Input
                       disabled={true}
                       variant="outlined"
@@ -45,10 +47,12 @@ export function DurationForm(props: RoomFormProps) {
           }
           <div>
             <label htmlFor="duration">
+              {/* @ts-expect-error weird react 19 types error */}
               <Typography variant="h6" color="blue-gray">
                 Nama Durasi
               </Typography>
             </label>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
               variant="outlined"
               name="duration"
@@ -65,10 +69,12 @@ export function DurationForm(props: RoomFormProps) {
           </div>
           <div>
             <label htmlFor="month_count">
+              {/* @ts-expect-error weird react 19 types error */}
               <Typography variant="h6" color="blue-gray">
                 Jumlah Bulan
               </Typography>
             </label>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
               min="0" onInput={({currentTarget}) => currentTarget.validity.valid || currentTarget.value == ''}
               type="number"
@@ -90,6 +96,7 @@ export function DurationForm(props: RoomFormProps) {
           </div>
           {
             props.mutationResponse?.failure &&
+               // @ts-expect-error weird react 19 types error
               <Typography variant="h6" color="red" className="-mb-4">
                 {props.mutationResponse.failure}
               </Typography>
@@ -97,9 +104,11 @@ export function DurationForm(props: RoomFormProps) {
         </div>
 
         <div className={"flex gap-x-4 justify-end"}>
+          {/* @ts-expect-error weird react 19 types error */}
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
             Batal
           </Button>
+          {/* @ts-expect-error weird react 19 types error */}
           <Button onClick={() => props.mutation.mutate(durationData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
             {(props.contentData && props.contentData.id) ? "Ubah" : "Buat"}

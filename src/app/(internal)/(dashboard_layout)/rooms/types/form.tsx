@@ -26,10 +26,12 @@ export function RoomTypesForm(props: RoomFormProps) {
               roomTypeData.id &&
               <div>
                 <label htmlFor="room_number">
+                  {/* @ts-expect-error weird react 19 types error */}
                   <Typography variant="h6" color="blue-gray">
                     ID
                   </Typography>
                 </label>
+                {/* @ts-expect-error weird react 19 types error */}
                 <Input
                     disabled={true}
                     variant="outlined"
@@ -45,10 +47,12 @@ export function RoomTypesForm(props: RoomFormProps) {
           }
           <div>
             <label htmlFor="room_type">
+              {/* @ts-expect-error weird react 19 types error */}
               <Typography variant="h6" color="blue-gray">
                 Tipe Kamar
               </Typography>
             </label>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
                 variant="outlined"
                 name="type"
@@ -65,10 +69,12 @@ export function RoomTypesForm(props: RoomFormProps) {
           </div>
           <div>
             <label htmlFor="description">
+              {/* @ts-expect-error weird react 19 types error */}
               <Typography variant="h6" color="blue-gray">
                 Deskripsi
               </Typography>
             </label>
+            {/* @ts-expect-error weird react 19 types error */}
             <Input
                 variant="outlined"
                 name="description"
@@ -84,6 +90,7 @@ export function RoomTypesForm(props: RoomFormProps) {
           </div>
           {
               props.mutationResponse?.failure &&
+               // @ts-expect-error weird react 19 types error
               <Typography variant="h6" color="red" className="-mb-4">
                 {props.mutationResponse.failure}
               </Typography>
@@ -91,9 +98,11 @@ export function RoomTypesForm(props: RoomFormProps) {
         </div>
 
         <div className={"flex gap-x-4 justify-end"}>
+          {/* @ts-expect-error weird react 19 types error */}
           <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
             Batal
           </Button>
+          {/* @ts-expect-error weird react 19 types error */}
           <Button onClick={() => props.mutation.mutate(roomTypeData)} color={"blue"} className="mt-6"
                   loading={props.mutation.isPending}>
             {(props.contentData && props.contentData.id) ? "Ubah" : "Buat"}

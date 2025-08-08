@@ -5,7 +5,7 @@ import React, {useState} from "react";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {useHeader} from "@/app/_context/HeaderContext";
-import {Prisma, Transaction} from "@prisma/client";
+import {Prisma} from "@prisma/client";
 import {BillIncludeAll} from "@/app/_db/bills";
 import Link from "next/link";
 import {Button, Dialog, Typography} from "@material-tailwind/react";
@@ -15,7 +15,7 @@ import {
     deleteTransactionAction,
     upsertTransactionAction
 } from "@/app/(internal)/(dashboard_layout)/financials/transaction-action";
-import { TransactionWithBookingInfo } from "@/app/_db/transaction";
+import {TransactionWithBookingInfo} from "@/app/_db/transaction";
 
 
 export interface IncomesContentProps {
@@ -91,7 +91,7 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
             columns={columns}
             form={
                 // @ts-expect-error
-                <IncomeForm />
+                <IncomeForm/>
             }
             searchPlaceholder={"TODO!"} // TODO!
             upsert={{
@@ -128,6 +128,7 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
             //     ]
             // }}
             customDialog={
+                // @ts-expect-error weird react 19 types error
                 <Dialog
                     open={showDialog}
                     size={"lg"}
@@ -146,13 +147,16 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
     setShowDialog: React.Dispatch<React.SetStateAction<boolean>>
 }) => (
     <>
+        {/*@ts-expect-error weird react 19 types error*/}
         <Typography variant="h5" color="black" className="mb-4">Detail Tagihan dan Pembayaran</Typography>
+        {/*@ts-expect-error weird react 19 types error*/}
         <Typography variant="h6" color="blue-gray" className="mb-2">Rincian Tagihan</Typography>
         <table className="w-full table-auto text-left mb-6">
             <thead>
             <tr>
                 {["Deskripsi", "Harga"].map((el) => (
                     <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <Typography variant="small" color="blue-gray"
                                     className="font-normal leading-none opacity-70">
                             {el}
@@ -167,11 +171,13 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
                     activeData.bill_item.map((item, index) => (
                         <tr key={index}>
                             <td className="border-b border-blue-gray-50 p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography variant="small" color="blue-gray" className="font-normal">
                                     {item.description}
                                 </Typography>
                             </td>
                             <td className="border-b border-blue-gray-50 p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography variant="small" color="blue-gray" className="font-normal">
                                     {formatToIDR(new Prisma.Decimal(item.amount).toNumber())}
                                 </Typography>
@@ -180,6 +186,7 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
                     )) :
                     <tr>
                         <td colSpan={3} className="p-4">
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Typography>Tidak ada rincian tagihan.</Typography>
                         </td>
                     </tr>
@@ -187,12 +194,14 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
             </tbody>
         </table>
 
+        {/*@ts-expect-error weird react 19 types error*/}
         <Typography variant="h6" color="blue-gray" className="mb-2">Pembayaran</Typography>
         <table className="w-full table-auto text-left">
             <thead>
             <tr>
                 {["ID", "Tanggal", "Jumlah Pembayaran", "Pembayaran yang Dialokasikan", ""].map((el) => (
                     <th key={el} className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
+                        {/*@ts-expect-error weird react 19 types error*/}
                         <Typography variant="small" color="blue-gray"
                                     className="font-normal leading-none opacity-70">
                             {el}
@@ -207,21 +216,25 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
                     activeData.paymentBills.map((pb, index) => (
                         <tr key={pb.payment.id}>
                             <td className="border-b border-blue-gray-50 p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography variant="small" color="blue-gray" className="font-normal">
                                     {pb.payment.id}
                                 </Typography>
                             </td>
                             <td className="border-b border-blue-gray-50 p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography variant="small" color="blue-gray" className="font-normal">
                                     {formatToDateTime(pb.payment.payment_date)}
                                 </Typography>
                             </td>
                             <td className="border-b border-blue-gray-50 p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography variant="small" color="blue-gray" className="font-normal">
                                     {formatToIDR(new Prisma.Decimal(pb.payment.amount).toNumber())}
                                 </Typography>
                             </td>
                             <td className="border-b border-blue-gray-50 p-4">
+                                {/*@ts-expect-error weird react 19 types error*/}
                                 <Typography variant="small" color="blue-gray" className="font-normal">
                                     {formatToIDR(new Prisma.Decimal(pb.amount).toNumber())}
                                 </Typography>
@@ -236,6 +249,7 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
                                     }}
                                     className="font-normal"
                                 >
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="small" color="blue-gray" className="font-normal">
                                         {"More Info"}
                                     </Typography>
@@ -245,6 +259,7 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
                     )) :
                     <tr>
                         <td colSpan={5} className="p-4">
+                            {/*@ts-expect-error weird react 19 types error*/}
                             <Typography>Tidak ada pembayaran yang telah dilakukan</Typography>
                         </td>
                     </tr>
@@ -253,6 +268,7 @@ const DetailsDialogContent = ({activeData, setShowDialog}: {
         </table>
 
         <div className="flex gap-x-4 justify-end">
+            {/*@ts-expect-error weird react 19 types error*/}
             <Button onClick={() => setShowDialog(false)} variant="outlined" className="mt-6">
                 Tutup
             </Button>

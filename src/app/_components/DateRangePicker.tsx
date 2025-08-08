@@ -26,17 +26,17 @@ export interface DatePickerProps {
 }
 
 export function DatePicker({
-    mode = "range",
-    onUpdate,
-    placeholder = "Pilih tanggal",
-    showSearchButton = true,
-    searchButtonText = "Cari",
-    disabled = false,
-    min,
-    max,
-    timeZone = "UTC",
-    className
-}: DatePickerProps) {
+                               mode = "range",
+                               onUpdate,
+                               placeholder = "Pilih tanggal",
+                               showSearchButton = true,
+                               searchButtonText = "Cari",
+                               disabled = false,
+                               min,
+                               max,
+                               timeZone = "UTC",
+                               className
+                           }: DatePickerProps) {
     const today = new Date();
     const [dates, setDates] = useState<DateRange | undefined>(undefined);
     const [singleDate, setSingleDate] = useState<Date | undefined>(undefined);
@@ -46,11 +46,11 @@ export function DatePicker({
     const handleSearch = () => {
         if (mode === "range" && dates?.from) {
             setIsSearching(true);
-            onUpdate({ range: dates, searchTriggered: true });
+            onUpdate({range: dates, searchTriggered: true});
             setTimeout(() => setIsSearching(false), 1000);
         } else if (mode === "single" && singleDate) {
             setIsSearching(true);
-            onUpdate({ singleDate, searchTriggered: true });
+            onUpdate({singleDate, searchTriggered: true});
             setTimeout(() => setIsSearching(false), 1000);
         } else {
             setIsPopoverOpen(true);
@@ -67,7 +67,7 @@ export function DatePicker({
                     setDates(range);
                 } else {
                     // Keep the partial selection (just from date)
-                    setDates({ from: range.from });
+                    setDates({from: range.from});
                 }
             }
         } else {
@@ -90,12 +90,12 @@ export function DatePicker({
         if (mode === "range" && dates?.from) {
             setIsPopoverOpen(false);
             setIsSearching(true);
-            onUpdate({ range: dates, searchTriggered: true });
+            onUpdate({range: dates, searchTriggered: true});
             setTimeout(() => setIsSearching(false), 1000);
         } else if (mode === "single" && singleDate) {
             setIsPopoverOpen(false);
             setIsSearching(true);
-            onUpdate({ singleDate, searchTriggered: true });
+            onUpdate({singleDate, searchTriggered: true});
             setTimeout(() => setIsSearching(false), 1000);
         }
     };
@@ -133,6 +133,7 @@ export function DatePicker({
                 placement="bottom-end"
             >
                 <PopoverHandler>
+                    {/* @ts-expect-error weird react 19 types error */}
                     <Input
                         variant="outlined"
                         icon={<CiCalendarDate/>}
@@ -148,6 +149,7 @@ export function DatePicker({
                             className: "before:content-none after:content-none",
                         }}/>
                 </PopoverHandler>
+                {/* @ts-expect-error weird react 19 types error */}
                 <PopoverContent className={"z-[99999] p-0"}>
                     <div className="p-3">
                         <DayPicker
@@ -158,8 +160,8 @@ export function DatePicker({
                             // @ts-expect-error type error
                             selected={mode === "range" ? dates : singleDate}
                             onSelect={handleDateSelect}
-                            {...(min !== undefined && { min })}
-                            {...(max !== undefined && { max })}
+                            {...(min !== undefined && {min})}
+                            {...(max !== undefined && {max})}
                             showOutsideDays
                             startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
                             endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
@@ -169,6 +171,7 @@ export function DatePicker({
                             }}/>
                     </div>
                     <div className="flex gap-2 p-3 border-t border-gray-200">
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button
                             variant="outlined"
                             size="sm"
@@ -178,6 +181,7 @@ export function DatePicker({
                         >
                             Bersihkan
                         </Button>
+                        {/* @ts-expect-error weird react 19 types error */}
                         <Button
                             variant="filled"
                             size="sm"
@@ -191,6 +195,7 @@ export function DatePicker({
                 </PopoverContent>
             </Popover>
             {showSearchButton && (
+                /* @ts-expect-error weird react 19 types error */
                 <Button
                     className={"basis-full md:basis-auto border-[#b0bec5] text-[#b0bec5] flex justify-center items-center gap-4"}
                     variant={"outlined"}
@@ -216,11 +221,11 @@ export interface DateRangePickerProps {
     onUpdate: (data: { range: DateRange, searchTriggered: boolean }) => void;
 }
 
-export function DateRangePicker({ onUpdate }: DateRangePickerProps) {
+export function DateRangePicker({onUpdate}: DateRangePickerProps) {
     return (
         <DatePicker
             mode="range"
-            onUpdate={(data) => onUpdate({ range: data.range!, searchTriggered: data.searchTriggered })}
+            onUpdate={(data) => onUpdate({range: data.range!, searchTriggered: data.searchTriggered})}
         />
     );
 }

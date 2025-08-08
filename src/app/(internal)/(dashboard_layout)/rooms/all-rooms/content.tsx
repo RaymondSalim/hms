@@ -2,18 +2,17 @@
 
 import {createColumnHelper} from "@tanstack/react-table";
 import React, {useState} from "react";
-import {formatToDateTime} from "@/app/_lib/util";
+import {formatToDateTime, getNextUpcomingBooking, isBookingActive} from "@/app/_lib/util";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {RoomsWithTypeAndLocationAndBookings} from "@/app/_db/room";
 import {RoomForm} from "@/app/(internal)/(dashboard_layout)/rooms/all-rooms/form";
-import {deleteRoomAction, upsertRoomAction, getRoomsWithBookingsAction} from "@/app/(internal)/(dashboard_layout)/rooms/room-actions";
+import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/(dashboard_layout)/rooms/room-actions";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {getSortedDurations} from "@/app/_db/duration";
 import Link from "next/link";
 import {toast} from "react-toastify";
-import {isBookingActive, getNextUpcomingBooking} from "@/app/_lib/util";
 
 
 export interface RoomsContentProps {
@@ -58,12 +57,12 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
         const room = props.row.original;
         const activeBooking = room.bookings?.find(booking => isBookingActive(booking));
         const nextUpcomingBooking = getNextUpcomingBooking(room.bookings || []);
-        
+
         if (activeBooking) {
           return (
             <div className="flex flex-col">
               <span className="text-green-600 font-medium">Sedang Dihuni</span>
-              <Link 
+              <Link
                 href={`/bookings?action=search&id=${activeBooking.id}`}
                 className="text-blue-400 text-sm hover:underline"
               >
@@ -75,7 +74,7 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
           return (
             <div className="flex flex-col">
               <span className="text-orange-600 font-medium">Pemesanan Berikutnya</span>
-              <Link 
+              <Link
                 href={`/bookings?action=search&id=${nextUpcomingBooking.id}`}
                 className="text-blue-400 text-sm hover:underline"
               >
@@ -188,12 +187,14 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
           mutationFn: deleteRoomAction,
         }}
         customDialog={
+          // @ts-expect-error weird react 19 types error
           <Dialog
             open={showDialog}
             size={"md"}
             handler={() => setShowDialog(prev => !prev)}
             className={"p-8"}
           >
+            {/* @ts-expect-error weird react 19 types error */}
             <Typography variant="h5" color="black" className="mb-4">Rincian Harga</Typography>
             {
               activeData?.roomtypes?.roomtypedurations && isSuccess &&
@@ -205,6 +206,7 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
                           key={el}
                           className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
                         >
+                          {/* @ts-expect-error weird react 19 types error */}
                           <Typography
                             variant="small"
                             color="blue-gray"
@@ -227,6 +229,7 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
                       return (
                         <tr key={d.id}>
                           <td className={classes}>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography
                               variant="small"
                               color="blue-gray"
@@ -236,6 +239,7 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
                             </Typography>
                           </td>
                           <td className={classes}>
+                            {/* @ts-expect-error weird react 19 types error */}
                             <Typography
                               variant="small"
                               color={hasPrice ? "blue-gray" : "red"}
@@ -255,6 +259,7 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
                 </table>
             }
             <div className={"flex gap-x-4 justify-end"}>
+              {/* @ts-expect-error weird react 19 types error */}
               <Button onClick={() => setShowDialog(false)} variant={"outlined"} className="mt-6">
                 Close
               </Button>

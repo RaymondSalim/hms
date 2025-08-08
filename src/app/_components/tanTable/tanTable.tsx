@@ -143,6 +143,7 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                     className={`flex gap-x-1 items-center text-blue-gray-300 ${header.column.getCanSort() ? "cursor-pointer" : ""}`}
                                     onClick={header.column.getToggleSortingHandler()}
                                 >
+                                    {/* @ts-expect-error weird react 19 types error */}
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
@@ -179,8 +180,10 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                                     />
                                                 </div>
                                             </PopoverHandler>
+                                            {/* @ts-expect-error weird react 19 types error */}
                                             <PopoverContent className="w-80 z-[100]">
                                                 <div className="mb-4">
+                                                    {/* @ts-expect-error weird react 19 types error */}
                                                     <Input
                                                         type="text"
                                                         value={searchTerms[header.id] || ''}
@@ -200,6 +203,7 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                                         .filter(val => (selectedValues[header.id] || []).includes(val))
                                                         .map((val) => (
                                                             <div key={val} className="flex items-center gap-2 py-1">
+                                                                {/* @ts-expect-error weird react 19 types error */}
                                                                 <Checkbox
                                                                     checked={true}
                                                                     onChange={(e) => {
@@ -210,7 +214,8 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                                                         }));
                                                                     }}
                                                                 />
-                                                                <span className="text-sm">{getDisplayLabel(header.id, val)}</span>
+                                                                <span
+                                                                    className="text-sm">{getDisplayLabel(header.id, val)}</span>
                                                             </div>
                                                         ))}
 
@@ -226,6 +231,7 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                                         .filter(val => !(selectedValues[header.id] || []).includes(val))
                                                         .map((val) => (
                                                             <div key={val} className="flex items-center gap-2 py-1">
+                                                                {/* @ts-expect-error weird react 19 types error */}
                                                                 <Checkbox
                                                                     checked={false}
                                                                     onChange={(e) => {
@@ -236,12 +242,14 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                                                         }));
                                                                     }}
                                                                 />
-                                                                <span className="text-sm">{getDisplayLabel(header.id, val)}</span>
+                                                                <span
+                                                                    className="text-sm">{getDisplayLabel(header.id, val)}</span>
                                                             </div>
                                                         ))}
                                                 </div>
 
                                                 <div className={styles.filterActions}>
+                                                    {/* @ts-expect-error weird react 19 types error */}
                                                     <Button
                                                         variant="outlined"
                                                         size="sm"
@@ -254,6 +262,7 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                                     >
                                                         Clear
                                                     </Button>
+                                                    {/* @ts-expect-error weird react 19 types error */}
                                                     <Button
                                                         size="sm"
                                                         onClick={() => {
@@ -277,78 +286,78 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
             </thead>
             <tbody>
             <AnimatePresence>
-              {tanTable.getRowModel().rows.map((row) => (
-                  <React.Fragment key={row.id}>
-                      <motion.tr
-                          key={row.id}
-                          className={styles.tr}
-                          initial={{ opacity: row.getIsGrouped() ? 0 : 1 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.25 }}
-                      >
-                          {
-                              isGrouping && (
-                                  <td className={styles.td} style={{width: 32}}>
-                                      {row.getIsGrouped?.() ? (
-                                          <button onClick={() => handleGroupExpand(row)} style={{
-                                              cursor: 'pointer',
-                                              background: 'none',
-                                              border: 'none',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              padding: 0
-                                          }}>
-                                              <motion.span
-                                                  animate={{rotate: row.getIsExpanded?.() ? 90 : 0}}
-                                                  transition={{duration: 0.2}}
-                                                  style={{display: 'inline-flex', alignItems: 'center', color: 'black'}}
-                                              >
-                                                  <MdKeyboardArrowRight size={22}/>
-                                              </motion.span>
-                                          </button>
-                                      ) : null}
-                                  </td>
-                              )
-                          }
-                          {
-                              row.getIsGrouped?.() ? (
-                                  <td colSpan={row.getVisibleCells().length} className={styles.td}>
-                                      <strong className={styles.groupHeader}>
-                                          {row.groupingColumnId ? row.getValue(row.groupingColumnId) : ''}
-                                      </strong>
-                                  </td>
-                              ) : (
-                                  row.getVisibleCells().map(cell => {
-                                    return (
-                                        <td
-                                            key={cell.id}
-                                            className={styles.td}
-                                            style={{
-                                              width:
-                                                  cell.column.getSize() !== 0
-                                                      ? cell.column.getSize()
-                                                      : undefined,
-                                            }}
-                                        >
-                                          <motion.div
-                                              initial={{ height: isGrouping ? 0 : "auto" }}
-                                              animate={{ height: "auto" }}
-                                              exit={{ height: isGrouping ? 0 : "auto" }}
-                                              transition={{ duration: 0.25 }}
-                                              style={{ overflow: "hidden" }}
-                                          >
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                          </motion.div>
-                                        </td>
-                                    );
-                                  })
-                              )
-                          }
-                      </motion.tr>
-                  </React.Fragment>
-              ))}
+                {tanTable.getRowModel().rows.map((row) => (
+                    <React.Fragment key={row.id}>
+                        <motion.tr
+                            key={row.id}
+                            className={styles.tr}
+                            initial={{opacity: row.getIsGrouped() ? 0 : 1}}
+                            animate={{opacity: 1}}
+                            exit={{opacity: 0}}
+                            transition={{duration: 0.25}}
+                        >
+                            {
+                                isGrouping && (
+                                    <td className={styles.td} style={{width: 32}}>
+                                        {row.getIsGrouped?.() ? (
+                                            <button onClick={() => handleGroupExpand(row)} style={{
+                                                cursor: 'pointer',
+                                                background: 'none',
+                                                border: 'none',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: 0
+                                            }}>
+                                                <motion.span
+                                                    animate={{rotate: row.getIsExpanded?.() ? 90 : 0}}
+                                                    transition={{duration: 0.2}}
+                                                    style={{display: 'inline-flex', alignItems: 'center', color: 'black'}}
+                                                >
+                                                    <MdKeyboardArrowRight size={22}/>
+                                                </motion.span>
+                                            </button>
+                                        ) : null}
+                                    </td>
+                                )
+                            }
+                            {
+                                row.getIsGrouped?.() ? (
+                                    <td colSpan={row.getVisibleCells().length} className={styles.td}>
+                                        <strong className={styles.groupHeader}>
+                                            {row.groupingColumnId ? row.getValue(row.groupingColumnId) : ''}
+                                        </strong>
+                                    </td>
+                                ) : (
+                                    row.getVisibleCells().map(cell => {
+                                        return (
+                                            <td
+                                                key={cell.id}
+                                                className={styles.td}
+                                                style={{
+                                                    width:
+                                                        cell.column.getSize() !== 0
+                                                            ? cell.column.getSize()
+                                                            : undefined,
+                                                }}
+                                            >
+                                                <motion.div
+                                                    initial={{height: isGrouping ? 0 : "auto"}}
+                                                    animate={{height: "auto"}}
+                                                    exit={{height: isGrouping ? 0 : "auto"}}
+                                                    transition={{duration: 0.25}}
+                                                    style={{overflow: "hidden"}}
+                                                >
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </motion.div>
+                                            </td>
+                                        );
+                                    })
+                                )
+                            }
+                        </motion.tr>
+                    </React.Fragment>
+                ))}
             </AnimatePresence>
             </tbody>
         </table>

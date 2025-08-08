@@ -345,6 +345,7 @@ export function BookingForm(props: BookingFormProps) {
                         <AnimatePresence key={"booking_form"}>
                             <div>
                                 <label htmlFor="tenant_id">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" color="blue-gray">
                                         Penyewa
                                     </Typography>
@@ -360,11 +361,13 @@ export function BookingForm(props: BookingFormProps) {
                                 />
                                 {
                                     fieldErrors?.tenant_id &&
+                                    // @ts-expect-error weird react 19 types error
                                     <Typography color="red">{fieldErrors?.tenant_id._errors}</Typography>
                                 }
                             </div>
                             <div>
                                 <label htmlFor="location">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" color="blue-gray">
                                         Lokasi
                                     </Typography>
@@ -383,10 +386,12 @@ export function BookingForm(props: BookingFormProps) {
                                 props.fromQuery &&
                                 <div>
                                     <label htmlFor="room_type_id">
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="h6" color="blue-gray">
                                             Tipe Kamar
                                         </Typography>
                                     </label>
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Input
                                         disabled={true}
                                         value={(() => {
@@ -397,6 +402,7 @@ export function BookingForm(props: BookingFormProps) {
                             }
                             <div>
                                 <label htmlFor="room_id">
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography variant="h6" color="blue-gray">
                                         Kamar
                                     </Typography>
@@ -416,6 +422,7 @@ export function BookingForm(props: BookingFormProps) {
                                 />
                                 {
                                     fieldErrors?.room_id &&
+                                    // @ts-expect-error weird react 19 types error
                                     <Typography color="red">{fieldErrors?.room_id._errors}</Typography>
                                 }
                             </div>
@@ -428,6 +435,7 @@ export function BookingForm(props: BookingFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="start_date">
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="h6" color="blue-gray">
                                             Tanggal Mulai
                                         </Typography>
@@ -439,12 +447,17 @@ export function BookingForm(props: BookingFormProps) {
                                         showSearchButton={false}
                                         onUpdate={(dateData) => {
                                             if (dateData.singleDate) {
-                                                setBookingData(p => ({...p, start_date: dateData.singleDate, duration_id: undefined,}));
+                                                setBookingData(p => ({
+                                                    ...p,
+                                                    start_date: dateData.singleDate,
+                                                    duration_id: undefined,
+                                                }));
                                             }
                                         }}
                                     />
                                     {
                                         fieldErrors?.start_date &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.start_date._errors}</Typography>
                                     }
                                 </motion.div>
@@ -458,6 +471,7 @@ export function BookingForm(props: BookingFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="duration_id">
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="h6" color="blue-gray">
                                             Durasi
                                         </Typography>
@@ -481,15 +495,16 @@ export function BookingForm(props: BookingFormProps) {
                                         options={durationDataMapped}
                                         selectedOption={
                                             bookingData.is_rolling ? durationDataMapped[0] :
-                                            (bookingData.duration_id !== undefined && bookingData.duration_id !== null)
-                                                ? durationDataMapped.find(r => r.value === bookingData.duration_id)
-                                                : undefined
+                                                (bookingData.duration_id !== undefined && bookingData.duration_id !== null)
+                                                    ? durationDataMapped.find(r => r.value === bookingData.duration_id)
+                                                    : undefined
                                         }
                                         placeholder={"Pick duration"}
                                         isError={!!fieldErrors?.duration_id}
                                     />
                                     {
                                         fieldErrors?.duration_id &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.duration_id._errors}</Typography>
                                     }
                                 </motion.div>
@@ -503,6 +518,7 @@ export function BookingForm(props: BookingFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="fee">
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="h6" color="blue-gray">
                                             Harga
                                         </Typography>
@@ -526,6 +542,7 @@ export function BookingForm(props: BookingFormProps) {
                                     />
                                     {
                                         fieldErrors?.fee &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.fee._errors}</Typography>
                                     }
                                 </motion.div>
@@ -539,6 +556,7 @@ export function BookingForm(props: BookingFormProps) {
                                     exit={{opacity: 0, height: 0}}
                                 >
                                     <label htmlFor="status_id">
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="h6" color="blue-gray">
                                             Status
                                         </Typography>
@@ -552,6 +570,7 @@ export function BookingForm(props: BookingFormProps) {
                                     />
                                     {
                                         fieldErrors?.status_id &&
+                                        // @ts-expect-error weird react 19 types error
                                         <Typography color="red">{fieldErrors?.status_id._errors}</Typography>
                                     }
                                 </motion.div>
@@ -564,8 +583,10 @@ export function BookingForm(props: BookingFormProps) {
                                     animate={{opacity: 1, height: "auto"}}
                                     exit={{opacity: 0, height: 0}}
                                 >
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Checkbox
                                         label={
+                                            // @ts-expect-error weird react 19 types error
                                             <Typography color="blue-gray" className="font-medium">
                                                 Deposit diperlukan
                                             </Typography>
@@ -590,6 +611,7 @@ export function BookingForm(props: BookingFormProps) {
                                             className="mt-4 space-y-6"
                                         >
                                             <label htmlFor="fee">
+                                                {/*@ts-expect-error weird react 19 types error*/}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Deposit
                                                 </Typography>
@@ -624,6 +646,7 @@ export function BookingForm(props: BookingFormProps) {
                                             />
                                             {
                                                 fieldErrors?.deposit &&
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography color="red">{fieldErrors?.deposit._errors}</Typography>
                                             }
                                         </motion.div>
@@ -638,8 +661,10 @@ export function BookingForm(props: BookingFormProps) {
                                     animate={{opacity: 1, height: "auto"}}
                                     exit={{opacity: 0, height: 0}}
                                 >
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Checkbox
                                         label={
+                                            // @ts-expect-error weird react 19 types error
                                             <Typography color="blue-gray" className="font-medium">
                                                 Ada Penghuni Kedua
                                             </Typography>
@@ -663,6 +688,7 @@ export function BookingForm(props: BookingFormProps) {
                                             className="mt-4 space-y-6"
                                         >
                                             <label htmlFor="fee">
+                                                {/*@ts-expect-error weird react 19 types error*/}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Biaya Tambahan per Bulan
                                                 </Typography>
@@ -685,7 +711,9 @@ export function BookingForm(props: BookingFormProps) {
                                             />
                                             {
                                                 fieldErrors?.second_resident_fee &&
-                                                <Typography color="red">{fieldErrors?.second_resident_fee._errors}</Typography>
+                                                // @ts-expect-error weird react 19 types error
+                                                <Typography
+                                                    color="red">{fieldErrors?.second_resident_fee._errors}</Typography>
                                             }
                                         </motion.div>
                                     )}
@@ -698,8 +726,10 @@ export function BookingForm(props: BookingFormProps) {
                                     animate={{opacity: 1, height: "auto"}}
                                     exit={{opacity: 0, height: 0}}
                                 >
+                                    {/*@ts-expect-error weird react 19 types error*/}
                                     <Checkbox
                                         label={
+                                            // @ts-expect-error weird react 19 types error
                                             <Typography color="blue-gray" className="font-medium">
                                                 Ada tambahan layanan
                                             </Typography>
@@ -718,6 +748,7 @@ export function BookingForm(props: BookingFormProps) {
                                             className="mt-4 space-y-6"
                                         >
                                             <label htmlFor="addons">
+                                                {/*@ts-expect-error weird react 19 types error*/}
                                                 <Typography variant="h6" color="blue-gray">
                                                     Layanan Tambahan
                                                 </Typography>
@@ -754,6 +785,7 @@ export function BookingForm(props: BookingFormProps) {
                                                         isError={!!fieldErrors?.addOns?.[index]?.addon_id}
                                                     />
                                                     {fieldErrors?.addOns?.[index]?.addon_id && (
+                                                        // @ts-expect-error weird react 19 types error
                                                         <Typography color="red">
                                                             {fieldErrors.addOns[index].addon_id?._errors}
                                                         </Typography>
@@ -761,6 +793,7 @@ export function BookingForm(props: BookingFormProps) {
 
                                                     {/* Start Date */}
                                                     <div>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Typography variant="h6" color="blue-gray">
                                                             Tanggal Mulai
                                                         </Typography>
@@ -776,6 +809,7 @@ export function BookingForm(props: BookingFormProps) {
                                                             }}
                                                         />
                                                         {fieldErrors?.addOns?.[index]?.start_date && (
+                                                            // @ts-expect-error weird react 19 types error
                                                             <Typography color="red">
                                                                 {fieldErrors.addOns[index].start_date?._errors}
                                                             </Typography>
@@ -784,6 +818,7 @@ export function BookingForm(props: BookingFormProps) {
 
                                                     {/* End Date */}
                                                     <div>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Typography variant="h6" color="blue-gray">
                                                             Tanggal Selesai
                                                         </Typography>
@@ -799,6 +834,7 @@ export function BookingForm(props: BookingFormProps) {
                                                             }}
                                                         />
                                                         {fieldErrors?.addOns?.[index]?.end_date && (
+                                                            // @ts-expect-error weird react 19 types error
                                                             <Typography color="red">
                                                                 {fieldErrors.addOns[index].end_date?._errors}
                                                             </Typography>
@@ -807,9 +843,11 @@ export function BookingForm(props: BookingFormProps) {
 
                                                     {/* Additional Input */}
                                                     <div>
+                                                        {/*@ts-expect-error weird react 19 types error*/}
                                                         <Typography variant="h6" color="blue-gray">
                                                             Deskripsi Tambahan
                                                         </Typography>
+                                                        {/* @ts-expect-error weird react 19 types error */}
                                                         <Input
                                                             value={addon.input || ""}
                                                             onChange={(e) =>
@@ -824,6 +862,7 @@ export function BookingForm(props: BookingFormProps) {
                                                             }}
                                                         />
                                                         {fieldErrors?.addOns?.[index]?.input && (
+                                                            // @ts-expect-error weird react 19 types error
                                                             <Typography color="red">
                                                                 {fieldErrors.addOns[index].input?._errors}
                                                             </Typography>
@@ -831,6 +870,7 @@ export function BookingForm(props: BookingFormProps) {
                                                     </div>
 
                                                     {/* Remove Addon */}
+                                                    {/*@ts-expect-error weird react 19 types error*/}
                                                     <Button
                                                         color="red"
                                                         size="sm"
@@ -841,6 +881,7 @@ export function BookingForm(props: BookingFormProps) {
                                                 </motion.div>
                                             ))}
 
+                                            {/*@ts-expect-error weird react 19 types error*/}
                                             <Button
                                                 color="green"
                                                 onClick={addAddonEntry}
@@ -865,17 +906,26 @@ export function BookingForm(props: BookingFormProps) {
                                     >
                                         <div className="flex items-start">
                                             <div className="flex-shrink-0">
-                                                <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20"
+                                                     fill="currentColor">
+                                                    <path fillRule="evenodd"
+                                                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                                          clipRule="evenodd"/>
                                                 </svg>
                                             </div>
                                             <div className="ml-3">
-                                                <Typography variant="h6" color="amber" className="font-medium text-amber-800">
+                                                {/*@ts-expect-error weird react 19 types error*/}
+                                                <Typography variant="h6" color="amber"
+                                                            className="font-medium text-amber-800">
                                                     Peringatan Alokasi Pembayaran
                                                 </Typography>
-                                                <Typography variant="small" color="amber" className="mt-1 text-amber-700">
-                                                    Mengubah rincian pemesanan dapat mempengaruhi alokasi pembayaran yang sudah ada.
-                                                    Harap periksa kembali alokasi pembayaran setelah menyimpan perubahan ini.
+                                                {/*@ts-expect-error weird react 19 types error*/}
+                                                <Typography variant="small" color="amber"
+                                                            className="mt-1 text-amber-700">
+                                                    Mengubah rincian pemesanan dapat mempengaruhi alokasi pembayaran
+                                                    yang sudah ada.
+                                                    Harap periksa kembali alokasi pembayaran setelah menyimpan perubahan
+                                                    ini.
                                                 </Typography>
                                             </div>
                                         </div>
@@ -887,10 +937,13 @@ export function BookingForm(props: BookingFormProps) {
                                         exit={{opacity: 0, height: 0}}
                                         className="mt-1"
                                     >
+                                        {/*@ts-expect-error weird react 19 types error*/}
                                         <Checkbox
                                             label={
+                                                // @ts-expect-error weird react 19 types error
                                                 <Typography color="amber" className="font-medium text-amber-800">
-                                                    Saya memahami bahwa perubahan ini dapat mempengaruhi alokasi pembayaran yang sudah ada
+                                                    Saya memahami bahwa perubahan ini dapat mempengaruhi alokasi
+                                                    pembayaran yang sudah ada
                                                 </Typography>
                                             }
                                             checked={understoodWarning}
@@ -904,6 +957,7 @@ export function BookingForm(props: BookingFormProps) {
                             )}
                             {
                                 props.mutationResponse?.failure &&
+                                // @ts-expect-error weird react 19 types error
                                 <Typography variant="h6" color="red" className="-mb-4">
                                     {props.mutationResponse.failure}
                                 </Typography>
@@ -913,9 +967,11 @@ export function BookingForm(props: BookingFormProps) {
                 </div>
 
                 <div className={"flex gap-x-4 justify-end"}>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Button onClick={() => props.setDialogOpen(false)} variant={"outlined"} className="mt-6">
                         Batal
                     </Button>
+                    {/*@ts-expect-error weird react 19 types error*/}
                     <Button disabled={isButtonDisabled || !hasChanges(initialBookingData, bookingData)}
                             onClick={() => props.mutation.mutate(bookingData)}
                             color={"blue"} className="mt-6"
