@@ -1,3 +1,5 @@
+"use server";
+
 import * as aws from "@aws-sdk/client-ses";
 import {SESServiceException} from "@aws-sdk/client-ses";
 import nodemailer from 'nodemailer';
@@ -5,6 +7,8 @@ import {Address, Options} from "nodemailer/lib/mailer";
 import prisma from "@/app/_lib/primsa";
 import {PartialBy} from "@/app/_db/db";
 import * as util from "node:util";
+import {serverLogger} from "@/app/_lib/axiom/server";
+import {after} from "next/server";
 
 enum EmailStatus {
     SUCCESS = "SUCCESS",
@@ -51,6 +55,9 @@ class NodemailerSingleton {
     }
 
     public async sendMail(mailOptions: PartialBy<Options, "from">) {
+        after(() => {
+            serverLogger.flush();
+        });
         mailOptions.from = mailOptions.from ?? NodemailerSingleton.DEFAULT_FROM;
         try {
             const response = await this.client.sendMail(mailOptions);
@@ -65,7 +72,7 @@ class NodemailerSingleton {
             });
             return response;
         } catch (error) {
-            console.error(error);
+            serverLogger.error("[sendMail]", {error});
             let errBlame = EmailStatus.FAIL_CLIENT;
             if (error instanceof SESServiceException) {
                 if (error.$fault == "server") {

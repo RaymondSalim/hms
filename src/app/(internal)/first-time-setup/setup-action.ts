@@ -4,6 +4,8 @@ import {z} from "zod";
 import {finalValidationSetupSchema, stepValidationSetupSchema} from "@/app/_lib/zod/setup/zod";
 import prisma from "@/app/_lib/primsa";
 import {SettingsKey} from "@/app/_enum/setting";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 export async function validateStepData(data: Partial<z.infer<typeof stepValidationSetupSchema>>) {
     try {
@@ -23,6 +25,9 @@ export async function validateStepData(data: Partial<z.infer<typeof stepValidati
 
 // Example function to validate final form data
 export async function validateFinalData(data: z.infer<typeof finalValidationSetupSchema>) {
+    after(() => {
+        serverLogger.flush();
+    });
     try {
         const {success, data: parsedData, error} = finalValidationSetupSchema.safeParse(data);
         if (!success) {
@@ -81,7 +86,7 @@ export async function validateFinalData(data: z.infer<typeof finalValidationSetu
         if (error instanceof z.ZodError) {
             return { success: false, errors: error.errors };
         }
-        console.log(error);
+        serverLogger.error("[validateFinalData]", {error});
         return { failure: true };
     }
 }

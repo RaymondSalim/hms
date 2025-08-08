@@ -20,6 +20,8 @@ import {updateDepositStatus} from "@/app/_db/deposit";
 import {revalidateTag} from "next/cache";
 import {endOfMonth, format, getDaysInMonth, startOfMonth} from "date-fns";
 import {id as indonesianLocale} from "date-fns/locale";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 import BillItemUncheckedCreateWithoutBillInput = Prisma.BillItemUncheckedCreateWithoutBillInput;
 
 export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
@@ -32,6 +34,10 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
             errors: error?.format()
         };
     }
+
+    after(() => {
+        serverLogger.flush();
+    });
 
     // Handle rolling bookings
     if (data.is_rolling) {
@@ -114,8 +120,8 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                 });
                 return { success: res };
             }
-        } catch (e) {
-            console.error("[upsertBookingAction][Rolling]", e);
+        } catch (error) {
+            serverLogger.error("[upsertBookingAction][Rolling]", {error});
             return { failure: "Gagal memproses pemesanan bulanan." };
         }
     }
@@ -170,14 +176,14 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
         };
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[upsertBookingAction][PrismaKnownError]", error.code, error.message);
+            serverLogger.error("[upsertBookingAction][PrismaKnownError]", {error});
             if (error.code == "P2002") {
                 return {failure: "Booking is taken"};
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
-            console.error("[upsertBookingAction][PrismaUnknownError]", error.message);
+            serverLogger.error("[upsertBookingAction][PrismaUnknownError]", {error});
         } else {
-            console.error("[upsertBookingAction]", error);
+            serverLogger.error("[upsertBookingAction]", {error});
         }
 
         return {failure: "Request unsuccessful"};
@@ -193,6 +199,9 @@ export async function getBookingsWithUnpaidBillsAction(...args: Parameters<typeo
 }
 
 export async function deleteBookingAction(id: number) {
+    after(() => {
+        serverLogger.flush();
+    });
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -214,7 +223,7 @@ export async function deleteBookingAction(id: number) {
             success: res,
         };
     } catch (error) {
-        console.error(error);
+        serverLogger.error("deleteBookingAction", {error, booking_id: id});
         return {
             failure: "Error deleting booking",
         };
@@ -284,6 +293,9 @@ export async function matchBillItemsToBills(
     billItemsByDueDate: Map<Date, Omit<BillItem, "bill_id">[]>,
     bills: Pick<Bill, "due_date" | "id">[]
 ): Promise<Map<number, Omit<BillItem, "bill_id">[]>> {
+    after(() => {
+        serverLogger.flush();
+    });
     // Sort bills by due_date for easier matching
     const sortedBills = bills.sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
 
@@ -315,7 +327,7 @@ export async function matchBillItemsToBills(
             }
             matchedBillItems.get(closestBill.id)?.push(...billItems);
         } else {
-            console.debug(`No matching bill found for due_date: ${dueDate}`);
+            serverLogger.debug(`[matchBillItemsToBills] No matching bill found for due_date: ${dueDate}`);
         }
     });
 
@@ -480,12 +492,15 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
 export async function generateNextMonthlyBill(booking: Booking & {
     addOns?: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[]
 }, existingBills: Bill[], date: Date): Promise<Prisma.BillCreateInput | null> {
+    after(() => {
+        serverLogger.flush();
+    });
     if (booking.end_date && date > booking.end_date) {
         return null;
     }
 
     if (existingBills.length === 0) {
-        console.error(`Rolling booking ${booking.id} has no existing bills.`);
+        serverLogger.info(`Rolling booking ${booking.id} has no existing bills.`);
         return null;
     }
 

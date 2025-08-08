@@ -1,8 +1,12 @@
-import {NextResponse} from "next/server";
+import {after, NextResponse} from "next/server";
 import prisma from "@/app/_lib/primsa";
 import {generateNextMonthlyBill} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
+import {serverLogger, withAxiom} from "@/app/_lib/axiom/server";
 
-export async function POST() {
+export const POST = withAxiom(async () => {
+    after(() => {
+        serverLogger.flush();
+    });
     try {
         const activeRollingBookings = await prisma.booking.findMany({
             where: {
@@ -44,13 +48,13 @@ export async function POST() {
 
         for (const booking of activeRollingBookings) {
             const nextBill = await generateNextMonthlyBill(booking, booking.bills, today);
-            
+
             if (nextBill) {
                 const createdBill = await prisma.bill.create({
                     data: nextBill,
                 });
                 newBillsCount++;
-                
+
                 processedBookings.push({
                     bookingId: booking.id,
                     tenantName: booking.tenants?.name || 'Unknown',
@@ -84,10 +88,10 @@ export async function POST() {
         });
 
     } catch (error) {
-        console.error("Cron job failed:", error);
-        return NextResponse.json({ 
+        serverLogger.error("[api/cron/monthly-billing] Cron job failed:", {error});
+        return NextResponse.json({
             message: "Cron job failed",
             error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
     }
-} 
+});

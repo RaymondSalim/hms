@@ -19,6 +19,8 @@ import {number, object} from "zod";
 import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {UpsertBookingPayload} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
+import {after} from 'next/server';
+import {serverLogger} from "@/app/_lib/axiom/server";
 import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
 import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 
@@ -332,6 +334,10 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
         };
     }
 
+    after(() => {
+        serverLogger.flush();
+    });
+
     try {
         let res;
         // Update - only allow due_date changes
@@ -373,12 +379,12 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
         };
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[upsertBillAction]", error.code, error.message);
+            serverLogger.error("[upsertBillAction]", {error});
             if (error.code == "P2002") {
                 return {failure: "Invalid Bill"};
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
-            console.error("[upsertBillAction]", error.message);
+            serverLogger.error("[upsertBillAction]", {error});
         }
 
         return {failure: "Request unsuccessful"};
@@ -401,6 +407,10 @@ export async function deleteBillAction(id: number) {
         };
     }
 
+    after(() => {
+        serverLogger.flush();
+    });
+
     try {
         let res = await prisma.bill.delete({
             where: {
@@ -411,7 +421,7 @@ export async function deleteBillAction(id: number) {
             success: res
         };
     } catch (error) {
-        console.error(error);
+        serverLogger.error("[deleteBillAction]", {error, bill_id: id});
 
         return {
             failure: "error"
@@ -529,6 +539,10 @@ export async function sendBillEmailAction(billID: number) {
         };
     }
 
+    after(() => {
+        serverLogger.flush();
+    });
+
     const tenant = billData.bookings.tenants!;
     const currBillAmount = billData.bill_item.reduce(
         (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
@@ -549,7 +563,7 @@ export async function sendBillEmailAction(billID: number) {
             text: template
         });
     } catch (error) {
-        console.error(error);
+        serverLogger.error("[sendBillEmailAction]", {error, billID});
         return {
             failure: "Error"
         };
@@ -953,6 +967,10 @@ export async function updateBillItemAction(billItemData: {
         };
     }
 
+    after(() => {
+        serverLogger.flush();
+    });
+
     try {
         const res = await prisma.$transaction(async (tx) => {
             // Update the bill item
@@ -982,12 +1000,12 @@ export async function updateBillItemAction(billItemData: {
         };
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[updateBillItemAction]", error.code, error.message);
+            serverLogger.error("[updateBillItemAction]", {error, data});
             if (error.code == "P2025") {
                 return {failure: "Bill item tidak ditemukan"};
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
-            console.error("[updateBillItemAction]", error.message);
+            serverLogger.error("[updateBillItemAction]", {error, data});
         }
 
         return {failure: "Gagal memperbarui rincian tagihan"};
@@ -1000,6 +1018,10 @@ export async function updateBillItemAction(billItemData: {
  * @returns Success response with deleted bill item data or error information
  */
 export async function deleteBillItemAction(id: number) {
+    after(() => {
+        serverLogger.flush();
+    });
+
     try {
         const res = await prisma.$transaction(async (tx) => {
             // Get the bill item first to get bill_id
@@ -1034,12 +1056,12 @@ export async function deleteBillItemAction(id: number) {
         };
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[deleteBillItemAction]", error.code, error.message);
+            serverLogger.error("[deleteBillItemAction]", {error, bill_id: id});
             if (error.code == "P2025") {
                 return {failure: "Bill item tidak ditemukan"};
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
-            console.error("[deleteBillItemAction]", error.message);
+            serverLogger.error("[deleteBillItemAction]", {error, bill_id: id});
         }
 
         return {failure: "Gagal menghapus rincian tagihan"};
@@ -1065,6 +1087,10 @@ export async function createBillItemAction(billItemData: {
             errors: error?.format()
         };
     }
+
+    after(() => {
+        serverLogger.flush();
+    });
 
     try {
         const res = await prisma.$transaction(async (tx) => {
@@ -1096,12 +1122,12 @@ export async function createBillItemAction(billItemData: {
         };
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[createBillItemAction]", error.code, error.message);
+            serverLogger.error("[createBillItemAction]", {error});
             if (error.code == "P2003") {
                 return {failure: "Bill tidak ditemukan"};
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
-            console.error("[createBillItemAction]", error.message);
+            serverLogger.error("[createBillItemAction]", {error});
         }
 
         return {failure: "Gagal membuat rincian tagihan"};

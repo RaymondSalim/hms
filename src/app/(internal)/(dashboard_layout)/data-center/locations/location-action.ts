@@ -5,118 +5,129 @@ import {number, object, typeToFlattenedError} from "zod";
 import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
 import {Location} from "@prisma/client";
 import {createLocation, deleteLocation, updateLocationByID, upsertLocation} from "@/app/_db/location";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 export type LocationActionsType<T = OmitIDTypeAndTimestamp<Location>> = {
-  success?: Location,
-  failure?: string,
-  errors?: typeToFlattenedError<T>
+    success?: Location,
+    failure?: string,
+    errors?: typeToFlattenedError<T>
 }
 
 export async function createLocationAction(prevState: LocationActionsType, formData: FormData): Promise<LocationActionsType> {
-  const { success, error, data } = locationObject.safeParse({
-    name: formData.get('name'),
-    address: formData.get('address'),
-  });
+    after(() => {
+        serverLogger.flush();
+    });
+    const { success, error, data } = locationObject.safeParse({
+        name: formData.get('name'),
+        address: formData.get('address'),
+    });
 
-  if (!success) {
-    return {
-      errors: error?.flatten()
-    };
-  }
+    if (!success) {
+        return {
+            errors: error?.flatten()
+        };
+    }
 
-  try {
-    let res = await createLocation(data);
+    try {
+        let res = await createLocation(data);
 
-    return {
-      success: res
-    };
-  } catch (error) {
-    console.error(error);
+        return {
+            success: res
+        };
+    } catch (error) {
+        serverLogger.error("[createLocationAction]", {error});
 
-    return {
-      failure: "error"
-    };
-  }
+        return {
+            failure: "error"
+        };
+    }
 }
 
 export async function updateLocationAction(prevState: LocationActionsType, formData: FormData): Promise<LocationActionsType> {
-  let { success, error, data } = locationObjectWithID.safeParse({
-    id: formData.get('id'),
-    name: formData.get('name'),
-    address: formData.get('address'),
-  });
-
-  if (!success) {
-    return {
-      errors: error?.flatten()
-    };
-  }
-
-  try {
-    let res = await updateLocationByID(data!.id, {
-      ...data,
-      // @ts-ignore
-      id: undefined
+    after(() => {
+        serverLogger.flush();
+    });
+    let { success, error, data } = locationObjectWithID.safeParse({
+        id: formData.get('id'),
+        name: formData.get('name'),
+        address: formData.get('address'),
     });
 
-    return {
-      success: res
-    };
-  } catch (error) {
-    console.error(error);
+    if (!success) {
+        return {
+            errors: error?.flatten()
+        };
+    }
 
-    return {
-      failure: "error"
-    };
-  }
+    try {
+        let res = await updateLocationByID(data!.id, {
+            ...data,
+            // @ts-ignore
+            id: undefined
+        });
+
+        return {
+            success: res
+        };
+    } catch (error) {
+        serverLogger.error("[updateLocationAction]", {error});
+
+        return {
+            failure: "error"
+        };
+    }
 }
 
 export async function upsertLocationAction(locationData: OmitTimestamp<Location>): Promise<LocationActionsType> {
-  const {success, error, data} = locationObjectWithOptionalID.safeParse(locationData);
+    after(() => {
+        serverLogger.flush();
+    });
+    const {success, error, data} = locationObjectWithOptionalID.safeParse(locationData);
 
-  if (!success) {
-    return {
-      errors: error?.flatten()
-    };
-  }
+    if (!success) {
+        return {
+            errors: error?.flatten()
+        };
+    }
 
-  try {
-    let res = await upsertLocation(data);
+    try {
+        let res = await upsertLocation(data);
 
-    return {
-      success: res
-    };
-  } catch (error) {
-    console.error(error);
+        return {
+            success: res
+        };
+    } catch (error) {
+        serverLogger.error("[upsertLocationAction]", {error});
 
-    return {
-      failure: "error"
-    };
-  }
+        return {
+            failure: "error"
+        };
+    }
 }
 
 export async function deleteLocationAction(id: number): Promise<LocationActionsType<Pick<Location, "id">>> {
-  const { success, error, data } = object({ id: number().positive() }).safeParse({
-    id: id
-  });
+    const { success, error, data } = object({ id: number().positive() }).safeParse({
+        id: id
+    });
 
-  if (!success) {
-    return {
-      errors: error?.flatten()
-    };
-  }
+    if (!success) {
+        return {
+            errors: error?.flatten()
+        };
+    }
 
-  try {
-    let res = await deleteLocation(data!.id);
+    try {
+        let res = await deleteLocation(data!.id);
 
-    return {
-      success: res
-    };
-  } catch (error) {
-    console.error(error);
+        return {
+            success: res
+        };
+    } catch (error) {
+        serverLogger.error("[deleteLocationAction]", {error, location_id: id});
 
-    return {
-      failure: "error"
-    };
-  }
+        return {
+            failure: "error"
+        };
+    }
 }
