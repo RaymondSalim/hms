@@ -213,9 +213,11 @@ describe('Booking Lifecycle Integration', () => {
             createdAt: new Date(),
             updatedAt: new Date(),
         });
+
         prismaMock.bill.findMany.mockResolvedValue([
             billData,
         ]);
+        prismaMock.billItem.findMany.mockResolvedValue(billData.bill_item);
         prismaMock.paymentBill.findMany.mockResolvedValue([
             {
                 id: 1,
@@ -347,7 +349,7 @@ describe('Booking Lifecycle Integration', () => {
             payment_id: 1,
             // @ts-expect-error type mismatch
             bill: billData,
-        }])
+        }]);
         prismaMock.deposit.findUnique.mockResolvedValue({
             id: 1,
             booking_id: 1,
@@ -432,6 +434,109 @@ describe('Booking Lifecycle Integration', () => {
                 amount: new Prisma.Decimal(500000),
             })
         });
+    });
+
+    it('should roll deposit back to UNPAID when no deposit income remains', async () => {
+        // Arrange
+        const paymentData = {
+            booking_id: 1,
+            amount: new Prisma.Decimal(500000),
+            payment_date: new Date('2024-02-05'),
+            payment_proof: null,
+            status_id: 1,
+            allocationMode: 'manual' as const,
+            manualAllocations: { 10: 500000 },
+        };
+
+        const billData = {
+            id: 10,
+            booking_id: 1,
+            due_date: new Date(2024, 0, 31),
+            bill_item: [
+                { id: 101, bill_id: 10, amount: new Prisma.Decimal(500000), description: 'Deposit Kamar', type: 'CREATED', related_id: { deposit_id: 1 } },
+            ],
+        };
+
+        prismaMock.booking.findFirst.mockResolvedValue({ id: 1, room_id: 1, start_date: new Date(2024,0,1), duration_id: 1, status_id: 1, fee: new Prisma.Decimal(1000000), tenant_id: 'tenant-1', end_date: new Date(2024,2,31), second_resident_fee: null, createdAt: new Date(), updatedAt: new Date() });
+        prismaMock.bill.findMany.mockResolvedValue([billData] as any);
+
+        const createdPayment = {
+            id: 5,
+            booking_id: 1,
+            amount: new Prisma.Decimal(500000),
+            payment_date: new Date('2024-02-05'),
+            payment_proof: null,
+            status_id: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            bookings: { id: 1, rooms: { id: 1, location_id: 1 } },
+            paymentstatuses: { id: 1, status: 'Paid', createdAt: new Date(), updatedAt: new Date() },
+        };
+        prismaMock.payment.create.mockResolvedValue(createdPayment);
+        prismaMock.payment.findFirst.mockResolvedValueOnce(createdPayment);
+
+        // First, creating deposit transaction (income) should move deposit to HELD
+        prismaMock.paymentBill.createMany.mockResolvedValue({ count: 1 });
+        prismaMock.paymentBill.findMany.mockResolvedValueOnce([
+            { id: 1, payment_id: 5, bill_id: 10, amount: new Prisma.Decimal(500000), bill: billData as any }
+        ] as any);
+        prismaMock.transaction.findMany.mockResolvedValueOnce([]);
+        prismaMock.deposit.findUnique.mockResolvedValueOnce({ id: 1, booking_id: 1, amount: new Prisma.Decimal(500000), status: DepositStatus.UNPAID } as any);
+        prismaMock.transaction.create.mockResolvedValueOnce({ id: 10 } as any); // regular
+        prismaMock.transaction.create.mockResolvedValueOnce({ id: 11 } as any); // deposit
+        prismaMock.deposit.findFirst.mockResolvedValueOnce({ id: 1, booking_id: 1, status: DepositStatus.UNPAID } as any);
+        prismaMock.deposit.update.mockResolvedValueOnce({ id: 1, status: DepositStatus.HELD } as any);
+
+        await upsertPaymentAction(paymentData as any);
+        expect(prismaMock.deposit.update).toHaveBeenCalledWith(expect.objectContaining({ data: { status: DepositStatus.HELD } }));
+
+        // Now simulate updating allocation so deposit share becomes zero and deposit transaction is deleted
+        // Update payment in auto mode triggers global recompute and then we delete deposit transaction (no deposit bills found)
+        const updateRequest = { ...paymentData, id: 5, allocationMode: 'auto' as const };
+        prismaMock.payment.update.mockResolvedValueOnce({
+            id: 5,
+            booking_id: 1,
+            amount: new Prisma.Decimal(500000),
+            payment_date: new Date('2024-02-05'),
+            status_id: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            bookings: { id: 1, rooms: { id: 1, location_id: 1 } },
+            paymentstatuses: { id: 1, status: 'Paid', createdAt: new Date(), updatedAt: new Date() }
+        } as any);
+
+        // After sync, paymentBills for booking contain only regular allocations (no deposit)
+        prismaMock.paymentBill.findMany.mockResolvedValueOnce([{ payment_id: 5 }, { payment_id: 7 }] as any); // affected payments list
+
+        // For recompute: when loading payment 5
+        prismaMock.payment.findFirst.mockResolvedValue({ id: 5, booking_id: 1, payment_date: new Date('2024-02-05'), bookings: { rooms: { location_id: 1 } } } as any);
+        prismaMock.paymentBill.findMany.mockResolvedValueOnce([
+            {
+                id: 2,
+                payment_id: 5,
+                bill_id: 10,
+                amount: new Prisma.Decimal(500000),
+                // @ts-expect-error
+                bill: { id: 10, bill_item: [ { id: 100, amount: new Prisma.Decimal(500000), related_id: null } ] }
+            }
+        ] as any);
+        prismaMock.transaction.findMany.mockResolvedValueOnce([
+            { id: 11, category: 'Deposit', related_id: { payment_id: 5, booking_id: 1, deposit_id: 1 } },
+        ] as any);
+        // Will delete the deposit transaction since depositAmount is 0
+        prismaMock.transaction.delete.mockResolvedValueOnce({ id: 11 } as any);
+
+        // Deposit status checker: count deposit income for booking -> 0, so move to UNPAID
+        prismaMock.deposit.findFirst.mockResolvedValueOnce({ id: 1, booking_id: 1, status: DepositStatus.HELD } as any);
+        prismaMock.transaction.count.mockResolvedValueOnce(0);
+        prismaMock.deposit.update.mockResolvedValueOnce({ id: 1, status: DepositStatus.UNPAID } as any);
+
+        // Second payment recompute (id 7) short-circuit
+        prismaMock.payment.findFirst.mockResolvedValueOnce({ id: 7, booking_id: 1, payment_date: new Date('2024-02-06'), bookings: { rooms: { location_id: 1 } } } as any);
+        prismaMock.paymentBill.findMany.mockResolvedValueOnce([] as any);
+        prismaMock.transaction.findMany.mockResolvedValueOnce([] as any);
+
+        await upsertPaymentAction(updateRequest as any);
     });
 
     it('should create check-in and check-out logs, and handle deposit refund', async () => {

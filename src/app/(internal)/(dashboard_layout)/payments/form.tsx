@@ -25,6 +25,8 @@ import {Prisma} from "@prisma/client";
 import {toast} from "react-toastify";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 
+// TODO! Separate deposit field
+
 interface PaymentForm extends TableFormProps<PaymentIncludeAll> {
 }
 
