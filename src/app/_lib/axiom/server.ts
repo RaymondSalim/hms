@@ -5,7 +5,7 @@ import {createAxiomRouteHandler, nextJsFormatters} from '@axiomhq/nextjs';
 const shouldLogToAxiom =
     process.env.NODE_ENV === 'production' &&
     Boolean(axiomClient) &&
-    Boolean(process.env.NEXT_PUBLIC_AXIOM_DATASET);
+    Boolean(process.env.AXIOM_DATASET);
 
 export const serverLogger = new Logger({
     transports: shouldLogToAxiom
@@ -14,7 +14,7 @@ export const serverLogger = new Logger({
                   // axiomClient can be null in local; guarded by shouldLogToAxiom
                   // @ts-expect-error - guarded above
                   axiom: axiomClient,
-                  dataset: process.env.NEXT_PUBLIC_AXIOM_DATASET as string,
+                  dataset: process.env.AXIOM_DATASET as string,
               }),
           ]
         : [new ConsoleTransport()],
