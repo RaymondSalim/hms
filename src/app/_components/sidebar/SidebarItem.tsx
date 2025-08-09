@@ -8,7 +8,7 @@ import {SiteUser} from "@prisma/client";
 import {CiLogout} from "react-icons/ci";
 import React, {useRef, useState} from "react";
 import {signOut} from "next-auth/react";
-import {useChangelogContext} from "../ChangelogProvider";
+import {useChangelogContext} from "@/app/_components/ChangelogProvider";
 
 interface SidebarItemProps {
     name: string;

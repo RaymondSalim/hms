@@ -1,8 +1,8 @@
 'use client';
 
 import React, {createContext, useContext} from 'react';
-import {useChangelog} from '../_hooks/useChangelog';
-import ChangelogModal from './ChangelogModal';
+import {useChangelog} from '@/app/_hooks/useChangelog';
+import ChangelogModal from "@/app/_components/ChangelogModal";
 
 // Create a context for the changelog functionality
 const ChangelogContext = createContext<ReturnType<typeof useChangelog> | null>(null);

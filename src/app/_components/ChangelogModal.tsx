@@ -4,7 +4,7 @@ import React, {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {RiArrowDownSLine, RiCheckLine, RiCloseLine} from 'react-icons/ri';
 import ReactMarkdown from 'react-markdown';
-import {ChangelogItem} from '../_hooks/useChangelog';
+import {ChangelogItem} from '@/app/_hooks/useChangelog';
 
 interface ChangelogModalProps {
   isOpen: boolean;
