@@ -51,12 +51,27 @@ export default function DepositsContent({initialDeposits}: { initialDeposits: De
     const columns = [
         columnHelper.accessor("id", {header: "ID"}),
         columnHelper.accessor("booking_id", {header: "ID Booking", cell: (v) => `#-${v.getValue()}`}),
-        columnHelper.accessor((row) => formatToIDR(Number(row.amount)), {header: "Jumlah"}),
+        columnHelper.accessor((row) => Number(row.amount), {
+            header: "Jumlah",
+            cell: props => formatToIDR(props.getValue())
+        }),
         columnHelper.accessor("status", {header: "Status"}),
-        columnHelper.accessor((row) => formatToIDR(Number(row.refunded_amount)) ?? "", {header: "Jumlah Dikembalikan"}),
-        columnHelper.accessor((row) => row.received_date ? new Date(row.received_date).toLocaleString() : "", {header: "Diterima Pada"}),
-        columnHelper.accessor((row) => row.applied_at ? new Date(row.applied_at).toLocaleString() : "", {header: "Digunakan Pada"}),
-        columnHelper.accessor((row) => row.refunded_at ? new Date(row.refunded_at).toLocaleString() : "", {header: "Dikembalikan Pada"}),
+        columnHelper.accessor((row) => Number(row.refunded_amount) || 0, {
+            header: "Jumlah Dikembalikan",
+            cell: props => props.getValue() > 0 ? formatToIDR(props.getValue()) : ""
+        }),
+        columnHelper.accessor((row) => row.received_date, {
+            header: "Diterima Pada",
+            cell: props => props.getValue() ? new Date(props.getValue()).toLocaleString() : ""
+        }),
+        columnHelper.accessor((row) => row.applied_at, {
+            header: "Digunakan Pada",
+            cell: props => props.getValue() ? new Date(props.getValue()).toLocaleString() : ""
+        }),
+        columnHelper.accessor((row) => row.refunded_at, {
+            header: "Dikembalikan Pada",
+            cell: props => props.getValue() ? new Date(props.getValue()).toLocaleString() : ""
+        }),
     ];
 
     return (
