@@ -261,7 +261,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 columns={columns}
                 groupByOptions={[
                     {value: 'booking_id', label: 'Kelompokkan per Pemesanan'},
-                    {value: 'due_date', label: 'Kelompokkan per Bulan'}
+                    {value: 'due_date', label: 'Kelompokkan per Bulan', defaultSelected: true}
                 ]}
                 form={
                     // @ts-expect-error
