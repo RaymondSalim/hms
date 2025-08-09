@@ -83,16 +83,7 @@ function AccordionItem({ item, isOpen, onToggle, isFirst }: AccordionItemProps) 
   };
 
   const getImportanceText = (importance: string) => {
-    switch (importance) {
-      case 'major':
-        return 'Penting';
-      case 'minor':
-        return 'Sedang';
-      case 'patch':
-        return 'Kecil';
-      default:
-        return 'Sedang';
-    }
+    return importance;
   };
 
   return (
