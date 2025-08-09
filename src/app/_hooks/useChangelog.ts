@@ -23,8 +23,7 @@ export function useChangelog() {
     const [shouldShowChangelog, setShouldShowChangelog] = useState(false);
     const [changelogItems, setChangelogItems] = useState<ChangelogItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    const currentVersion = process.env.NEXT_PUBLIC_VERSION || 'development';
+    const [currentVersion, setCurrentVersion] = useState<string>('development');
 
     // Helper function to find all available versions using prevVersion chain
     const findAllAvailableVersions = async (currentVersion: string): Promise<string[]> => {
@@ -124,36 +123,41 @@ export function useChangelog() {
     };
 
     useEffect(() => {
-        const checkAndLoadChangelog = async () => {
+        const run = async () => {
             try {
-                // Skip in development
-                if (currentVersion === 'development' || currentVersion === 'preview') {
+                // 1) Fetch current version from public/version.json (client-side)
+                const vres = await fetch('/version.json', { cache: 'no-store' });
+                if (!vres.ok) throw new Error('version.json not found');
+                const vdata = await vres.json();
+                const effectiveVersion = typeof vdata?.version === 'string' ? vdata.version : 'development';
+                setCurrentVersion(effectiveVersion);
+
+                // 2) Skip in development/preview
+                if (effectiveVersion === 'development' || effectiveVersion === 'preview') {
                     setIsLoading(false);
                     return;
                 }
 
-                // Get dismissed versions
+                // 3) Get dismissed versions
                 const dismissedVersions = JSON.parse(
                     localStorage.getItem(CHANGELOG_DISMISSED_KEY) || '[]'
                 ) as string[];
 
-                // Find all available versions
-                const allVersions = await findAllAvailableVersions(currentVersion);
-
+                // 4) Find all available versions
+                const allVersions = await findAllAvailableVersions(effectiveVersion);
                 if (allVersions.length === 0) {
                     setIsLoading(false);
                     return;
                 }
 
-                // Get the version range to show
+                // 5) Get the version range to show
                 const versionsToShow = getVersionRangeToShow(allVersions, dismissedVersions);
-
                 if (versionsToShow.length === 0) {
                     setIsLoading(false);
                     return;
                 }
 
-                // Load all changelogs for the versions to show
+                // 6) Load all changelogs for the versions to show
                 const changelogPromises = versionsToShow.map(async (version) => {
                     try {
                         return await loadChangelogForVersion(version);
@@ -178,8 +182,8 @@ export function useChangelog() {
             }
         };
 
-        checkAndLoadChangelog();
-    }, [currentVersion]);
+        run();
+    }, []);
 
     const handleChangelogClose = () => {
         // Mark all shown versions as dismissed

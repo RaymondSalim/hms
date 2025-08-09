@@ -35,18 +35,23 @@ jobs:
           git tag "$tag_name"
           git push origin "$tag_name"
 
-      - name: Create .env.production
+      - name: Create public/version.json
         if: env.tag_name != ''
         run: |
-          echo "VERSION=${{ steps.extract_tag.outputs.tag }}" > .env.production
-          echo "Created .env.production with VERSION=${{ steps.extract_tag.outputs.tag }}"
-          cat .env.production
+          mkdir -p public
+          cat > public/version.json << EOF
+          {
+            "version": "${{ steps.extract_tag.outputs.tag }}"
+          }
+          EOF
+          echo "Created public/version.json with version=${{ steps.extract_tag.outputs.tag }}"
+          cat public/version.json
 
-      - name: Commit and push .env.production
+      - name: Commit and push version.json
         if: env.tag_name != ''
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .env.production
+          git add public/version.json
           git commit -m "Update version to ${{ steps.extract_tag.outputs.tag }}" || exit 0
           git push
