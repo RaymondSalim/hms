@@ -82,7 +82,8 @@ export async function getRooms(id?: number, locationID?: number, limit?: number,
             roomstatuses: true
         },
         skip: offset,
-        take: limit
+        take: limit,
+        orderBy: { room_number: 'asc' }
     }).then(rooms => rooms.map(r => {
         if (r.roomtypes?.roomtypedurations) {
             r.roomtypes.roomtypedurations = r.roomtypes.roomtypedurations.filter(rtd => rtd.location_id == r.location_id);
@@ -255,6 +256,7 @@ export async function getRoomsByLocationId(location_id: number) {
         where: {
             location_id: location_id
         },
+        orderBy: { room_number: 'asc' }
     });
 }
 
@@ -279,6 +281,7 @@ export async function getRoomTypes(locationID?: number) {
                     },
                 }
             },
+        orderBy: { type: 'asc' },
     });
 }
 
@@ -354,7 +357,8 @@ export async function getRoomsWithBookings(id?: number, locationID?: number, lim
             }
         },
         skip: offset,
-        take: limit
+        take: limit,
+        orderBy: { room_number: 'asc' }
     }).then(rooms => rooms.map(r => {
         if (r.roomtypes?.roomtypedurations) {
             r.roomtypes.roomtypedurations = r.roomtypes.roomtypedurations.filter(rtd => rtd.location_id == r.location_id);

@@ -46,6 +46,7 @@ export async function getAllPayments(id?: number, locationID?: number, limit?: n
         include: includeAll,
         take: limit,
         skip: offset,
+        orderBy: { payment_date: 'desc' },
     })
         .then(mapCustomID);
 }

@@ -106,6 +106,7 @@ export async function getBillsWithPayments(booking_id?: Prisma.IntFilter<"Bill">
       ...args?.include,
       ...includePayments
     },
+    orderBy: args?.orderBy ?? { due_date: 'desc' },
   });
 }
 

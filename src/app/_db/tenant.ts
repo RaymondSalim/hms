@@ -83,7 +83,8 @@ export async function getTenantsWithRooms(id?: string, locationID?: number, limi
                 },
             },
             second_resident: true,
-        }
+        },
+        orderBy: { createdAt: 'desc' },
     });
 }
 

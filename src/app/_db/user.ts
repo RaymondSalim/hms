@@ -13,7 +13,8 @@ export async function getAllUsers(offset?: number, limit?: number): Promise<Omit
     take: limit,
     include: {
       roles: true,
-    }
+    },
+    orderBy: { createdAt: 'desc' }
   });
 }
 

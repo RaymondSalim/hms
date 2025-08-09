@@ -432,7 +432,8 @@ export async function getAllBookings(location_id?: number, room_id?: number, whe
         },
         skip: offset,
         take: limit,
-        include: includeAll
+        include: includeAll,
+        orderBy: { createdAt: 'desc' }
     });
 }
 

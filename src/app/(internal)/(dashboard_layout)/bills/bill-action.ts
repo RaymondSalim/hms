@@ -316,6 +316,7 @@ export async function getAllBillsIncludeAll(id?: number, locationID?: number, li
             },
             take: limit,
             skip: offset,
+            orderBy: { createdAt: 'desc' },
         }
     );
 }

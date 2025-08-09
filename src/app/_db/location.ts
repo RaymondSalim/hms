@@ -79,7 +79,7 @@ export async function getAllLocations(limit?: number, offset?: number, include?:
     skip: offset,
     take: limit,
     orderBy: {
-      id: 'asc'
+      createdAt: 'desc'
     },
     include: include
   });

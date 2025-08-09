@@ -194,7 +194,8 @@ export async function getAddonsByLocation(id?: number) {
                     }
                 }
             }
-        }
+        },
+        orderBy: { createdAt: 'desc' }
     });
 
     return addons.map(addon => ({
