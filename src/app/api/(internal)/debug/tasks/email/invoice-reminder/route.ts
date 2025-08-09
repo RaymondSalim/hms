@@ -6,7 +6,6 @@ export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 export const GET = withAxiom(async (request: Request) => {
-    // @ts-expect-error salt
     const token = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET as string

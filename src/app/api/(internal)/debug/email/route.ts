@@ -11,7 +11,6 @@ export const POST = withAxiom(async (request: Request) => {
         serverLogger.flush();
     });
 
-    // @ts-expect-error
     const token = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET as string
