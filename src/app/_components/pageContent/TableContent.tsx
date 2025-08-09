@@ -97,6 +97,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
         allLabel?: string
     },
     valueLabelMapping?: { [columnId: string]: { [value: string]: string } }
+    initialSorting?: import("@tanstack/react-table").SortingState
 } & (
     {
         searchType: "smart",
@@ -129,6 +130,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>();
     const [grouping, setGrouping] = useState<string[]>(props.groupBy ?? []);
     const [expanded, setExpanded] = useState({});
+    const [sorting, setSorting] = useState<import("@tanstack/react-table").SortingState>(props.initialSorting ?? []);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -258,12 +260,14 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         getExpandedRowModel: getExpandedRowModel(),
         initialState: {
             columnVisibility: useAutoHidden(columns),
+            sorting: props.initialSorting ?? [],
         },
         state: {
             globalFilter: globalFilter,
             columnFilters: columnFilter,
             grouping,
             expanded,
+            sorting,
         },
         onColumnFiltersChange: (updaterOrValue) => {
             if (typeof updaterOrValue === 'function') {
@@ -278,6 +282,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         onGlobalFilterChange: setGlobalFilter,
         onGroupingChange: setGrouping,
         onExpandedChange: setExpanded,
+        onSortingChange: setSorting,
         globalFilterFn: fuzzyFilter,
     });
 

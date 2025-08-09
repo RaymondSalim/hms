@@ -53,7 +53,7 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
       enableColumnFilter: true,
       cell: props => {
         const data = props.row.original.bookings.tenants;
-        return ( // TODO! Make link
+        return (
           <div className={"flex flex-col gap-y-1"}>
             <span>{data?.name}</span>
             <span>{data?.phone}</span>
@@ -70,11 +70,22 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
       enableColumnFilter: true,
       cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
     }),
-    columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
-      header: "Jumlah Pembayaran"
+    // amount: use raw numeric for sorting, format in cell
+    columnHelper.accessor(row => Number(new Prisma.Decimal(row.amount).toNumber()), {
+      id: 'amount',
+      header: "Jumlah Pembayaran",
+      cell: props => formatToIDR(props.getValue<number>()),
     }),
-    columnHelper.accessor(row => formatToDateTime(row.payment_date, true, true), {
-      header: "Tanggal Pembayaran"
+    // payment_date: use raw Date for sorting, format in cell
+    columnHelper.accessor(row => row.payment_date as Date, {
+      id: 'payment_date',
+      header: "Tanggal Pembayaran",
+      cell: props => formatToDateTime(props.getValue<Date>(), true, true),
+      sortingFn: (a, b, id) => {
+        const av = a.getValue<Date>(id)?.valueOf() ?? 0;
+        const bv = b.getValue<Date>(id)?.valueOf() ?? 0;
+        return av - bv;
+      }
     }),
     columnHelper.display({
       header: "Bukti Pembayaran",
@@ -134,11 +145,8 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
                 action: "search",
                 values: queryParams,
               } : undefined
-          /*{
-              action: "create",
-              initialActiveContent: {...queryParams} as unknown as typeof bills[0]
-          }*/
         }
+        initialSorting={[{id: 'payment_date', desc: true}]}
       />
   );
 }
