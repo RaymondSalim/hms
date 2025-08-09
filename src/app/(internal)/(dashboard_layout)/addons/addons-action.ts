@@ -194,6 +194,9 @@ export async function getAddonsByLocation(id?: number) {
                     }
                 }
             }
+        },
+        orderBy: {
+            createdAt: 'desc'
         }
     });
 
