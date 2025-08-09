@@ -117,7 +117,7 @@ export async function getAllBillsWithBooking(id?: Prisma.IntFilter<"Bill"> | num
       id: id,
     },
     orderBy: args?.orderBy ?? {
-      createdAt: 'desc'
+      due_date: 'desc'
     },
     include: {
       ...args?.include,
