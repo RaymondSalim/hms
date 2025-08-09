@@ -62,15 +62,15 @@ export default function DepositsContent({initialDeposits}: { initialDeposits: De
         }),
         columnHelper.accessor((row) => row.received_date, {
             header: "Diterima Pada",
-            cell: props => props.getValue() ? new Date(props.getValue()).toLocaleString() : ""
+            cell: props => props.getValue() ? new Date(props.getValue()!).toLocaleString() : ""
         }),
         columnHelper.accessor((row) => row.applied_at, {
             header: "Digunakan Pada",
-            cell: props => props.getValue() ? new Date(props.getValue()).toLocaleString() : ""
+            cell: props => props.getValue() ? new Date(props.getValue()!).toLocaleString() : ""
         }),
         columnHelper.accessor((row) => row.refunded_at, {
             header: "Dikembalikan Pada",
-            cell: props => props.getValue() ? new Date(props.getValue()).toLocaleString() : ""
+            cell: props => props.getValue() ? new Date(props.getValue()!).toLocaleString() : ""
         }),
     ];
 
