@@ -7,7 +7,6 @@ import {SessionProvider} from "next-auth/react";
 import {auth} from "@/app/_lib/auth";
 import {getCompanyInfo} from "@/app/_db/settings";
 import Script from "next/script";
-import {WebVitals} from "./_lib/axiom/client";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -35,7 +34,8 @@ export default async function RootLayout({
     return (
         <SessionProvider session={session}>
             <html lang="en" className={styles.html}>
-                <WebVitals/>
+                {/*TODO! Fix*/}
+                {/*<WebVitals/>*/}
                 <body className={`${inter.className} ${styles.body}`}>
                     <div className={styles.container}>
                         {children}
