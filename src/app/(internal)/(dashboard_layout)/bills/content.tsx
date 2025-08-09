@@ -753,7 +753,7 @@ const DetailsDialogContent = ({activeData, setShowDialog, onBillUpdate}: {
                                     >
                                         {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="small" color="blue-gray" className="font-normal">
-                                            {"More Info"}
+                                            {"Info Lebih Lanjut"}
                                         </Typography>
                                     </Link>
                                 </td>
