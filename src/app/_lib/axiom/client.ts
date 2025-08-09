@@ -9,7 +9,9 @@ const shouldLogToAxiom = process.env.NODE_ENV === 'production';
 export const clientLogger = new Logger({
     transports: shouldLogToAxiom
         ? [new ProxyTransport({url: '/api/axiom', autoFlush: true})]
-        : [new ConsoleTransport()],
+        : [new ConsoleTransport({
+            prettyPrint: true,
+        })],
     formatters: nextJsFormatters,
 });
 
