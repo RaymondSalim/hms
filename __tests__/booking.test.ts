@@ -62,7 +62,7 @@ describe('Booking Actions', () => {
             const mockDepositData: Partial<OmitIDTypeAndTimestamp<Deposit>> = {
                 amount: new Prisma.Decimal(500),
                 status: DepositStatus.UNPAID,
-            }
+            };
 
             const mockBookingData: Omit<BookingsIncludeAddons, "id" | "createdAt" | "updatedAt" | "end_date"> = {
                 fee: new Prisma.Decimal(1000),
@@ -631,6 +631,9 @@ describe('Booking Actions', () => {
                 skip: undefined,
                 take: undefined,
                 include: expect.any(Object),
+                orderBy: {
+                    "createdAt": "desc",
+                }
             });
         });
     });

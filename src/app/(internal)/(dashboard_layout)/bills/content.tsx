@@ -139,22 +139,24 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             minSize: 275,
             enableColumnFilter: true,
         }),
-        columnHelper.accessor(row => formatToIDR(
+        columnHelper.accessor(row => 
             row.bill_item
                 .map(bi => bi.amount)
                 .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0)
-                ).toNumber()), {
+                ).toNumber(), {
             header: "Jumlah",
             enableColumnFilter: true,
+            cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => {
             if (row.paymentBills) {
-                return formatToIDR(row.paymentBills?.map(pb => new Prisma.Decimal(pb.amount).toNumber()).reduce((sum, curr) => sum + curr, 0));
+                return row.paymentBills?.map(pb => new Prisma.Decimal(pb.amount).toNumber()).reduce((sum, curr) => sum + curr, 0);
             }
-            return formatToIDR(0);
+            return 0;
         }, {
             header: "Jumlah Terbayar",
             enableColumnFilter: true,
+            cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => {
             const totalAmount = row.bill_item

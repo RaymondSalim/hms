@@ -29,7 +29,10 @@ export async function getGuests(id?: number, locationID?: number, limit?: number
     },
     skip: offset,
     take: limit,
-    include: guestIncludeAll.include
+    include: guestIncludeAll.include,
+    orderBy: {
+      createdAt: 'desc'
+    }
   });
 }
 
