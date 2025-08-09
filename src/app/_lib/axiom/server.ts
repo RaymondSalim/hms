@@ -1,6 +1,7 @@
 import axiomClient from '@/app/_lib/axiom/axiom';
 import {AxiomJSTransport, ConsoleTransport, Logger} from '@axiomhq/logging';
 import {createAxiomRouteHandler, nextJsFormatters} from '@axiomhq/nextjs';
+import {addStaticFields} from "@/app/_lib/axiom/formatter";
 
 const shouldLogToAxiom =
     process.env.NODE_ENV === 'production' &&
@@ -17,8 +18,10 @@ export const serverLogger = new Logger({
                   dataset: process.env.AXIOM_DATASET as string,
               }),
           ]
-        : [new ConsoleTransport()],
-    formatters: nextJsFormatters,
+        : [new ConsoleTransport({
+            prettyPrint: true,
+        })],
+    formatters: [...nextJsFormatters, addStaticFields],
 });
 
 export const withAxiom = createAxiomRouteHandler(serverLogger);
