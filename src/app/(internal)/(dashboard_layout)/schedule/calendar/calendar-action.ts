@@ -5,6 +5,8 @@ import prisma from "@/app/_lib/primsa";
 import {CalenderEventTypes, CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {Event} from "@prisma/client";
 import {GenericActionsType} from "@/app/_lib/actions";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 export type CalenderEventRange = {
     startDate: Date | string,
@@ -140,14 +142,17 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
 }
 
 export async function deleteCalendarEvent(id: number): Promise<GenericActionsType<boolean>> {
+    after(() => {
+        serverLogger.flush();
+    });
     try {
         await prisma.event.delete({
             where: {
                 id
             }
         });
-    } catch (e) {
-        console.error(e);
+    } catch (error) {
+        serverLogger.error("[deleteCalendarEvent]", {error, event_id: id});
         return {
             failure: "Request Unsuccessful",
         };

@@ -8,9 +8,14 @@ import {guestSchemaWithOptionalID, guestStaySchema} from "@/app/_lib/zod/guests/
 import {createGuest, deleteGuest, GuestIncludeAll, updateGuestByID} from "@/app/_db/guest";
 import prisma from "@/app/_lib/primsa";
 import {PartialBy} from "@/app/_db/db";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 // Action to update guests
 export async function upsertGuestAction(guestData: Partial<Guest>): Promise<GenericActionsType<GuestIncludeAll>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const {success, data, error} = guestSchemaWithOptionalID.safeParse(guestData);
 
     if (!success) {
@@ -33,12 +38,12 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
         };
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[register]", error.code, error.message);
+            serverLogger.error("[register]", {error});
             if (error.code == "P2002") {
                 return {failure: "Alamat Email sudah terdaftar"};
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
-            console.error("[register]", error.message);
+            serverLogger.error("[register]", {error});
         }
 
         return {failure: "Request unsuccessful"};
@@ -46,6 +51,9 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
 }
 
 export async function deleteGuestAction(id: string): Promise<GenericActionsType<GuestIncludeAll>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -62,7 +70,7 @@ export async function deleteGuestAction(id: string): Promise<GenericActionsType<
             success: res,
         };
     } catch (error) {
-        console.error(error);
+        serverLogger.error("[deleteGuestAction]", {error, guest_id: id});
         return {
             failure: "Error deleting guest",
         };
@@ -72,6 +80,9 @@ export async function deleteGuestAction(id: string): Promise<GenericActionsType<
 
 // Action to Create or Update Guest Stay
 export async function upsertGuestStayAction(guestStayData: Partial<GuestStay>): Promise<GenericActionsType<any>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const {success, data, error} = guestStaySchema.safeParse(guestStayData);
 
     if (!success) {
@@ -183,13 +194,16 @@ export async function upsertGuestStayAction(guestStayData: Partial<GuestStay>): 
             timeout: 25000
         });
     } catch (error) {
-        console.error("[upsertGuestStayAction]", error);
+        serverLogger.error("[upsertGuestStayAction]", {error});
         return {failure: "Error processing guest stay."};
     }
 }
 
 // Action to Delete Guest Stay
 export async function deleteGuestStayAction(id: number): Promise<GenericActionsType<GuestStay>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const parsedData = object({id: number().positive()}).safeParse({id});
 
     if (!parsedData.success) {
@@ -233,7 +247,7 @@ export async function deleteGuestStayAction(id: number): Promise<GenericActionsT
             return {success: guestStay};
         });
     } catch (error) {
-        console.error("[deleteGuestStayAction]", error);
+        serverLogger.error("[deleteGuestStayAction]", {error, guest_stay_id: id});
         return {failure: "Error deleting guest stay."};
     }
 }

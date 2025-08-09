@@ -4,6 +4,8 @@ import {transactionSchema} from "@/app/_lib/zod/transaction/zod";
 import {Prisma, Transaction} from "@prisma/client";
 import {GenericActionsType} from "@/app/_lib/actions";
 import prisma from "@/app/_lib/primsa";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 /**
  * Creates or Updates a transaction based on the presence of an ID.
@@ -12,6 +14,9 @@ import prisma from "@/app/_lib/primsa";
 export async function upsertTransactionAction(
     transactionData: Partial<Transaction>
 ): Promise<GenericActionsType<Transaction>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const { success, data, error } = transactionSchema.safeParse(transactionData);
 
     if (!success) {
@@ -54,8 +59,8 @@ export async function upsertTransactionAction(
         }
 
         return { success: result };
-    } catch (err) {
-        console.error('[upsertTransaction]', err);
+    } catch (error) {
+        serverLogger.error('[upsertTransactionAction]', {error});
         return {
             failure: 'An error occurred while processing the transaction.',
         };
@@ -64,13 +69,16 @@ export async function upsertTransactionAction(
 
 // Action to delete a Transaction
 export async function deleteTransactionAction(id: number): Promise<GenericActionsType<Transaction>> {
+    after(() => {
+        serverLogger.flush();
+    });
     try {
         const deletedTransaction = await prisma.transaction.delete({
             where: { id },
         });
         return { success: deletedTransaction };
     } catch (error) {
-        console.error("[deleteTransaction]", error);
+        serverLogger.error("[deleteTransactionAction]", {error, transaction_id: id});
         return { failure: "Error deleting transaction" };
     }
 }

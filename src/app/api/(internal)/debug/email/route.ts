@@ -3,9 +3,14 @@
 import nodemailerClient from "@/app/_lib/mailer";
 import {emailSchema} from "@/app/_lib/zod/email/zod";
 import {getToken} from "@auth/core/jwt";
+import {serverLogger, withAxiom} from "@/app/_lib/axiom/server";
+import {after} from "next/server";
 
-export async function POST(request: Request) {
-    // @ts-expect-error
+export const POST = withAxiom(async (request: Request) => {
+    after(() => {
+        serverLogger.flush();
+    });
+
     const token = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET as string
@@ -28,10 +33,10 @@ export async function POST(request: Request) {
             to: data?.to,
             text: data?.body
         });
-    } catch (e) {
-        console.error(e);
-        if (e instanceof Error) {
-            return Response.json({status: 500, message: e.message});
+    } catch (error) {
+        serverLogger.error("[api/debug/email]", {error});
+        if (error instanceof Error) {
+            return Response.json({status: 500, message: error.message});
         }
     }
 
@@ -39,4 +44,5 @@ export async function POST(request: Request) {
         status: 200,
         response: resp
     });
-}
+
+});

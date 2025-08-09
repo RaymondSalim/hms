@@ -7,6 +7,8 @@ import {generateRandomPassword} from "@/app/_lib/util";
 import prisma from "@/app/_lib/primsa";
 import bcrypt from "bcrypt";
 import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 type ResetPasswordType = {
     success?: string,
@@ -17,6 +19,9 @@ type ResetPasswordType = {
 }
 
 export async function resetPasswordAction(prevState: ResetPasswordType, formData: FormData): Promise<ResetPasswordType> {
+    after(() => {
+        serverLogger.flush();
+    });
     const {success, data, error} = resetSchema.safeParse({
         email: formData.get('email'),
     });
@@ -64,7 +69,7 @@ export async function resetPasswordAction(prevState: ResetPasswordType, formData
 
     } catch (error: any) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[resetPasswordAction]", error.code, error.message);
+            serverLogger.error("[resetPasswordAction]", {error});
             if (error.code == "P2002") {
 
             }
@@ -72,7 +77,7 @@ export async function resetPasswordAction(prevState: ResetPasswordType, formData
                 failure: "Internal Server Error",
             };
         } else if (error instanceof PrismaClientUnknownRequestError) {
-            console.error("[resetPasswordAction]", error.message);
+            serverLogger.error("[resetPasswordAction]", {error});
         }
     }
 

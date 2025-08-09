@@ -15,9 +15,14 @@ import {tenantSchemaWithOptionalID} from "@/app/_lib/zod/tenant/zod";
 import {DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {OmitTimestamp, PartialBy} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 // Action to update tenants
 export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<GenericActionsType<TenantWithRoomsAndSecondResident>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const {success, data, error} = tenantSchemaWithOptionalID.safeParse(tenantData);
 
     if (!success) {
@@ -47,7 +52,7 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
             }
         }
     } catch (error) {
-        console.warn("[upsertTenantAction] error uploading to s3 with err: ", error);
+        serverLogger.error("[upsertTenantAction] error uploading to s3", {error});
         return {
             failure: "Internal Server Error"
         };
@@ -73,7 +78,7 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
             }
         }
     } catch (error) {
-        console.warn("[upsertTenantAction] error uploading to s3 with err: ", error);
+        serverLogger.error("[upsertTenantAction] error uploading to s3", {error});
         // Delete previously uploaded ID
         try {
             const command = new DeleteObjectCommand({
@@ -82,7 +87,7 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
             });
             await client.send(command);
         } catch (error) {
-            console.warn("[upsertTenantAction] error deleting from s3 with err: ", error);
+            serverLogger.warn("[upsertTenantAction] error deleting from s3", {error});
         }
         return {
             failure: "Internal Server Error"
@@ -109,7 +114,7 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
             }
         }
     } catch (error) {
-        console.warn("[upsertTenantAction] error uploading to s3 with err: ", error);
+        serverLogger.error("[upsertTenantAction] error uploading to s3", {error});
         // Delete previously uploaded ID
         try {
             const command = new DeleteObjectsCommand({
@@ -128,7 +133,7 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
 
             await client.send(command);
         } catch (error) {
-            console.warn("[upsertTenantAction] error deleting from s3 with err: ", error);
+            serverLogger.error("[upsertTenantAction] error deleting from s3", {error});
         }
         return {
             failure: "Internal Server Error"
@@ -179,25 +184,25 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
                 Bucket: process.env.S3_BUCKET,
                 Delete: {
                     Objects: [
-                        { Key: idS3Key },
-                        { Key: familyCertificateS3Key },
-                        { Key: secondTenantIDS3Key }
+                        {Key: idS3Key},
+                        {Key: familyCertificateS3Key},
+                        {Key: secondTenantIDS3Key}
                     ]
                 }
             });
             await client.send(command);
         } catch (error) {
-            console.warn("[upsertTenantAction] error deleting multiple objects from s3 with err: ", error);
+            serverLogger.error("[upsertTenantAction] error deleting multiple objects from s3", {error});
         }
 
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[register]", error.code, error.message);
+            serverLogger.error("[upsertTenantAction]", {error});
             if (error.code == "P2002") {
-                return {failure: "Alamat email sudah terdaftar"};
+                return {failure: "Duplikat Data"};
             }
         }
         if (error instanceof Error) {
-            console.error("[register]", error.message);
+            serverLogger.error("[upsertTenantAction]", {error});
         }
 
         return {failure: "Request unsuccessful"};
@@ -205,6 +210,9 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
 }
 
 export async function deleteTenantAction(id: string): Promise<GenericActionsType<TenantWithRooms>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const parsedData = object({id: string().min(1, "ID is required")}).safeParse({
         id: id,
     });
@@ -221,7 +229,7 @@ export async function deleteTenantAction(id: string): Promise<GenericActionsType
             success: res,
         };
     } catch (error) {
-        console.error(error);
+        serverLogger.error("[deleteTenantAction]", {error, tenant_id: id});
         return {
             failure: "Error deleting tenant",
         };

@@ -1,11 +1,11 @@
 import {getToken} from "@auth/core/jwt";
 import {generateBillEmailReminders} from "@/app/api/(internal)/tasks/email/invoice-reminder/invoice-reminder-action";
+import {withAxiom} from "@/app/_lib/axiom/server";
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-    // @ts-expect-error salt
+export const GET = withAxiom(async (request: Request) => {
     const token = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET as string
@@ -41,4 +41,4 @@ export async function GET(request: Request) {
     }
 
     return Response.json({success: true, message: "No Emails to be sent"});
-}
+});

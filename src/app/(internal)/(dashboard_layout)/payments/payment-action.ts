@@ -13,6 +13,8 @@ import {
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {DeleteObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {getBookingByID} from "@/app/_db/bookings";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 export async function createPaymentBillsFromBillAllocations(
     manualAllocations: Record<number, number>,
@@ -37,12 +39,17 @@ export async function createPaymentBillsFromBillAllocations(
         }));
 
     if (paymentBills.length > 0) {
-        await trx.paymentBill.createMany({ data: paymentBills });
+        await trx.paymentBill.createMany({data: paymentBills});
     }
 }
 
-export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & { allocationMode?: 'auto' | 'manual', manualAllocations?: Record<number, number> }) {
-
+export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & {
+    allocationMode?: 'auto' | 'manual',
+    manualAllocations?: Record<number, number>
+}) {
+    after(() => {
+        serverLogger.flush();
+    });
     const {success, data, error} = paymentSchema.safeParse(reqData);
 
     if (!success) {
@@ -83,7 +90,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
             }
         }
     } catch (error) {
-        console.warn("error uploading to s3 with err: ", error);
+        serverLogger.warn("[upsertPaymentAction] error uploading to s3 with err: ", {error});
         return {
             failure: "Internal Server Error"
         };
@@ -111,7 +118,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
                 if (allocationMode === 'manual' && manualAllocations) {
                     // Delete existing payment-bill records for this payment
                     await tx.paymentBill.deleteMany({
-                        where: { payment_id: data.id }
+                        where: {payment_id: data.id}
                     });
 
                     await createPaymentBillsFromBillAllocations(manualAllocations, res.id, dbData.amount, tx);
@@ -124,8 +131,8 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
 
                     // After global reallocation, recompute transactions for ALL payments in this booking
                     const paymentIdRows = await tx.paymentBill.findMany({
-                        where: { bill: { booking_id: booking.id } },
-                        select: { payment_id: true }
+                        where: {bill: {booking_id: booking.id}},
+                        select: {payment_id: true}
                     });
                     const uniquePaymentIds = Array.from(new Set(paymentIdRows.map(r => r.payment_id)));
                     for (const paymentId of uniquePaymentIds) {
@@ -142,8 +149,8 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
                     const unpaidBills = await getUnpaidBillsDueAction(booking.id);
                     // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
                     const simulation = await simulateUnpaidBillPaymentAction(data.amount, unpaidBills.bills, res.id);
-                    const { payments: paymentBills } = simulation.new;
-                    await tx.paymentBill.createMany({ data: paymentBills });
+                    const {payments: paymentBills} = simulation.new;
+                    await tx.paymentBill.createMany({data: paymentBills});
                     // Don't sync for new payments - we already created the records
                 }
 
@@ -152,9 +159,8 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
             }
 
 
-
         } catch (error) {
-            console.warn("error creating/updating payment with error: ", error);
+            serverLogger.warn("error creating/updating payment with error: ", {error});
             return {
                 success: false,
                 error: error instanceof Error ? error.message : "Internal Server Error"
@@ -181,6 +187,9 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
 }
 
 export async function deletePaymentAction(id: number) {
+    after(() => {
+        serverLogger.flush();
+    });
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -229,7 +238,7 @@ export async function deletePaymentAction(id: number) {
                 });
                 await client.send(command);
             } catch (error) {
-                console.warn("[deletePaymentAction] error deleting from s3 with err: ", error);
+                serverLogger.warn("[deletePaymentAction] error deleting from s3", {error});
             }
         }
 
@@ -237,7 +246,7 @@ export async function deletePaymentAction(id: number) {
             success: res,
         };
     } catch (error) {
-        console.error(error);
+        serverLogger.error("[deletePaymentAction]", {error});
         return {
             failure: "Error deleting payment",
         };
@@ -252,7 +261,7 @@ export async function getPaymentStatusAction() {
 // Helper function to get deposit ID for a booking
 async function getDepositIdForBooking(bookingId: number, trx: Prisma.TransactionClient): Promise<number | null> {
     const deposit = await trx.deposit.findFirst({
-        where: { booking_id: bookingId }
+        where: {booking_id: bookingId}
     });
     return deposit?.id || null;
 }
@@ -263,7 +272,7 @@ export const createOrUpdatePaymentTransactions = async function (
     trx: Prisma.TransactionClient
 ) {
     const payment = await trx.payment.findFirst({
-        where: { id: paymentId },
+        where: {id: paymentId},
         include: {
             bookings: {
                 include: {
@@ -281,7 +290,7 @@ export const createOrUpdatePaymentTransactions = async function (
 
     // Compute amounts from actual PaymentBill entries, prioritizing deposit items within each bill
     const paymentBills = await trx.paymentBill.findMany({
-        where: { payment_id: paymentId },
+        where: {payment_id: paymentId},
         include: {
             bill: {
                 include: {
@@ -326,13 +335,13 @@ export const createOrUpdatePaymentTransactions = async function (
     if (depositIdsToUpdate.length > 0) {
         for (const depositId of depositIdsToUpdate) {
             const deposit = await trx.deposit.findUnique({
-                where: { id: depositId }
+                where: {id: depositId}
             });
 
             if (deposit && deposit.status === DepositStatus.UNPAID) {
                 await trx.deposit.update({
-                    where: { id: depositId },
-                    data: { status: DepositStatus.HELD }
+                    where: {id: depositId},
+                    data: {status: DepositStatus.HELD}
                 });
             }
         }
@@ -348,7 +357,7 @@ export const createOrUpdatePaymentTransactions = async function (
         }
     });
 
-        // Find or create regular income transaction
+    // Find or create regular income transaction
     const regularTransaction = existingTransactions.find(t =>
         t.category === "Biaya Sewa" &&
         // @ts-expect-error JSON field has no type def
@@ -361,7 +370,7 @@ export const createOrUpdatePaymentTransactions = async function (
         if (regularTransaction) {
             // Update existing transaction
             await trx.transaction.update({
-                where: { id: regularTransaction.id },
+                where: {id: regularTransaction.id},
                 data: {
                     amount: regularAmount,
                     date: payment.payment_date,
@@ -394,7 +403,7 @@ export const createOrUpdatePaymentTransactions = async function (
     } else if (regularTransaction) {
         // Delete if amount is 0
         await trx.transaction.delete({
-            where: { id: regularTransaction.id }
+            where: {id: regularTransaction.id}
         });
     }
 
@@ -411,7 +420,7 @@ export const createOrUpdatePaymentTransactions = async function (
         if (depositTransaction) {
             // Update existing transaction
             await trx.transaction.update({
-                where: { id: depositTransaction.id },
+                where: {id: depositTransaction.id},
                 data: {
                     amount: depositAmount,
                     date: payment.payment_date,
@@ -419,7 +428,7 @@ export const createOrUpdatePaymentTransactions = async function (
                     related_id: {
                         payment_id: payment.id,
                         booking_id: payment.booking_id,
-                        ...(depositTransaction.related_id && typeof depositTransaction.related_id === 'object' && 'deposit_id' in depositTransaction.related_id && { deposit_id: depositTransaction.related_id.deposit_id })
+                        ...(depositTransaction.related_id && typeof depositTransaction.related_id === 'object' && 'deposit_id' in depositTransaction.related_id && {deposit_id: depositTransaction.related_id.deposit_id})
                     }
                 }
             });
@@ -440,7 +449,7 @@ export const createOrUpdatePaymentTransactions = async function (
                     related_id: {
                         payment_id: payment.id,
                         booking_id: payment.booking_id,
-                        ...(depositId && { deposit_id: depositId })
+                        ...(depositId && {deposit_id: depositId})
                     }
                 }
             });
@@ -449,7 +458,7 @@ export const createOrUpdatePaymentTransactions = async function (
     } else if (depositTransaction) {
         // Delete if amount is 0
         await trx.transaction.delete({
-            where: { id: depositTransaction.id }
+            where: {id: depositTransaction.id}
         });
     }
 
@@ -473,7 +482,7 @@ export const createOrUpdatePaymentTransactions = async function (
 
     // Ensure deposit status stays consistent with presence of deposit income transactions across the booking
     const bookingDeposit = await trx.deposit.findFirst({
-        where: { booking_id: payment.booking_id }
+        where: {booking_id: payment.booking_id}
     });
     if (bookingDeposit && (bookingDeposit.status === DepositStatus.UNPAID || bookingDeposit.status === DepositStatus.HELD)) {
         const depositIncomeCount = await trx.transaction.count({
@@ -489,13 +498,13 @@ export const createOrUpdatePaymentTransactions = async function (
 
         if (depositIncomeCount > 0 && bookingDeposit.status === DepositStatus.UNPAID) {
             await trx.deposit.update({
-                where: { id: bookingDeposit.id },
-                data: { status: DepositStatus.HELD }
+                where: {id: bookingDeposit.id},
+                data: {status: DepositStatus.HELD}
             });
         } else if (depositIncomeCount === 0 && bookingDeposit.status === DepositStatus.HELD) {
             await trx.deposit.update({
-                where: { id: bookingDeposit.id },
-                data: { status: DepositStatus.UNPAID }
+                where: {id: bookingDeposit.id},
+                data: {status: DepositStatus.UNPAID}
             });
         }
     }

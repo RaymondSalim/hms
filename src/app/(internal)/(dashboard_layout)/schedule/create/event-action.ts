@@ -6,8 +6,13 @@ import {eventSchemaWithOptionalID} from "@/app/_lib/zod/event/zod";
 import {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
 import {createEvent, updateEventByID} from "@/app/_db/event";
 import {GenericActionsType} from "@/app/_lib/actions";
+import {after} from "next/server";
+import {serverLogger} from "@/app/_lib/axiom/server";
 
 export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>): Promise<GenericActionsType<Event>> {
+    after(() => {
+        serverLogger.flush();
+    });
     const {success, data, error} = eventSchemaWithOptionalID.safeParse(reqData);
 
     if (!success) {
@@ -46,10 +51,10 @@ export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>):
         }
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
-            console.error("[upsertEventAction]", error.code, error.message);
+            serverLogger.error("[upsertEventAction]", {error});
         }
         if (error instanceof Error) {
-            console.error("[upsertEventAction]", error.message);
+            serverLogger.error("[upsertEventAction]", {error});
         }
 
         return {failure: "Request unsuccessful"};
