@@ -35,6 +35,10 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
       size: 20,
       enableColumnFilter: true,
     }),
+    columnHelper.accessor(row => row.payment_date, {
+      header: "Tanggal Pembayaran",
+      cell: props => formatToDateTime(props.getValue(), true, true)
+    }),
     columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
       id: 'booking_id',
       header: "ID Pemesanan",
@@ -70,11 +74,9 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
       enableColumnFilter: true,
       cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
     }),
-    columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
-      header: "Jumlah Pembayaran"
-    }),
-    columnHelper.accessor(row => formatToDateTime(row.payment_date, true, true), {
-      header: "Tanggal Pembayaran"
+    columnHelper.accessor(row => new Prisma.Decimal(row.amount).toNumber(), {
+      header: "Jumlah Pembayaran",
+      cell: props => formatToIDR(props.getValue())
     }),
     columnHelper.display({
       header: "Bukti Pembayaran",

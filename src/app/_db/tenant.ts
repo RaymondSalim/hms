@@ -50,6 +50,9 @@ export async function getTenants(id?: string, locationID?: number, limit?: numbe
         },
         skip: offset,
         take: limit,
+        orderBy: {
+            createdAt: 'desc'
+        }
     });
 }
 
@@ -83,6 +86,9 @@ export async function getTenantsWithRooms(id?: string, locationID?: number, limi
                 },
             },
             second_resident: true,
+        },
+        orderBy: {
+            createdAt: 'desc'
         }
     });
 }

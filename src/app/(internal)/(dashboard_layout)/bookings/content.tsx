@@ -39,6 +39,7 @@ import {toast} from "react-toastify";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {getUnpaidBillsDueAction} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {EndOfStayForm} from "@/app/(internal)/(dashboard_layout)/bookings/_components/EndOfStayForm";
+import {DEPOSIT_STATUS_LABELS} from "@/app/_lib/enum-translations";
 
 
 export interface BookingsContentProps {
@@ -611,11 +612,11 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                                             onChange={(val) => setSelectedDepositStatus(val as DepositStatus)}
                                                             label="Pilih Status Deposit"
                                                         >
-                                                            <Option value="HELD">HELD</Option>
-                                                            <Option value="APPLIED">APPLIED</Option>
-                                                            <Option value="REFUNDED">REFUNDED</Option>
+                                                            <Option value="HELD">{DEPOSIT_STATUS_LABELS["HELD"]}</Option>
+                                                            <Option value="APPLIED">{DEPOSIT_STATUS_LABELS["APPLIED"]}</Option>
+                                                            <Option value="REFUNDED">{DEPOSIT_STATUS_LABELS["REFUNDED"]}</Option>
                                                             <Option
-                                                                value="PARTIALLY_REFUNDED">PARTIALLY_REFUNDED</Option>
+                                                                value="PARTIALLY_REFUNDED">{DEPOSIT_STATUS_LABELS["PARTIALLY_REFUNDED"]}</Option>
                                                         </Select>
                                                     </div>
 

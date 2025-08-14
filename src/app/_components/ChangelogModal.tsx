@@ -4,7 +4,7 @@ import React, {useEffect, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {RiArrowDownSLine, RiCheckLine, RiCloseLine} from 'react-icons/ri';
 import ReactMarkdown from 'react-markdown';
-import {ChangelogItem} from '../_hooks/useChangelog';
+import {ChangelogItem} from '@/app/_hooks/useChangelog';
 
 interface ChangelogModalProps {
   isOpen: boolean;
@@ -83,16 +83,7 @@ function AccordionItem({ item, isOpen, onToggle, isFirst }: AccordionItemProps) 
   };
 
   const getImportanceText = (importance: string) => {
-    switch (importance) {
-      case 'major':
-        return 'Penting';
-      case 'minor':
-        return 'Sedang';
-      case 'patch':
-        return 'Kecil';
-      default:
-        return 'Sedang';
-    }
+    return importance;
   };
 
   return (

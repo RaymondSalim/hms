@@ -47,6 +47,8 @@ export function BookingForm(props: BookingFormProps) {
         return JSON.stringify(initialData) !== JSON.stringify(currentData);
     };
 
+    const hasChangeNow = useMemo(() => hasChanges(initialBookingData, bookingData), [initialBookingData, bookingData]);
+
     const isButtonDisabled = useMemo(() => {
         const basicValidation = !bookingData.tenant_id ||
             !bookingData.room_id ||
@@ -54,9 +56,10 @@ export function BookingForm(props: BookingFormProps) {
             !(bookingData.duration_id || bookingData.is_rolling) ||
             !bookingData.fee ||
             !bookingData.status_id;
-        const warningValidation = props.contentData?.id ? !understoodWarning : false; // Only require checkbox when editing
+        // Only require acknowledgement when editing AND there are actual changes
+        const warningValidation = props.contentData?.id ? (hasChangeNow && !understoodWarning) : false;
         return basicValidation || warningValidation;
-    }, [bookingData, understoodWarning, props.contentData?.id]);
+    }, [bookingData, understoodWarning, props.contentData?.id, hasChangeNow]);
 
     // Use effect to set initialBookingData when the component mounts
     useEffect(() => {
@@ -725,6 +728,7 @@ export function BookingForm(props: BookingFormProps) {
                                     initial={{opacity: 0, height: 0}}
                                     animate={{opacity: 1, height: "auto"}}
                                     exit={{opacity: 0, height: 0}}
+                                    key={"addons"}
                                 >
                                     {/*@ts-expect-error weird react 19 types error*/}
                                     <Checkbox
@@ -895,7 +899,7 @@ export function BookingForm(props: BookingFormProps) {
                                     )}
                                 </motion.div>
                             }
-                            {props.contentData?.id && (
+                            {props.contentData?.id && hasChangeNow && (
                                 <>
                                     <motion.div
                                         key={"warning_message"}
@@ -972,7 +976,7 @@ export function BookingForm(props: BookingFormProps) {
                         Batal
                     </Button>
                     {/*@ts-expect-error weird react 19 types error*/}
-                    <Button disabled={isButtonDisabled || !hasChanges(initialBookingData, bookingData)}
+                    <Button disabled={isButtonDisabled || !hasChangeNow}
                             onClick={() => props.mutation.mutate(bookingData)}
                             color={"blue"} className="mt-6"
                             loading={props.mutation.isPending}>
