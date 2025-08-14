@@ -119,10 +119,11 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             enableColumnFilter: true,
             size: 20,
         }),
-        columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id, {
+        columnHelper.accessor(row => row.bookings?.id, {
             id: "booking_id",
             header: "ID Pemesanan",
             enableColumnFilter: true,
+            cell: (row) => `#-${row.getValue()}`
         }),
         columnHelper.accessor(row => row.bookings?.rooms?.room_number, {
             id: "room_number",
