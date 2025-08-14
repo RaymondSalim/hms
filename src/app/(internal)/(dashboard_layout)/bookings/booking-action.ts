@@ -455,17 +455,16 @@ export async function matchBillItemsToBills(
 }
 
 /**
- * Updates a rolling booking to schedule its end date and optionally updates the deposit status.
- * This action is transactional, ensuring both the booking and deposit are updated together.
- * @param data - An object containing the bookingId, endDate, and optional depositStatus.
+ * Updates a rolling booking to schedule its end date.
+ * This action is transactional, ensuring the booking is updated properly.
+ * @param data - An object containing the bookingId and endDate.
  * @returns A success or failure response.
  */
 export async function scheduleEndOfStayAction(data: {
     bookingId: number;
     endDate: Date;
-    depositStatus?: DepositStatus;
 }) {
-    const { bookingId, endDate, depositStatus } = data;
+    const { bookingId, endDate } = data;
 
     const booking = await prisma.booking.findFirst({
         where: {
@@ -500,15 +499,6 @@ export async function scheduleEndOfStayAction(data: {
                     is_rolling: false,
                 },
             });
-
-            if (depositStatus) {
-                await tx.deposit.update({
-                    where: { booking_id: bookingId },
-                    data: {
-                        status: depositStatus,
-                    },
-                });
-            }
         });
 
         revalidateTag("bookings");
@@ -525,7 +515,7 @@ export async function scheduleEndOfStayAction(data: {
  * @returns A promise that resolves to an array of the newly created bills.
  */
 export async function generateInitialBillsForRollingBooking(booking: Pick<Booking, 'start_date' | 'fee' | 'second_resident_fee'> & {
-    deposit?: { amount: Prisma.Decimal },
+    deposit?: { amount: Prisma.Decimal } | null,
     addOns?: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[]
 }): Promise<PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[]> {
     const { start_date, fee, second_resident_fee, deposit, addOns } = booking;
