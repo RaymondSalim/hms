@@ -59,15 +59,118 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
             }
 
             if (data.id) {
-                const res = await prisma.booking.update({
-                    where: { id: data.id },
-                    // @ts-expect-error type
-                    data: {
-                        ...data,
-                        duration_id: null,
-                        end_date: null,
-                        is_rolling: true,
+                const res = await prisma.$transaction(async (tx) => {
+                    const { addOns, deposit, ...bookingData } = data;
+
+                    // Update the booking
+                    const updatedBooking = await tx.booking.update({
+                        where: { id: data.id },
+                        data: {
+                            ...bookingData,
+                            duration_id: null,
+                            end_date: null,
+                            is_rolling: true,
+                        },
+                        include: {
+                            rooms: {
+                                include: {
+                                    locations: true,
+                                }
+                            },
+                            durations: true,
+                            bookingstatuses: true,
+                            tenants: true,
+                            checkInOutLogs: true,
+                            addOns: {
+                                include: {
+                                    addOn: true
+                                }
+                            },
+                            deposit: true,
+                        }
+                    });
+
+                    // Handle deposit updates
+                    if (deposit) {
+                        // Check if deposit already exists
+                        const existingDeposit = await tx.deposit.findFirst({
+                            where: { booking_id: data.id }
+                        });
+
+                        if (existingDeposit) {
+                            // Update existing deposit
+                            await tx.deposit.update({
+                                where: { id: existingDeposit.id },
+                                data: {
+                                    amount: new Prisma.Decimal(deposit.amount),
+                                    status: DepositStatus.UNPAID
+                                }
+                            });
+
+                            // Update or create bill item for deposit
+                            const existingBillItem = await tx.billItem.findFirst({
+                                where: {
+                                    bill: {
+                                        booking_id: {
+                                            equals: data.id
+                                        }
+                                    },
+                                    // bill_id: { in: (await tx.bill.findMany({ where: { booking_id: data.id } })).map(b => b.id) },
+                                    related_id: { path: ['deposit_id'], equals: existingDeposit.id }
+                                }
+                            });
+
+                            if (existingBillItem) {
+                                await tx.billItem.update({
+                                    where: { id: existingBillItem.id },
+                                    data: { amount: new Prisma.Decimal(deposit.amount) }
+                                });
+                            } else {
+                                // Create new bill item if none exists
+                                const firstBill = await tx.bill.findFirst({
+                                    where: { booking_id: data.id }
+                                });
+                                if (firstBill) {
+                                    await tx.billItem.create({
+                                        data: {
+                                            bill_id: firstBill.id,
+                                            amount: new Prisma.Decimal(deposit.amount),
+                                            description: 'Deposit Kamar',
+                                            related_id: { deposit_id: existingDeposit.id } as any,
+                                            type: 'CREATED',
+                                        }
+                                    });
+                                }
+                            }
+                        } else {
+                            // Create new deposit
+                            const depositRecord = await tx.deposit.create({
+                                data: {
+                                    booking_id: data.id!,
+                                    amount: new Prisma.Decimal(deposit.amount),
+                                    status: DepositStatus.UNPAID
+                                }
+                            });
+
+                            // Create bill item for new deposit
+                            const firstBill = await tx.bill.findFirst({
+                                where: { booking_id: data.id }
+                            });
+                            if (firstBill) {
+                                await tx.billItem.create({
+                                    data: {
+                                        bill_id: firstBill.id,
+                                        amount: depositRecord.amount,
+                                        description: 'Deposit Kamar',
+                                        related_id: { deposit_id: depositRecord.id } as any,
+                                        type: 'CREATED',
+                                    }
+                                });
+                            }
+                        }
                     }
+
+                    return updatedBooking;
                 });
                 return { success: res };
             } else {
@@ -80,6 +183,23 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                             duration_id: null,
                             end_date: null,
                             is_rolling: true,
+                        },
+                        include: {
+                            rooms: {
+                                include: {
+                                    locations: true,
+                                }
+                            },
+                            durations: true,
+                            bookingstatuses: true,
+                            tenants: true,
+                            checkInOutLogs: true,
+                            addOns: {
+                                include: {
+                                    addOn: true
+                                }
+                            },
+                            deposit: true,
                         }
                     });
 
