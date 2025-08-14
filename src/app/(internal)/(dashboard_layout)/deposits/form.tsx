@@ -3,6 +3,7 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {Button, Checkbox, Input, Typography} from "@material-tailwind/react";
 import {DepositStatus, Prisma} from "@prisma/client";
+import {DEPOSIT_STATUS_LABELS} from "@/app/_lib/enum-translations";
 import {TableFormProps} from "@/app/_components/pageContent/TableContent";
 import {ZodFormattedError} from "zod";
 import {AnimatePresence, motion, MotionConfig} from "framer-motion";
@@ -47,10 +48,10 @@ export function DepositForm(props: TableFormProps<any>) {
 
     // Status options for SelectComponent
     const statusOptions: SelectOption<DepositStatus>[] = [
-        {value: "HELD", label: "HELD"},
-        {value: "APPLIED", label: "APPLIED"},
-        {value: "PARTIALLY_REFUNDED", label: "PARTIALLY_REFUNDED"},
-        {value: "REFUNDED", label: "REFUNDED"},
+        {value: "HELD", label: DEPOSIT_STATUS_LABELS["HELD"]},
+        {value: "APPLIED", label: DEPOSIT_STATUS_LABELS["APPLIED"]},
+        {value: "PARTIALLY_REFUNDED", label: DEPOSIT_STATUS_LABELS["PARTIALLY_REFUNDED"]},
+        {value: "REFUNDED", label: DEPOSIT_STATUS_LABELS["REFUNDED"]},
     ];
 
     useEffect(() => {

@@ -5,7 +5,7 @@ import {createColumnHelper} from "@tanstack/react-table";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {Deposit, DepositStatus} from "@prisma/client";
 import {deleteDepositAction, upsertDepositAction} from "./deposit-action";
-import {formatToIDR} from "@/app/_lib/util";
+import {formatToIDR, getDepositStatusLabel} from "@/app/_lib/util";
 import {DepositForm} from "./form";
 import {toast} from "react-toastify";
 
@@ -55,7 +55,10 @@ export default function DepositsContent({initialDeposits}: { initialDeposits: De
             header: "Jumlah",
             cell: props => formatToIDR(props.getValue())
         }),
-        columnHelper.accessor("status", {header: "Status"}),
+        columnHelper.accessor("status", {
+            header: "Status",
+            cell: (props) => getDepositStatusLabel(props.getValue())
+        }),
         columnHelper.accessor((row) => Number(row.refunded_amount) || 0, {
             header: "Jumlah Dikembalikan",
             cell: props => props.getValue() > 0 ? formatToIDR(props.getValue()) : ""

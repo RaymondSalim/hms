@@ -1,18 +1,8 @@
 "use client";
 
 import React, {useState} from 'react';
-import {
-    Button,
-    Dialog,
-    DialogBody,
-    DialogFooter,
-    DialogHeader,
-    Input,
-    Option,
-    Select,
-    Typography
-} from '@material-tailwind/react';
-import {Booking, DepositStatus} from '@prisma/client';
+import {Button, Dialog, DialogBody, DialogFooter, DialogHeader, Input, Typography} from '@material-tailwind/react';
+import {Booking} from '@prisma/client';
 import {useMutation} from "@tanstack/react-query";
 import {toast} from "react-toastify";
 import {scheduleEndOfStayAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
@@ -25,7 +15,6 @@ interface EndOfStayFormProps {
 
 export function EndOfStayForm({booking, open, onClose}: EndOfStayFormProps) {
     const [endDate, setEndDate] = useState('');
-    const [depositStatus, setDepositStatus] = useState<DepositStatus | undefined>();
     const [showWarning, setShowWarning] = useState(false);
 
     const scheduleEndOfStayMutation = useMutation({
@@ -68,7 +57,6 @@ export function EndOfStayForm({booking, open, onClose}: EndOfStayFormProps) {
         scheduleEndOfStayMutation.mutate({
             bookingId: booking.id,
             endDate: new Date(endDate),
-            depositStatus,
         });
     };
 
@@ -100,26 +88,20 @@ export function EndOfStayForm({booking, open, onClose}: EndOfStayFormProps) {
                         </Typography>
                     )}
                     {/*@ts-expect-error weird react 19 types error*/}
-                    <Select
-                        label="Status Deposit"
-                        value={depositStatus}
-                        onChange={(val) => setDepositStatus(val as DepositStatus)}
-                    >
-                        <Option value={DepositStatus.HELD}>Tahan Deposit</Option>
-                        <Option value={DepositStatus.REFUNDED}>Kembalikan Deposit</Option>
-                        <Option value={DepositStatus.FORFEITED}>Hanguskan Deposit</Option>
-                    </Select>
+                    <Typography color="blue-gray" className="text-sm">
+                        <strong>Info:</strong> Status deposit akan diatur saat check-out, bukan saat menjadwalkan berhenti sewa.
+                    </Typography>
                 </div>
             </DialogBody>
             {/*@ts-expect-error weird react 19 types error*/}
             <DialogFooter>
                 {/*@ts-expect-error weird react 19 types error*/}
                 <Button variant="text" color="red" onClick={onClose} className="mr-1">
-                    <span>Batal</span>
+                    Batal
                 </Button>
                 {/*@ts-expect-error weird react 19 types error*/}
-                <Button variant="gradient" color="green" onClick={handleSubmit}>
-                    <span>Simpan</span>
+                <Button onClick={handleSubmit} disabled={scheduleEndOfStayMutation.isPending}>
+                    {scheduleEndOfStayMutation.isPending ? "Memproses..." : "Jadwalkan"}
                 </Button>
             </DialogFooter>
         </Dialog>
