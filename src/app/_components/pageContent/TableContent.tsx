@@ -75,7 +75,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
 
     columns: ColumnDef<T, any>[],
     groupBy?: string[],
-    groupByOptions?: { value: string, label: string }[],
+    groupByOptions?: { value: string, label: string, defaultSelected?: boolean }[],
 
     searchPlaceholder?: string,
     form: ReactElement<TableFormProps<T>>
@@ -127,7 +127,13 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     const [fromQuery, setFromQuery] = useState(false);
     const [globalFilter, setGlobalFilter] = useState<string>();
     const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>();
-    const [grouping, setGrouping] = useState<string[]>(props.groupBy ?? []);
+    const [grouping, setGrouping] = useState<string[]>(() => {
+        if (props.groupBy && props.groupBy.length > 0) {
+            return props.groupBy;
+        }
+        const defaultOption = props.groupByOptions?.find(opt => opt.defaultSelected);
+        return defaultOption ? [defaultOption.value] : [];
+    });
     const [expanded, setExpanded] = useState({});
 
     const [dialogOpen, setDialogOpen] = useState(false);

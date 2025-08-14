@@ -27,8 +27,13 @@ export function formatToDateTime(d: Date, showTime = true, showSeconds = true): 
 }
 
 export function formatToMonthYear(d: Date): string {
-  return new Intl.DateTimeFormat('id', { month: 'long', year: 'numeric' }).format(d);
+  return new Intl.DateTimeFormat("id-ID", {
+    year: "numeric",
+    month: "long"
+  }).format(d);
 }
+
+export { getDepositStatusLabel } from './enum-translations';
 
 export type IntersectionToUnion<T> = (T extends any ? (arg: T) => void : never) extends (arg: infer U) => void ? U : never;
 

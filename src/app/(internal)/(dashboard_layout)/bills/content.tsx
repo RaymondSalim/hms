@@ -119,10 +119,11 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             enableColumnFilter: true,
             size: 20,
         }),
-        columnHelper.accessor(row => row.bookings?.custom_id ?? row.bookings?.id, {
+        columnHelper.accessor(row => row.bookings?.id, {
             id: "booking_id",
             header: "ID Pemesanan",
             enableColumnFilter: true,
+            cell: (row) => `#-${row.getValue()}`
         }),
         columnHelper.accessor(row => row.bookings?.rooms?.room_number, {
             id: "room_number",
@@ -139,22 +140,24 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             minSize: 275,
             enableColumnFilter: true,
         }),
-        columnHelper.accessor(row => formatToIDR(
+        columnHelper.accessor(row => 
             row.bill_item
                 .map(bi => bi.amount)
                 .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0)
-                ).toNumber()), {
+                ).toNumber(), {
             header: "Jumlah",
             enableColumnFilter: true,
+            cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => {
             if (row.paymentBills) {
-                return formatToIDR(row.paymentBills?.map(pb => new Prisma.Decimal(pb.amount).toNumber()).reduce((sum, curr) => sum + curr, 0));
+                return row.paymentBills?.map(pb => new Prisma.Decimal(pb.amount).toNumber()).reduce((sum, curr) => sum + curr, 0);
             }
-            return formatToIDR(0);
+            return 0;
         }, {
             header: "Jumlah Terbayar",
             enableColumnFilter: true,
+            cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => {
             const totalAmount = row.bill_item
@@ -259,7 +262,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 columns={columns}
                 groupByOptions={[
                     {value: 'booking_id', label: 'Kelompokkan per Pemesanan'},
-                    {value: 'due_date', label: 'Kelompokkan per Bulan'}
+                    {value: 'due_date', label: 'Kelompokkan per Bulan', defaultSelected: true}
                 ]}
                 form={
                     // @ts-expect-error
@@ -751,7 +754,7 @@ const DetailsDialogContent = ({activeData, setShowDialog, onBillUpdate}: {
                                     >
                                         {/*@ts-expect-error weird react 19 types error*/}
                                         <Typography variant="small" color="blue-gray" className="font-normal">
-                                            {"More Info"}
+                                            {"Info Lebih Lanjut"}
                                         </Typography>
                                     </Link>
                                 </td>

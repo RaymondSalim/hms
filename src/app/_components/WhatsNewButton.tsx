@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {RiSparklingLine} from 'react-icons/ri';
-import {useChangelogContext} from './ChangelogProvider';
+import {useChangelogContext} from "@/app/_components/ChangelogProvider";
 
 interface WhatsNewButtonProps {
   className?: string;

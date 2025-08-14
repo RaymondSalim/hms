@@ -33,13 +33,14 @@ export default function ExpensesContent({expenses, refetchFn}: ExpensesContentPr
     const columns = [
         columnHelper.accessor(row => row.date, {
             header: "Date",
-            cell: props => formatToDateTime(props.row.original.date, false)
+            cell: props => formatToDateTime(props.getValue(), false)
         }),
         columnHelper.accessor(row => row.category, {
             header: "Kategori",
         }),
-        columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.amount).toNumber()), {
-            header: "Jumlah"
+        columnHelper.accessor(row => new Prisma.Decimal(row.amount).toNumber(), {
+            header: "Jumlah",
+            cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
