@@ -16,6 +16,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Extract Tag from Title
         id: extract_tag
@@ -27,14 +29,7 @@ jobs:
             echo "tag=$tag_name" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Tag
-        if: env.tag_name != ''
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git tag "$tag_name"
-          git push origin "$tag_name"
-
+      # 1) Build the file first so the tag's commit includes it
       - name: Create public/version.json
         if: env.tag_name != ''
         run: |
@@ -47,11 +42,44 @@ jobs:
           echo "Created public/version.json with version=${{ steps.extract_tag.outputs.tag }}"
           cat public/version.json
 
-      - name: Commit and push version.json
+      - name: Commit version.json (no-op if unchanged)
         if: env.tag_name != ''
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add public/version.json
-          git commit -m "Update version to ${{ steps.extract_tag.outputs.tag }}" || exit 0
-          git push
+          git commit -m "chore: update version to ${{ steps.extract_tag.outputs.tag }}" || echo "No changes to commit"
+
+      - name: Push commit to prod (SSH)
+        if: env.tag_name != ''
+        env:
+          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=accept-new"
+        run: |
+          git remote set-url origin git@github.com:RaymondSalim/hms.git
+          # Push only if there is a new commit
+          if ! git diff --quiet origin/prod..HEAD; then
+            git push origin HEAD:prod
+          else
+            echo "No new commit to push"
+          fi
+
+      # 2) Now create the tag at the commit that includes version.json
+      - name: Create Tag (skip if exists)
+        if: env.tag_name != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_name="${{ env.tag_name }}"
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+          # Make sure we know about remote tags
+          git fetch --tags origin
+
+          if git rev-parse -q --verify "refs/tags/${tag_name}" >/dev/null 2>&1 \
+             || git ls-remote --exit-code --tags origin "${tag_name}" >/dev/null 2>&1; then
+            echo "Tag '${tag_name}' already exists. Skipping tag creation."
+          else
+            git tag "${tag_name}"
+            git push origin "${tag_name}"
+          fi
