@@ -70,6 +70,7 @@ export const GET = withAxiom(async (request: Request) => {
                 const nextBill = await generateNextMonthlyBill(booking, booking.bills, targetDate);
 
                 if (nextBill) {
+                    const dueDate: Date = nextBill.due_date as Date;
                     simulationResults.push({
                         bookingId: booking.id,
                         tenantName: booking.tenants?.name || 'Unknown',
@@ -79,10 +80,10 @@ export const GET = withAxiom(async (request: Request) => {
                         status: 'would_create_bill',
                         billDescription: nextBill.description,
                         existingBillsCount: booking.bills.length,
-                        latestBillDueDate: booking.bills.length > 0 
+                        latestBillDueDate: booking.bills.length > 0
                             ? new Date(Math.max(...booking.bills.map(b => b.due_date.getTime()))).toISOString()
                             : undefined,
-                        nextBillStartDate: nextBill.due_date ? new Date(nextBill.due_date.getFullYear(), nextBill.due_date.getMonth(), 1).toISOString() : undefined,
+                        nextBillStartDate: nextBill.due_date ? new Date(dueDate.getFullYear(), dueDate.getMonth(), 1).toISOString() : undefined,
                     });
                 } else {
                     // Determine why no bill was generated
@@ -94,7 +95,7 @@ export const GET = withAxiom(async (request: Request) => {
                     } else {
                         const latestBill = booking.bills.sort((a, b) => b.due_date.getTime() - a.due_date.getTime())[0];
                         const nextBillStartDate = new Date(latestBill.due_date.getFullYear(), latestBill.due_date.getMonth() + 1, 1);
-                        
+
                         if (nextBillStartDate.getMonth() !== targetDate.getMonth() || nextBillStartDate.getFullYear() !== targetDate.getFullYear()) {
                             reason = `Next bill date (${nextBillStartDate.toISOString().split('T')[0]}) is not in target month (${targetDate.getMonth() + 1}/${targetDate.getFullYear()})`;
                         } else {
@@ -111,7 +112,7 @@ export const GET = withAxiom(async (request: Request) => {
                         status: 'no_bill_needed',
                         reason,
                         existingBillsCount: booking.bills.length,
-                        latestBillDueDate: booking.bills.length > 0 
+                        latestBillDueDate: booking.bills.length > 0
                             ? new Date(Math.max(...booking.bills.map(b => b.due_date.getTime()))).toISOString()
                             : undefined,
                     });
