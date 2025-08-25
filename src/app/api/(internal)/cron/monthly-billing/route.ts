@@ -3,6 +3,9 @@ import prisma from "@/app/_lib/primsa";
 import {generateNextMonthlyBill} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {serverLogger, withAxiom} from "@/app/_lib/axiom/server";
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 export const POST = withAxiom(async () => {
     after(() => {
         serverLogger.flush();

@@ -203,7 +203,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                         }
                     });
 
-                    const initialBills = await generateInitialBillsForRollingBooking(newBooking);
+                    const initialBills = await generateInitialBillsForRollingBooking(newBooking, new Date());
                     const createdBills: Bill[] = [];
                     for (const bill of initialBills) {
                         const createdBill = await tx.bill.create({
@@ -510,18 +510,20 @@ export async function scheduleEndOfStayAction(data: {
 
 /**
  * Generates the initial set of bills for a new rolling booking.
- * It creates a prorated bill for the first partial month and a full bill for the following month.
+ * It creates a prorated bill for the first partial month and full bills for all subsequent months up to the current month.
  * @param booking - The booking object for which to generate bills.
+ * @param currentDate - The current date to generate bills up to (defaults to today).
  * @returns A promise that resolves to an array of the newly created bills.
  */
 export async function generateInitialBillsForRollingBooking(booking: Pick<Booking, 'start_date' | 'fee' | 'second_resident_fee'> & {
     deposit?: { amount: Prisma.Decimal } | null,
     addOns?: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[]
-}): Promise<PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[]> {
+}, currentDate: Date = new Date()): Promise<PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[]> {
     const { start_date, fee, second_resident_fee, deposit, addOns } = booking;
     const bills: PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[] = [];
+    const today = currentDate;
 
-    // First bill (prorated)
+    // First bill (prorated for the first month)
     const firstBillEndDate = endOfMonth(start_date);
     const daysInFirstMonth = getDaysInMonth(start_date);
     const proratedDays = daysInFirstMonth - start_date.getDate() + 1;
@@ -561,32 +563,38 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
         }
     });
 
-    // Second bill (full month)
-    const secondBillStartDate = startOfMonth(new Date(start_date.getFullYear(), start_date.getMonth() + 1, 1));
-    const secondBillEndDate = endOfMonth(secondBillStartDate);
-
-    const secondBillItems = [{
-        description: `Sewa Kamar (${format(secondBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(secondBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
-        amount: fee,
-        type: BillType.GENERATED
-    }];
-
-    // Add second resident fee if exists
-    if (second_resident_fee) {
-        secondBillItems.push({
-            description: `Biaya Penghuni Kedua (${format(secondBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(secondBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
-            amount: second_resident_fee,
+    // Generate bills for all subsequent months up to the current month
+    let currentMonth = startOfMonth(new Date(start_date.getFullYear(), start_date.getMonth() + 1, 1));
+    
+    while (currentMonth <= startOfMonth(today)) {
+        const billEndDate = endOfMonth(currentMonth);
+        
+        const billItems = [{
+            description: `Sewa Kamar (${format(currentMonth, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(billEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+            amount: fee,
             type: BillType.GENERATED
-        });
-    }
+        }];
 
-    bills.push({
-        description: `Tagihan untuk Bulan ${format(secondBillStartDate, 'MMMM yyyy', { locale: indonesianLocale })}`,
-        due_date: secondBillEndDate,
-        bill_item: {
-            create: secondBillItems
+        // Add second resident fee if exists
+        if (second_resident_fee) {
+            billItems.push({
+                description: `Biaya Penghuni Kedua (${format(currentMonth, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(billEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+                amount: second_resident_fee,
+                type: BillType.GENERATED
+            });
         }
-    });
+
+        bills.push({
+            description: `Tagihan untuk Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesianLocale })}`,
+            due_date: billEndDate,
+            bill_item: {
+                create: billItems
+            }
+        });
+
+        // Move to next month
+        currentMonth = startOfMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+    }
 
     return bills;
 }
