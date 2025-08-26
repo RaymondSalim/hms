@@ -235,7 +235,12 @@ function AddonInfo({addon}: AddonInfoProps) {
                                             </Typography>
                                             {/*@ts-expect-error weird react 19 types error*/}
                                             <Typography variant="small" className="text-gray-600">
-                                                {formatToDateTime(bookingAddon.end_date, false)}
+                                                {bookingAddon.end_date 
+                                                    ? formatToDateTime(bookingAddon.end_date, false)
+                                                    : bookingAddon.is_rolling 
+                                                        ? "Rolling (berkelanjutan)"
+                                                        : "Tidak ditentukan"
+                                                }
                                             </Typography>
                                         </div>
                                     </div>

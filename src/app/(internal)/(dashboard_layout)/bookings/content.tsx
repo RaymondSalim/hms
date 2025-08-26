@@ -43,6 +43,7 @@ import {toast} from "react-toastify";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {getUnpaidBillsDueAction} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {EndOfStayForm} from "@/app/(internal)/(dashboard_layout)/bookings/_components/EndOfStayForm";
+import {EndOfAddonForm} from "@/app/(internal)/(dashboard_layout)/bookings/_components/EndOfAddonForm";
 import {DEPOSIT_STATUS_LABELS} from "@/app/_lib/enum-translations";
 
 
@@ -70,6 +71,9 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     // End of Stay dialog states
     const [showEndOfStayDialog, setShowEndOfStayDialog] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<BookingsIncludeAll | null>(null);
+
+    // End of Addon dialog states
+    const [showEndOfAddonDialog, setShowEndOfAddonDialog] = useState(false);
 
     // Detail dialog states
     let [dialogContent, setDialogContent] = useState(<></>);
@@ -390,7 +394,18 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                                             className="flex items-center gap-2"
                                             disabled={!canScheduleEnd}
                                         >
-                                            <span className="text-orange-500">Jadwalkan Berhenti Sewa</span>
+                                            <span className="">Jadwalkan Berhenti Sewa</span>
+                                        </MenuItem>
+                                        {/* @ts-expect-error weird react 19 types error */}
+                                        <MenuItem
+                                            onClick={() => {
+                                                setSelectedBooking(rowData);
+                                                setShowEndOfAddonDialog(true);
+                                            }}
+                                            className="flex items-center gap-2"
+                                            disabled={!rowData.addOns?.some(addon => addon.is_rolling)}
+                                        >
+                                            <span className="">Jadwalkan Berhenti Layanan Tambahan</span>
                                         </MenuItem>
                                     </MenuList>
                                 </Menu>
@@ -498,6 +513,17 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             open={showEndOfStayDialog}
                             onClose={() => {
                                 setShowEndOfStayDialog(false);
+                                setSelectedBooking(null);
+                            }}
+                        />
+                    )}
+
+                    {selectedBooking && (
+                        <EndOfAddonForm
+                            booking={selectedBooking}
+                            open={showEndOfAddonDialog}
+                            onClose={() => {
+                                setShowEndOfAddonDialog(false);
                                 setSelectedBooking(null);
                             }}
                         />
@@ -768,7 +794,12 @@ function BookingInfo({booking}: BookingInfoProps) {
                                         Mulai:</strong> {formatToDateTime(addon.start_date, false)}</Typography>
                                     {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography><strong>Tanggal
-                                        Selesai:</strong> {formatToDateTime(addon.end_date, false)}</Typography>
+                                        Selesai:</strong> {addon.end_date
+                                            ? formatToDateTime(addon.end_date, false)
+                                            : addon.is_rolling
+                                                ? "Rolling (berkelanjutan)"
+                                                : "Tidak ditentukan"
+                                        }</Typography>
                                 </div>
                             ))}
                         </div>

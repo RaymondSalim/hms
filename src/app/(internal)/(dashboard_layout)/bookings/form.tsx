@@ -315,7 +315,7 @@ export function BookingForm(props: BookingFormProps) {
             ...prev,
             addOns: [
                 ...(prev.addOns || []),
-                {id: undefined, booking_id: prev.id},
+                {id: undefined, booking_id: prev.id, is_rolling: false},
             ],
         }));
     };
@@ -820,30 +820,63 @@ export function BookingForm(props: BookingFormProps) {
                                                         )}
                                                     </div>
 
-                                                    {/* End Date */}
+                                                    {/* Rolling Option */}
                                                     <div>
                                                         {/*@ts-expect-error weird react 19 types error*/}
                                                         <Typography variant="h6" color="blue-gray">
-                                                            Tanggal Selesai
+                                                            Opsi Layanan
                                                         </Typography>
-                                                        <DatePicker
-                                                            key={`${index}_dp_ed`}
-                                                            mode="single"
-                                                            placeholder="Pilih tanggal selesai"
-                                                            showSearchButton={false}
-                                                            onUpdate={(dateData) => {
-                                                                if (dateData.singleDate) {
-                                                                    updateAddonEntry(index, "end_date", dateData.singleDate);
-                                                                }
-                                                            }}
-                                                        />
-                                                        {fieldErrors?.addOns?.[index]?.end_date && (
-                                                            // @ts-expect-error weird react 19 types error
-                                                            <Typography color="red">
-                                                                {fieldErrors.addOns[index].end_date?._errors}
-                                                            </Typography>
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                id={`rolling_${index}`}
+                                                                checked={addon.is_rolling || false}
+                                                                onChange={(e) => {
+                                                                    updateAddonEntry(index, "is_rolling", e.target.checked);
+                                                                    if (e.target.checked) {
+                                                                        // Clear end date when switching to rolling
+                                                                        updateAddonEntry(index, "end_date", null);
+                                                                    }
+                                                                }}
+                                                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                                            />
+                                                            <label htmlFor={`rolling_${index}`} className="text-sm text-gray-700">
+                                                                Layanan Rolling (berkelanjutan)
+                                                            </label>
+                                                        </div>
+                                                        {!bookingData.is_rolling && (
+                                                            <p className="text-xs text-gray-500 mt-1 italic">
+                                                                Catatan: Jika booking tidak rolling, layanan ini akan berakhir sesuai tanggal selesai booking.
+                                                            </p>
                                                         )}
                                                     </div>
+
+                                                    {/* End Date - Only show if not rolling */}
+                                                    {!addon.is_rolling && (
+                                                        <div>
+                                                            {/*@ts-expect-error weird react 19 types error*/}
+                                                            <Typography variant="h6" color="blue-gray">
+                                                                Tanggal Selesai
+                                                            </Typography>
+                                                            <DatePicker
+                                                                key={`${index}_dp_ed`}
+                                                                mode="single"
+                                                                placeholder="Pilih tanggal selesai"
+                                                                showSearchButton={false}
+                                                                onUpdate={(dateData) => {
+                                                                    if (dateData.singleDate) {
+                                                                        updateAddonEntry(index, "end_date", dateData.singleDate);
+                                                                    }
+                                                                }}
+                                                            />
+                                                            {fieldErrors?.addOns?.[index]?.end_date && (
+                                                                // @ts-expect-error weird react 19 types error
+                                                                <Typography color="red">
+                                                                    {fieldErrors.addOns[index].end_date?._errors}
+                                                                </Typography>
+                                                            )}
+                                                        </div>
+                                                    )}
 
                                                     {/* Additional Input */}
                                                     <div>

@@ -579,11 +579,13 @@ export async function sendBillEmailAction(billID: number) {
  * Generates bill items for booking add-ons and maps them to bills by due date
  * @param bookingAddons - Array of booking add-ons
  * @param bills - Array of bills with id and due_date
+ * @param bookingEndDate -
  * @returns Object mapping bill_id to array of bill items
  */
 export async function generateBookingAddonsBillItems(
-    bookingAddons: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[],
-    bills: { id: number, due_date: Date }[]
+    bookingAddons: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date' | 'is_rolling'>[],
+    bills: { id: number, due_date: Date }[],
+    bookingEndDate?: Date | null
 ): Promise<{ [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] }> {
     const billItemsByBillId: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } = {};
 
@@ -637,7 +639,24 @@ export async function generateBookingAddonsBillItems(
             .sort((a, b) => a.interval_start - b.interval_start);
 
         const addonStartDate = new Date(bookingAddon.start_date);
-        const addonEndDate = new Date(bookingAddon.end_date);
+        let addonEndDate: Date;
+
+        if (bookingAddon.is_rolling) {
+            // For rolling addons, use booking end date or current date
+            if (bookingEndDate) {
+                addonEndDate = new Date(bookingEndDate);
+            } else {
+                // If no booking end date, use current date for billing purposes
+                addonEndDate = new Date();
+            }
+        } else {
+            // For non-rolling addons, use the specified end date
+            if (bookingAddon.end_date) {
+                addonEndDate = new Date(bookingAddon.end_date);
+            } else {
+                throw new Error(`Addon ${bookingAddon.addon_id} is not rolling but has no end date`);
+            }
+        }
 
         let currentStartDate = addonStartDate;
         let currentEndDate;
