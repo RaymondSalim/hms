@@ -18,11 +18,100 @@ import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {updateDepositStatus} from "@/app/_db/deposit";
 import {revalidateTag} from "next/cache";
-import {endOfMonth, format, getDaysInMonth, startOfMonth} from "date-fns";
+import {
+    generatePaymentBillMappingFromPaymentsAndBills
+} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
+import {
+    addMonths,
+    differenceInDays,
+    endOfMonth,
+    format,
+    getDaysInMonth,
+    isSameMonth,
+    max,
+    startOfMonth,
+    subDays
+} from "date-fns";
 import {id as indonesianLocale} from "date-fns/locale";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import BillItemUncheckedCreateWithoutBillInput = Prisma.BillItemUncheckedCreateWithoutBillInput;
+
+type AddonWithDetails = BookingAddOn & { addOn: { name: string, pricing: {is_full_payment: boolean, interval_start: number, interval_end: number | null, price: number}[] } };
+
+function processAddonsForPeriod(
+    periodStartDate: Date,
+    periodEndDate: Date,
+    addOns: AddonWithDetails[]
+): BillItemUncheckedCreateWithoutBillInput[] {
+    const addonBillItems: BillItemUncheckedCreateWithoutBillInput[] = [];
+    if (!addOns || addOns.length === 0) {
+        return addonBillItems;
+    }
+
+    for (const addon of addOns) {
+        const addonDetails = addon.addOn;
+        if (!addonDetails) continue;
+
+        const addonStartDate = new Date(addon.start_date);
+        const addonEndDate = addon.end_date ? new Date(addon.end_date) : null;
+
+        if (addonEndDate && addonEndDate < periodStartDate) continue;
+        if (addonStartDate > periodEndDate) continue;
+
+        for (const pricing of addonDetails.pricing) {
+            const tierStartMonth = pricing.interval_start;
+            const tierEndMonth = pricing.interval_end;
+
+            if (pricing.is_full_payment) {
+                const paymentDate = addMonths(addonStartDate, tierStartMonth);
+                if (paymentDate >= periodStartDate && paymentDate <= periodEndDate) {
+                    const pricingDuration = (tierEndMonth ?? tierStartMonth) - tierStartMonth + 1;
+                    const fullPaymentEndDate = subDays(addMonths(addonStartDate, tierStartMonth + pricingDuration), 1);
+
+                    addonBillItems.push({
+                        description: `Biaya Layanan Tambahan (${addonDetails.name}) (${format(paymentDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(fullPaymentEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+                        amount: pricing.price,
+                        type: BillType.GENERATED
+                    });
+                }
+            } else {
+                const tierStartDate = addMonths(addonStartDate, tierStartMonth);
+                const tierEndDateAbs = (tierEndMonth !== null) ? subDays(addMonths(addonStartDate, tierEndMonth + 1), 1) : null;
+
+                if (tierStartDate <= periodEndDate && (!tierEndDateAbs || tierEndDateAbs >= periodStartDate)) {
+                    const effectiveStartDate = max([periodStartDate, tierStartDate, addonStartDate]);
+                    let effectiveEndDate = periodEndDate;
+                    if (tierEndDateAbs && tierEndDateAbs < periodEndDate) {
+                        effectiveEndDate = tierEndDateAbs;
+                    }
+                    if (addonEndDate && addonEndDate < effectiveEndDate) {
+                        effectiveEndDate = addonEndDate;
+                    }
+
+                    if (effectiveStartDate > effectiveEndDate) continue;
+
+                    const daysInMonth = getDaysInMonth(periodStartDate);
+                    const daysToBill = differenceInDays(effectiveEndDate, effectiveStartDate) + 1;
+
+                    let amount;
+                    if (daysToBill < daysInMonth) {
+                        amount = new Prisma.Decimal(Math.ceil(Number(pricing.price) / daysInMonth * daysToBill));
+                    } else {
+                        amount = new Prisma.Decimal(Number(pricing.price));
+                    }
+
+                    addonBillItems.push({
+                        description: `Biaya Layanan Tambahan (${addonDetails.name}) (${format(effectiveStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(effectiveEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+                        amount,
+                        type: BillType.GENERATED,
+                    });
+                }
+            }
+        }
+    }
+    return addonBillItems;
+}
 
 export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
 
@@ -62,6 +151,39 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                 const res = await prisma.$transaction(async (tx) => {
                     const { addOns, deposit, ...bookingData } = data;
 
+                    // Handle Addons CUD
+                    const existingAddOns = await tx.bookingAddOn.findMany({
+                        where: { booking_id: data.id },
+                    });
+
+                    const newAddOns = addOns?.filter((addon) => !addon.id) || [];
+                    const updateAddOns = addOns?.filter((addon) =>
+                        existingAddOns.some((ea) => ea.id === addon.id)
+                    ) || [];
+                    const deleteAddOnIDs = existingAddOns
+                        .filter((ea) => !addOns?.some((addon) => addon.id === ea.id))
+                        .map((ea) => ea.id);
+
+                    if (deleteAddOnIDs.length > 0) {
+                        await tx.bookingAddOn.deleteMany({
+                            where: { id: { in: deleteAddOnIDs } },
+                        });
+                    }
+
+                    for (const addon of updateAddOns) {
+                        await tx.bookingAddOn.update({
+                            where: { id: addon.id! },
+                            data: addon,
+                        });
+                    }
+
+                    if (newAddOns.length > 0) {
+                        await tx.bookingAddOn.createMany({
+                            // @ts-expect-error invalid type
+                            data: newAddOns.map((na) => ({ ...na, booking_id: data.id! })),
+                        });
+                    }
+
                     // Update the booking
                     const updatedBooking = await tx.booking.update({
                         where: { id: data.id },
@@ -92,82 +214,116 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
 
                     // Handle deposit updates
                     if (deposit) {
-                        // Check if deposit already exists
                         const existingDeposit = await tx.deposit.findFirst({
                             where: { booking_id: data.id }
                         });
-
                         if (existingDeposit) {
-                            // Update existing deposit
                             await tx.deposit.update({
                                 where: { id: existingDeposit.id },
-                                data: {
-                                    amount: new Prisma.Decimal(deposit.amount),
-                                    status: DepositStatus.UNPAID
-                                }
+                                data: { amount: new Prisma.Decimal(deposit.amount) }
                             });
-
-                            // Update or create bill item for deposit
-                            const existingBillItem = await tx.billItem.findFirst({
-                                where: {
-                                    bill: {
-                                        booking_id: {
-                                            equals: data.id
-                                        }
-                                    },
-                                    // bill_id: { in: (await tx.bill.findMany({ where: { booking_id: data.id } })).map(b => b.id) },
-                                    related_id: { path: ['deposit_id'], equals: existingDeposit.id }
-                                }
-                            });
-
-                            if (existingBillItem) {
-                                await tx.billItem.update({
-                                    where: { id: existingBillItem.id },
-                                    data: { amount: new Prisma.Decimal(deposit.amount) }
-                                });
-                            } else {
-                                // Create new bill item if none exists
-                                const firstBill = await tx.bill.findFirst({
-                                    where: { booking_id: data.id }
-                                });
-                                if (firstBill) {
-                                    await tx.billItem.create({
-                                        data: {
-                                            bill_id: firstBill.id,
-                                            amount: new Prisma.Decimal(deposit.amount),
-                                            description: 'Deposit Kamar',
-                                            related_id: { deposit_id: existingDeposit.id } as any,
-                                            type: 'CREATED',
-                                        }
-                                    });
-                                }
-                            }
                         } else {
-                            // Create new deposit
-                            const depositRecord = await tx.deposit.create({
+                            await tx.deposit.create({
                                 data: {
                                     booking_id: data.id!,
                                     amount: new Prisma.Decimal(deposit.amount),
                                     status: DepositStatus.UNPAID
                                 }
                             });
-
-                            // Create bill item for new deposit
-                            const firstBill = await tx.bill.findFirst({
-                                where: { booking_id: data.id }
-                            });
-                            if (firstBill) {
-                                await tx.billItem.create({
-                                    data: {
-                                        bill_id: firstBill.id,
-                                        amount: depositRecord.amount,
-                                        description: 'Deposit Kamar',
-                                        related_id: { deposit_id: depositRecord.id } as any,
-                                        type: 'CREATED',
-                                    }
-                                });
-                            }
                         }
+                    }
+
+                    // Regenerate bills and re-allocate payments
+                    const today = new Date();
+                    const startOfCurrentMonth = startOfMonth(today);
+
+                    // 1. Delete all payment-bill links for the entire booking
+                    const allBillsForBooking = await tx.bill.findMany({
+                        where: { booking_id: data.id },
+                        select: { id: true }
+                    });
+                    const allBillIds = allBillsForBooking.map(b => b.id);
+                    if (allBillIds.length > 0) {
+                        await tx.paymentBill.deleteMany({
+                            where: { bill_id: { in: allBillIds } }
+                        });
+                    }
+
+                    // 2. Delete current and future bills
+                    const futureBills = await tx.bill.findMany({
+                        where: {
+                            booking_id: data.id,
+                            due_date: { gte: startOfCurrentMonth }
+                        },
+                        select: { id: true }
+                    });
+                    const futureBillIds = futureBills.map(b => b.id);
+
+                    if (futureBillIds.length > 0) {
+                        await tx.billItem.deleteMany({
+                            where: { bill_id: { in: futureBillIds } }
+                        });
+                        await tx.bill.deleteMany({
+                            where: { id: { in: futureBillIds } }
+                        });
+                    }
+
+                    // 3. Regenerate bills
+                    let existingBills = await tx.bill.findMany({ where: { booking_id: data.id } });
+                    const updatedAddons = await tx.bookingAddOn.findMany({
+                        where: { booking_id: data.id },
+                        include: { addOn: { include: { pricing: { orderBy: { interval_start: 'asc' } } } } }
+                    });
+                    const bookingWithDetails = { ...updatedBooking, addOns: updatedAddons };
+
+                    // Regenerate current month's bill
+                    const currentMonthBill = await generateNextMonthlyBill(bookingWithDetails, existingBills, today);
+                    if (currentMonthBill) {
+                        const createdBill = await tx.bill.create({ data: { ...currentMonthBill }});
+                        existingBills.push(createdBill);
+                    }
+
+                    // Regenerate next month's bill
+                    const nextMonth = addMonths(today, 1);
+                    const nextMonthBill = await generateNextMonthlyBill(bookingWithDetails, existingBills, nextMonth);
+                    if (nextMonthBill) {
+                        await tx.bill.create({ data: { ...nextMonthBill }});
+                    }
+
+                    // Re-attach Deposit Bill Item
+                    const depositRecord = await tx.deposit.findFirst({ where: { booking_id: data.id } });
+                    if (depositRecord) {
+                        await tx.billItem.deleteMany({
+                            where: {
+                                bill: { booking_id: data.id },
+                                related_id: { path: ['deposit_id'], equals: depositRecord.id }
+                            }
+                        });
+
+                        const earliestBill = await tx.bill.findFirst({
+                            where: { booking_id: data.id },
+                            orderBy: { due_date: 'asc' }
+                        });
+
+                        if (earliestBill) {
+                            await tx.billItem.create({
+                                data: {
+                                    bill_id: earliestBill.id,
+                                    amount: depositRecord.amount,
+                                    description: 'Deposit Kamar',
+                                    related_id: { deposit_id: depositRecord.id } as any,
+                                    type: 'CREATED'
+                                }
+                            });
+                        }
+                    }
+
+                    // 4. Re-allocate payments
+                    const allPayments = await tx.payment.findMany({ where: { booking_id: data.id } });
+                    const allBillsNow = await tx.bill.findMany({ where: { booking_id: data.id }, include: { bill_item: true } });
+                    const paymentBillMappings = await generatePaymentBillMappingFromPaymentsAndBills(allPayments, allBillsNow);
+                    if (paymentBillMappings.length > 0) {
+                        await tx.paymentBill.createMany({ data: paymentBillMappings });
                     }
 
                     return updatedBooking;
@@ -203,7 +359,41 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                         }
                     });
 
-                    const initialBills = await generateInitialBillsForRollingBooking(newBooking, new Date());
+                    if (addOns) {
+                        const validAddOns = addOns.filter((addon): addon is typeof addon & { addon_id: string } => !!addon.addon_id);
+                        if (validAddOns.length > 0) {
+                            await tx.bookingAddOn.createMany({
+                                data: validAddOns.map(na => ({
+                                    ...na,
+                                    booking_id: newBooking.id
+                                }))
+                            });
+                        }
+                    }
+
+                    const bookingAddonsWithDetails = [];
+                    if (addOns) {
+                        for (const addon of addOns) {
+                            const addonDetails = await tx.addOn.findUnique({
+                                where: { id: addon.addon_id },
+                                include: { pricing: { orderBy: { interval_start: 'asc' } } }
+                            });
+                            if (addonDetails) {
+                                bookingAddonsWithDetails.push({
+                                    ...addon,
+                                    addOn: addonDetails
+                                });
+                            }
+                        }
+                    }
+
+                    const initialBills = await generateInitialBillsForRollingBooking({
+                        ...newBooking,
+                        // @ts-expect-error invalid type
+                        addOns: bookingAddonsWithDetails,
+                        deposit: deposit ? { amount: new Prisma.Decimal(deposit.amount) } : null
+                    }, new Date());
+
                     const createdBills: Bill[] = [];
                     for (const bill of initialBills) {
                         const createdBill = await tx.bill.create({
@@ -517,9 +707,9 @@ export async function scheduleEndOfStayAction(data: {
  */
 export async function generateInitialBillsForRollingBooking(booking: Pick<Booking, 'start_date' | 'fee' | 'second_resident_fee'> & {
     deposit?: { amount: Prisma.Decimal } | null,
-    addOns?: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[]
+    addOns?: (BookingAddOn & { addOn: { name: string, pricing: {is_full_payment: boolean, interval_start: number, interval_end: number | null, price: number}[] } })[]
 }, currentDate: Date = new Date()): Promise<PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[]> {
-    const { start_date, fee, second_resident_fee, deposit, addOns } = booking;
+    const { start_date, fee, second_resident_fee, addOns } = booking;
     const bills: PartialBy<Prisma.BillUncheckedCreateInput, "booking_id">[] = [];
     const today = currentDate;
 
@@ -535,7 +725,6 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
         type: BillType.GENERATED
     }];
 
-    // Add second resident fee if exists
     if (second_resident_fee) {
         const proratedSecondResidentFee = (proratedDays / daysInFirstMonth) * Number(second_resident_fee);
         firstBillItems.push({
@@ -545,15 +734,8 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
         });
     }
 
-    // Add deposit to first bill if exists
-    if (deposit) {
-        firstBillItems.push({
-            description: 'Deposit Kamar',
-            amount: deposit.amount,
-            type: BillType.CREATED,
-            related_id: { deposit_id: null } // Will be updated when deposit is created
-        });
-    }
+    const firstBillAddonItems = processAddonsForPeriod(start_date, firstBillEndDate, addOns ?? []);
+    firstBillItems.push(...firstBillAddonItems);
 
     bills.push({
         description: `Tagihan untuk Bulan ${format(start_date, 'MMMM yyyy', { locale: indonesianLocale })}`,
@@ -565,11 +747,11 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
 
     // Generate bills for all subsequent months up to the current month
     let currentMonth = startOfMonth(new Date(start_date.getFullYear(), start_date.getMonth() + 1, 1));
-    
+
     while (currentMonth <= startOfMonth(today)) {
         const billEndDate = endOfMonth(currentMonth);
-        
-        const billItems = [{
+
+        const billItems: BillItemUncheckedCreateWithoutBillInput[] = [{
             description: `Sewa Kamar (${format(currentMonth, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(billEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
             amount: fee,
             type: BillType.GENERATED
@@ -583,6 +765,9 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
                 type: BillType.GENERATED
             });
         }
+        
+        const addonItems = processAddonsForPeriod(currentMonth, billEndDate, addOns ?? []);
+        billItems.push(...addonItems);
 
         bills.push({
             description: `Tagihan untuk Bulan ${format(currentMonth, 'MMMM yyyy', { locale: indonesianLocale })}`,
@@ -608,49 +793,66 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
  * @returns The new bill object if one was created, otherwise null.
  */
 export async function generateNextMonthlyBill(booking: Booking & {
-    addOns?: Pick<BookingAddOn, 'addon_id' | 'start_date' | 'end_date'>[]
+    addOns?: (BookingAddOn & { addOn: { name: string, pricing: {is_full_payment: boolean, interval_start: number, interval_end: number | null, price: number}[] } })[]
 }, existingBills: Bill[], date: Date): Promise<Prisma.BillCreateInput | null> {
     after(() => {
         serverLogger.flush();
     });
+
+    // 1. Pre-checks
     if (booking.end_date && date > booking.end_date) {
+        return null; // Don't bill after booking has ended
+    }
+
+    const billStartDate = startOfMonth(date);
+    const billEndDate = endOfMonth(billStartDate);
+
+    // Don't generate a bill for a period that has already been billed.
+    if (existingBills.some(b => isSameMonth(b.due_date, billEndDate))) {
         return null;
     }
 
-    if (existingBills.length === 0) {
-        serverLogger.info(`Rolling booking ${booking.id} has no existing bills.`);
+    // Don't generate a bill for a period completely before the booking starts.
+    if (billEndDate < booking.start_date) {
         return null;
     }
 
-    const latestBill = existingBills.sort((a, b) => b.due_date.getTime() - a.due_date.getTime())[0];
-    const nextBillStartDate = startOfMonth(new Date(latestBill.due_date.getFullYear(), latestBill.due_date.getMonth() + 1, 1));
+    // 2. Calculate proration for main fees
+    const effectiveStartDate = max([billStartDate, booking.start_date]);
+    const daysInMonth = getDaysInMonth(billStartDate);
+    const daysToBill = differenceInDays(billEndDate, effectiveStartDate) + 1;
+    const isProrated = daysToBill < daysInMonth;
 
-    // Only generate for the current month.
-    if (nextBillStartDate.getMonth() !== date.getMonth() || nextBillStartDate.getFullYear() !== date.getFullYear()) {
-        return null;
-    }
+    const billItems: BillItemUncheckedCreateWithoutBillInput[] = [];
 
-    const nextBillEndDate = endOfMonth(nextBillStartDate);
-    const billDescription = `Tagihan untuk Bulan ${format(nextBillStartDate, 'MMMM yyyy', { locale: indonesianLocale })}`;
-
-    const billItems = [{
-        description: `Sewa Kamar (${format(nextBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(nextBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
-        amount: booking.fee,
+    // Main fee
+    const mainFeeAmount = isProrated ? (daysToBill / daysInMonth) * Number(booking.fee) : Number(booking.fee);
+    billItems.push({
+        description: `Sewa Kamar (${format(effectiveStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(billEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+        amount: new Prisma.Decimal(mainFeeAmount.toFixed(2)),
         type: BillType.GENERATED
-    }];
+    });
 
-    // Add second resident fee if exists
+    // Second resident fee
     if (booking.second_resident_fee) {
+        const secondFeeAmount = isProrated ? (daysToBill / daysInMonth) * Number(booking.second_resident_fee) : Number(booking.second_resident_fee);
         billItems.push({
-            description: `Biaya Penghuni Kedua (${format(nextBillStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(nextBillEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
-            amount: booking.second_resident_fee,
+            description: `Biaya Penghuni Kedua (${format(effectiveStartDate, 'd MMMM yyyy', { locale: indonesianLocale })} - ${format(billEndDate, 'd MMMM yyyy', { locale: indonesianLocale })})`,
+            amount: new Prisma.Decimal(secondFeeAmount.toFixed(2)),
             type: BillType.GENERATED
         });
     }
 
+    // 3. Process Addons for the period
+    const addonItems = processAddonsForPeriod(billStartDate, billEndDate, booking.addOns ?? []);
+    billItems.push(...addonItems);
+
+
+    // 4. Construct the bill
+    const billDescription = `Tagihan untuk Bulan ${format(billStartDate, 'MMMM yyyy', { locale: indonesianLocale })}`;
     return {
         description: billDescription,
-        due_date: nextBillEndDate,
+        due_date: billEndDate,
         bookings: { connect: { id: booking.id } },
         bill_item: {
             create: billItems
@@ -673,4 +875,63 @@ export async function scheduleEndOfRollingBooking(booking: Booking, endDate: Dat
             is_rolling: false
         }
     });
+}
+
+/**
+ * Schedules the end of an addon service for a specific booking.
+ * @param data - An object containing the bookingId, addonId, and endDate.
+ * @returns A success or failure response.
+ */
+export async function scheduleEndOfAddonAction(data: {
+    bookingId: number;
+    addonId: string;
+    endDate: Date;
+}) {
+    const { bookingId, addonId, endDate } = data;
+
+    const bookingAddon = await prisma.bookingAddOn.findFirst({
+        where: {
+            id: addonId,
+            booking_id: bookingId,
+        },
+        include: {
+            addOn: true,
+            booking: true
+        }
+    });
+
+    if (!bookingAddon) {
+        return {
+            failure: "Layanan tambahan tidak ditemukan",
+        };
+    }
+
+    if (!bookingAddon.is_rolling) {
+        return {
+            failure: "Layanan tambahan bukan rolling",
+        };
+    }
+
+    if (endDate < bookingAddon.start_date) {
+        return {
+            failure: "Tanggal selesai harus setelah tanggal mulai",
+        };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.bookingAddOn.update({
+                where: { id: addonId },
+                data: {
+                    end_date: endDate,
+                    is_rolling: false,
+                },
+            });
+        });
+
+        revalidateTag("bookings");
+        return { success: true };
+    } catch (error) {
+        return { failure: "Gagal memperbarui layanan tambahan." };
+    }
 }
