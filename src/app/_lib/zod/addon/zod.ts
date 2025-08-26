@@ -44,10 +44,30 @@ const AddonSchema = z.object({
 
 // BookingAddon Schema
 const BookingAddonSchema = z.object({
+    id: z.string().cuid().optional(),
     addon_id: z.string().min(1, "ID is required").optional(),
     input: z.any().optional(), // Optional input field
     start_date: z.union([isoDateStringToDate({required_error: "Tanggal Mulai diperlukan"}), date({required_error: "Tanggal Mulai diperlukan"})]),
-    end_date: union([isoDateStringToDate({required_error: "Tanggal Selesai diperlukan"}), date({required_error: "Tanggal Selesai diperlukan"})]),
+    end_date: z.union([isoDateStringToDate({required_error: "Tanggal Selesai diperlukan"}), date({required_error: "Tanggal Selesai diperlukan"})]).nullable().optional(),
+    is_rolling: z.boolean().default(false),
+}).superRefine((obj, ctx) => {
+    // If not rolling, end_date is required
+    if (!obj.is_rolling && !obj.end_date) {
+        ctx.addIssue({
+            code: ZodIssueCode.custom,
+            path: ["end_date"],
+            message: "Tanggal Selesai diperlukan jika layanan tidak rolling"
+        });
+    }
+    
+    // If end_date is provided, it must be after start_date
+    if (obj.end_date && obj.start_date && obj.end_date <= obj.start_date) {
+        ctx.addIssue({
+            code: ZodIssueCode.custom,
+            path: ["end_date"],
+            message: "Tanggal Selesai harus setelah Tanggal Mulai"
+        });
+    }
 });
 
 export { AddonPricingSchema, AddonSchema, BookingAddonSchema };

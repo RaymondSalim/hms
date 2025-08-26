@@ -526,8 +526,9 @@ model BookingAddOn {
   input      String?
   addon_id   String
   booking_id Int
-  end_date   DateTime @db.Date
+  end_date   DateTime? @db.Date
   start_date DateTime @db.Date
+  is_rolling Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

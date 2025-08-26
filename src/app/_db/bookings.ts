@@ -146,7 +146,8 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
             if (bookingAddons) {
                 addonBillItems = await generateBookingAddonsBillItems(
                     bookingAddons,
-                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date }))
+                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date })),
+                    endDate
                 );
             }
 
@@ -328,7 +329,8 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
             if (bookingAddons) {
                 addonBillItems = await generateBookingAddonsBillItems(
                     bookingAddons,
-                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date }))
+                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date })),
+                    endDate
                 );
             }
 
