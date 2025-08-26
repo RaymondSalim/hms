@@ -22,11 +22,15 @@ import {
     DialogFooter,
     DialogHeader,
     Input,
+    Menu,
+    MenuHandler,
+    MenuItem,
+    MenuList,
     Option,
     Select,
     Typography
 } from "@material-tailwind/react";
-import {TbDoorEnter, TbDoorExit} from "react-icons/tb";
+import {TbDoorEnter, TbDoorExit, TbDotsVertical} from "react-icons/tb";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
@@ -39,6 +43,7 @@ import {toast} from "react-toastify";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {getUnpaidBillsDueAction} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {EndOfStayForm} from "@/app/(internal)/(dashboard_layout)/bookings/_components/EndOfStayForm";
+import {EndOfAddonForm} from "@/app/(internal)/(dashboard_layout)/bookings/_components/EndOfAddonForm";
 import {DEPOSIT_STATUS_LABELS} from "@/app/_lib/enum-translations";
 
 
@@ -66,6 +71,9 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
     // End of Stay dialog states
     const [showEndOfStayDialog, setShowEndOfStayDialog] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<BookingsIncludeAll | null>(null);
+
+    // End of Addon dialog states
+    const [showEndOfAddonDialog, setShowEndOfAddonDialog] = useState(false);
 
     // Detail dialog states
     let [dialogContent, setDialogContent] = useState(<></>);
@@ -348,67 +356,61 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                     {
                         generateButton: (rowData) => {
                             const checkInExists = rowData.checkInOutLogs?.find(l => l.event_type == CheckInOutType.CHECK_IN);
-
-                            return (
-                                // @ts-expect-error weird react 19 types error
-                                <Button
-                                    key={`${rowData.id}_in`}
-                                    size={"sm"}
-                                    color="blue"
-                                    className="flex items-center gap-2 w-fit"
-                                    onClick={() => handleCheckInOut(rowData, CheckInOutType.CHECK_IN)}
-                                    disabled={!!checkInExists}
-                                >
-                                    <TbDoorEnter className={"text-white h-5 w-5"}/>
-                                    <span className={"text-white whitespace-nowrap"}>Check In</span>
-                                </Button>
-                            );
-                        },
-                    },
-                    {
-                        generateButton: (rowData) => {
-                            const checkInExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_IN);
                             const checkOutExists = rowData.checkInOutLogs?.some(l => l.event_type == CheckInOutType.CHECK_OUT);
-
-                            let disabled = !checkInExists || (checkInExists && checkOutExists);
+                            const canCheckOut = checkInExists && !checkOutExists;
+                            const canScheduleEnd = rowData.is_rolling && !rowData.end_date;
 
                             return (
-                                // @ts-expect-error weird react 19 types error
-                                <Button
-                                    key={`${rowData.id}_out`}
-                                    size={"sm"}
-                                    color="red"
-                                    className="flex items-center gap-2 w-fit"
-                                    onClick={() => handleCheckInOut(rowData, CheckInOutType.CHECK_OUT)}
-                                    disabled={disabled}
-                                >
-                                    <TbDoorExit className={"text-white h-5 w-5"}/>
-                                    <span className={"text-white whitespace-nowrap"}>Check Out</span>
-                                </Button>
+                                <Menu key={`${rowData.id}_actions_menu`}>
+                                    <MenuHandler>
+                                        <TbDotsVertical className="h-5 w-5 cursor-pointer hover:text-blue-500" />
+                                    </MenuHandler>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <MenuList>
+                                        {/* @ts-expect-error weird react 19 types error */}
+                                        <MenuItem
+                                            onClick={() => handleCheckInOut(rowData, CheckInOutType.CHECK_IN)}
+                                            className="flex items-center gap-2"
+                                            disabled={!!checkInExists}
+                                        >
+                                            <TbDoorEnter className="h-4 w-4 text-blue-500" />
+                                            <span>Check In</span>
+                                        </MenuItem>
+                                        {/* @ts-expect-error weird react 19 types error */}
+                                        <MenuItem
+                                            onClick={() => handleCheckInOut(rowData, CheckInOutType.CHECK_OUT)}
+                                            className="flex items-center gap-2"
+                                            disabled={!canCheckOut}
+                                        >
+                                            <TbDoorExit className="h-4 w-4 text-red-500" />
+                                            <span>Check Out</span>
+                                        </MenuItem>
+                                        {/* @ts-expect-error weird react 19 types error */}
+                                        <MenuItem
+                                            onClick={() => {
+                                                setSelectedBooking(rowData);
+                                                setShowEndOfStayDialog(true);
+                                            }}
+                                            className="flex items-center gap-2"
+                                            disabled={!canScheduleEnd}
+                                        >
+                                            <span className="">Jadwalkan Berhenti Sewa</span>
+                                        </MenuItem>
+                                        {/* @ts-expect-error weird react 19 types error */}
+                                        <MenuItem
+                                            onClick={() => {
+                                                setSelectedBooking(rowData);
+                                                setShowEndOfAddonDialog(true);
+                                            }}
+                                            className="flex items-center gap-2"
+                                            disabled={!rowData.addOns?.some(addon => addon.is_rolling)}
+                                        >
+                                            <span className="">Jadwalkan Berhenti Layanan Tambahan</span>
+                                        </MenuItem>
+                                    </MenuList>
+                                </Menu>
                             );
                         },
-                    },
-                    {
-                        generateButton: (rowData) => {
-                            if (!rowData.is_rolling || rowData.end_date) {
-                                return <></>;
-                            }
-                            return (
-                                // @ts-expect-error weird react 19 types error
-                                <Button
-                                    key={`${rowData.id}_end_of_stay`}
-                                    size={"sm"}
-                                    color="orange"
-                                    className="flex items-center gap-2 w-fit"
-                                    onClick={() => {
-                                        setSelectedBooking(rowData);
-                                        setShowEndOfStayDialog(true);
-                                    }}
-                                >
-                                    <span className={"text-white whitespace-nowrap"}>Jadwalkan Berhenti Sewa</span>
-                                </Button>
-                            );
-                        }
                     },
                     {
                         generateButton: (rowData, setActiveContent, setDialogOpen) => (
@@ -511,6 +513,17 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             open={showEndOfStayDialog}
                             onClose={() => {
                                 setShowEndOfStayDialog(false);
+                                setSelectedBooking(null);
+                            }}
+                        />
+                    )}
+
+                    {selectedBooking && (
+                        <EndOfAddonForm
+                            booking={selectedBooking}
+                            open={showEndOfAddonDialog}
+                            onClose={() => {
+                                setShowEndOfAddonDialog(false);
                                 setSelectedBooking(null);
                             }}
                         />
@@ -781,7 +794,12 @@ function BookingInfo({booking}: BookingInfoProps) {
                                         Mulai:</strong> {formatToDateTime(addon.start_date, false)}</Typography>
                                     {/*@ts-expect-error weird react 19 types error*/}
                                     <Typography><strong>Tanggal
-                                        Selesai:</strong> {formatToDateTime(addon.end_date, false)}</Typography>
+                                        Selesai:</strong> {addon.end_date
+                                            ? formatToDateTime(addon.end_date, false)
+                                            : addon.is_rolling
+                                                ? "Rolling (berkelanjutan)"
+                                                : "Tidak ditentukan"
+                                        }</Typography>
                                 </div>
                             ))}
                         </div>
