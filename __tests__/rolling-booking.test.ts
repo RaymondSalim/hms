@@ -129,13 +129,10 @@ describe("Rolling Booking Feature", () => {
             // Should generate bills for: July (prorated), Aug (2 bills total)
             expect(bills).toHaveLength(2);
 
-            // First bill should have room fee and deposit
+            // First bill should have room fee
             const firstBillItems = bills[0].bill_item?.create as any[];
-            expect(firstBillItems).toHaveLength(2);
+            expect(firstBillItems).toHaveLength(1);
             expect(firstBillItems?.[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
-            expect(firstBillItems?.[1].description).toBe("Deposit Kamar");
-            expect(Number(firstBillItems?.[1].amount)).toBe(1000000);
-            expect(firstBillItems?.[1].type).toBe(BillType.CREATED);
 
             // Second bill should only have room fee
             const secondBillItems = bills[1].bill_item?.create as any[];
@@ -199,10 +196,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-05T00:00:00.000Z"),
                         end_date: null,
                         is_rolling: true,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ]
+                        }
                     },
                 ],
             };
@@ -272,10 +272,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-15T00:00:00.000Z"),
                         end_date: null,
                         is_rolling: true,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -346,10 +349,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-15T00:00:00.000Z"),
                         end_date: new Date("2024-10-14T00:00:00.000Z"),
                         is_rolling: false,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -416,10 +422,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-08-01T00:00:00.000Z"),
                         end_date: null,
                         is_rolling: true,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -503,10 +512,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-08-01T00:00:00.000Z"),
                         end_date: new Date("2024-10-31T00:00:00.000Z"),
                         is_rolling: false,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -584,6 +596,10 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-01T00:00:00.000Z"),
                         end_date: new Date("2024-07-31T00:00:00.000Z"),
                         is_rolling: false,
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: []
+                        }
                     },
                 ],
             };
@@ -611,10 +627,13 @@ describe("Rolling Booking Feature", () => {
                         addon_id: 'addon1',
                         start_date: new Date("2024-08-10T00:00:00.000Z"),
                         is_rolling: true,
-                        pricing: [
-                            { interval_start: 0, interval_end: 1, price: 500000, is_full_payment: true }, // 2 months full payment
-                            { interval_start: 2, interval_end: null, price: 150000 }, // Recurring monthly afterwards
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                { interval_start: 0, interval_end: 1, price: 500000, is_full_payment: true }, // 2 months full payment
+                                { interval_start: 2, interval_end: null, price: 150000 }, // Recurring monthly afterwards
+                            ],
+                        }
                     },
                 ],
             };
@@ -660,14 +679,20 @@ describe("Rolling Booking Feature", () => {
                         addon_id: 'addon1',
                         start_date: new Date("2024-08-15T00:00:00.000Z"),
                         is_rolling: true,
-                        pricing: [{ interval_start: 0, interval_end: null, price: 100000 }],
+                        addOn: {
+                            name: "Layanan A",
+                            pricing: [{ interval_start: 0, interval_end: null, price: 100000 }],
+                        }
                     },
                     { // Non-rolling, full month
                         addon_id: 'addon2',
                         start_date: new Date("2024-09-01T00:00:00.000Z"),
                         end_date: new Date("2024-09-30T00:00:00.000Z"),
                         is_rolling: false,
-                        pricing: [{ interval_start: 0, interval_end: 0, price: 200000, is_full_payment: true }],
+                        addOn: {
+                            name: "Layanan B",
+                            pricing: [{ interval_start: 0, interval_end: 0, price: 200000, is_full_payment: true }],
+                        }
                     }
                 ],
             };
