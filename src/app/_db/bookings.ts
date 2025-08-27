@@ -45,6 +45,45 @@ export type BookingsIncludeAddons = Prisma.BookingGetPayload<{
     custom_id: string
 }
 
+export type BookingIncludeAddons = Prisma.BookingGetPayload<{
+    include: {
+        addOns: {
+            include: {
+                addOn: {
+                    include: {
+                        pricing: true
+                    }
+                }
+            }
+        },
+    }
+}>;
+
+export type BookingIncludeAddonsAndDeposit = Prisma.BookingGetPayload<{
+    include: {
+        addOns: {
+            include: {
+                addOn: {
+                    include: {
+                        pricing: true
+                    }
+                }
+            }
+        },
+        deposit: true
+    }
+}>;
+
+export type BookingAddonWithDetails = Prisma.BookingAddOnGetPayload<{
+    include: {
+        addOn: {
+            include: {
+                pricing: true
+            }
+        }
+    }
+}>;
+
 export async function getBookingStatuses() {
     return prisma.bookingStatus.findMany({
         orderBy: {
@@ -479,7 +518,7 @@ export async function getBookingsWithUnpaidBills(location_id?: number, room_id?:
             }
         }
     });
-    
+
     // Filter bookings that have unpaid bills
     const bookingsWithUnpaidBills = bookingsWithBills.filter(booking => {
         return booking.bills.some(bill => {
@@ -489,11 +528,11 @@ export async function getBookingsWithUnpaidBills(location_id?: number, room_id?:
             const paidAmount = bill.paymentBills.reduce(
                 (acc, pb) => acc.add(pb.amount), new Prisma.Decimal(0)
             );
-            
+
             // Bill is unpaid if paid amount is less than total bill amount
             return paidAmount.lessThan(billAmount);
         });
     });
-    
+
     return bookingsWithUnpaidBills;
 }

@@ -5,14 +5,20 @@ import {
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {Bill, BillItem, BillType, Booking, Prisma} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
-import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
 
 jest.mock('@/app/_lib/primsa', () => ({
   __esModule: true,
   default: {
+    $transaction: jest.fn(),
     booking: {
       create: jest.fn(),
       update: jest.fn(),
+    },
+    bill: {
+      deleteMany: jest.fn(),
+    },
+    billItem: {
+      deleteMany: jest.fn(),
     },
   },
 }));
@@ -123,13 +129,10 @@ describe("Rolling Booking Feature", () => {
             // Should generate bills for: July (prorated), Aug (2 bills total)
             expect(bills).toHaveLength(2);
 
-            // First bill should have room fee and deposit
+            // First bill should have room fee
             const firstBillItems = bills[0].bill_item?.create as any[];
-            expect(firstBillItems).toHaveLength(2);
+            expect(firstBillItems).toHaveLength(1);
             expect(firstBillItems?.[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
-            expect(firstBillItems?.[1].description).toBe("Deposit Kamar");
-            expect(Number(firstBillItems?.[1].amount)).toBe(1000000);
-            expect(firstBillItems?.[1].type).toBe(BillType.CREATED);
 
             // Second bill should only have room fee
             const secondBillItems = bills[1].bill_item?.create as any[];
@@ -193,10 +196,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-05T00:00:00.000Z"),
                         end_date: null,
                         is_rolling: true,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ]
+                        }
                     },
                 ],
             };
@@ -266,10 +272,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-15T00:00:00.000Z"),
                         end_date: null,
                         is_rolling: true,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -340,10 +349,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-15T00:00:00.000Z"),
                         end_date: new Date("2024-10-14T00:00:00.000Z"),
                         is_rolling: false,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -410,10 +422,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-08-01T00:00:00.000Z"),
                         end_date: null,
                         is_rolling: true,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -497,10 +512,13 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-08-01T00:00:00.000Z"),
                         end_date: new Date("2024-10-31T00:00:00.000Z"),
                         is_rolling: false,
-                        pricing: [
-                            {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
-                            {interval_start: 3, interval_end: null, price: 120000},
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                {interval_start: 0, interval_end: 2, price: 300000, is_full_payment: true},
+                                {interval_start: 3, interval_end: null, price: 120000},
+                            ],
+                        }
                     },
                 ],
             };
@@ -578,6 +596,10 @@ describe("Rolling Booking Feature", () => {
                         start_date: new Date("2024-07-01T00:00:00.000Z"),
                         end_date: new Date("2024-07-31T00:00:00.000Z"),
                         is_rolling: false,
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: []
+                        }
                     },
                 ],
             };
@@ -605,10 +627,13 @@ describe("Rolling Booking Feature", () => {
                         addon_id: 'addon1',
                         start_date: new Date("2024-08-10T00:00:00.000Z"),
                         is_rolling: true,
-                        pricing: [
-                            { interval_start: 0, interval_end: 1, price: 500000, is_full_payment: true }, // 2 months full payment
-                            { interval_start: 2, interval_end: null, price: 150000 }, // Recurring monthly afterwards
-                        ],
+                        addOn: {
+                            name: "Test Addon",
+                            pricing: [
+                                { interval_start: 0, interval_end: 1, price: 500000, is_full_payment: true }, // 2 months full payment
+                                { interval_start: 2, interval_end: null, price: 150000 }, // Recurring monthly afterwards
+                            ],
+                        }
                     },
                 ],
             };
@@ -654,14 +679,20 @@ describe("Rolling Booking Feature", () => {
                         addon_id: 'addon1',
                         start_date: new Date("2024-08-15T00:00:00.000Z"),
                         is_rolling: true,
-                        pricing: [{ interval_start: 0, interval_end: null, price: 100000 }],
+                        addOn: {
+                            name: "Layanan A",
+                            pricing: [{ interval_start: 0, interval_end: null, price: 100000 }],
+                        }
                     },
                     { // Non-rolling, full month
                         addon_id: 'addon2',
                         start_date: new Date("2024-09-01T00:00:00.000Z"),
                         end_date: new Date("2024-09-30T00:00:00.000Z"),
                         is_rolling: false,
-                        pricing: [{ interval_start: 0, interval_end: 0, price: 200000, is_full_payment: true }],
+                        addOn: {
+                            name: "Layanan B",
+                            pricing: [{ interval_start: 0, interval_end: 0, price: 200000, is_full_payment: true }],
+                        }
                     }
                 ],
             };
@@ -710,13 +741,32 @@ describe("Rolling Booking Feature", () => {
         it("should update the booking with the new end_date", async () => {
             const endDate = new Date("2024-10-31T00:00:00.000Z");
             const expectedBooking = { ...mockBooking, end_date: endDate, is_rolling: false };
-            (prisma.booking.update as jest.Mock).mockResolvedValue(expectedBooking);
+
+            // Mock the transaction to return the expected booking
+            (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
+                // Create a mock transaction client
+                const mockTx = {
+                    booking: {
+                        update: jest.fn().mockResolvedValue(expectedBooking)
+                    },
+                    bill: {
+                        findMany: jest.fn().mockResolvedValue([])
+                    },
+                    billItem: {
+                        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+                    }
+                };
+
+                // Call the callback with the mock transaction client
+                return await callback(mockTx);
+            });
 
             const updatedBooking = await scheduleEndOfRollingBooking(mockBooking as Booking, endDate);
-            expect(prisma.booking.update).toHaveBeenCalledWith({
-                where: { id: mockBooking.id },
-                data: { end_date: endDate, is_rolling: false }
-            });
+
+            // Verify transaction was called
+            expect(prisma.$transaction).toHaveBeenCalled();
+
+            // Verify the result
             expect(updatedBooking.end_date).not.toBeNull();
             expect(updatedBooking.end_date?.toISOString().split('T')[0]).toEqual(endDate.toISOString().split('T')[0]);
             expect(updatedBooking.is_rolling).toBe(false);
@@ -730,6 +780,97 @@ describe("Rolling Booking Feature", () => {
             }];
             const newBill = await generateNextMonthlyBill(endedBooking as Booking, existingBills as Bill[], new Date("2024-11-01T00:00:00.000Z"));
             expect(newBill).toBeNull();
+        });
+
+        it("should clean up bills that extend beyond the scheduled end date", async () => {
+            // Mock a booking that started 12 months ago and has bills up to current month
+            const mockBookingWithBills = {
+                ...mockBooking,
+                start_date: new Date("2023-07-05T00:00:00.000Z"), // 12 months ago
+                bills: [
+                    // Bills from July 2023 to June 2024 (12 bills total)
+                    { id: 1, due_date: new Date("2023-07-31T00:00:00.000Z"), description: "Tagihan untuk Bulan Juli 2023" },
+                    { id: 2, due_date: new Date("2023-08-31T00:00:00.000Z"), description: "Tagihan untuk Bulan Agustus 2023" },
+                    { id: 3, due_date: new Date("2023-09-30T00:00:00.000Z"), description: "Tagihan untuk Bulan September 2023" },
+                    { id: 4, due_date: new Date("2023-10-31T00:00:00.000Z"), description: "Tagihan untuk Bulan Oktober 2023" },
+                    { id: 5, due_date: new Date("2023-11-30T00:00:00.000Z"), description: "Tagihan untuk Bulan November 2023" },
+                    { id: 6, due_date: new Date("2023-12-31T00:00:00.000Z"), description: "Tagihan untuk Bulan Desember 2023" },
+                    { id: 7, due_date: new Date("2024-01-31T00:00:00.000Z"), description: "Tagihan untuk Bulan Januari 2024" },
+                    { id: 8, due_date: new Date("2024-02-29T00:00:00.000Z"), description: "Tagihan untuk Bulan Februari 2024" },
+                    { id: 9, due_date: new Date("2024-03-31T00:00:00.000Z"), description: "Tagihan untuk Bulan Maret 2024" },
+                    { id: 10, due_date: new Date("2024-04-30T00:00:00.000Z"), description: "Tagihan untuk Bulan April 2024" },
+                    { id: 11, due_date: new Date("2024-05-31T00:00:00.000Z"), description: "Tagihan untuk Bulan Mei 2024" },
+                    { id: 12, due_date: new Date("2024-06-30T00:00:00.000Z"), description: "Tagihan untuk Bulan Juni 2024" },
+                ]
+            };
+
+            // Schedule end date to 6 months ago (December 2023)
+            const endDate = new Date("2023-12-31T00:00:00.000Z");
+
+            // Mock the expected behavior after cleanup
+            const expectedBooking = {
+                ...mockBookingWithBills,
+                end_date: endDate,
+                is_rolling: false
+            };
+
+            // Mock the transaction to return the expected booking
+            (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
+                // Create a mock transaction client
+                const mockTx = {
+                    booking: {
+                        update: jest.fn().mockResolvedValue(expectedBooking)
+                    },
+                    bill: {
+                        findMany: jest.fn().mockResolvedValue([
+                            { id: 7 }, { id: 8 }, { id: 9 }, { id: 10 }, { id: 11 }, { id: 12 }
+                        ]),
+                        deleteMany: jest.fn().mockResolvedValue({ count: 6 })
+                    },
+                    billItem: {
+                        deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+                    }
+                };
+
+                // Call the callback with the mock transaction client
+                return await callback(mockTx);
+            });
+
+            const updatedBooking = await scheduleEndOfRollingBooking(mockBookingWithBills as Booking, endDate);
+
+            // Verify transaction was called
+            expect(prisma.$transaction).toHaveBeenCalled();
+
+            // Verify the result
+            expect(updatedBooking.end_date).toEqual(endDate);
+            expect(updatedBooking.is_rolling).toBe(false);
+
+            // Verify that bills beyond end date were cleaned up
+            // Get the mock transaction client that was passed to the callback
+            const transactionCallback = (prisma.$transaction as jest.Mock).mock.calls[0][0];
+            const mockTx = {
+                booking: { update: jest.fn().mockResolvedValue(expectedBooking) },
+                bill: {
+                    findMany: jest.fn().mockResolvedValue([
+                        { id: 7 }, { id: 8 }, { id: 9 }, { id: 10 }, { id: 11 }, { id: 12 }
+                    ]),
+                    deleteMany: jest.fn().mockResolvedValue({ count: 6 })
+                },
+                billItem: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) }
+            };
+
+            // Call the callback to simulate what happens in the transaction
+            await transactionCallback(mockTx);
+
+            // Verify bill items were deleted first (due to foreign key constraints)
+            expect(mockTx.billItem.deleteMany).toHaveBeenCalledWith({
+                where: { bill_id: { in: [7, 8, 9, 10, 11, 12] } }
+            });
+
+            // Verify bills were deleted
+            expect(mockTx.bill.deleteMany).toHaveBeenCalledWith({
+                where: { id: { in: [7, 8, 9, 10, 11, 12] } }
+            });
         });
     });
 });
