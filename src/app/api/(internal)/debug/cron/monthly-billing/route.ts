@@ -47,6 +47,16 @@ export const GET = withAxiom(async (request: Request) => {
                             }
                         }
                     }
+                },
+                deposit: true,
+                addOns: {
+                    include: {
+                        addOn: {
+                            include: {
+                                pricing: true
+                            }
+                        }
+                    }
                 }
             }
         });

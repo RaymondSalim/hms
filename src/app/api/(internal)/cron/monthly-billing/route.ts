@@ -32,6 +32,16 @@ export const POST = withAxiom(async () => {
                             }
                         }
                     }
+                },
+                deposit: true,
+                addOns: {
+                    include: {
+                        addOn: {
+                            include: {
+                                pricing: true
+                            }
+                        }
+                    }
                 }
             }
         });
