@@ -18,9 +18,7 @@ import {GenericActionsType} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {updateDepositStatus} from "@/app/_db/deposit";
 import {revalidateTag} from "next/cache";
-import {
-    generatePaymentBillMappingFromPaymentsAndBills
-} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
+import {generatePaymentBillMappingFromPaymentsAndBills} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {
     addMonths,
     differenceInDays,
@@ -765,7 +763,7 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
                 type: BillType.GENERATED
             });
         }
-        
+
         const addonItems = processAddonsForPeriod(currentMonth, billEndDate, addOns ?? []);
         billItems.push(...addonItems);
 
@@ -862,19 +860,58 @@ export async function generateNextMonthlyBill(booking: Booking & {
 
 /**
  * Schedules the end of a rolling booking by setting its end date.
- * This also sets the 'is_rolling' flag to false.
+ * This also sets the 'is_rolling' flag to false and cleans up any bills
+ * that extend beyond the new end date.
  * @param booking - The booking to update.
  * @param endDate - The new end date for the booking.
  * @returns The updated booking object.
  */
 export async function scheduleEndOfRollingBooking(booking: Booking, endDate: Date): Promise<Booking> {
-    return prisma.booking.update({
-        where: { id: booking.id },
-        data: {
-            end_date: endDate,
-            is_rolling: false
-        }
+    return prisma.$transaction(async (tx) => {
+        // Update the booking
+        const updatedBooking = await tx.booking.update({
+            where: { id: booking.id },
+            data: {
+                end_date: endDate,
+                is_rolling: false
+            }
+        });
+
+        // Clean up invalid bills beyond end date
+        await cleanupInvalidBills(booking.id, endDate, tx);
+
+        return updatedBooking;
     });
+}
+
+/**
+ * Cleans up bills that extend beyond the specified end date.
+ * @param bookingId - The booking ID to clean up bills for.
+ * @param endDate - The end date to clean up bills beyond.
+ * @param tx - The database transaction client.
+ */
+async function cleanupInvalidBills(bookingId: number, endDate: Date, tx: Prisma.TransactionClient) {
+    // Find bills that extend beyond the end date
+    const invalidBills = await tx.bill.findMany({
+        where: {
+            booking_id: bookingId,
+            due_date: { gt: endDate }
+        },
+        select: { id: true }
+    });
+
+    if (invalidBills.length > 0) {
+        const billIds = invalidBills.map(b => b.id);
+        // Delete bill items first (due to foreign key constraints)
+        await tx.billItem.deleteMany({
+            where: { bill_id: { in: billIds } }
+        });
+
+        // Delete the invalid bills
+        await tx.bill.deleteMany({
+            where: { id: { in: billIds } }
+        });
+    }
 }
 
 /**
