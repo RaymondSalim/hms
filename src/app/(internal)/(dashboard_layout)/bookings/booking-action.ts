@@ -680,15 +680,7 @@ export async function scheduleEndOfStayAction(data: {
     }
 
     try {
-        await prisma.$transaction(async (tx) => {
-            await tx.booking.update({
-                where: { id: bookingId },
-                data: {
-                    end_date: endDate,
-                    is_rolling: false,
-                },
-            });
-        });
+        await scheduleEndOfRollingBooking(booking, endDate);
 
         revalidateTag("bookings");
         return { success: true };
