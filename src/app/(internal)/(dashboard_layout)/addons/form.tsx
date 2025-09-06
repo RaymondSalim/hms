@@ -11,6 +11,7 @@ import {
     CardBody,
     Checkbox,
     Input,
+    Tooltip,
     Typography
 } from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import {AnimatePresence, MotionConfig} from "framer-motion";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
 import {FaAngleDown} from "react-icons/fa6";
+import {FaQuestionCircle} from "react-icons/fa";
 
 interface AddonFormProps extends TableFormProps<AddonIncludePricing> {
 }
@@ -274,10 +276,23 @@ export function AddonForm(props: AddonFormProps) {
                                                         {/*@ts-expect-error weird react 19 types error*/}
                                                         <Checkbox
                                                             label={
-                                                                // @ts-expect-error weird react 19 types error
-                                                                <Typography color="blue-gray" className="font-medium">
-                                                                    Pembayaran Penuh di Awal
-                                                                </Typography>
+                                                                <div className="flex items-center gap-x-2">
+                                                                    {/* @ts-expect-error weird react 19 types error */}
+                                                                    <Typography color="blue-gray"
+                                                                                className="font-medium">
+                                                                        Pembayaran Penuh di Awal
+                                                                    </Typography>
+                                                                    <Tooltip
+                                                                        className="z-[10000] bg-white"
+                                                                        content={
+                                                                            // @ts-expect-error weird react 19 types error
+                                                                            <Typography color="blue-gray">
+                                                                                Jika dicentang, biaya untuk jangka waktu yang dimasukkan akan ditagihkan sekali saja di awal.
+                                                                            </Typography>
+                                                                        }>
+                                                                        <FaQuestionCircle className="cursor-help"/>
+                                                                    </Tooltip>
+                                                                </div>
                                                             }
                                                             checked={pricing.is_full_payment}
                                                             onChange={(e) => updatePricingEntry(index, "is_full_payment", e.target.checked)}
