@@ -386,6 +386,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                         }
                     }
 
+                    // TODO! Why deposit not created inside?
                     const initialBills = await generateInitialBillsForRollingBooking({
                         ...newBooking,
                         // @ts-expect-error invalid type
@@ -692,6 +693,7 @@ export async function scheduleEndOfStayAction(data: {
 /**
  * Generates the initial set of bills for a new rolling booking.
  * It creates a prorated bill for the first partial month and full bills for all subsequent months up to the current month.
+ * For now, deposit is not handled here.
  * @param booking - The booking object for which to generate bills.
  * @param currentDate - The current date to generate bills up to (defaults to today).
  * @returns A promise that resolves to an array of the newly created bills.

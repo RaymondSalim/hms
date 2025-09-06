@@ -3,8 +3,10 @@ import {
     generateNextMonthlyBill,
     scheduleEndOfRollingBooking
 } from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
-import {Bill, BillItem, BillType, Booking, Prisma} from "@prisma/client";
+import {AddOnPricing, Bill, BillItem, BillType, Booking, Deposit, Prisma, Room} from "@prisma/client";
 import prisma from "@/app/_lib/primsa";
+import {BookingIncludeAddons, BookingIncludeAddonsAndDeposit} from "@/app/_db/bookings";
+import {AddonIncludePricing} from "@/app/(internal)/(dashboard_layout)/addons/addons-action";
 
 jest.mock('@/app/_lib/primsa', () => ({
   __esModule: true,
@@ -50,6 +52,30 @@ describe("Rolling Booking Feature", () => {
         end_date: null,
         deposit: { amount: new Prisma.Decimal(1000000) }
     };
+
+    const mockAddonPricing: Partial<AddOnPricing>[] = [
+        {interval_start: 0, interval_end: 1, price: 300000, is_full_payment: true},
+        {interval_start: 2, interval_end: null, price: 120000},
+    ];
+
+    const mockAddon: Partial<AddonIncludePricing> = {
+        id: "addon-1",
+        name: "Addon Kulkas",
+        // @ts-expect-error missing id, etc.
+        pricing: mockAddonPricing
+    }
+
+    const mockBookingWithAddons: Partial<BookingIncludeAddons> = {
+        ...mockBooking,
+        addOns: [
+            {
+                addon_id: 'addon-1',
+                // @ts-expect-error pricing type
+                addOn: mockAddon,
+                is_rolling: false,
+            }
+        ],
+    }
 
     describe("generateInitialBillsForRollingBooking", () => {
         it("should generate a prorated bill for the first month and full bills for all subsequent months up to current month", async () => {
@@ -139,6 +165,136 @@ describe("Rolling Booking Feature", () => {
             expect(secondBillItems).toHaveLength(1);
             expect(secondBillItems?.[0].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
         });
+
+        test("issue 2025-09-03", async () => {
+            // booking data
+            // INSERT INTO public.bookings
+            // (id, room_id, start_date, duration_id, status_id, fee, "createdAt", "updatedAt", tenant_id, end_date, second_resident_fee, is_rolling) VALUES
+            // (872, 17, '2025-02-01', null, 1, 3100000.00, '2025-09-04 06:43:06.334', '2025-09-04 06:43:06.334', 'cm4upz1lm0002p7x3xbx5ka4v', null, 500000.00, true);
+
+            // INSERT INTO public.deposits
+            // (id, booking_id, amount, status, refunded_at, applied_at, refunded_amount, "createdAt", "updatedAt") VALUES
+            // (343, 872, 300000.00, 'HELD', null, null, null, '2025-09-04 06:43:06.334', '2025-09-04 06:44:05.450');
+
+
+            // INSERT INTO public.rooms
+            // (id, room_number, room_type_id, status_id, location_id, "createdAt", "updatedAt") VALUES
+            // (17, '111', 14, 1, 4, '2024-11-01 05:14:57.371', '2024-11-01 05:14:57.371');
+
+            // INSERT INTO public."AddOn"
+            // (id, name, description, "createdAt", "updatedAt", location_id, parent_addon_id, requires_input) VALUES
+            // ('cmbhqxpm0000213qacu2007rg', 'kulkas perbulan', null, '2025-06-04 09:29:43.654', '2025-06-04 09:29:43.654', 4, null, false);
+
+            // INSERT INTO public."AddOnPricing"
+            // (id, price, "createdAt", "updatedAt", addon_id, interval_end, interval_start, is_full_payment) VALUES
+            // ('cmbhqxpm0000313qaan5hpgdf', 120000, '2025-06-04 09:29:43.654', '2025-06-04 09:29:43.654', 'cmbhqxpm0000213qacu2007rg', null, 0, true);
+
+            // INSERT INTO public."BookingAddOn"
+            // (id, input, "createdAt", "updatedAt", addon_id, booking_id, end_date, start_date, is_rolling) VALUES
+            // ('cmf51hszf0001u8153pkfi4mv', null, '2025-09-04 06:43:06.334', '2025-09-04 06:43:06.334', 'cmbhqxpm0000213qacu2007rg', 872, null, '2025-02-01', true);
+
+            const mockRoom: Room = {
+                id: 10,
+                room_number: "111",
+                room_type_id: 1,
+                status_id: 1,
+                location_id: 1,
+                createdAt: new Date('2024-11-01 05:14:57.371'.replace(' ', 'T')),
+                updatedAt: new Date('2024-11-01 05:14:57.371'.replace(' ', 'T')),
+            };
+
+            const mockDeposit: Deposit = {
+                id: 20,
+                booking_id: 1,
+                amount: new Prisma.Decimal('300000'),
+                applied_at: null,
+                refunded_amount: null,
+                refunded_at: null,
+                status: 'HELD',
+                createdAt: new Date('2025-09-04 06:43:06.334'.replace(' ', 'T')),
+                updatedAt: new Date('2025-09-04 06:44:05.450'.replace(' ', 'T')),
+            };
+
+            const mockAddonPricing: AddOnPricing[] = [
+                {
+                    id: "ap-1",
+                    price: 120000,
+                    addon_id: "addon-1",
+                    interval_end: null,
+                    interval_start: 0,
+                    is_full_payment: false,
+                    createdAt: new Date('2025-06-04 09:29:43.654'.replace(' ', 'T')),
+                    updatedAt: new Date('2025-06-04 09:29:43.654'.replace(' ', 'T'))
+                }
+            ];
+
+            const mockAddon: AddonIncludePricing = {
+                id: "addon-1",
+                name: "kulkas perbulan",
+                description: null,
+                location_id: 1,
+                parent_addon_id: null,
+                requires_input: false,
+                activeBookingsCount: 0,
+                bookings: [],
+                pricing: mockAddonPricing,
+                createdAt: new Date('2025-06-04 09:29:43.654'.replace(' ', 'T')),
+                updatedAt: new Date('2025-06-04 09:29:43.654'.replace(' ', 'T'))
+            };
+
+            const mockBooking: BookingIncludeAddonsAndDeposit = {
+                id: 1,
+                addOns: [{
+                    id: "bookingaddon-1",
+                    addon_id: "addon-1",
+                    addOn: mockAddon,
+                    booking_id: 1,
+                    start_date: new Date('2025-02-01'),
+                    end_date: null,
+                    is_rolling: true,
+                    input: null,
+                    createdAt: new Date('2025-09-04 06:43:06.334'.replace(' ', 'T')),
+                    updatedAt: new Date('2025-09-04 06:43:06.334'.replace(' ', 'T'))
+                }],
+                deposit: mockDeposit,
+                fee: new Prisma.Decimal('3100000'),
+                is_rolling: true,
+                duration_id: null,
+                end_date: null,
+                room_id: 10,
+                second_resident_fee: new Prisma.Decimal('500000'),
+                start_date: new Date('2025-02-01'),
+                status_id: 1,
+                tenant_id: 'tenant-1',
+                createdAt: new Date('2025-09-04 06:43:06.334'.replace(' ', 'T')),
+                updatedAt: new Date('2025-09-04 06:43:06.334'.replace(' ', 'T'))
+            };
+
+            const mockDate = new Date('2025-09-04 06:43:06.334');
+
+            const bills = await generateInitialBillsForRollingBooking(mockBooking, mockDate);
+            // Should generate bills for: Feb - Sep
+            expect(bills).toHaveLength(8);
+
+            // First bill should have room fee
+            const firstBillItems = bills[0].bill_item?.create as any[];
+            expect(firstBillItems).toHaveLength(3);
+            expect(firstBillItems?.[0].description).toBe("Sewa Kamar (1 Februari 2025 - 28 Februari 2025)");
+            expect(firstBillItems?.[1].description).toContain("Biaya Penghuni Kedua");
+            expect(firstBillItems?.[2].description).toContain("kulkas perbulan");
+
+            const secondBillItems = bills[1].bill_item?.create as any[];
+            expect(secondBillItems).toHaveLength(3);
+            expect(secondBillItems?.[0].description).toBe("Sewa Kamar (1 Maret 2025 - 31 Maret 2025)");
+            expect(secondBillItems?.[1].description).toContain("Biaya Penghuni Kedua");
+            expect(secondBillItems?.[2].description).toContain("kulkas perbulan");
+
+            const thirdBillItems = bills[2].bill_item?.create as any[];
+            expect(thirdBillItems).toHaveLength(3);
+            expect(thirdBillItems?.[0].description).toBe("Sewa Kamar (1 April 2025 - 30 April 2025)");
+            expect(thirdBillItems?.[1].description).toContain("Biaya Penghuni Kedua");
+            expect(thirdBillItems?.[2].description).toContain("kulkas perbulan");
+        })
     });
 
     describe("generateNextMonthlyBill (Cron Job Simulation)", () => {
