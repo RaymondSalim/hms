@@ -61,36 +61,36 @@ jobs:
             echo "PR title doesn't match 'Release <tag>' pattern. Skipping."
           fi
 
-      # 6) Create public/version.json
-      - name: Create public/version.json
-        if: env.tag_name != ''
-        run: |
-          mkdir -p public
-          printf '{\n  "version": "%s"\n}\n' "${{ steps.extract_tag.outputs.tag }}" > public/version.json
-          echo "Created public/version.json:"
-          cat public/version.json
+      # # 6) Create public/version.json
+      # - name: Create public/version.json
+      #   if: env.tag_name != ''
+      #   run: |
+      #     mkdir -p public
+      #     printf '{\n  "version": "%s"\n}\n' "${{ steps.extract_tag.outputs.tag }}" > public/version.json
+      #     echo "Created public/version.json:"
+      #     cat public/version.json
 
-      # 7) Commit version.json (no-op if unchanged)
-      - name: Commit version.json
-        if: env.tag_name != ''
-        run: |
-          git config user.email "action@github.com"
-          git config user.name  "GitHub Action"
-          git add public/version.json
-          git commit -m "chore: set version to ${{ steps.extract_tag.outputs.tag }}" || echo "No changes to commit"
+      # # 7) Commit version.json (no-op if unchanged)
+      # - name: Commit version.json
+      #   if: env.tag_name != ''
+      #   run: |
+      #     git config user.email "action@github.com"
+      #     git config user.name  "GitHub Action"
+      #     git add public/version.json
+      #     git commit -m "chore: set version to ${{ steps.extract_tag.outputs.tag }}" || echo "No changes to commit"
 
-      # 8) Push commit to prod
-      - name: Push commit to prod (SSH)
-        if: env.tag_name != ''
-        env:
-          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes"
-        run: |
-          git fetch origin prod
-          if ! git diff --quiet origin/prod..HEAD; then
-            git push origin HEAD:prod
-          else
-            echo "No new commit to push"
-          fi
+      # # 8) Push commit to prod
+      # - name: Push commit to prod (SSH)
+      #   if: env.tag_name != ''
+      #   env:
+      #     GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes"
+      #   run: |
+      #     git fetch origin prod
+      #     if ! git diff --quiet origin/prod..HEAD; then
+      #       git push origin HEAD:prod
+      #     else
+      #       echo "No new commit to push"
+      #     fi
 
       # 9) Create tag (skip if exists) and push it
       - name: Create Tag (skip if exists)
