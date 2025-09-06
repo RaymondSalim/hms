@@ -181,9 +181,16 @@ export async function getAddonsByLocation(id?: number) {
                     start_date: {
                         lte: new Date()
                     },
-                    end_date: {
-                        gte: new Date()
-                    }
+                    OR: [
+                        {
+                            end_date: {
+                                gte: new Date()
+                            }
+                        },
+                        {
+                            end_date: null
+                        }
+                    ]
                 },
                 include: {
                     booking: {
@@ -193,7 +200,8 @@ export async function getAddonsByLocation(id?: number) {
                         }
                     }
                 }
-            }
+            },
+
         },
         orderBy: {
             createdAt: 'desc'
