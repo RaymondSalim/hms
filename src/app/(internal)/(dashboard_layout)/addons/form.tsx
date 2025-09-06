@@ -415,15 +415,21 @@ function ConfirmationDialog({open, onConfirm, onCancel, title, children}: {
     children: React.ReactNode
 }) {
     return (
+        // @ts-expect-error weird react 19 types error
         <Dialog open={open} handler={onCancel}>
+            {/*@ts-expect-error weird react 19 types error*/}
             <DialogHeader>{title}</DialogHeader>
+            {/*@ts-expect-error weird react 19 types error*/}
             <DialogBody divider>
                 {children}
             </DialogBody>
+            {/*@ts-expect-error weird react 19 types error*/}
             <DialogFooter>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Button variant="text" color="red" onClick={onCancel} className="mr-1">
                     <span>Tidak</span>
                 </Button>
+                {/*@ts-expect-error weird react 19 types error*/}
                 <Button variant="gradient" color="green" onClick={onConfirm}>
                     <span>Ya</span>
                 </Button>
