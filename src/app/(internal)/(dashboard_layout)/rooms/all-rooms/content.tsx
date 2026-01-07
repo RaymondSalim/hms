@@ -117,16 +117,6 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
     );
   }
 
-  // Define filterKeys for smart search
-  const filterKeys = columns
-    .filter(c => (
-      c.enableColumnFilter !== false && c.header && c.id
-    ))
-    .map(c => ({
-      label: c.header!.toString(),
-      value: c.id!,
-    }));
-
   return (
       <TableContent<RoomsWithTypeAndLocationAndBookings>
         name={"Kamar"}
@@ -138,8 +128,7 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
           <RoomForm/>
         }
         searchPlaceholder={"Cari berdasarkan nama atau alamat email"}
-        searchType="smart"
-        filterKeys={filterKeys}
+        searchType={undefined}
         upsert={{
           // @ts-ignore - View-only column, form doesn't need booking data
           mutationFn: upsertRoomAction,
