@@ -10,7 +10,6 @@ import {PaymentForm} from "@/app/(internal)/(dashboard_layout)/payments/form";
 import {PaymentIncludeAll} from "@/app/_db/payment";
 import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
 import {Prisma} from "@prisma/client";
-import {SelectOption} from "@/app/_components/input/select";
 import {PaymentPageQueryParams} from "@/app/(internal)/(dashboard_layout)/payments/page";
 
 
@@ -35,9 +34,10 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
       size: 20,
       enableColumnFilter: true,
     }),
-    columnHelper.accessor(row => row.payment_date, {
+    columnHelper.accessor(row => formatToDateTime(row.payment_date, true, false), {
+      id: "payment_date",
       header: "Tanggal Pembayaran",
-      cell: props => formatToDateTime(props.getValue(), true, true)
+      cell: props => props.getValue()
     }),
     columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
       id: 'booking_id',
@@ -99,15 +99,6 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
     );
   }
 
-  const filterKeys: SelectOption<string>[] = columns
-      .filter(c => (
-          c.enableColumnFilter && c.header && c.id
-      ))
-      .map(c => ({
-        label: c.header!.toString(),
-        value: c.id!,
-      }));
-
   return (
       <TableContent<typeof payments[0]>
         name={"Pembayaran"}
@@ -117,7 +108,7 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
           // @ts-expect-error
           <PaymentForm/>
         }
-        searchPlaceholder={"TODO!"} // TODO!
+        searchPlaceholder={"Cari"} // simplified search box
         upsert={{
           // @ts-expect-error
           mutationFn: upsertPaymentAction,
@@ -128,8 +119,7 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
           // @ts-expect-error
           mutationFn: deletePaymentAction,
         }}
-        searchType={"smart"}
-        filterKeys={filterKeys}
+        searchType={undefined}
         queryParams={
           (queryParams?.action == undefined || queryParams?.action == "search") ?
               {

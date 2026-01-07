@@ -30,7 +30,6 @@ import {
 import {useMutation, UseMutationResult} from "@tanstack/react-query";
 import {MdClose, MdDelete, MdEdit, MdEmail, MdSave} from "react-icons/md";
 import {toast} from "react-toastify";
-import {SelectOption} from "@/app/_components/input/select";
 import {BillPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bills/page";
 import CurrencyInput from "@/app/_components/input/currencyInput";
 
@@ -140,7 +139,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             minSize: 275,
             enableColumnFilter: true,
         }),
-        columnHelper.accessor(row => 
+        columnHelper.accessor(row =>
             row.bill_item
                 .map(bi => bi.amount)
                 .reduce((prevSum, bi) => new Prisma.Decimal(bi).add(prevSum), new Prisma.Decimal(0)
@@ -247,13 +246,6 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
         );
     }
 
-    const filterKeys: SelectOption<string>[] = columns
-        .filter(col => col.enableColumnFilter && col.id)
-        .map(col => ({
-            label: col.header as string,
-            value: col.id as string
-        }));
-
     return (
         <>
             <TableContent<typeof bills[0]>
@@ -269,6 +261,13 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                     <BillForm/>
                 }
                 searchPlaceholder={"TODO!"} // TODO!
+                queryParams={
+                    (queryParams?.action == undefined || queryParams?.action == "search") ? {
+                        action: "search",
+                        values: queryParams,
+                    } : undefined
+                }
+                persistFiltersToUrl
                 // TODO! Data should refresh on CRUD
                 upsert={{
                     // @ts-expect-error
@@ -346,8 +345,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                         </Dialog>
                     </>
                 }
-                searchType={"smart"}
-                filterKeys={filterKeys}
+                searchType={undefined}
                 filterByOptions={{
                     columnId: 'payment_status',
                     options: [
@@ -364,13 +362,6 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                         'unpaid': 'Belum Lunas'
                     }
                 }}
-                queryParams={
-                    (queryParams?.action == undefined || queryParams?.action == "search") ?
-                        {
-                            action: "search",
-                            values: queryParams,
-                        } : undefined
-                }
             />
         </>
     );

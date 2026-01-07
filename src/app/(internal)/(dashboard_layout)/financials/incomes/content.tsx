@@ -31,9 +31,10 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
 
     const columnHelper = createColumnHelper<typeof incomes[0]>();
     const columns = [
-        columnHelper.accessor(row => row.date, {
+        columnHelper.accessor(row => formatToDateTime(row.date, false), {
+            id: "date",
             header: "Date",
-            cell: props => formatToDateTime(props.getValue(), false)
+            cell: props => props.getValue()
         }),
         columnHelper.accessor(row => row.category, {
             header: "Kategori",
