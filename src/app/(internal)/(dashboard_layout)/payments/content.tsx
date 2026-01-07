@@ -34,9 +34,10 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
       size: 20,
       enableColumnFilter: true,
     }),
-    columnHelper.accessor(row => row.payment_date, {
+    columnHelper.accessor(row => formatToDateTime(row.payment_date, true, false), {
+      id: "payment_date",
       header: "Tanggal Pembayaran",
-      cell: props => formatToDateTime(props.getValue(), true, true)
+      cell: props => props.getValue()
     }),
     columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
       id: 'booking_id',
