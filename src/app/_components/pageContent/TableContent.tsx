@@ -301,6 +301,37 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         setGlobalFilter(global);
     };
 
+    useEffect(() => {
+        if (!props.queryParams) return;
+        if (props.searchType === "smart") return; // smart search already hydrates via initialValues
+
+        const isSearchAction = props.queryParams.action === undefined || props.queryParams.action === "search";
+        if (!isSearchAction) return;
+
+        const hasSessionPreset = props.persistFiltersToUrl && (
+            (sessionPreset.global !== undefined && sessionPreset.global !== "") ||
+            (sessionPreset.columnFilters?.length ?? 0) > 0
+        );
+        if (hasSessionPreset) return;
+
+        const values = 'values' in props.queryParams ? props.queryParams.values : undefined;
+        if (!values) return;
+
+        const {q, action: _ignored, ...rest} = values as Record<string, any>;
+        const nextColumnFilters = normalizeColumnFilters(
+            Object.entries(rest)
+                .filter(([, value]) => value !== undefined && value !== null && value !== "")
+                .map(([key, value]) => ({id: key, value}))
+        );
+
+        if (nextColumnFilters.length > 0) {
+            setColumnFilter(nextColumnFilters);
+        }
+        if (q !== undefined && q !== null && q !== "") {
+            setGlobalFilter(String(q));
+        }
+    }, [props.queryParams, props.searchType, props.persistFiltersToUrl, sessionPreset]);
+
     const tanTable = useReactTable({
         defaultColumn: {
             minSize: 0,

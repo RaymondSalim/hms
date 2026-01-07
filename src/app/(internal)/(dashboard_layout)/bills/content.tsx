@@ -261,6 +261,13 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                     <BillForm/>
                 }
                 searchPlaceholder={"TODO!"} // TODO!
+                queryParams={
+                    (queryParams?.action == undefined || queryParams?.action == "search") ? {
+                        action: "search",
+                        values: queryParams,
+                    } : undefined
+                }
+                persistFiltersToUrl
                 // TODO! Data should refresh on CRUD
                 upsert={{
                     // @ts-expect-error
