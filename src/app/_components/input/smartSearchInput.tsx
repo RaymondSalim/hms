@@ -101,15 +101,18 @@ export default function SmartSearchInput({suggestions, onSubmit, initialValues}:
             );
 
             if (matchedFilter && value.length > 0) {
-                // Create a pill for column-specific filtering
-                setPills([
-                    ...pills,
-                    {
-                        column: matchedFilter.original_label,
-                        key: matchedFilter.value,
-                        value
-                    }
-                ]);
+                // Create or update a pill for column-specific filtering (dedupe by key)
+                setPills(prev => {
+                    const withoutSameKey = prev.filter(p => p.key !== matchedFilter.value);
+                    return [
+                        ...withoutSameKey,
+                        {
+                            column: matchedFilter.original_label,
+                            key: matchedFilter.value,
+                            value
+                        }
+                    ];
+                });
                 setInputValue("");
             } else {
                 setGlobalFilter(text);

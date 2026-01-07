@@ -340,8 +340,8 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                 <BookingForm/>
             }
             searchPlaceholder={"Cari"} // TODO!
-            filterKeys={filterKeys}
-            searchType="smart"
+            searchType={undefined}
+            persistFiltersToUrl
             upsert={{
                 // @ts-ignore
                 mutationFn: handleUpsert,

@@ -13,7 +13,7 @@ import {
     getSortedRowModel,
     useReactTable
 } from "@tanstack/react-table";
-import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
+import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useRef, useState} from "react";
 import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
 import {Button, Dialog, IconButton, Input, Option, Select, Typography} from "@material-tailwind/react";
@@ -33,6 +33,7 @@ import {FilterFn} from '@tanstack/table-core';
 import SmartSearchInput, {SmartSearchFilter} from "@/app/_components/input/smartSearchInput";
 import {SelectOption} from "@/app/_components/input/select";
 import {objectToStringArray} from "@/app/_lib/util";
+import {usePathname} from "next/navigation";
 
 export interface TableFormProps<T> {
     contentData?: T
@@ -97,6 +98,7 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
         allLabel?: string
     },
     valueLabelMapping?: { [columnId: string]: { [value: string]: string } }
+    persistFiltersToUrl?: boolean
 } & (
     {
         searchType: "smart",
@@ -120,13 +122,45 @@ const useAutoHidden = (cols: ColumnDef<any>[]) => {
 };
 
 export function TableContent<T extends { id: number | string }>(props: TableContentProps<T>) {
+    const normalizeColumnFilters = (filters: ColumnFiltersState): ColumnFiltersState => {
+        const seen = new Set<string>();
+        const normalized: ColumnFiltersState = [];
+        // keep last occurrence for each id
+        for (let i = filters.length - 1; i >= 0; i--) {
+            const f = filters[i];
+            if (!seen.has(f.id)) {
+                normalized.push(f);
+                seen.add(f.id);
+            }
+        }
+        return normalized.reverse();
+    };
+
+    const pathname = usePathname();
+    const storageKey = useMemo(() => `tableFilters:${pathname}`, [pathname]);
+    const sessionPreset = useMemo(() => {
+        if (!props.persistFiltersToUrl) return { global: undefined as string | undefined, columnFilters: [] as ColumnFiltersState };
+        if (typeof window === "undefined") return { global: undefined as string | undefined, columnFilters: [] as ColumnFiltersState };
+        try {
+            const raw = sessionStorage.getItem(storageKey);
+            if (!raw) return { global: undefined as string | undefined, columnFilters: [] as ColumnFiltersState };
+            const parsed = JSON.parse(raw);
+            return {
+                global: parsed?.global || undefined,
+                columnFilters: Array.isArray(parsed?.columnFilters) ? normalizeColumnFilters(parsed.columnFilters) : []
+            } as { global: string | undefined, columnFilters: ColumnFiltersState };
+        } catch {
+            return { global: undefined as string | undefined, columnFilters: [] as ColumnFiltersState };
+        }
+    }, [props.persistFiltersToUrl, storageKey]);
+
     const [contentsState, setContentsState] = useState<T[]>(props.initialContents);
     const [activeContent, setActiveContent] = useState<T | undefined>();
     const [upsertMutationResponse, setUpsertMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [deleteMutationResponse, setDeleteMutationResponse] = useState<GenericActionsType<T> | undefined>(undefined);
     const [fromQuery, setFromQuery] = useState(false);
-    const [globalFilter, setGlobalFilter] = useState<string>();
-    const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>();
+    const [globalFilter, setGlobalFilter] = useState<string | undefined>(sessionPreset.global);
+    const [columnFilter, setColumnFilter] = useState<ColumnFiltersState>(sessionPreset.columnFilters);
     const [grouping, setGrouping] = useState<string[]>(() => {
         if (props.groupBy && props.groupBy.length > 0) {
             return props.groupBy;
@@ -135,6 +169,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         return defaultOption ? [defaultOption.value] : [];
     });
     const [expanded, setExpanded] = useState({});
+
+    const urlSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -241,10 +277,27 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         })
     ], [contentsState]);
 
+    const syncFiltersToSession = (nextColumnFilters: ColumnFiltersState, nextGlobal?: string) => {
+        if (!props.persistFiltersToUrl) return;
+        if (urlSyncTimeoutRef.current) {
+            clearTimeout(urlSyncTimeoutRef.current);
+        }
+        urlSyncTimeoutRef.current = setTimeout(() => {
+            try {
+                const payload = {
+                    global: nextGlobal ?? "",
+                    columnFilters: normalizeColumnFilters(nextColumnFilters ?? []),
+                };
+                sessionStorage.setItem(storageKey, JSON.stringify(payload));
+            } catch (e) {
+                console.warn("Failed to persist table filters to sessionStorage", e);
+            }
+        }, 150);
+    };
+
     const handleSearchSubmit = (filter?: SmartSearchFilter[], global?: string) => {
-        setColumnFilter(
-            filter?.map(f => ({id: f.key, value: f.value}))
-        );
+        const nextColumnFilters = normalizeColumnFilters(filter?.map(f => ({id: f.key, value: f.value})) ?? []);
+        setColumnFilter(nextColumnFilters);
         setGlobalFilter(global);
     };
 
@@ -275,10 +328,10 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
             if (typeof updaterOrValue === 'function') {
                 setColumnFilter((prev) => {
                     const result = updaterOrValue(prev ?? []);
-                    return result ?? [];
+                    return normalizeColumnFilters(result ?? []);
                 });
             } else {
-                setColumnFilter(updaterOrValue ?? []);
+                setColumnFilter(normalizeColumnFilters(updaterOrValue ?? []));
             }
         },
         onGlobalFilterChange: setGlobalFilter,
@@ -286,6 +339,19 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         onExpandedChange: setExpanded,
         globalFilterFn: fuzzyFilter,
     });
+
+    useEffect(() => {
+        if (!props.persistFiltersToUrl) return;
+        syncFiltersToSession(columnFilter ?? [], globalFilter);
+    }, [props.persistFiltersToUrl, columnFilter, globalFilter]);
+
+    useEffect(() => {
+        return () => {
+            if (urlSyncTimeoutRef.current) {
+                clearTimeout(urlSyncTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Reset pagination when initial contents change
     useEffect(() => {
@@ -304,7 +370,9 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         if (!dialogOpen) {
             setActiveContent(undefined);
             setUpsertMutationResponse(undefined);
-            props.queryParams?.clearQueryParams?.();
+            if (props.queryParams?.action === "create") {
+                props.queryParams?.clearQueryParams?.();
+            }
             setFromQuery(false);
         }
     }, [dialogOpen]);
@@ -325,17 +393,26 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         }
     }, [props.queryParams]);
 
-    const smartSearchInputInitialValues =
-        props.queryParams ?
-            (
-                (
-                    props.queryParams.action == undefined ||
-                    props.queryParams.action == "search"
-                ) ? (
-                    props.queryParams.values ? objectToStringArray(props.queryParams.values) : undefined
-                ) : undefined
-            )
-            : undefined;
+    const smartSearchInputInitialValues = useMemo(() => {
+        if (props.persistFiltersToUrl) {
+            const preset: string[] = [];
+            sessionPreset.columnFilters.forEach(cf => {
+                preset.push(`${cf.id}: ${cf.value}`);
+            });
+            if (sessionPreset.global) {
+                preset.push(sessionPreset.global);
+            }
+            if (preset.length > 0) return preset;
+        }
+
+        if (props.queryParams &&
+            (props.queryParams.action == undefined || props.queryParams.action == "search") &&
+            props.queryParams.values) {
+            return objectToStringArray(props.queryParams.values);
+        }
+
+        return undefined;
+    }, [props.persistFiltersToUrl, sessionPreset, props.queryParams]);
 
     const filterColumn = props.filterByOptions ? tanTable.getColumn(props.filterByOptions.columnId) : undefined;
 

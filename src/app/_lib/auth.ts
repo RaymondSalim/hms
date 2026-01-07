@@ -48,6 +48,7 @@ const providers: Provider[] = [
                 return user;
             } catch (error: any) {
                 if (error instanceof InvalidCredentialsError || error instanceof ZodError) {
+                    // TODO! Does this mean we are not returning wrong password?
                 } else {
                     serverLogger.error("[auth][authorize]", {error});
                 }

@@ -14,6 +14,7 @@ export type BookingPageQueryParams = {
   location_id?: number
 } | {
   action: "search";
+  q?: string,
   id?: string,
   room_number?: string,
   tenant?: string,
