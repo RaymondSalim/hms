@@ -1,5 +1,4 @@
-import * as aws from "@aws-sdk/client-ses";
-import {SESServiceException} from "@aws-sdk/client-ses";
+import {SendEmailCommand, SESv2Client, SESv2ServiceException} from "@aws-sdk/client-sesv2";
 import nodemailer from 'nodemailer';
 import {Address, Options} from "nodemailer/lib/mailer";
 import prisma from "@/app/_lib/primsa";
@@ -25,12 +24,12 @@ class NodemailerSingleton {
 
     private constructor() {
         if (process.env.NODE_ENV == "production") {
-            const ses = new aws.SES({
+            const sesClient = new SESv2Client({
                 region: "ap-southeast-1",
             });
 
             this.client = nodemailer.createTransport({
-                SES: {ses, aws},
+                SES: {sesClient, SendEmailCommand},
                 sendingRate: 14,
             });
         } else {
@@ -72,7 +71,7 @@ class NodemailerSingleton {
         } catch (error) {
             serverLogger.error("[sendMail]", {error});
             let errBlame = EmailStatus.FAIL_CLIENT;
-            if (error instanceof SESServiceException) {
+            if (error instanceof SESv2ServiceException) {
                 if (error.$fault == "server") {
                     errBlame = EmailStatus.FAIL_SERVER;
                 }
