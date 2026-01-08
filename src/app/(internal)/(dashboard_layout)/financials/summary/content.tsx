@@ -1,7 +1,7 @@
 "use client";
 
 import {convertGroupedTransactionsToTotals, formatToDateTime, formatToIDR, preparePieChartData} from "@/app/_lib/util";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {getGroupedIncomeExpense, getRecentTransactions} from "@/app/_db/dashboard";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Period} from "@/app/_enum/financial";
@@ -13,24 +13,103 @@ import {Pie} from "react-chartjs-2";
 import {ArcElement, Chart as ChartJS, ChartData, Colors} from "chart.js";
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {AiOutlineLoading} from "react-icons/ai";
+import {FiMaximize2, FiMinimize2} from "react-icons/fi";
+import {DatePicker} from "@/app/_components/DateRangePicker";
+import {DateRange} from "react-day-picker";
+
+type PeriodMode = "preset" | "all" | "custom";
+type ExpandableSection = "transactionsTable" | "category" | "graph" | "recent";
 
 ChartJS.register(ArcElement, Colors);
 
 export default function FinancialSummaryPage() {
     const headerContext = useHeader();
 
+    const [periodMode, setPeriodMode] = useState<PeriodMode>("preset");
     const [selectedPeriod, setSelectedPeriod] = useState<Period>(Period.ONE_YEAR);
+    const [customRange, setCustomRange] = useState<DateRange | undefined>(undefined);
 
     const [totalIncome, setTotalIncome] = useState<number | null>(null);
     const [totalExpense, setTotalExpense] = useState<number | null>(null);
     const [netIncome, setNetIncome] = useState<number | null>(null);
 
     const [transactions, setTransactions] = useState<IncomeExpenseGraphProps['data'] | undefined>(undefined);
+    const [expandedSection, setExpandedSection] = useState<ExpandableSection | null>(null);
+const baseOrder: Record<ExpandableSection, string> = {
+    transactionsTable: "order-1 xl:col-span-1",
+    category: "order-2 xl:col-span-1",
+    graph: "order-3 xl:col-span-1",
+    recent: "order-4 xl:col-span-1",
+};
+const getSectionClass = (key: ExpandableSection) => expandedSection === key ? "order-first xl:col-span-2" : baseOrder[key];
+const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
+    transactionsTable: null,
+    category: null,
+    graph: null,
+    recent: null,
+});
 
-    const {data: groupedIncomeExpense, isLoading: isTransactionsLoading, isSuccess: isTransactionsSuccess} = useQuery({
-        queryKey: ["groupedIncomeExpense", selectedPeriod, headerContext.locationID],
-        queryFn: () => getGroupedIncomeExpense(selectedPeriod, headerContext.locationID),
+    const customRangeForQuery = customRange?.from
+        ? {
+            startDate: customRange.from,
+            endDate: customRange.to ?? customRange.from
+        }
+        : undefined;
+    const customRangeKey = customRangeForQuery
+        ? `${customRangeForQuery.startDate.toISOString()}_${customRangeForQuery.endDate.toISOString()}`
+        : "none";
+
+    const {
+        data: groupedIncomeExpense,
+        isLoading: isTransactionsLoading,
+        isSuccess: isTransactionsSuccess,
+        error: transactionsError
+    } = useQuery({
+        queryKey: [
+            "groupedIncomeExpense",
+            periodMode,
+            selectedPeriod,
+            customRangeForQuery?.startDate?.toISOString() ?? null,
+            customRangeForQuery?.endDate?.toISOString() ?? null,
+            headerContext.locationID
+        ],
+        queryFn: () => {
+            if (periodMode === "all") {
+                return getGroupedIncomeExpense({
+                    type: "all",
+                    locationID: headerContext.locationID
+                });
+            }
+
+            if (periodMode === "custom") {
+                if (!customRangeForQuery) {
+                    throw new Error("Pilih rentang tanggal kustom terlebih dahulu");
+                }
+
+                return getGroupedIncomeExpense({
+                    type: "custom",
+                    range: customRangeForQuery,
+                    locationID: headerContext.locationID
+                });
+            }
+
+            return getGroupedIncomeExpense(selectedPeriod, headerContext.locationID);
+        },
+        enabled: periodMode !== "custom" || Boolean(customRangeForQuery),
     });
+
+    useEffect(() => {
+        setTransactions(undefined);
+        setTotalIncome(null);
+        setTotalExpense(null);
+        setNetIncome(null);
+    }, [periodMode, selectedPeriod, customRangeKey]);
+
+    useEffect(() => {
+        if (expandedSection && sectionRefs.current[expandedSection]) {
+            sectionRefs.current[expandedSection]?.scrollIntoView({behavior: "smooth", block: "start"});
+        }
+    }, [expandedSection]);
 
     const {data: recentTransactions, isLoading: isRecentLoading, isSuccess: isRecentSuccess} = useQuery({
         queryKey: ["recentTransactions", headerContext.locationID],
@@ -75,26 +154,72 @@ export default function FinancialSummaryPage() {
     }, [isTransactionsSuccess, groupedIncomeExpense]);
 
     return (
-        <div className="min-h-screen pb-8 md:px-8 md:-mt-8">
+        <div className="min-h-screen pb-8 md:px-8 md:-mt-4">
             <div className="container mx-auto">
-                <div className={"w-min ml-auto mb-4"}>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end mb-4">
                     <div
-                        className={"min-h-0 h-fit border border-gray-400 rounded-md flex divide-x divide-gray-400 overflow-hidden"}>
+                        className={"min-h-0 h-fit border border-gray-400 rounded-md flex flex-wrap divide-x divide-gray-400 overflow-hidden"}>
                         {Object.values(Period).map((value, index) => {
                             return (
                                 <span
                                     key={index}
                                     className={`whitespace-nowrap px-2 py-2 text-xs text-black font-semibold cursor-pointer transition-colors ease-in-out duration-300 overflow-clip ${
-                                        selectedPeriod === value ? "bg-black text-white" : "bg-white"
+                                        periodMode === "preset" && selectedPeriod === value ? "bg-black text-white" : "bg-white"
                                     }`}
-                                    onClick={() => setSelectedPeriod(value)}
+                                    onClick={() => {
+                                        setPeriodMode("preset");
+                                        setSelectedPeriod(value);
+                                    }}
                                 >
                                   {value}
                                 </span>
                             );
                         })}
+                        <span
+                            className={`whitespace-nowrap px-2 py-2 text-xs text-black font-semibold cursor-pointer transition-colors ease-in-out duration-300 overflow-clip ${
+                                periodMode === "all" ? "bg-black text-white" : "bg-white"
+                            }`}
+                            onClick={() => setPeriodMode("all")}
+                        >
+                            Semua Waktu
+                        </span>
+                        <span
+                            className={`whitespace-nowrap px-2 py-2 text-xs text-black font-semibold cursor-pointer transition-colors ease-in-out duration-300 overflow-clip ${
+                                periodMode === "custom" ? "bg-black text-white" : "bg-white"
+                            }`}
+                            onClick={() => setPeriodMode("custom")}
+                        >
+                            Periode Kustom
+                        </span>
                     </div>
+                    {
+                        periodMode === "custom" &&
+                        <DatePicker
+                            onUpdate={({range}) => {
+                                setPeriodMode("custom");
+                                setCustomRange(range);
+                            }}
+                            placeholder="Pilih rentang tanggal"
+                            searchButtonText="Terapkan"
+                            showSearchButton={true}
+                            className="w-full md:w-auto"
+                        />
+                    }
                 </div>
+                {
+                    periodMode === "custom" && !customRangeForQuery &&
+                     // @ts-expect-error weird react 19 types error
+                    <Typography variant="small" className="text-gray-600 mb-2">
+                        Pilih rentang tanggal kustom lalu klik tombol Terapkan untuk menerapkan.
+                    </Typography>
+                }
+                {
+                    transactionsError &&
+                    // @ts-expect-error weird react 19 types error
+                    <Typography variant="small" className="text-red-600 mb-2">
+                        Gagal memuat ringkasan: {transactionsError instanceof Error ? transactionsError.message : "Terjadi kesalahan"}
+                    </Typography>
+                }
 
                 {/* Quick Summary Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -137,13 +262,21 @@ export default function FinancialSummaryPage() {
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8">
-                    <div className="flex flex-col gap-4">
+                    <div ref={(el) => { sectionRefs.current.transactionsTable = el; }} className={`w-full ${getSectionClass("transactionsTable")}`}>
                         {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
                             {/* @ts-expect-error weird react 19 types error */}
-                            <CardBody className="p-8 overflow-x-auto">
-                                {/* @ts-expect-error weird react 19 types error */}
-                                <Typography variant="h5" className="font-semibold">Pemasukan & Pengeluaran</Typography>
+                            <CardBody className="pt-0 px-8 pb-8 overflow-x-auto">
+                                <div className="-mx-8 px-8 pt-8 sticky top-0 z-10 flex items-start justify-between bg-white pb-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Typography variant="h5" className="font-semibold">Pemasukan & Pengeluaran</Typography>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Button size="sm" variant="text" className="min-w-fit"
+                                            aria-label={expandedSection === "transactionsTable" ? "Kembalikan" : "Perlebar"}
+                                            onClick={() => setExpandedSection(expandedSection === "transactionsTable" ? null : "transactionsTable")}>
+                                        {expandedSection === "transactionsTable" ? <FiMinimize2/> : <FiMaximize2/>}
+                                    </Button>
+                                </div>
                                 {
                                     isTransactionsSuccess &&
                                     <table className="min-w-full border border-gray-300 mt-4">
@@ -181,12 +314,23 @@ export default function FinancialSummaryPage() {
                                 </Typography>
                             </CardFooter>
                         </Card>
+                    </div>
+
+                    <div ref={(el) => { sectionRefs.current.category = el; }} className={`w-full ${getSectionClass("category")}`}>
                         {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
                             {/* @ts-expect-error weird react 19 types error */}
-                            <CardBody className="p-8 overflow-x-auto flex flex-col gap-y-6">
-                                {/* @ts-expect-error weird react 19 types error */}
-                                <Typography variant="h5" className="font-semibold">Rincian Kategori</Typography>
+                            <CardBody className="pt-0 px-8 pb-8 overflow-x-auto flex flex-col gap-y-6">
+                                <div className="-mx-8 px-8 pt-8 sticky top-0 z-10 flex items-start justify-between bg-white pb-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Typography variant="h5" className="font-semibold">Rincian Kategori</Typography>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Button size="sm" variant="text" className="min-w-fit"
+                                            aria-label={expandedSection === "category" ? "Kembalikan" : "Perlebar"}
+                                            onClick={() => setExpandedSection(expandedSection === "category" ? null : "category")}>
+                                        {expandedSection === "category" ? <FiMinimize2/> : <FiMaximize2/>}
+                                    </Button>
+                                </div>
                                 <div className={"flex gap-x-2 overflow-x-auto flex-shrink-0"}>
                                     {Object.keys(TransactionType).map(t => (
                                         <>
@@ -262,14 +406,22 @@ export default function FinancialSummaryPage() {
                             </CardBody>
                         </Card>
                     </div>
-                    <div className="flex flex-col gap-4">
+
+                    <div ref={(el) => { sectionRefs.current.graph = el; }} className={`w-full ${getSectionClass("graph")}`}>
                         {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
                             {/* @ts-expect-error weird react 19 types error */}
-                            <CardBody className="overflow-x-auto">
-                                {/* @ts-expect-error weird react 19 types error */}
-                                <Typography variant="h5" className="font-semibold p-2">Grafik Pemasukan &
-                                    Pengeluaran</Typography>
+                            <CardBody className="pt-0 px-8 pb-8 overflow-x-auto">
+                                <div className="-mx-8 px-8 pt-8 sticky top-0 z-10 flex items-start justify-between bg-white pb-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Typography variant="h5" className="font-semibold">Grafik Pemasukan & Pengeluaran</Typography>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Button size="sm" variant="text" className="min-w-fit"
+                                            aria-label={expandedSection === "graph" ? "Kembalikan" : "Perlebar"}
+                                            onClick={() => setExpandedSection(expandedSection === "graph" ? null : "graph")}>
+                                        {expandedSection === "graph" ? <FiMinimize2/> : <FiMaximize2/>}
+                                    </Button>
+                                </div>
                                 <IncomeExpenseGraph
                                     showPeriodPicker={false}
                                     isSuccess={isTransactionsSuccess}
@@ -280,12 +432,23 @@ export default function FinancialSummaryPage() {
                                 />
                             </CardBody>
                         </Card>
+                    </div>
+
+                    <div ref={(el) => { sectionRefs.current.recent = el; }} className={`w-full ${getSectionClass("recent")}`}>
                         {/* @ts-expect-error weird react 19 types error */}
                         <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
                             {/* @ts-expect-error weird react 19 types error */}
-                            <CardBody className="p-8 w-full">
-                                {/* @ts-expect-error weird react 19 types error */}
-                                <Typography variant="h5" className="font-semibold">Transaksi Terbaru</Typography>
+                            <CardBody className="pt-0 px-8 pb-8 w-full">
+                                <div className="-mx-8 px-8 pt-8 sticky top-0 z-10 flex items-start justify-between bg-white pb-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Typography variant="h5" className="font-semibold">Transaksi Terbaru</Typography>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Button size="sm" variant="text" className="min-w-fit"
+                                            aria-label={expandedSection === "recent" ? "Kembalikan" : "Perlebar"}
+                                            onClick={() => setExpandedSection(expandedSection === "recent" ? null : "recent")}>
+                                        {expandedSection === "recent" ? <FiMinimize2/> : <FiMaximize2/>}
+                                    </Button>
+                                </div>
                                 <div className={"overflow-auto"}>
                                     {
                                         isRecentSuccess && recentTransactions &&
@@ -303,7 +466,7 @@ export default function FinancialSummaryPage() {
                                                     <tbody>
                                                     {recentTransactions.map((txn, index) => (
                                                         <tr key={index}>
-                                                            <td className="px-4 py-2 border">{formatToDateTime(new Date(txn.date))}</td>
+                                                            <td className="px-4 py-2 border">{formatToDateTime(new Date(txn.date), false, false)}</td>
                                                             <td className="px-4 py-2 border">{txn.description}</td>
                                                             <td className="px-4 py-2 border">{formatToIDR(new Prisma.Decimal(txn.amount).toNumber())}</td>
                                                             <td className="px-4 py-2 border">{txn.type}</td>
