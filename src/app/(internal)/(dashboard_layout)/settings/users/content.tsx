@@ -35,7 +35,9 @@ export default function UsersContent({users}: UsersContentProps) {
     }),
     columnHelper.accessor(row => row.createdAt, {
       header: "Dibuat Pada",
-      cell: props => formatToDateTime(props.cell.getValue())
+      enableGlobalFilter: false,
+      enableColumnFilter: false,
+      cell: props => formatToDateTime(props.cell.getValue(), true, false),
     }),
   ];
 
