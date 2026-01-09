@@ -25,6 +25,7 @@ export type SelectProps<T> = {
     isSearchable?: boolean
     formatOptionLabel?: (data: SelectOption<T>) => React.ReactNode;
     styles?: StylesConfig<SelectOption<T>>;
+    className?: string
 };
 
 export function SelectComponent<T = string>({type = "select", ...props}: SelectProps<T>) {
@@ -73,6 +74,7 @@ export function SelectComponent<T = string>({type = "select", ...props}: SelectP
 
     return (
         <Component
+            className={props.className}
             menuPosition={"fixed"}
             onChange={(n: SelectOption<T> | null) => {
                 setValue(n ?? undefined);

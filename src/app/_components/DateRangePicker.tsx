@@ -7,6 +7,7 @@ import {DateRange, DayPicker} from "react-day-picker";
 import {formatToDateTime} from "@/app/_lib/util";
 import {AiOutlineLoading} from "react-icons/ai";
 import "react-day-picker/style.css";
+import {Placement} from "@floating-ui/react";
 
 export interface DatePickerProps {
     mode?: "single" | "range";
@@ -23,6 +24,7 @@ export interface DatePickerProps {
     max?: number;
     timeZone?: string;
     className?: string;
+    placement?: Placement;
 }
 
 export function DatePicker({
@@ -35,7 +37,8 @@ export function DatePicker({
                                min,
                                max,
                                timeZone = "UTC",
-                               className
+                               className,
+                               placement = "bottom-end",
                            }: DatePickerProps) {
     const today = new Date();
     const [dates, setDates] = useState<DateRange | undefined>(undefined);
@@ -130,7 +133,7 @@ export function DatePicker({
             <Popover
                 open={popoverOpen}
                 handler={() => setIsPopoverOpen(p => !p)}
-                placement="bottom-end"
+                placement={placement}
             >
                 <PopoverHandler>
                     {/* @ts-expect-error weird react 19 types error */}

@@ -97,6 +97,7 @@ export default function Sidebar({session, companyInfo}: SidebarProps) {
                 {name: 'Deposit', path: '/deposits', icon: <FaFileInvoiceDollar/>},
                 {name: 'Pemasukan', path: '/financials/incomes', icon: <FaFileInvoiceDollar/>},
                 {name: 'Pengeluaran', path: '/financials/expenses', icon: <FaFileInvoiceDollar/>},
+                {name: 'Export Transaksi', path: '/financials/export', icon: <FaFileInvoiceDollar/>},
 
                 // {name: 'Laporan', path: '/financials/reports', icon: <FaChartBar/>},
             ]
