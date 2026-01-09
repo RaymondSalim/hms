@@ -67,7 +67,9 @@ export default function GuestsContent({guests}: GuestsContentProps) {
         }),
         columnHelper.accessor(row => row.createdAt, {
             header: "Dibuat Pada",
-            cell: props => formatToDateTime(props.cell.getValue())
+            enableGlobalFilter: false,
+            enableColumnFilter: false,
+            cell: props => formatToDateTime(props.cell.getValue(), true, false),
         }),
     ];
 

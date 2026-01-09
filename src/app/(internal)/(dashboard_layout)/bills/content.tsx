@@ -117,27 +117,32 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             header: "ID",
             enableColumnFilter: true,
             size: 20,
+            meta: {filterType: "enumMulti"},
         }),
         columnHelper.accessor(row => row.bookings?.id, {
             id: "booking_id",
             header: "ID Pemesanan",
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
             cell: (row) => `#-${row.getValue()}`
         }),
         columnHelper.accessor(row => row.bookings?.rooms?.room_number, {
             id: "room_number",
             header: "Nomor Kamar",
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
         }),
         columnHelper.accessor(row => row.bookings?.tenants?.name, {
             id: "tenant_name",
             header: "Nama Penyewa",
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
         }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
             minSize: 275,
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
         }),
         columnHelper.accessor(row =>
             row.bill_item
@@ -146,6 +151,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
                 ).toNumber(), {
             header: "Jumlah",
             enableColumnFilter: true,
+            meta: {filterType: "currencyRange"},
             cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => {
@@ -156,6 +162,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
         }, {
             header: "Jumlah Terbayar",
             enableColumnFilter: true,
+            meta: {filterType: "currencyRange"},
             cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => {
@@ -177,6 +184,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
             id: "payment_status",
             header: "Status Pembayaran",
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
             cell: props => {
                 const status = props.getValue();
                 const chipProps = {
@@ -241,7 +249,8 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
         // @ts-ignore
         columns.splice(1, 0, columnHelper.accessor(row => row.bookings?.rooms?.locations?.name ?? "", {
                 header: "Lokasi",
-                size: 20
+                size: 20,
+                meta: {filterType: "enumMulti"},
             })
         );
     }

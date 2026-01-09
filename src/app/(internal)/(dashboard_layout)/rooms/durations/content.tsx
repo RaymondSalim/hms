@@ -33,8 +33,9 @@ export default function DurationsContent({contents}: ContentProps<Duration>) {
     }),
     columnHelper.accessor(row => row.createdAt, {
       header: "Dibuat Pada",
-      cell: props => formatToDateTime(props.cell.getValue()),
       enableGlobalFilter: false,
+      enableColumnFilter: false,
+      cell: props => formatToDateTime(props.cell.getValue(), true, false),
     }),
   ];
 

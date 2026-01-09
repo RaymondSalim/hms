@@ -19,6 +19,41 @@ export interface SimplifiedIncomeExpense {
     expenseData: number[];
 }
 
+type PresetIncomeExpenseArgs = { type: "preset"; period: Period; locationID?: number };
+type AllTimeIncomeExpenseArgs = { type: "all"; locationID?: number };
+type CustomIncomeExpenseArgs = { type: "custom"; range: { startDate: Date; endDate: Date }; locationID?: number };
+
+export type GroupedIncomeExpenseArgs = PresetIncomeExpenseArgs | AllTimeIncomeExpenseArgs | CustomIncomeExpenseArgs;
+
+type NormalizedIncomeExpenseArgs = {
+    type: "preset" | "all" | "custom";
+    period?: Period;
+    range?: { startDate: Date; endDate: Date };
+    locationID?: number;
+};
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function normalizeGroupedIncomeExpenseArgs(
+    periodOrOptions: Period | GroupedIncomeExpenseArgs,
+    locationID?: number
+): NormalizedIncomeExpenseArgs {
+    if (typeof periodOrOptions === "string") {
+        return {
+            type: "preset",
+            period: periodOrOptions,
+            locationID,
+        };
+    }
+
+    return {
+        type: periodOrOptions.type,
+        period: periodOrOptions.type === "preset" ? periodOrOptions.period : undefined,
+        range: periodOrOptions.type === "custom" ? periodOrOptions.range : undefined,
+        locationID: periodOrOptions.locationID ?? locationID,
+    };
+}
+
 export async function getOverviewData(locationID?: number) {
     const today = new Date();
     const sevenDaysAhead = new Date();
@@ -135,50 +170,95 @@ export async function getUpcomingEvents(locationID?: number) {
         });
 }
 
-export async function getGroupedIncomeExpense(
+export function getGroupedIncomeExpense(
     period: Period,
     locationID?: number
+): Promise<GroupedIncomeExpense>;
+export function getGroupedIncomeExpense(options: GroupedIncomeExpenseArgs): Promise<GroupedIncomeExpense>;
+export async function getGroupedIncomeExpense(
+    periodOrOptions: Period | GroupedIncomeExpenseArgs,
+    locationID?: number
 ): Promise<GroupedIncomeExpense> {
+    const normalizedArgs = normalizeGroupedIncomeExpenseArgs(periodOrOptions, locationID);
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = now;
     let groupBy: "day" | "month";
 
-    switch (period) {
-        case Period.SEVEN_DAYS:
-            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            groupBy = "day";
-            break;
-        case Period.ONE_MONTH:
-            startDate = new Date(now);
-            startDate.setMonth(now.getMonth() - 1);
-            groupBy = "day";
-            break;
-        case Period.THREE_MONTHS:
-            startDate = new Date(now);
-            startDate.setMonth(now.getMonth() - 3);
-            groupBy = "day";
-            break;
-        case Period.SIX_MONTHS:
-            startDate = new Date(now);
-            startDate.setMonth(now.getMonth() - 6);
-            groupBy = "day";
-            break;
-        case Period.ONE_YEAR:
-            startDate = new Date(now);
-            startDate.setFullYear(now.getFullYear() - 1);
-            groupBy = "month";
-            break;
-        default:
-            throw new Error("Invalid period");
+    if (normalizedArgs.type === "preset") {
+        switch (normalizedArgs.period) {
+            case Period.SEVEN_DAYS:
+                startDate = new Date(now.getTime() - 7 * DAY_IN_MS);
+                groupBy = "day";
+                break;
+            case Period.ONE_MONTH:
+                startDate = new Date(now);
+                startDate.setMonth(now.getMonth() - 1);
+                groupBy = "day";
+                break;
+            case Period.THREE_MONTHS:
+                startDate = new Date(now);
+                startDate.setMonth(now.getMonth() - 3);
+                groupBy = "day";
+                break;
+            case Period.SIX_MONTHS:
+                startDate = new Date(now);
+                startDate.setMonth(now.getMonth() - 6);
+                groupBy = "day";
+                break;
+            case Period.ONE_YEAR:
+                startDate = new Date(now);
+                startDate.setFullYear(now.getFullYear() - 1);
+                groupBy = "month";
+                break;
+            default:
+                throw new Error("Invalid period");
+        }
+    } else if (normalizedArgs.type === "all") {
+        const earliestTransaction = await prisma.transaction.aggregate({
+            _min: { date: true },
+            where: {
+                location_id: normalizedArgs.locationID,
+            },
+        });
+
+        startDate = earliestTransaction._min.date ? new Date(earliestTransaction._min.date) : now;
+        // For very long ranges, use monthly grouping to avoid overly dense graphs
+        groupBy = "month";
+    } else {
+        if (!normalizedArgs.range) {
+            throw new Error("Rentang tanggal kustom belum ditentukan");
+        }
+
+        startDate = new Date(normalizedArgs.range.startDate);
+        endDate = new Date(normalizedArgs.range.endDate);
+
+        if (startDate > endDate) {
+            throw new Error("Rentang tanggal tidak valid: tanggal mulai setelah tanggal akhir");
+        }
+
+        const diffDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / DAY_IN_MS));
+        groupBy = diffDays > 90 ? "month" : "day";
     }
 
-    const dateRange = getDatesInRange(startDate, now, groupBy);
+    const startDateNormalized = new Date(startDate);
+    startDateNormalized.setHours(0, 0, 0, 0);
+
+    let endDateNormalized = new Date(endDate);
+    endDateNormalized.setHours(23, 59, 59, 999);
+
+    if (groupBy === "month") {
+        startDateNormalized.setDate(1);
+        endDateNormalized = new Date(endDateNormalized.getFullYear(), endDateNormalized.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
+
+    const dateRange = getDatesInRange(startDateNormalized, endDateNormalized, groupBy);
 
     // Fetch income transactions
     const incomeTransactions = await prisma.transaction.findMany({
             where: {
-                date: { gte: startDate, lte: now },
-                location_id: locationID,
+                date: { gte: startDateNormalized, lte: endDateNormalized },
+                location_id: normalizedArgs.locationID,
                 type: TransactionType.INCOME,
             },
         orderBy: { date: "asc" },
@@ -187,8 +267,8 @@ export async function getGroupedIncomeExpense(
     // Fetch expense transactions
     const expenseTransactions = await prisma.transaction.findMany({
             where: {
-                date: { gte: startDate, lte: now },
-                location_id: locationID,
+                date: { gte: startDateNormalized, lte: endDateNormalized },
+                location_id: normalizedArgs.locationID,
                 type: TransactionType.EXPENSE,
             },
         orderBy: { date: "asc" },
@@ -197,7 +277,7 @@ export async function getGroupedIncomeExpense(
     // Group transactions based on date
     const groupedIncome: { [key: string]: Transaction[] } = {};
     incomeTransactions.forEach((tx) => {
-        const dateKey = groupBy === "day" ? format(tx.date, "dd-MM-yyyy") : format(tx.date, "MMM yyyy");
+        const dateKey = groupBy === "day" ? format(tx.date, "dd-MMM-yyyy") : format(tx.date, "MMM yyyy");
         if (!groupedIncome[dateKey]) {
             groupedIncome[dateKey] = [];
         }
@@ -206,7 +286,7 @@ export async function getGroupedIncomeExpense(
 
     const groupedExpense: { [key: string]: Transaction[] } = {};
     expenseTransactions.forEach((tx) => {
-        const dateKey = groupBy === "day" ? format(tx.date, "dd-MM-yyyy") : format(tx.date, "MMM yyyy");
+        const dateKey = groupBy === "day" ? format(tx.date, "dd-MMM-yyyy") : format(tx.date, "MMM yyyy");
         if (!groupedExpense[dateKey]) {
             groupedExpense[dateKey] = [];
         }

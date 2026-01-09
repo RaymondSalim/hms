@@ -71,7 +71,9 @@ export default function TenantsContent({tenants}: TenantsContentProps) {
         }),
         columnHelper.accessor(row => row.createdAt, {
             header: "Dibuat Pada",
-            cell: props => formatToDateTime(props.cell.getValue())
+            enableGlobalFilter: false,
+            enableColumnFilter: false,
+            cell: props => formatToDateTime(props.cell.getValue(), true, false),
         }),
         columnHelper.accessor(row => row.status, {
             id: 'status',
