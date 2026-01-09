@@ -15,6 +15,7 @@ const nextConfig = {
         NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF: process.env.VERCEL_GIT_COMMIT_REF,
         NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
     },
+    serverExternalPackages: ["pdfkit"],
 };
 
 export default nextConfig;
