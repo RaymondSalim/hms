@@ -31,28 +31,34 @@ export default function ExpensesContent({expenses, refetchFn}: ExpensesContentPr
 
     const columnHelper = createColumnHelper<typeof expenses[0]>();
     const columns = [
-        columnHelper.accessor(row => formatToDateTime(row.date, false), {
+        columnHelper.accessor(row => row.date, {
             id: "date",
-            header: "Date",
-            cell: props => props.getValue()
+            header: "Tanggal",
+            meta: {filterType: "dateRange"},
+            cell: props => formatToDateTime(props.getValue(), false)
         }),
         columnHelper.accessor(row => row.category, {
             header: "Kategori",
+            meta: {filterType: "enumMulti"},
         }),
         columnHelper.accessor(row => new Prisma.Decimal(row.amount).toNumber(), {
             header: "Jumlah",
+            meta: {filterType: "currencyRange"},
             cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => row.description, {
             header: "Deskripsi",
-            minSize: 200
+            minSize: 200,
+            meta: {filterType: "enumMulti"},
         }),
         columnHelper.accessor(row => row.booking?.id || "", {
             header: "Booking ID",
+            meta: {filterType: "enumMulti"},
             cell: props => props.row.original.booking?.id ? `#${props.row.original.booking.id}` : "-"
         }),
         columnHelper.accessor(row => row.room_number || "", {
             header: "Nomor Kamar",
+            meta: {filterType: "enumMulti"},
             cell: props => props.row.original.room_number || "-"
         }),
         // columnHelper.display({
@@ -81,7 +87,8 @@ export default function ExpensesContent({expenses, refetchFn}: ExpensesContentPr
         // @ts-ignore
         columns.splice(1, 0, columnHelper.accessor(row => row.bookings?.rooms?.locations.name ?? "", {
                 header: "Lokasi",
-                size: 20
+                size: 20,
+                meta: {filterType: "enumMulti"},
             })
         );
     }

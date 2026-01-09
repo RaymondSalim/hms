@@ -4,6 +4,7 @@ import type {CommonProviderOptions} from "@auth/core/src/providers";
 import type {Awaitable} from "@auth/core/src/types";
 import {DefaultSession} from "next-auth";
 import {SiteUser, User} from "@prisma/client";
+import {FilterType} from "@/app/_components/tanTable/tanTable";
 
 declare module "next-auth" {
 
@@ -38,5 +39,6 @@ declare module '@tanstack/react-table' {
   // Add a `hidden?` flag to every column's meta
   interface ColumnMeta<TData extends unknown, TValue> {
     hidden?: boolean;
+    filterType?: FilterType
   }
 }

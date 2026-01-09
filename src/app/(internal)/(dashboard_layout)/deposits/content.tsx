@@ -5,7 +5,7 @@ import {createColumnHelper} from "@tanstack/react-table";
 import {TableContent} from "@/app/_components/pageContent/TableContent";
 import {Deposit, DepositStatus} from "@prisma/client";
 import {deleteDepositAction, upsertDepositAction} from "./deposit-action";
-import {formatToIDR, getDepositStatusLabel} from "@/app/_lib/util";
+import {formatToDateTime, formatToIDR, getDepositStatusLabel} from "@/app/_lib/util";
 import {DepositForm} from "./form";
 import {toast} from "react-toastify";
 
@@ -65,15 +65,18 @@ export default function DepositsContent({initialDeposits}: { initialDeposits: De
         }),
         columnHelper.accessor((row) => row.received_date, {
             header: "Diterima Pada",
-            cell: props => props.getValue() ? new Date(props.getValue()!).toLocaleString() : ""
+            meta: {filterType: "dateRange"},
+            cell: props => props.getValue() ? formatToDateTime(props.getValue()!, false, false) : "-"
         }),
         columnHelper.accessor((row) => row.applied_at, {
             header: "Digunakan Pada",
-            cell: props => props.getValue() ? new Date(props.getValue()!).toLocaleString() : ""
+            meta: {filterType: "dateRange"},
+            cell: props => props.getValue() ? formatToDateTime(props.getValue()!, false, false) : "-"
         }),
         columnHelper.accessor((row) => row.refunded_at, {
             header: "Dikembalikan Pada",
-            cell: props => props.getValue() ? new Date(props.getValue()!).toLocaleString() : ""
+            meta: {filterType: "dateRange"},
+            cell: props => props.getValue() ? formatToDateTime(props.getValue()!, false, false) : "-"
         }),
     ];
 

@@ -245,11 +245,13 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             header: "ID",
             enableColumnFilter: true,
             size: 20,
+            meta: {filterType: "enumMulti"},
         }),
         columnHelper.accessor(row => `${row.tenants?.name} | ${row.tenants?.phone}`, {
             id: "tenant",
             header: "Penyewa",
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
             cell: props => {
                 const data = props.row.original.tenants;
                 return ( // TODO! Make link
@@ -267,22 +269,30 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             id: "status",
             header: "Status",
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
             cell: props => <span className={colorMapping.get(props.getValue() ?? "default")}>{props.getValue()}</span>
         }),
         columnHelper.accessor(row => row.rooms?.room_number, {
             id: "room_number",
             header: "Nomor Kamar",
             enableColumnFilter: true,
+            meta: {filterType: "enumMulti"},
         }),
-        columnHelper.accessor(row => formatToDateTime(row.start_date, false), {
+        columnHelper.accessor(row => row.start_date, {
             header: "Tanggal Mulai",
+            meta: {filterType: "dateRange"},
+            cell: props => formatToDateTime(props.getValue(), false)
         }),
-        columnHelper.accessor(row => row.end_date ? formatToDateTime(row.end_date, false) : "-", {
+        columnHelper.accessor(row => row.end_date ?? null, {
             header: "Tanggal Selesai",
+            meta: {filterType: "dateRange"},
+            cell: props => props.getValue() ? formatToDateTime(props.getValue()!, false) : "-"
         }),
-        columnHelper.accessor(row => formatToIDR(new Prisma.Decimal(row.fee).toNumber()), {
+        columnHelper.accessor(row => new Prisma.Decimal(row.fee).toNumber(), {
             id: "fee",
             header: "Biaya",
+            meta: {filterType: "currencyRange"},
+            cell: props => formatToIDR(props.getValue()),
         }),
         columnHelper.display({
             header: "Tagihan",

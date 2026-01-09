@@ -31,16 +31,18 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
 
     const columnHelper = createColumnHelper<typeof incomes[0]>();
     const columns = [
-        columnHelper.accessor(row => formatToDateTime(row.date, false), {
+        columnHelper.accessor(row => row.date, {
             id: "date",
-            header: "Date",
-            cell: props => props.getValue()
+            header: "Tanggal",
+            meta: {filterType: "dateRange"},
+            cell: props => formatToDateTime(props.getValue(), false)
         }),
         columnHelper.accessor(row => row.category, {
             header: "Kategori",
         }),
         columnHelper.accessor(row => new Prisma.Decimal(row.amount).toNumber(), {
             header: "Jumlah",
+            meta: {filterType: "currencyRange"},
             cell: props => formatToIDR(props.getValue())
         }),
         columnHelper.accessor(row => row.description, {

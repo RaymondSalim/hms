@@ -37,19 +37,23 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
     columnHelper.accessor(row => row.id, {
       id: "id",
       header: "ID",
-      size: 20
+      size: 20,
+      meta: {filterType: "enumMulti"},
     }),
     columnHelper.accessor(row => row.room_number, {
       id: "room_number",
-      header: "Nomor Kamar"
+      header: "Nomor Kamar",
+      meta: {filterType: "enumMulti"},
     }),
     columnHelper.accessor(row => row.roomtypes?.type, {
       id: "type",
-      header: "Tipe Kamar"
+      header: "Tipe Kamar",
+      meta: {filterType: "enumMulti"},
     }),
     columnHelper.accessor(row => row.roomstatuses?.status, {
       id: "status",
       header: "Status",
+      meta: {filterType: "enumMulti"},
     }),
     columnHelper.display({
       header: "Status Pemesanan",
@@ -103,7 +107,9 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
 
     columnHelper.accessor(row => row.createdAt, {
       header: "Dibuat Pada",
-      cell: props => formatToDateTime(props.cell.getValue())
+      enableGlobalFilter: false,
+      enableColumnFilter: false,
+      cell: props => formatToDateTime(props.cell.getValue(), true, false),
     }),
   ];
 
@@ -112,7 +118,8 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
     columns.splice(1, 0, columnHelper.accessor(row => row.locations?.name, {
         id: "location",
         header: "Lokasi",
-        size: 20
+        size: 20,
+        meta: {filterType: "enumMulti"},
       })
     );
   }
