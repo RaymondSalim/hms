@@ -222,7 +222,7 @@ describe('Booking Actions', () => {
         it('should handle prorated billing when start_date is not the first of the month', async () => {
             const startDate = new Date(2024, 10, 15);
             const mockBookingData = {
-                fee: 1500,
+                fee: new Prisma.Decimal(1500),
                 addOns: [],
                 start_date: startDate,
                 tenant_id: 'tenant-1',
