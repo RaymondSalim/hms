@@ -50,6 +50,7 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
             minSize: 200
         }),
         columnHelper.accessor(row => row.booking?.id || "", {
+            id: "booking_id",
             header: "Booking ID",
             cell: props => props.row.original.booking?.id ? `#${props.row.original.booking.id}` : "-"
         }),
@@ -131,6 +132,7 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
             //         }
             //     ]
             // }}
+            persistFiltersToUrl
             customDialog={
                 // @ts-expect-error weird react 19 types error
                 <Dialog
