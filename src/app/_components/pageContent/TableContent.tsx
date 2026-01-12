@@ -14,7 +14,7 @@ import {
     useReactTable
 } from "@tanstack/react-table";
 import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useRef, useState} from "react";
-import TanTable, {RowAction} from "@/app/_components/tanTable/tanTable";
+import TanTable, {RowAction, smartFilterFn} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
 import {Button, Dialog, IconButton, Input, Option, Select, Typography} from "@material-tailwind/react";
 import {FaArrowLeft, FaArrowRight, FaPlus} from "react-icons/fa6";
@@ -29,7 +29,7 @@ import {
 import {GenericActionsType} from "@/app/_lib/actions";
 import {toast} from "react-toastify";
 import {rankItem} from '@tanstack/match-sorter-utils';
-import {FilterFn} from '@tanstack/table-core';
+import {FilterFn} from "@tanstack/table-core";
 import SmartSearchInput, {SmartSearchFilter} from "@/app/_components/input/smartSearchInput";
 import {SelectOption} from "@/app/_components/input/select";
 import {objectToStringArray} from "@/app/_lib/util";
@@ -308,12 +308,6 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         const isSearchAction = props.queryParams.action === undefined || props.queryParams.action === "search";
         if (!isSearchAction) return;
 
-        const hasSessionPreset = props.persistFiltersToUrl && (
-            (sessionPreset.global !== undefined && sessionPreset.global !== "") ||
-            (sessionPreset.columnFilters?.length ?? 0) > 0
-        );
-        if (hasSessionPreset) return;
-
         const values = 'values' in props.queryParams ? props.queryParams.values : undefined;
         if (!values) return;
 
@@ -336,7 +330,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
         defaultColumn: {
             minSize: 0,
             size: 0,
-            filterFn: "includesString",
+            filterFn: smartFilterFn,
         },
         columns: columns,
         data: contentsState,
@@ -425,6 +419,12 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
     }, [props.queryParams]);
 
     const smartSearchInputInitialValues = useMemo(() => {
+        if (props.queryParams &&
+            (props.queryParams.action == undefined || props.queryParams.action == "search") &&
+            props.queryParams.values) {
+            return objectToStringArray(props.queryParams.values);
+        }
+
         if (props.persistFiltersToUrl) {
             const preset: string[] = [];
             sessionPreset.columnFilters.forEach(cf => {
@@ -434,12 +434,6 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 preset.push(sessionPreset.global);
             }
             if (preset.length > 0) return preset;
-        }
-
-        if (props.queryParams &&
-            (props.queryParams.action == undefined || props.queryParams.action == "search") &&
-            props.queryParams.values) {
-            return objectToStringArray(props.queryParams.values);
         }
 
         return undefined;
