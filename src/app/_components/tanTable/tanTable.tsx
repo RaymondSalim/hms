@@ -1,4 +1,4 @@
-import {Table} from "@tanstack/table-core";
+import {FilterFn, Table} from "@tanstack/table-core";
 import {Button, Checkbox, Input, Popover, PopoverContent, PopoverHandler, Typography} from "@material-tailwind/react";
 import {flexRender} from "@tanstack/react-table";
 import {MdDelete, MdEdit, MdFilterList, MdKeyboardArrowRight} from "react-icons/md";
@@ -21,7 +21,7 @@ type RangeFilterValue = { kind: "range", min?: string, max?: string };
 type DateRangeFilterValue = { kind: "dateRange", from?: string, to?: string };
 type BooleanFilterValue = { kind: "boolean", value?: boolean };
 
-type SupportedFilterValue =
+export type SupportedFilterValue =
     | EnumMultiFilterValue
     | RangeFilterValue
     | DateRangeFilterValue
@@ -30,8 +30,8 @@ type SupportedFilterValue =
     | undefined;
 
 const isLegacyFilterType = (filterType?: FilterType) => {
-    // Legacy path keeps the existing value-list checkbox UX
-    return !filterType || filterType === "enumMulti";
+    // Legacy path keeps the existing value-list checkbox UX for enum multi only
+    return filterType === "enumMulti";
 };
 
 const getDefaultFilterValue = (filterType: FilterType): SupportedFilterValue => {
@@ -57,11 +57,11 @@ const coerceNumber = (val: unknown): number | null => {
     return Number.isNaN(num) ? null : num;
 };
 
-const applyFilterPredicate = (cellValue: unknown, filterValue: SupportedFilterValue, filterType?: FilterType) => {
+export const applyFilterPredicate = (cellValue: unknown, filterValue: SupportedFilterValue, filterType?: FilterType) => {
     if (!filterValue) return true;
 
-    // Legacy: comma separated string of values
-    if (isLegacyFilterType(filterType) && typeof filterValue === "string") {
+    // Legacy enumMulti: comma separated string of values
+    if (filterType === "enumMulti" && typeof filterValue === "string") {
         const selectedValues = filterValue.split(',').filter(Boolean);
         if (selectedValues.length === 0) return true;
         return selectedValues.includes(String(cellValue));
@@ -108,6 +108,12 @@ const applyFilterPredicate = (cellValue: unknown, filterValue: SupportedFilterVa
         default:
             return true;
     }
+};
+
+export const smartFilterFn: FilterFn<any> = (row, columnId, filterValue) => {
+    const column = row.getAllCells?.().find(cell => cell.column.id === columnId)?.column;
+    const filterType: FilterType | undefined = (column?.columnDef.meta as any)?.filterType;
+    return applyFilterPredicate(row.getValue(columnId), filterValue as SupportedFilterValue, filterType);
 };
 
 export interface TanTableProps {
@@ -169,17 +175,6 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
         });
         return Array.from(values).sort();
     };
-
-    // Apply dynamic filter function to all filterable columns
-    useEffect(() => {
-        tanTable.getAllColumns().forEach(column => {
-            if (!column.getCanFilter()) return;
-            const filterType: FilterType | undefined = (column.columnDef.meta as any)?.filterType;
-            column.columnDef.filterFn = (row, columnId, filterValue) => {
-                return applyFilterPredicate(row.getValue(columnId), filterValue as SupportedFilterValue, filterType);
-            };
-        });
-    }, [tanTable]);
 
     // Update selected values when filter changes
     useEffect(() => {
