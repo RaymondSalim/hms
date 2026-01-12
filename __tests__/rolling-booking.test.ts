@@ -63,7 +63,7 @@ describe("Rolling Booking Feature", () => {
         name: "Addon Kulkas",
         // @ts-expect-error missing id, etc.
         pricing: mockAddonPricing
-    }
+    };
 
     const mockBookingWithAddons: Partial<BookingIncludeAddons> = {
         ...mockBooking,
@@ -72,10 +72,11 @@ describe("Rolling Booking Feature", () => {
                 addon_id: 'addon-1',
                 // @ts-expect-error pricing type
                 addOn: mockAddon,
-                is_rolling: false,
+                is_rolling: true,
+                start_date: mockBooking.start_date!,
             }
         ],
-    }
+    };
 
     describe("generateInitialBillsForRollingBooking", () => {
         it("should generate a prorated bill for the first month and full bills for all subsequent months up to current month", async () => {
@@ -164,6 +165,76 @@ describe("Rolling Booking Feature", () => {
             const secondBillItems = bills[1].bill_item?.create as any[];
             expect(secondBillItems).toHaveLength(1);
             expect(secondBillItems?.[0].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
+        });
+
+        it ("should include addon in bills when present", async () => {
+            // Use a fixed date for testing - September 2024
+            const mockDate = new Date("2024-09-15T00:00:00.000Z");
+
+            const bills = await generateInitialBillsForRollingBooking(mockBookingWithAddons as BookingIncludeAddonsAndDeposit, mockDate);
+            // Should generate bills for: July (prorated), Aug, Sep (3 bills total)
+            expect(bills).toHaveLength(3);
+
+            // First bill should have both room fee and addon fee
+            const firstBillItems = bills[0].bill_item?.create as any[];
+            expect(firstBillItems).toHaveLength(2);
+            expect(firstBillItems?.[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
+            expect(firstBillItems?.[1].description).toContain("Biaya Layanan Tambahan");
+            expect(Number(firstBillItems?.[0].amount)).toBeCloseTo(1741935.48);
+            expect(Number(firstBillItems?.[1].amount)).toBeCloseTo(300000); // addon fee
+
+            // Second bill should have both room fee and second resident fee
+            const secondBillItems = bills[1].bill_item?.create as any[];
+            expect(secondBillItems).toHaveLength(1);
+            expect(secondBillItems?.[0].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
+            expect(Number(secondBillItems?.[0].amount)).toBe(2000000);
+
+            // Third bill should have both room fee and second resident fee
+            const thirdBillItems = bills[2].bill_item?.create as any[];
+            expect(thirdBillItems).toHaveLength(2);
+            expect(thirdBillItems?.[0].description).toBe("Sewa Kamar (1 September 2024 - 30 September 2024)");
+            expect(thirdBillItems?.[1].description).toContain("Biaya Layanan Tambahan");
+            expect(Number(thirdBillItems?.[0].amount)).toBe(2000000);
+            expect(Number(thirdBillItems?.[1].amount)).toBe(104000); // prorated addon
+        });
+
+        it ("should include addon in bills when present case #2", async () => {
+            // Use a fixed date for testing - October 2024
+            const mockDate = new Date("2024-10-15T00:00:00.000Z");
+
+            const bills = await generateInitialBillsForRollingBooking(mockBookingWithAddons as BookingIncludeAddonsAndDeposit, mockDate);
+            // Should generate bills for: July (prorated), Aug, Sep, Oct (4 bills total)
+            expect(bills).toHaveLength(4);
+
+            // First bill should have both room fee and addon fee
+            const firstBillItems = bills[0].bill_item?.create as any[];
+            expect(firstBillItems).toHaveLength(2);
+            expect(firstBillItems?.[0].description).toBe("Sewa Kamar (5 Juli 2024 - 31 Juli 2024)");
+            expect(firstBillItems?.[1].description).toContain("Biaya Layanan Tambahan");
+            expect(Number(firstBillItems?.[0].amount)).toBeCloseTo(1741935.48);
+            expect(Number(firstBillItems?.[1].amount)).toBeCloseTo(300000); // addon fee
+
+            // Second bill should have both room fee and second resident fee
+            const secondBillItems = bills[1].bill_item?.create as any[];
+            expect(secondBillItems).toHaveLength(1);
+            expect(secondBillItems?.[0].description).toBe("Sewa Kamar (1 Agustus 2024 - 31 Agustus 2024)");
+            expect(Number(secondBillItems?.[0].amount)).toBe(2000000);
+
+            // Third bill should have both room fee and second resident fee
+            const thirdBillItems = bills[2].bill_item?.create as any[];
+            expect(thirdBillItems).toHaveLength(2);
+            expect(thirdBillItems?.[0].description).toBe("Sewa Kamar (1 September 2024 - 30 September 2024)");
+            expect(thirdBillItems?.[1].description).toContain("Biaya Layanan Tambahan");
+            expect(Number(thirdBillItems?.[0].amount)).toBe(2000000);
+            expect(Number(thirdBillItems?.[1].amount)).toBe(104000); // prorated addon
+
+            // Fourth bill should have both room fee and second resident fee
+            const fourthBillItems = bills[3].bill_item?.create as any[];
+            expect(fourthBillItems).toHaveLength(2);
+            expect(fourthBillItems?.[0].description).toBe("Sewa Kamar (1 Oktober 2024 - 31 Oktober 2024)");
+            expect(fourthBillItems?.[1].description).toContain("Biaya Layanan Tambahan");
+            expect(Number(fourthBillItems?.[0].amount)).toBe(2000000);
+            expect(Number(fourthBillItems?.[1].amount)).toBe(120000);
         });
 
         test("issue 2025-09-03", async () => {
@@ -294,7 +365,7 @@ describe("Rolling Booking Feature", () => {
             expect(thirdBillItems?.[0].description).toBe("Sewa Kamar (1 April 2025 - 30 April 2025)");
             expect(thirdBillItems?.[1].description).toContain("Biaya Penghuni Kedua");
             expect(thirdBillItems?.[2].description).toContain("kulkas perbulan");
-        })
+        });
     });
 
     describe("generateNextMonthlyBill (Cron Job Simulation)", () => {
