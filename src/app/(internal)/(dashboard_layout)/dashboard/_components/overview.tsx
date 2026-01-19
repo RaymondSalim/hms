@@ -7,6 +7,7 @@ import {useHeader} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
 import {Popover, PopoverContent, PopoverHandler} from "@material-tailwind/react";
 import React, {useState} from "react";
+import {formatToDateTime} from "@/app/_lib/util";
 
 export default function Overview() {
     const dashboardContext = useHeader();
@@ -125,7 +126,7 @@ export default function Overview() {
             <div className={styles.overviewHeaderContainer}>
                 <h2>Ringaksan</h2>
                 {isSuccess &&
-                    <div className={styles.overviewDate}>{`${data?.date_range.start} - ${data?.date_range.end}`}</div>}
+                    <div className={styles.overviewDate}>{`${formatToDateTime(new Date(data?.date_range.start), false, false)} - ${formatToDateTime(new Date(data?.date_range.end), false, false)}`}</div>}
             </div>
             {
                 <div className={styles.overviewContent}>
