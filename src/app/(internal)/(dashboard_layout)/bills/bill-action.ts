@@ -803,7 +803,7 @@ export async function generateBookingBillandBillItems(
     data: PartialBy<Pick<UpsertBookingPayload, "fee" | "start_date" | "second_resident_fee">, "second_resident_fee">,
     duration: Pick<Duration, "month_count">
 ) {
-    const fee = data.fee;
+    const fee = new Prisma.Decimal(data.fee);
     const startDate = new Date(data.start_date);
     let endDate = new Date();
 
@@ -816,21 +816,21 @@ export async function generateBookingBillandBillItems(
         // Calculate prorated amount if start_date is not the first of the month
         if (startDate.getDate() !== 1) {
             const remainingDays = totalDaysInMonth - startDate.getDate() + 1;
-            const dailyRate = Number(fee) / totalDaysInMonth;
-            const proratedAmount = dailyRate * remainingDays;
+            const dailyRate = fee.div(totalDaysInMonth);
+            const proratedAmount = dailyRate.mul(remainingDays);
 
             let bi = [];
             let billItemDate = `(${startDate.toLocaleString('default', {month: 'long'})} ${startDate.getDate()}-${totalDaysInMonth})`;
             bi.push({
-                amount: new Prisma.Decimal(Math.round(proratedAmount)),
+                amount: proratedAmount.round(),
                 description: `Biaya Sewa Kamar ${billItemDate}`,
                 type: BillType.GENERATED
             });
             if (data.second_resident_fee) {
-                const dailyRate = Number(data.second_resident_fee) / totalDaysInMonth;
-                const proratedAmount = dailyRate * remainingDays;
+                const dailyRate = new Prisma.Decimal(data.second_resident_fee).div(totalDaysInMonth);
+                const proratedAmount = dailyRate.mul(remainingDays);
                 bi.push({
-                    amount: new Prisma.Decimal(Math.round(proratedAmount)),
+                    amount: proratedAmount.round(),
                     description: `Biaya Penghuni Kedua ${billItemDate}`,
                     type: BillType.GENERATED
                 });
@@ -860,13 +860,13 @@ export async function generateBookingBillandBillItems(
                 let billItemDate = `(${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`;
 
                 bi.push({
-                    amount: new Prisma.Decimal(fee.round()),
+                    amount: fee.round(),
                     description: `Biaya Sewa Kamar ${billItemDate}`,
                     type: BillType.GENERATED
                 });
                 if (data.second_resident_fee) {
                     bi.push({
-                        amount: data.second_resident_fee.round(),
+                        amount: new Prisma.Decimal(data.second_resident_fee).round(),
                         description: `Biaya Penghuni Kedua ${billItemDate}`,
                         type: BillType.GENERATED
                     });
@@ -894,13 +894,13 @@ export async function generateBookingBillandBillItems(
             bi = [];
             billItemDate = `(${lastMonthStartDate.toLocaleString('default', {month: 'long'})} ${lastMonthStartDate.getDate()}-${lastMonthEndDate.getDate()})`;
             bi.push({
-                amount: new Prisma.Decimal(fee.round()),
+                amount: fee.round(),
                 description: `Biaya Sewa Kamar ${billItemDate}`,
                 type: BillType.GENERATED
             });
             if (data.second_resident_fee) {
                 bi.push({
-                    amount: data.second_resident_fee.round(),
+                    amount: new Prisma.Decimal(data.second_resident_fee).round(),
                     description: `Biaya Penghuni Kedua ${billItemDate}`,
                     type: BillType.GENERATED
                 });
@@ -930,13 +930,13 @@ export async function generateBookingBillandBillItems(
                 let bi = [];
                 let billItemDate = `(${billStartDate.toLocaleString('default', {month: 'long'})} ${billStartDate.getDate()}-${billEndDate.getDate()})`;
                 bi.push({
-                    amount: new Prisma.Decimal(fee.round()),
+                    amount: fee.round(),
                     description: `Biaya Sewa Kamar ${billItemDate}`,
                     type: BillType.GENERATED
                 });
                 if (data.second_resident_fee) {
                     bi.push({
-                        amount: data.second_resident_fee.round(),
+                        amount: new Prisma.Decimal(data.second_resident_fee).round(),
                         description: `Biaya Penghuni Kedua ${billItemDate}`,
                         type: BillType.GENERATED
                     });
