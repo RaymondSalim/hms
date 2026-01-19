@@ -104,7 +104,7 @@ export function SelectComponent<T = string>({type = "select", ...props}: SelectP
                 }),
             }}
             formatCreateLabel={(s) => `Buat "${s}"`}
-            noOptionsMessage={(s) => `Tidak Ada Pilihan ${s.inputValue.length > 0 ? '"${s.inputValue}"' : ""}`}
+            noOptionsMessage={(s) => `Tidak Ada Pilihan ${s.inputValue.length > 0 ? `"${s.inputValue}"` : ""}`}
         />
     );
 }
