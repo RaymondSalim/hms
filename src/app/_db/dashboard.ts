@@ -170,11 +170,6 @@ export async function getUpcomingEvents(locationID?: number) {
         });
 }
 
-export function getGroupedIncomeExpense(
-    period: Period,
-    locationID?: number
-): Promise<GroupedIncomeExpense>;
-export function getGroupedIncomeExpense(options: GroupedIncomeExpenseArgs): Promise<GroupedIncomeExpense>;
 export async function getGroupedIncomeExpense(
     periodOrOptions: Period | GroupedIncomeExpenseArgs,
     locationID?: number

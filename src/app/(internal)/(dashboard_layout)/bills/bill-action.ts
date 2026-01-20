@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
-import {AddOn, Bill, BillType, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
+import {AddOn, Bill, BillItem, BillType, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
     BillIncludeAll,
     billIncludeAll,
@@ -22,6 +22,7 @@ import {UpsertBookingPayload} from "@/app/(internal)/(dashboard_layout)/bookings
 import {after} from 'next/server';
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
+import {GenericActionsType} from "@/app/_lib/actions";
 import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
 import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 
@@ -973,6 +974,11 @@ export async function generateBookingBillandBillItems(
     };
 }
 
+type BillItemReturnType = {
+    bill: Bill | null,
+    billItem: BillItem
+};
+
 /**
  * Updates a bill item
  * @param billItemData - Bill item data to update
@@ -983,7 +989,7 @@ export async function updateBillItemAction(billItemData: {
     description?: string;
     amount?: number;
     internal_description?: string;
-}) {
+}): Promise<GenericActionsType<BillItemReturnType>> {
     const {success, data, error} = billItemUpdateSchema.safeParse(billItemData);
 
     if (!success) {
@@ -1042,7 +1048,7 @@ export async function updateBillItemAction(billItemData: {
  * @param id - The bill item ID to delete
  * @returns Success response with deleted bill item data or error information
  */
-export async function deleteBillItemAction(id: number) {
+export async function deleteBillItemAction(id: number): Promise<GenericActionsType<BillItemReturnType>> {
     after(() => {
         serverLogger.flush();
     });
@@ -1104,7 +1110,7 @@ export async function createBillItemAction(billItemData: {
     amount: number;
     internal_description?: string;
     type?: BillType;
-}) {
+}): Promise<GenericActionsType<BillItemReturnType>> {
     const {success, data, error} = billItemCreateSchema.safeParse(billItemData);
 
     if (!success) {

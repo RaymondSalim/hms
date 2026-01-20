@@ -25,7 +25,6 @@ export async function upsertTransactionAction(
 
     if (!success) {
         return toClient({
-            // @ts-expect-error amount type
             errors: error.format(),
         });
     }

@@ -656,7 +656,7 @@ export async function matchBillItemsToBills(
 export async function scheduleEndOfStayAction(data: {
     bookingId: number;
     endDate: Date;
-}) {
+}): Promise<GenericActionsType<boolean>> {
     const { bookingId, endDate } = data;
 
     const booking = await prisma.booking.findFirst({
@@ -920,7 +920,7 @@ export async function scheduleEndOfAddonAction(data: {
     bookingId: number;
     addonId: string;
     endDate: Date;
-}) {
+}): Promise<GenericActionsType<boolean>> {
     const { bookingId, addonId, endDate } = data;
 
     const bookingAddon = await prisma.bookingAddOn.findFirst({
