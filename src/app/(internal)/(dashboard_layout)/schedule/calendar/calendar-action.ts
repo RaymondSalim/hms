@@ -7,6 +7,9 @@ import {Event} from "@prisma/client";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export type CalenderEventRange = {
     startDate: Date | string,
@@ -138,7 +141,7 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
         events.push(eventData);
     });
 
-    return events;
+    return toClient(events);
 }
 
 export async function deleteCalendarEvent(id: number): Promise<GenericActionsType<boolean>> {
@@ -153,12 +156,12 @@ export async function deleteCalendarEvent(id: number): Promise<GenericActionsTyp
         });
     } catch (error) {
         serverLogger.error("[deleteCalendarEvent]", {error, event_id: id});
-        return {
+        return toClient({
             failure: "Request Unsuccessful",
-        };
+        });
     }
 
-    return {
+    return toClient({
         success: true,
-    };
+    });
 }

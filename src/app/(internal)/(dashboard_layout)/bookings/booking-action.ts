@@ -36,7 +36,10 @@ import {
 import {id as indonesianLocale} from "date-fns/locale";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
 import BillItemUncheckedCreateWithoutBillInput = Prisma.BillItemUncheckedCreateWithoutBillInput;
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 function processAddonsForPeriod(
     periodStartDate: Date,
@@ -118,9 +121,9 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
     const {success, data, error} = bookingSchema.safeParse(reqData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     after(() => {
@@ -143,7 +146,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
             });
 
             if (overlappingBooking) {
-                return { failure: `Kamar sudah terisi untuk tanggal tersebut (ID Pemesanan: ${overlappingBooking.id})` };
+                return toClient({ failure: `Kamar sudah terisi untuk tanggal tersebut (ID Pemesanan: ${overlappingBooking.id})` });
             }
 
             if (data.id) {
@@ -327,7 +330,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
 
                     return updatedBooking;
                 });
-                return { success: res };
+                return toClient({ success: res });
             } else {
                 const res = await prisma.$transaction(async (tx) => {
                     const { addOns: bookingAddons, deposit, ...bookingData } = data;
@@ -428,11 +431,11 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
 
                     return newBooking;
                 });
-                return { success: res };
+                return toClient({ success: res });
             }
         } catch (error) {
             serverLogger.error("[upsertBookingAction][Rolling]", {error});
-            return { failure: "Gagal memproses pemesanan bulanan." };
+            return toClient({ failure: "Gagal memproses pemesanan bulanan." });
         }
     }
 
@@ -444,9 +447,9 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
     });
 
     if (!duration) {
-        return {
+        return toClient({
             failure: "Invalid Duration ID"
-        };
+        });
     }
 
     const lastDate = getLastDateOfBooking(start_date, duration);
@@ -467,9 +470,9 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
     });
 
     if (overlappingBooking) {
-        return {
+        return toClient({
             failure: `Pemesanan tumpang tindih dengan ID: ${overlappingBooking.id}`
-        };
+        });
     }
 
     try {
@@ -481,14 +484,14 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
             // @ts-expect-error TS2345
             res = await createBooking(data, duration);
         }
-        return {
+        return toClient({
             ...res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[upsertBookingAction][PrismaKnownError]", {error});
             if (error.code == "P2002") {
-                return {failure: "Booking is taken"};
+                return toClient({failure: "Booking is taken"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[upsertBookingAction][PrismaUnknownError]", {error});
@@ -496,16 +499,16 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
             serverLogger.error("[upsertBookingAction]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }
 
 export async function getAllBookingsAction(...args: Parameters<typeof getAllBookings>) {
-    return getAllBookings(...args);
+    return getAllBookings(...args).then(toClient);
 }
 
 export async function getBookingsWithUnpaidBillsAction(...args: Parameters<typeof getBookingsWithUnpaidBills>) {
-    return getBookingsWithUnpaidBills(...args);
+    return getBookingsWithUnpaidBills(...args).then(toClient);
 }
 
 export async function deleteBookingAction(id: number) {
@@ -517,9 +520,9 @@ export async function deleteBookingAction(id: number) {
     });
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
@@ -529,14 +532,14 @@ export async function deleteBookingAction(id: number) {
             }
         });
 
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         serverLogger.error("deleteBookingAction", {error, booking_id: id});
-        return {
+        return toClient({
             failure: "Error deleting booking",
-        };
+        });
     }
 
 }
@@ -559,12 +562,12 @@ export async function checkInOutAction(data: {
     });
 
     if (!booking) {
-        return {
+        return toClient({
             failure: "Booking not found"
-        };
+        });
     }
 
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
         // Create the check in/out log
         const checkInOutLog = await tx.checkInOutLog.create({
             data: {
@@ -596,7 +599,7 @@ export async function checkInOutAction(data: {
         return {
             success: checkInOutLog
         };
-    });
+    }).then(toClient);
 }
 
 export async function matchBillItemsToBills(
@@ -663,30 +666,30 @@ export async function scheduleEndOfStayAction(data: {
     });
 
     if (!booking) {
-        return {
+        return toClient({
             failure: "Booking tidak ditemukan",
-        };
+        });
     }
 
     if (!booking.is_rolling) {
-        return {
+        return toClient({
             failure: "Booking bukan rolling",
-        };
+        });
     }
 
     if (endDate < booking.start_date) {
-        return {
+        return toClient({
             failure: "Tanggal selesai harus setelah tanggal mulai",
-        };
+        });
     }
 
     try {
         await scheduleEndOfRollingBooking(booking, endDate);
 
         revalidateTag("bookings");
-        return { success: true };
+        return toClient({ success: true });
     } catch (error) {
-        return { failure: "Gagal memperbarui pemesanan." };
+        return toClient({ failure: "Gagal memperbarui pemesanan." });
     }
 }
 
@@ -932,21 +935,21 @@ export async function scheduleEndOfAddonAction(data: {
     });
 
     if (!bookingAddon) {
-        return {
+        return toClient({
             failure: "Layanan tambahan tidak ditemukan",
-        };
+        });
     }
 
     if (!bookingAddon.is_rolling) {
-        return {
+        return toClient({
             failure: "Layanan tambahan bukan rolling",
-        };
+        });
     }
 
     if (endDate < bookingAddon.start_date) {
-        return {
+        return toClient({
             failure: "Tanggal selesai harus setelah tanggal mulai",
-        };
+        });
     }
 
     try {
@@ -961,8 +964,8 @@ export async function scheduleEndOfAddonAction(data: {
         });
 
         revalidateTag("bookings");
-        return { success: true };
+        return toClient({ success: true });
     } catch (error) {
-        return { failure: "Gagal memperbarui layanan tambahan." };
+        return toClient({ failure: "Gagal memperbarui layanan tambahan." });
     }
 }

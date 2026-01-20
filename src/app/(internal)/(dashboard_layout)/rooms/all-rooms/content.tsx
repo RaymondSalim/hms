@@ -10,7 +10,7 @@ import {deleteRoomAction, upsertRoomAction} from "@/app/(internal)/(dashboard_la
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Button, Dialog, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
-import {getSortedDurations} from "@/app/_db/duration";
+import {getSortedDurationsAction} from "@/app/(internal)/(dashboard_layout)/rooms/durations/duration-actions";
 import Link from "next/link";
 import {toast} from "react-toastify";
 
@@ -29,7 +29,7 @@ export default function RoomsContent({rooms, queryParams}: RoomsContentProps) {
 
   const {data: durationsData, isSuccess, isLoading} = useQuery({
     queryKey: ['rooms.durations'],
-    queryFn: () => getSortedDurations(),
+    queryFn: () => getSortedDurationsAction(),
   });
 
   const columnHelper = createColumnHelper<RoomsWithTypeAndLocationAndBookings>();

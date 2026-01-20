@@ -7,6 +7,7 @@ import {object, string} from "zod";
 import {
     createTenant,
     deleteTenant,
+    getTenantsWithRooms,
     TenantWithRooms,
     TenantWithRoomsAndSecondResident,
     updateTenantByID
@@ -17,6 +18,9 @@ import {OmitTimestamp, PartialBy} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 // Action to update tenants
 export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<GenericActionsType<TenantWithRoomsAndSecondResident>> {
@@ -26,9 +30,9 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
     const {success, data, error} = tenantSchemaWithOptionalID.safeParse(tenantData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
     const client = new S3Client({region: process.env.AWS_REGION});
 
@@ -53,9 +57,9 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
         }
     } catch (error) {
         serverLogger.error("[upsertTenantAction] error uploading to s3", {error});
-        return {
+        return toClient({
             failure: "Internal Server Error"
-        };
+        });
     }
 
     const familyCertificateFile = data?.family_certificate_file_data;
@@ -89,9 +93,9 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
         } catch (error) {
             serverLogger.warn("[upsertTenantAction] error deleting from s3", {error});
         }
-        return {
+        return toClient({
             failure: "Internal Server Error"
-        };
+        });
     }
 
     const secondTenantIDFile = data?.second_resident_id_file_data;
@@ -135,9 +139,9 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
         } catch (error) {
             serverLogger.error("[upsertTenantAction] error deleting from s3", {error});
         }
-        return {
+        return toClient({
             failure: "Internal Server Error"
-        };
+        });
     }
 
     let newTenantData: PartialBy<OmitTimestamp<Tenant>, "id"> = {
@@ -174,9 +178,9 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
             }
         });
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         // Delete S3 objects
         try {
@@ -198,14 +202,14 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[upsertTenantAction]", {error});
             if (error.code == "P2002") {
-                return {failure: "Duplikat Data"};
+                return toClient({failure: "Duplikat Data"});
             }
         }
         if (error instanceof Error) {
             serverLogger.error("[upsertTenantAction]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }
 
@@ -218,20 +222,26 @@ export async function deleteTenantAction(id: string): Promise<GenericActionsType
     });
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
         let res = await deleteTenant(parsedData.data.id);
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         serverLogger.error("[deleteTenantAction]", {error, tenant_id: id});
-        return {
+        return toClient({
             failure: "Error deleting tenant",
-        };
+        });
     }
+}
+
+export async function getTenantsWithRoomsAction(
+    ...args: Parameters<typeof getTenantsWithRooms>
+) {
+    return getTenantsWithRooms(...args).then(toClient);
 }

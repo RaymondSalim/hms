@@ -5,7 +5,7 @@ import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
-import {getTenantsWithRooms} from "@/app/_db/tenant";
+import {getTenantsWithRoomsAction} from "@/app/(internal)/(dashboard_layout)/residents/tenants/tenant-action";
 import TenantsContent from "@/app/(internal)/(dashboard_layout)/residents/tenants/content";
 
 export default function TenantsPage() {
@@ -22,7 +22,7 @@ export default function TenantsPage() {
 
   const {data: tenants, isLoading, isSuccess} = useQuery({
     queryKey: ['tenants', headerContext.locationID],
-    queryFn: () => getTenantsWithRooms(undefined, headerContext.locationID, undefined, undefined),
+    queryFn: () => getTenantsWithRoomsAction(undefined, headerContext.locationID, undefined, undefined),
   });
 
   return (

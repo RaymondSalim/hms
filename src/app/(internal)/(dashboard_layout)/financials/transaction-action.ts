@@ -6,6 +6,10 @@ import {GenericActionsType} from "@/app/_lib/actions";
 import prisma from "@/app/_lib/primsa";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+import {getTransactionsWithBookingInfo} from "@/app/_db/transaction";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 /**
  * Creates or Updates a transaction based on the presence of an ID.
@@ -20,10 +24,10 @@ export async function upsertTransactionAction(
     const { success, data, error } = transactionSchema.safeParse(transactionData);
 
     if (!success) {
-        return {
+        return toClient({
             // @ts-expect-error amount type
             errors: error.format(),
-        };
+        });
     }
 
     try {
@@ -58,12 +62,12 @@ export async function upsertTransactionAction(
             });
         }
 
-        return { success: result };
+        return toClient({ success: result });
     } catch (error) {
         serverLogger.error('[upsertTransactionAction]', {error});
-        return {
+        return toClient({
             failure: 'An error occurred while processing the transaction.',
-        };
+        });
     }
 }
 
@@ -76,10 +80,15 @@ export async function deleteTransactionAction(id: number): Promise<GenericAction
         const deletedTransaction = await prisma.transaction.delete({
             where: { id },
         });
-        return { success: deletedTransaction };
+        return toClient({ success: deletedTransaction });
     } catch (error) {
         serverLogger.error("[deleteTransactionAction]", {error, transaction_id: id});
-        return { failure: "Error deleting transaction" };
+        return toClient({ failure: "Error deleting transaction" });
     }
 }
 
+export async function getTransactionsWithBookingInfoAction(
+    ...args: Parameters<typeof getTransactionsWithBookingInfo>
+) {
+    return getTransactionsWithBookingInfo(...args).then(toClient);
+}

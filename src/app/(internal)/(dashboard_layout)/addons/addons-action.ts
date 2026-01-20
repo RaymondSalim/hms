@@ -8,6 +8,9 @@ import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@p
 import {AddonSchema} from "@/app/_lib/zod/addon/zod";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {after} from "next/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export type AddonIncludePricing = Prisma.AddOnGetPayload<{
     include: {
@@ -34,9 +37,9 @@ export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) 
     const {success, data, error} = AddonSchema.safeParse(reqData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     if (data.parent_addon_id) {
@@ -45,9 +48,9 @@ export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) 
         });
 
         if (!parent) {
-            return {
+            return toClient({
                 failure: "Invalid Parent ID"
-            };
+            });
         }
     }
 
@@ -116,14 +119,14 @@ export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) 
             });
         }
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[upsertAddonAction][PrismaKnownError]", {error});
             if (error.code == "P2002") {
-                return {failure: "Addon is taken"};
+                return toClient({failure: "Addon is taken"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[upsertAddonAction][PrismaUnknownError]", {error});
@@ -131,7 +134,7 @@ export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) 
             serverLogger.error("[upsertAddonAction]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }
 
@@ -144,9 +147,9 @@ export async function deleteAddOnAction(id: string) {
     });
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
@@ -156,14 +159,14 @@ export async function deleteAddOnAction(id: string) {
             }
         });
 
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         serverLogger.error("[deleteAddOnAction]", {error});
-        return {
+        return toClient({
             failure: "Error deleting addon",
-        };
+        });
     }
 
 }
@@ -208,9 +211,9 @@ export async function getAddonsByLocation(id?: number) {
         }
     });
 
-    return addons.map(addon => ({
+    return toClient(addons.map(addon => ({
         ...addon,
         pricing: addon.pricing.sort((p1, p2) => p1.interval_start - p2.interval_start),
         activeBookingsCount: addon.bookings.length
-    }));
+    })));
 }
