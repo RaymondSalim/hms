@@ -319,6 +319,9 @@ export function GuestInfo({guest}: GuestInfoProps) {
                                                         mode="single"
                                                         placeholder=""
                                                         showSearchButton={false}
+                                                        initialDate={{
+                                                            singleDate: editedStays[index].start_date
+                                                        }}
                                                         onUpdate={(data) => {
                                                             if (data.singleDate) {
                                                                 const newStays = [...editedStays];
@@ -338,6 +341,9 @@ export function GuestInfo({guest}: GuestInfoProps) {
                                                         mode="single"
                                                         placeholder=""
                                                         showSearchButton={false}
+                                                        initialDate={{
+                                                            singleDate: editedStays[index].end_date
+                                                        }}
                                                         onUpdate={(data) => {
                                                             if (data.singleDate) {
                                                                 const newStays = [...editedStays];

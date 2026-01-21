@@ -141,6 +141,9 @@ export default function FinancialExportPage() {
                             mode="range"
                             placeholder="Pilih rentang tanggal"
                             showSearchButton={false}
+                            initialDate={{
+                                range: exportRange
+                            }}
                             onUpdate={({range}) => setExportRange(range)}
                             disabled={allTime}
                             placement={"bottom-start"}

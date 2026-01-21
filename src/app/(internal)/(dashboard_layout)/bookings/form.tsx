@@ -448,6 +448,9 @@ export function BookingForm(props: BookingFormProps) {
                                         mode="single"
                                         placeholder="Pilih tanggal mulai"
                                         showSearchButton={false}
+                                        initialDate={{
+                                            singleDate: bookingData.start_date
+                                        }}
                                         onUpdate={(dateData) => {
                                             if (dateData.singleDate) {
                                                 setBookingData(p => ({
@@ -812,6 +815,9 @@ export function BookingForm(props: BookingFormProps) {
                                                             mode="single"
                                                             placeholder="Pilih tanggal mulai"
                                                             showSearchButton={false}
+                                                            initialDate={{
+                                                                singleDate: bookingData.addOns?.[index]?.start_date
+                                                            }}
                                                             onUpdate={(dateData) => {
                                                                 if (dateData.singleDate) {
                                                                     updateAddonEntry(index, "start_date", dateData.singleDate);
@@ -869,6 +875,9 @@ export function BookingForm(props: BookingFormProps) {
                                                                 mode="single"
                                                                 placeholder="Pilih tanggal selesai"
                                                                 showSearchButton={false}
+                                                                initialDate={{
+                                                                    singleDate: bookingData.addOns?.[index]?.end_date ?? undefined
+                                                                }}
                                                                 onUpdate={(dateData) => {
                                                                     if (dateData.singleDate) {
                                                                         updateAddonEntry(index, "end_date", dateData.singleDate);

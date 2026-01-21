@@ -2,7 +2,10 @@
 
 import {convertGroupedTransactionsToTotals, formatToDateTime, formatToIDR, preparePieChartData} from "@/app/_lib/util";
 import React, {useEffect, useRef, useState} from "react";
-import {getGroupedIncomeExpenseAction, getRecentTransactionsAction} from "@/app/(internal)/(dashboard_layout)/dashboard/dashboard-action";
+import {
+    getGroupedIncomeExpenseAction,
+    getRecentTransactionsAction
+} from "@/app/(internal)/(dashboard_layout)/dashboard/dashboard-action";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Period} from "@/app/_enum/financial";
 import {useQuery} from "@tanstack/react-query";
@@ -195,6 +198,9 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                     {
                         periodMode === "custom" &&
                         <DatePicker
+                            initialDate={{
+                                range: customRange
+                            }}
                             onUpdate={({range}) => {
                                 setPeriodMode("custom");
                                 setCustomRange(range);
