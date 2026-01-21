@@ -14,7 +14,7 @@ export function serializeForClient<T>(value: T): T {
   }
 
   if (value instanceof Date) {
-    return value.toISOString() as T;
+    return value as T;
   }
 
   if (Array.isArray(value)) {
