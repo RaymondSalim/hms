@@ -5,7 +5,7 @@ import React, {useEffect} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
-import {getTransactionsWithBookingInfo} from "@/app/_db/transaction";
+import {getTransactionsWithBookingInfoAction} from "@/app/(internal)/(dashboard_layout)/financials/transaction-action";
 import {TransactionType} from "@prisma/client";
 import ExpensesContent from "@/app/(internal)/(dashboard_layout)/financials/expenses/content";
 
@@ -28,7 +28,7 @@ export default function ExpensePage() {
     refetch
   } = useQuery({
     queryKey: ['expenses', 'location_id', headerContext.locationID],
-    queryFn: () => getTransactionsWithBookingInfo({
+    queryFn: () => getTransactionsWithBookingInfoAction({
       where: {
         location_id: headerContext.locationID,
         type: TransactionType.EXPENSE

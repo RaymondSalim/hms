@@ -8,6 +8,9 @@ import {number, object} from "zod";
 import {roomTypeSchemaWithOptionalID} from "@/app/_lib/zod/rooms/roomtypes";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export async function upsertRoomTypeAction(roomData: Partial<RoomType>): Promise<GenericActionsType<RoomType>> {
     after(() => {
@@ -16,9 +19,9 @@ export async function upsertRoomTypeAction(roomData: Partial<RoomType>): Promise
     const {success, data, error} = roomTypeSchemaWithOptionalID.safeParse(roomData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     try {
@@ -30,24 +33,24 @@ export async function upsertRoomTypeAction(roomData: Partial<RoomType>): Promise
             res = await createRoomType(data);
         }
 
-        return {
+        return toClient({
             success: res
-        };
+        });
 
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[upsertRoomTypeAction]", {error});
             switch (error.code) {
                 case "P2002":
-                    return {failure: "Room Type is taken"};
+                    return toClient({failure: "Room Type is taken"});
                 case "P2003":
-                    return {failure: "There are rooms with this type. Please remove or change the room types first"};
+                    return toClient({failure: "There are rooms with this type. Please remove or change the room types first"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[upsertRoomTypeAction]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }
 
@@ -60,27 +63,27 @@ export async function deleteRoomTypeAction(id: string): Promise<GenericActionsTy
     });
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
         let res = await deleteRoomType(parsedData.data.id);
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[deleteRoomTypeAction]", {error, room_type_id: id});
             switch (error.code) {
                 case "P2003":
-                    return {failure: "There are rooms with this type.\nPlease remove or change the room types first"};
+                    return toClient({failure: "There are rooms with this type.\nPlease remove or change the room types first"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[deleteRoomTypeAction]", {error, room_type_id: id});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }

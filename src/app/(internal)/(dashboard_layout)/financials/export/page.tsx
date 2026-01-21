@@ -7,7 +7,7 @@ import {DateRange} from "react-day-picker";
 import {DatePicker} from "@/app/_components/DateRangePicker";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
-import {getLocations} from "@/app/_db/location";
+import {getLocationsAction} from "@/app/(internal)/(dashboard_layout)/data-center/locations/location-action";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 
 export default function FinancialExportPage() {
@@ -25,7 +25,7 @@ export default function FinancialExportPage() {
     // Location Data
     const {data: locationData, isSuccess: locationDataSuccess} = useQuery({
         queryKey: ['header.location'],
-        queryFn: () => getLocations(),
+        queryFn: () => getLocationsAction(),
     });
     const [locationDataMapped, setLocationDataMapped] = useState<SelectOption<number>[]>([]);
     useEffect(() => {

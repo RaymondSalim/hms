@@ -8,6 +8,9 @@ import {createEvent, updateEventByID} from "@/app/_db/event";
 import {GenericActionsType} from "@/app/_lib/actions";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>): Promise<GenericActionsType<Event>> {
     after(() => {
@@ -16,9 +19,9 @@ export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>):
     const {success, data, error} = eventSchemaWithOptionalID.safeParse(reqData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     let res;
@@ -57,10 +60,10 @@ export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>):
             serverLogger.error("[upsertEventAction]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 
-    return {
+    return toClient({
         success: res
-    };
+    });
 }

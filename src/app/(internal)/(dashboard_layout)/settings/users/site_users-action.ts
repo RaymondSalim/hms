@@ -10,6 +10,9 @@ import {object, string} from "zod";
 import bcrypt from "bcrypt";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 // Action to update site users
 export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise<GenericActionsType<SiteUser>> {
@@ -22,7 +25,7 @@ export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise
         const currUser = await getUserByID(session.user.id);
         if (currUser) {
             if (currUser.role_id != 1) {
-                return {failure: "Unauthorized"};
+                return toClient({failure: "Unauthorized"});
             }
         }
     }
@@ -30,10 +33,10 @@ export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise
     const {success, data, error} = siteUserSchemaWithOptionalID.safeParse(userData);
 
     if (!success) {
-        return {
+        return toClient({
             // errors: Object.fromEntries(error.errors.entries())
             errors: error?.format()
-        };
+        });
     }
 
     const newData = {
@@ -56,20 +59,20 @@ export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise
             }
         }
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[register]", {error});
             if (error.code == "P2002") {
-                return {failure: "Alamat email telah terdaftar"};
+                return toClient({failure: "Alamat email telah terdaftar"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[register]", {error});
         }
 
-        return {failure: "Update unsuccessful"};
+        return toClient({failure: "Update unsuccessful"});
     }
 }
 
@@ -83,7 +86,7 @@ export async function deleteUserAction(id: string): Promise<GenericActionsType<P
         const currUser = await getUserByID(session.user.id);
         if (currUser) {
             if (currUser.role_id != 1) {
-                return {failure: "Unauthorized"};
+                return toClient({failure: "Unauthorized"});
             }
         }
     }
@@ -93,22 +96,22 @@ export async function deleteUserAction(id: string): Promise<GenericActionsType<P
     });
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     try {
         let res = await deleteUser(data!.id);
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         serverLogger.error("[deleteUserAction]", {error, user_id: id});
 
-        return {
+        return toClient({
             failure: "error"
-        };
+        });
     }
 }
