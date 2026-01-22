@@ -1,13 +1,47 @@
 name: Run Tests
 
 on:
+  push:
+    branches:
+      - "**"
   pull_request:
     branches:
       - main
 
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm test
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: hms_test
+          POSTGRES_USER: hms_test
+          POSTGRES_PASSWORD: hms_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd="pg_isready -U hms_test -d hms_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout repository
@@ -21,5 +55,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Jest tests
-        run: npm test
+      - name: Prepare database
+        env:
+          DATABASE_URL: postgresql://hms_test:hms_test@localhost:55432/hms_test?schema=public
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://hms_test:hms_test@localhost:55432/hms_test?schema=public
+          NODE_ENV: test
+        run: npm run test:integration
