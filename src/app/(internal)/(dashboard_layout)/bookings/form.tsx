@@ -620,6 +620,7 @@ export function BookingForm(props: BookingFormProps) {
                                                 </Typography>
                                             </label>
                                             <CurrencyInput
+                                                disabled={!!(bookingData.id && bookingData.is_rolling)}
                                                 name={"deposit"}
                                                 value={Number(bookingData.deposit.amount) || ""}
                                                 setValue={(newValue) => {
@@ -647,6 +648,11 @@ export function BookingForm(props: BookingFormProps) {
                                                     className: "before:content-none after:content-none",
                                                 }}
                                             />
+                                            {
+                                                bookingData.id && bookingData.is_rolling &&
+                                                // @ts-expect-error weird react 19 types error
+                                                <Typography color={"blue-gray"}>Deposit tidak bisa diubah untuk Pemesanan Rolling</Typography>
+                                            }
                                             {
                                                 fieldErrors?.deposit &&
                                                 // @ts-expect-error weird react 19 types error
