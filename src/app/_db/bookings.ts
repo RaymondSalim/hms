@@ -168,7 +168,7 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                         amount: depositRecord.amount,
                         description: 'Deposit Kamar',
                         related_id: { deposit_id: depositRecord.id },
-                        type: 'CREATED',
+                        type: BillType.GENERATED
                     }
                 });
             }
@@ -358,7 +358,7 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                         amount: depositRecord.amount,
                         description: 'Deposit Kamar',
                         related_id: { deposit_id: depositRecord.id },
-                        type: BillType.CREATED,
+                        type: BillType.GENERATED,
                     }
                 });
             }

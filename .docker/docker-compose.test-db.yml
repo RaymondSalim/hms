@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  test-db:
+    build:
+      context: ..
+      dockerfile: .docker/test-db/Dockerfile
+    environment:
+      POSTGRES_DB: hms_test
+      POSTGRES_USER: hms_test
+      POSTGRES_PASSWORD: hms_test
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hms_test -d hms_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

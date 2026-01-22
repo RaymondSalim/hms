@@ -1,11 +1,11 @@
 import {
-    DEPOSIT_STATUS_LABELS,
-    getBillTypeLabel,
-    getBookingStatusLabel,
-    getDepositStatusLabel,
-    getPaymentStatusLabel,
-    getTransactionTypeLabel
-} from '../src/app/_lib/enum-translations';
+  DEPOSIT_STATUS_LABELS,
+  getBillTypeLabel,
+  getBookingStatusLabel,
+  getDepositStatusLabel,
+  getPaymentStatusLabel,
+  getTransactionTypeLabel
+} from '@/app/_lib/enum-translations';
 
 describe('Enum Translation Functions', () => {
   describe('getDepositStatusLabel', () => {

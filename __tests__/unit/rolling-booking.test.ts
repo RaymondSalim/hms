@@ -63,7 +63,7 @@ describe("Rolling Booking Feature", () => {
         name: "Addon Kulkas",
         // @ts-expect-error missing id, etc.
         pricing: mockAddonPricing
-    }
+    };
 
     const mockBookingWithAddons: Partial<BookingIncludeAddons> = {
         ...mockBooking,
@@ -75,7 +75,7 @@ describe("Rolling Booking Feature", () => {
                 is_rolling: false,
             }
         ],
-    }
+    };
 
     describe("generateInitialBillsForRollingBooking", () => {
         it("should generate a prorated bill for the first month and full bills for all subsequent months up to current month", async () => {
@@ -294,7 +294,7 @@ describe("Rolling Booking Feature", () => {
             expect(thirdBillItems?.[0].description).toBe("Sewa Kamar (1 April 2025 - 30 April 2025)");
             expect(thirdBillItems?.[1].description).toContain("Biaya Penghuni Kedua");
             expect(thirdBillItems?.[2].description).toContain("kulkas perbulan");
-        })
+        });
     });
 
     describe("generateNextMonthlyBill (Cron Job Simulation)", () => {

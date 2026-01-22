@@ -214,26 +214,31 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                         }
                     });
 
-                    // Handle deposit updates
-                    if (deposit) {
-                        const existingDeposit = await tx.deposit.findFirst({
-                            where: { booking_id: data.id }
-                        });
-                        if (existingDeposit) {
-                            await tx.deposit.update({
-                                where: { id: existingDeposit.id },
-                                data: { amount: new Prisma.Decimal(deposit.amount) }
-                            });
-                        } else {
-                            await tx.deposit.create({
-                                data: {
-                                    booking_id: data.id!,
-                                    amount: new Prisma.Decimal(deposit.amount),
-                                    status: DepositStatus.UNPAID
-                                }
-                            });
-                        }
-                    }
+                    // deposit changes are restricted in rolling booking
+                    // // Handle deposit updates
+                    // if (deposit) {
+                    //     const existingDeposit = await tx.deposit.findFirst({
+                    //         where: { booking_id: data.id }
+                    //     });
+                    //     if (existingDeposit) {
+                    //         await tx.deposit.update({
+                    //             where: { id: existingDeposit.id },
+                    //             data: { amount: new Prisma.Decimal(deposit.amount) }
+                    //         });
+                    //     } else {
+                    //         await tx.deposit.create({
+                    //             data: {
+                    //                 booking_id: data.id!,
+                    //                 amount: new Prisma.Decimal(deposit.amount),
+                    //                 status: DepositStatus.UNPAID
+                    //             }
+                    //         });
+                    //     }
+                    // } else {
+                    //     await tx.deposit.delete({
+                    //         where: { booking_id: data.id }
+                    //     });
+                    // }
 
                     // Regenerate bills and re-allocate payments
                     const today = new Date();
@@ -314,7 +319,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                                     amount: depositRecord.amount,
                                     description: 'Deposit Kamar',
                                     related_id: { deposit_id: depositRecord.id } as any,
-                                    type: 'CREATED'
+                                    type: BillType.GENERATED
                                 }
                             });
                         }
@@ -423,7 +428,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload) {
                                     amount: depositRecord.amount,
                                     description: 'Deposit Kamar',
                                     related_id: { deposit_id: depositRecord.id } as any,
-                                    type: 'CREATED',
+                                    type: BillType.GENERATED
                                 }
                             });
                         }
