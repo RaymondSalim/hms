@@ -209,7 +209,7 @@ describe('Booking Actions', () => {
                         bill_id: 100,
                         description: 'Deposit Kamar',
                         amount: new Prisma.Decimal(500),
-                        type: BillType.CREATED,
+                        type: BillType.GENERATED,
                         related_id: expect.anything(),
                     },
             });
@@ -559,7 +559,7 @@ describe('Booking Actions', () => {
                     bill_id: 100,
                     description: 'Deposit Kamar',
                     amount: mockBookingData.deposit,
-                    type: BillType.CREATED,
+                    type: BillType.GENERATED,
                     related_id: expect.anything(),
                 })
             }));

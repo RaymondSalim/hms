@@ -146,8 +146,11 @@ const config: Config = {
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
   setupFilesAfterEnv: [
-    '<rootDir>/__tests__/jest.setup.ts',
-    '<rootDir>/__tests__/singleton_prisma.ts'
+    '<rootDir>/__tests__/unit/jest.setup.ts',
+    '<rootDir>/__tests__/unit/singleton_prisma.ts'
+  ],
+  testMatch: [
+    '<rootDir>/__tests__/unit/**/*.test.ts'
   ],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.

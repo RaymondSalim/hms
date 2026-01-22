@@ -15,6 +15,7 @@
     "pgm": "npm run prisma-gen && npm run prisma-migrate",
     "postinstall": "prisma generate",
     "test": "jest",
+    "test:integration": "NODE_ENV=test jest -c jest.integration.config.ts",
     "test:watch": "jest --watch"
   },
   "dependencies": {

@@ -4,7 +4,7 @@ import {DeepMockProxy, mockDeep, mockReset} from 'jest-mock-extended';
 import prisma from '@/app/_lib/primsa';
 import {beforeEach, describe, test} from "@jest/globals";
 
-jest.mock('../src/app/_lib/primsa', () => ({
+jest.mock('@/app/_lib/primsa', () => ({
   __esModule: true,
   default: mockDeep<PrismaClient>(),
 }));
