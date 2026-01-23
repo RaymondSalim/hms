@@ -98,29 +98,29 @@ export default function GuestsContent({guests}: GuestsContentProps) {
             }}
             customDialog={(
                 <>
-                {/* @ts-expect-error weird react 19 types error */}
-                <Dialog
-                    open={showDialog}
-                    size={"lg"}
-                    handler={() => setShowDialog(prev => {
-                        const targetElement = document.getElementsByClassName(".Toastify");
-                        if (targetElement?.item(0)?.childElementCount && targetElement?.item(0)?.childElementCount! > 1) {
-                            return prev;
-                        }
-                        return !prev;
-                    })}
-                    className={"flex flex-col gap-y-4 p-8 h-[80dvh]"}
-                >
-                    <div ref={dialogRef} className="overflow-y-auto h-full">
-                        {dialogContent}
-                    </div>
-                    <div className={"flex gap-x-4 justify-end"}>
-                        {/* @ts-expect-error weird react 19 types error */}
-                        <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
-                            Tutup
-                        </Button>
-                    </div>
-                </Dialog>
+                    {/* @ts-expect-error weird react 19 types error */}
+                    <Dialog
+                        open={showDialog}
+                        size={"lg"}
+                        handler={() => setShowDialog(prev => {
+                            const targetElement = document.getElementsByClassName(".Toastify");
+                            if (targetElement?.item(0)?.childElementCount && targetElement?.item(0)?.childElementCount! > 1) {
+                                return prev;
+                            }
+                            return !prev;
+                        })}
+                        className={"flex flex-col gap-y-4 p-8 h-[80dvh]"}
+                    >
+                        <div ref={dialogRef} className="overflow-y-auto h-full">
+                            {dialogContent}
+                        </div>
+                        <div className={"flex gap-x-4 justify-end"}>
+                            {/* @ts-expect-error weird react 19 types error */}
+                            <Button onClick={() => setShowDialog(false)} variant={"filled"} className="mt-6">
+                                Tutup
+                            </Button>
+                        </div>
+                    </Dialog>
                 </>
             )}
             additionalActions={{
@@ -129,16 +129,14 @@ export default function GuestsContent({guests}: GuestsContentProps) {
                     {
                         generateButton: rowData => {
                             return (
-                                <Menu placement="bottom-end">
+                                <Menu key={rowData.id} placement="bottom-end">
                                     <MenuHandler>
-                                        <>
                                         {/* @ts-expect-error weird react 19 types error */}
                                         <Button variant={"text"} className={"p-0 hover:bg-transparent"}>
                                             <HiOutlineDotsVertical
                                                 className="h-5 w-5 cursor-pointer text-gray-700 hover:text-blue-500"
                                             />
                                         </Button>
-                                        </>
                                     </MenuHandler>
                                     {/* @ts-expect-error weird react 19 types error */}
                                     <MenuList>
@@ -425,7 +423,8 @@ export function GuestInfo({guest}: GuestInfoProps) {
                 </div>
 
                 {/* @ts-expect-error weird react 19 types error */}
-                <Button fullWidth color="green" className="mt-4 flex items-center justify-center" onClick={handleAddGuestStay}>
+                <Button fullWidth color="green" className="mt-4 flex items-center justify-center"
+                        onClick={handleAddGuestStay}>
                     <MdAdd className="h-6 w-6"/>
                     <span className={"leading-loose"}>Tambah Menginap</span>
                 </Button>
@@ -456,7 +455,8 @@ export function GuestInfo({guest}: GuestInfoProps) {
                         <Typography>Apakah Anda yakin ingin menghapus riwayat menginap ini?</Typography>
                         <div className={"flex justify-end gap-x-4"}>
                             {/* @ts-expect-error weird react 19 types error */}
-                            <Button color="black" variant={"outlined"} onClick={() => setShowDialog(false)}>Tutup</Button>
+                            <Button color="black" variant={"outlined"}
+                                    onClick={() => setShowDialog(false)}>Tutup</Button>
                             {/* @ts-expect-error weird react 19 types error */}
                             <Button color="red" onClick={handleConfirmDelete}>Hapus</Button>
                         </div>

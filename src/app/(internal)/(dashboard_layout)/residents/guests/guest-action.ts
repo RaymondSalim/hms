@@ -5,7 +5,7 @@ import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@p
 import {GenericActionsType} from "@/app/_lib/actions";
 import {number, object} from "zod";
 import {guestSchemaWithOptionalID, guestStaySchema} from "@/app/_lib/zod/guests/zod";
-import {createGuest, deleteGuest, GuestIncludeAll, updateGuestByID} from "@/app/_db/guest";
+import {createGuest, deleteGuest, getGuests, GuestIncludeAll, updateGuestByID} from "@/app/_db/guest";
 import prisma from "@/app/_lib/primsa";
 import {PartialBy} from "@/app/_db/db";
 import {after} from "next/server";
@@ -13,6 +13,10 @@ import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
+
+export async function getGuestsAction(id?: number, locationID?: number, limit?: number, offset?: number) {
+    return getGuests(id, locationID, limit, offset).then(toClient);
+}
 
 // Action to update guests
 export async function upsertGuestAction(guestData: Partial<Guest>): Promise<GenericActionsType<GuestIncludeAll>> {

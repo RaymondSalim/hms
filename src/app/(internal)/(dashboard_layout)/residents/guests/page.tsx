@@ -1,12 +1,12 @@
 "use client";
 
 import React, {useEffect} from "react";
-import {getGuests} from "@/app/_db/guest";
 import GuestsContent from "@/app/(internal)/(dashboard_layout)/residents/guests/content";
 import {useHeader} from "@/app/_context/HeaderContext";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
+import {getGuestsAction} from "@/app/(internal)/(dashboard_layout)/residents/guests/guest-action";
 
 export default function GuestsPage() {
   const headerContext = useHeader();
@@ -22,7 +22,7 @@ export default function GuestsPage() {
 
   const {data: guests, isLoading, isSuccess} = useQuery({
     queryKey: ['guests', headerContext.locationID],
-    queryFn: () => getGuests(undefined, headerContext.locationID),
+    queryFn: () => getGuestsAction(undefined, headerContext.locationID),
   });
 
   return (
