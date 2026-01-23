@@ -127,7 +127,7 @@ function processAddonsForPeriod(
 
 export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
 
-export async function upsertBookingAction(reqData: UpsertBookingPayload) {
+export async function upsertBookingAction(reqData: UpsertBookingPayload): Promise<GenericActionsType<Booking>> {
     const {success, data, error} = bookingSchema.safeParse(reqData);
 
     if (!success) {
@@ -648,6 +648,15 @@ export async function checkInOutAction(data: {
                     },
                     data: {
                         end_date: data.eventDate ? new Date(data.eventDate) : new Date(),
+                        is_rolling: false,
+                    }
+                });
+            } else {
+                await tx.booking.update({
+                    where: {
+                        id: booking.id
+                    },
+                    data: {
                         is_rolling: false,
                     }
                 });

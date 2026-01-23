@@ -348,6 +348,49 @@ describe('upsertBookingAction integration', () => {
     expect(toUtcDateOnly(booking?.end_date)).toBe(toUtcDateOnly(endDate));
   });
 
+  it('checkout booking rolling yang sudah ada end_date akan menonaktifkan rolling', async () => {
+    const base = await seedBaseFixtures();
+    const startDate = utcDate(2025, 0, 1);
+    const endDate = utcDate(2025, 1, 15);
+    const checkoutDate = utcDate(2025, 1, 20);
+
+    const createResult = await upsertBookingAction({
+      room_id: base.roomId,
+      start_date: startDate,
+      end_date: null,
+      duration_id: null,
+      status_id: base.bookingStatusId,
+      tenant_id: base.tenantId,
+      fee: 1000000,
+      is_rolling: true,
+    } as any);
+
+    if (createResult.success) {
+      await prisma.booking.update({
+        where: { id: createResult.success.id },
+        data: {
+          end_date: endDate,
+        }
+      });
+    }
+
+    const bookingId = (createResult as any).success.id;
+    const checkOutResult = await checkInOutAction({
+      booking_id: bookingId,
+      action: CheckInOutType.CHECK_OUT,
+      eventDate: checkoutDate,
+    });
+
+    expect(checkOutResult.success).toBeDefined();
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    expect(booking?.is_rolling).toBe(false);
+    expect(toUtcDateOnly(booking?.end_date)).toBe(toUtcDateOnly(endDate));
+  });
+
   it('creates a mid-month fixed-term booking with prorated first bill', async () => {
     const base = await seedBaseFixtures();
     const startDate = utcDate(2025, 0, 15);
