@@ -3,7 +3,7 @@ import {beforeEach, describe, expect, it} from '@jest/globals';
 import {BillType, DepositStatus, Prisma} from '@prisma/client';
 import {createBooking, updateBookingByID} from '@/app/_db/bookings';
 import {upsertPaymentAction} from '@/app/(internal)/(dashboard_layout)/payments/payment-action';
-import {checkInOutAction} from '@/app/(internal)/(dashboard_layout)/bookings/booking-action';
+import {checkInOutAction, scheduleEndOfStayAction} from '@/app/(internal)/(dashboard_layout)/bookings/booking-action';
 import {updateDepositStatus} from '@/app/_db/deposit';
 import {CheckInOutType} from '@/app/(internal)/(dashboard_layout)/bookings/enum';
 
@@ -212,6 +212,7 @@ describe('Booking Lifecycle Integration', () => {
             second_resident_fee: null,
             createdAt: new Date(),
             updatedAt: new Date(),
+            is_rolling: false,
         });
 
         prismaMock.bill.findMany.mockResolvedValue([
@@ -457,7 +458,18 @@ describe('Booking Lifecycle Integration', () => {
             ],
         };
 
-        prismaMock.booking.findFirst.mockResolvedValue({ id: 1, room_id: 1, start_date: new Date(2024,0,1), duration_id: 1, status_id: 1, fee: new Prisma.Decimal(1000000), tenant_id: 'tenant-1', end_date: new Date(2024,2,31), second_resident_fee: null, createdAt: new Date(), updatedAt: new Date() });
+        prismaMock.booking.findFirst.mockResolvedValue({
+            id: 1,
+            room_id: 1,
+            start_date: new Date(2024,0,1),
+            duration_id: 1,
+            status_id: 1, fee: new Prisma.Decimal(1000000),
+            tenant_id: 'tenant-1',
+            end_date: new Date(2024,2,31),
+            second_resident_fee: null,
+            is_rolling: false,
+            createdAt: new Date(), updatedAt: new Date()
+        });
         prismaMock.bill.findMany.mockResolvedValue([billData] as any);
 
         const createdPayment = {
@@ -516,7 +528,6 @@ describe('Booking Lifecycle Integration', () => {
                 payment_id: 5,
                 bill_id: 10,
                 amount: new Prisma.Decimal(500000),
-                // @ts-expect-error
                 bill: { id: 10, bill_item: [ { id: 100, amount: new Prisma.Decimal(500000), related_id: null } ] }
             }
         ] as any);
@@ -690,6 +701,89 @@ describe('Booking Lifecycle Integration', () => {
                 data: expect.objectContaining({
                     status: DepositStatus.PARTIALLY_REFUNDED,
                     refunded_amount: new Prisma.Decimal(300000)
+                })
+            })
+        );
+    });
+
+    it('harus menetapkan tanggal selesai dan menonaktifkan rolling saat checkout', async () => {
+        const bookingId = 10;
+        const eventDate = new Date('2024-03-10T00:00:00.000Z');
+
+        prismaMock.booking.findFirst.mockResolvedValue({
+            id: bookingId,
+            tenant_id: 'tenant-10',
+            end_date: null,
+            is_rolling: true,
+            deposit: undefined,
+            rooms: {
+                // @ts-expect-error type mismatch
+                id: 1, location_id: 1
+            },
+        });
+        prismaMock.checkInOutLog.create.mockResolvedValue({
+            id: 1,
+            booking_id: bookingId,
+            event_type: CheckInOutType.CHECK_OUT,
+            event_date: eventDate,
+            tenant_id: 'tenant-10',
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+        prismaMock.booking.update.mockResolvedValue({
+            id: bookingId,
+            end_date: eventDate,
+            is_rolling: false,
+        } as any);
+
+        const result = await checkInOutAction({
+            booking_id: bookingId,
+            action: CheckInOutType.CHECK_OUT,
+            eventDate,
+        });
+
+        expect(result.success).toBeDefined();
+        expect(prismaMock.booking.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {id: bookingId},
+                data: expect.objectContaining({
+                    end_date: eventDate,
+                    is_rolling: false,
+                })
+            })
+        );
+    });
+
+    it('harus menyimpan tanggal selesai dan menjadikan booking non-rolling saat dijadwalkan', async () => {
+        const bookingId = 20;
+        const endDate = new Date('2024-04-15T00:00:00.000Z');
+
+        prismaMock.booking.findFirst.mockResolvedValue({
+            id: bookingId,
+            start_date: new Date('2024-02-01T00:00:00.000Z'),
+            end_date: null,
+            is_rolling: true,
+        } as any);
+        prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
+        prismaMock.booking.update.mockResolvedValue({
+            id: bookingId,
+            end_date: endDate,
+            is_rolling: false,
+        } as any);
+        prismaMock.bill.findMany.mockResolvedValue([]);
+
+        const result = await scheduleEndOfStayAction({
+            bookingId,
+            endDate,
+        });
+
+        expect(result.success).toBe(true);
+        expect(prismaMock.booking.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {id: bookingId},
+                data: expect.objectContaining({
+                    end_date: endDate,
+                    is_rolling: false,
                 })
             })
         );
@@ -898,6 +992,7 @@ describe('Booking Lifecycle Integration', () => {
             status_id: 1,
             fee: new Prisma.Decimal(1000000),
             tenant_id: 'tenant-1',
+            is_rolling: false,
             end_date: new Date(2024, 2, 31),
             second_resident_fee: null,
             createdAt: new Date(),
@@ -1002,6 +1097,7 @@ describe('Booking Lifecycle Integration', () => {
             status_id: 1,
             fee: new Prisma.Decimal(1000000),
             tenant_id: 'tenant-1',
+            is_rolling: false,
             end_date: new Date(2024, 2, 31),
             second_resident_fee: null,
             createdAt: new Date(),

@@ -12,6 +12,11 @@ jest.mock('next/server', () => {
   };
 });
 
+jest.mock('next/cache', () => ({
+  revalidateTag: jest.fn(),
+  revalidatePath: jest.fn(),
+}));
+
 try {
   const serverLib = require('@/app/_lib/axiom/server');
   if (serverLib && serverLib.serverLogger && typeof serverLib.serverLogger.flush === 'function') {

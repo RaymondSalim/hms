@@ -1,10 +1,15 @@
 import {beforeEach, describe, expect, it} from '@jest/globals';
 import prisma from '@/app/_lib/primsa';
-import {upsertBookingAction} from '@/app/(internal)/(dashboard_layout)/bookings/booking-action';
+import {
+  checkInOutAction,
+  scheduleEndOfStayAction,
+  upsertBookingAction
+} from '@/app/(internal)/(dashboard_layout)/bookings/booking-action';
 import {getLastDateOfBooking} from '@/app/_lib/util/booking';
 import {cleanupDatabase, seedAddonFixtures, seedBaseFixtures} from './helpers';
 import {endOfMonth, getDaysInMonth, startOfMonth} from 'date-fns';
 import {BillType} from "@prisma/client";
+import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 
 const utcDate = (year: number, monthIndex: number, day: number) => (
   new Date(Date.UTC(year, monthIndex, day, 0, 0, 0))
@@ -278,6 +283,69 @@ describe('upsertBookingAction integration', () => {
       item.type === 'GENERATED' && item.amount.eq(1300000)
     ));
     expect(currentRentItem).toBeDefined();
+  });
+
+  it('menjadwalkan akhir inap booking rolling mengubah end_date dan status rolling', async () => {
+    const base = await seedBaseFixtures();
+    const startDate = utcDate(2025, 0, 1);
+    const endDate = utcDate(2025, 1, 10);
+
+    const createResult = await upsertBookingAction({
+      room_id: base.roomId,
+      start_date: startDate,
+      duration_id: null,
+      status_id: base.bookingStatusId,
+      tenant_id: base.tenantId,
+      fee: 1000000,
+      is_rolling: true,
+    } as any);
+
+    const bookingId = (createResult as any).success.id;
+    const scheduleResult = await scheduleEndOfStayAction({
+      bookingId,
+      endDate,
+    });
+
+    expect(scheduleResult.success).toBe(true);
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    expect(booking?.is_rolling).toBe(false);
+    expect(toUtcDateOnly(booking?.end_date)).toBe(toUtcDateOnly(endDate));
+  });
+
+  it('checkout booking rolling menetapkan end_date dan menonaktifkan rolling', async () => {
+    const base = await seedBaseFixtures();
+    const startDate = utcDate(2025, 0, 1);
+    const endDate = utcDate(2025, 1, 20);
+
+    const createResult = await upsertBookingAction({
+      room_id: base.roomId,
+      start_date: startDate,
+      duration_id: null,
+      status_id: base.bookingStatusId,
+      tenant_id: base.tenantId,
+      fee: 1000000,
+      is_rolling: true,
+    } as any);
+
+    const bookingId = (createResult as any).success.id;
+    const checkOutResult = await checkInOutAction({
+      booking_id: bookingId,
+      action: CheckInOutType.CHECK_OUT,
+      eventDate: endDate,
+    });
+
+    expect(checkOutResult.success).toBeDefined();
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    expect(booking?.is_rolling).toBe(false);
+    expect(toUtcDateOnly(booking?.end_date)).toBe(toUtcDateOnly(endDate));
   });
 
   it('creates a mid-month fixed-term booking with prorated first bill', async () => {

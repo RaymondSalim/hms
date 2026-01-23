@@ -16,6 +16,11 @@ jest.mock('next/server', () => {
   };
 });
 
+jest.mock('next/cache', () => ({
+  revalidateTag: jest.fn(),
+  revalidatePath: jest.fn(),
+}));
+
 // Optionally stub serverLogger.flush if it appears at import-time in some modules
 try {
   const serverLib = require('@/app/_lib/axiom/server');
