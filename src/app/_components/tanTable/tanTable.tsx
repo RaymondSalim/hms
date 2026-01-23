@@ -36,8 +36,6 @@ const isLegacyFilterType = (filterType?: FilterType) => {
 
 const getDefaultFilterValue = (filterType: FilterType): SupportedFilterValue => {
     switch (filterType) {
-        case "enumMulti":
-            return {kind: "enumMulti", values: []};
         case "numberRange":
         case "currencyRange":
         case "idRange":
@@ -46,8 +44,9 @@ const getDefaultFilterValue = (filterType: FilterType): SupportedFilterValue => 
             return {kind: "dateRange", from: "", to: ""};
         case "boolean":
             return {kind: "boolean", value: undefined};
+        case "enumMulti":
         default:
-            return undefined;
+            return {kind: "enumMulti", values: []};
     }
 };
 
@@ -57,7 +56,7 @@ const coerceNumber = (val: unknown): number | null => {
     return Number.isNaN(num) ? null : num;
 };
 
-export const applyFilterPredicate = (cellValue: unknown, filterValue: SupportedFilterValue, filterType?: FilterType) => {
+export const applyFilterPredicate = (cellValue: unknown, filterValue: SupportedFilterValue, filterType: FilterType) => {
     if (!filterValue) return true;
 
     // Legacy enumMulti: comma separated string of values
@@ -112,7 +111,7 @@ export const applyFilterPredicate = (cellValue: unknown, filterValue: SupportedF
 
 export const smartFilterFn: FilterFn<any> = (row, columnId, filterValue) => {
     const column = row.getAllCells?.().find(cell => cell.column.id === columnId)?.column;
-    const filterType: FilterType | undefined = (column?.columnDef.meta as any)?.filterType;
+    const filterType: FilterType = (column?.columnDef.meta as any)?.filterType ?? "enumMulti";
     return applyFilterPredicate(row.getValue(columnId), filterValue as SupportedFilterValue, filterType);
 };
 
@@ -135,7 +134,7 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
         const initialTypedDrafts: { [key: string]: SupportedFilterValue } = {};
 
         filterableColumns.forEach(col => {
-            const filterType: FilterType | undefined = (col.columnDef.meta as any)?.filterType;
+            const filterType: FilterType = (col.columnDef.meta as any)?.filterType ?? "enumMulti";
             const currentFilter = col.getFilterValue() as SupportedFilterValue;
 
             if (isLegacyFilterType(filterType)) {
@@ -180,7 +179,7 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
     useEffect(() => {
         tanTable.getAllColumns().forEach(column => {
             if (!column.getCanFilter()) return;
-            const filterType: FilterType | undefined = (column.columnDef.meta as any)?.filterType;
+            const filterType: FilterType = (column.columnDef.meta as any)?.filterType ?? "enumMulti";
             const currentFilter = column.getFilterValue() as SupportedFilterValue;
 
             if (isLegacyFilterType(filterType)) {
@@ -271,7 +270,7 @@ export default function TanTable({tanTable, valueLabelMapping}: TanTableProps) {
                                 </div>
                                 {
                                     header.column.getCanFilter() && (() => {
-                                        const filterType: FilterType | undefined = (header.column.columnDef.meta as any)?.filterType;
+                                        const filterType: FilterType = (header.column.columnDef.meta as any)?.filterType ?? "enumMulti";
                                         const legacyMode = isLegacyFilterType(filterType);
                                         const typedDraft = filterType ? (typedFilterDrafts[header.id] ?? getDefaultFilterValue(filterType)) : undefined;
 
