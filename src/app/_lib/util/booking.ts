@@ -2,7 +2,7 @@ import {Duration} from "@prisma/client";
 import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {generateDatesBetween} from "./datetime";
 
-export function getLastDateOfBooking(start_date: Date, duration: Duration) {
+export function getLastDateOfBooking(start_date: Date, duration: Pick<Duration, "month_count">) {
   const startDate = structuredClone(start_date);
 
   if (duration.month_count) {
