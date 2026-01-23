@@ -2,7 +2,7 @@
 
 import {createPayment, deletePayment, getAllPayments, getPaymentStatus, updatePaymentByID} from "@/app/_db/payment";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {DepositStatus, Payment, Prisma, TransactionType} from "@prisma/client";
+import {Booking, DepositStatus, Payment, Prisma, TransactionType} from "@prisma/client";
 import {number, object} from "zod";
 import {paymentSchema} from "@/app/_lib/zod/payment/zod";
 import prisma from "@/app/_lib/primsa";
@@ -16,6 +16,7 @@ import {getBookingByID} from "@/app/_db/bookings";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
+import {GenericActionsType} from "@/app/_lib/actions";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
@@ -49,7 +50,7 @@ export async function createPaymentBillsFromBillAllocations(
 export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & {
     allocationMode?: 'auto' | 'manual',
     manualAllocations?: Record<number, number>
-}) {
+}): Promise<GenericActionsType<Booking>> {
     after(() => {
         serverLogger.flush();
     });
