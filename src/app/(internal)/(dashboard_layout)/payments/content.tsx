@@ -39,7 +39,7 @@ export default function PaymentsContent({payments, queryParams}: PaymentsContent
             id: "payment_date",
             header: "Tanggal Pembayaran",
             meta: {filterType: "dateRange"},
-            cell: props => formatToDateTime(props.getValue())
+            cell: props => formatToDateTime(props.getValue(), false, false)
         }),
         columnHelper.accessor(row => row.bookings.custom_id ?? row.bookings.id, {
             id: 'booking_id',

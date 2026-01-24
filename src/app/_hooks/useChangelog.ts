@@ -3,6 +3,8 @@
 import {useEffect, useState} from 'react';
 import {useLogger} from "@/app/_lib/axiom/client";
 
+class CHANGELOG404 extends Error {}
+
 const CHANGELOG_DISMISSED_KEY = 'hms_changelog_dismissed_versions';
 
 export interface ChangelogMetadata {
@@ -127,7 +129,7 @@ export function useChangelog() {
             try {
                 // 1) Fetch current version from public/version.json (client-side)
                 const vres = await fetch('/version.json', { cache: 'no-store' });
-                if (!vres.ok) throw new Error('version.json not found');
+                if (!vres.ok) throw new CHANGELOG404('version.json not found');
                 const vdata = await vres.json();
                 const effectiveVersion = typeof vdata?.version === 'string' ? vdata.version : 'development';
                 setCurrentVersion(effectiveVersion);
@@ -176,7 +178,11 @@ export function useChangelog() {
                     setShouldShowChangelog(true);
                 }
             } catch (error) {
-                logger.error('Error checking changelog:', {error});
+                if (error instanceof CHANGELOG404) {
+                    logger.info(`version.json file not found`);
+                } else {
+                    logger.error('Error checking changelog:', {error});
+                }
             } finally {
                 setIsLoading(false);
             }

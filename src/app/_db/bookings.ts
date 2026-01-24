@@ -118,11 +118,13 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
                             id: data.tenant_id!
                         }
                     },
-                    durations: {
-                        connect: {
-                            id: data.duration_id!
+                    ...(data.duration_id ? {
+                        durations: {
+                            connect: {
+                                id: data.duration_id!
+                            }
                         }
-                    },
+                    } : {}),
                     bookingstatuses: {
                         connect: {
                             id: data.status_id!
@@ -181,11 +183,13 @@ export async function createBooking(data: OmitIDTypeAndTimestamp<BookingsInclude
             }
 
             // Now that we have real bill IDs, generate add-on bill items
-            let addonBillItems: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } | undefined;
+            let addonBillItems: {
+                [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[]
+            } | undefined;
             if (bookingAddons) {
                 addonBillItems = await generateBookingAddonsBillItems(
                     bookingAddons,
-                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date })),
+                    newBills.map(b => ({id: b.id, due_date: b.due_date as Date})),
                     endDate
                 );
             }
@@ -332,21 +336,21 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
             // (Re-)create Deposit record if deposit is provided
             let depositRecord = null;
             if (data.deposit) {
-                const existingDeposit = await prisma.deposit.findFirst({ where: { booking_id: id } });
+                const existingDeposit = await prisma.deposit.findFirst({where: {booking_id: id}});
                 if (existingDeposit) {
                     depositRecord = await prismaTrx.deposit.update({
-                        where: { id: existingDeposit.id },
-                        data: { amount: data.deposit.amount, status: data.deposit.status ?? DepositStatus.UNPAID },
+                        where: {id: existingDeposit.id},
+                        data: {amount: data.deposit.amount, status: data.deposit.status ?? DepositStatus.UNPAID},
                     });
                 } else {
                     depositRecord = await prismaTrx.deposit.create({
-                        data: { booking_id: id, amount: data.deposit.amount, status: DepositStatus.UNPAID }
+                        data: {booking_id: id, amount: data.deposit.amount, status: DepositStatus.UNPAID}
                     });
                 }
             } else {
                 // If deposit is not provided, delete the deposit record
                 await prismaTrx.deposit.deleteMany({
-                    where: { booking_id: id }
+                    where: {booking_id: id}
                 });
             }
 
@@ -364,11 +368,13 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
             }
 
             // Now that we have real bill IDs, generate add-on bill items
-            let addonBillItems: { [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[] } | undefined;
+            let addonBillItems: {
+                [billId: number]: PartialBy<Prisma.BillItemUncheckedCreateInput, "bill_id">[]
+            } | undefined;
             if (bookingAddons) {
                 addonBillItems = await generateBookingAddonsBillItems(
                     bookingAddons,
-                    newBills.map(b => ({ id: b.id, due_date: b.due_date as Date })),
+                    newBills.map(b => ({id: b.id, due_date: b.due_date as Date})),
                     endDate
                 );
             }
@@ -445,16 +451,18 @@ export async function updateBookingByID(id: number, data: OmitIDTypeAndTimestamp
                             id: data.tenant_id!
                         }
                     },
-                    durations: {
-                        connect: {
-                            id: data.duration_id!
-                        }
-                    },
                     bookingstatuses: {
                         connect: {
                             id: data.status_id!
                         }
-                    }
+                    },
+                    ...(data.duration_id ? {
+                        durations: {
+                            connect: {
+                                id: data.duration_id!
+                            }
+                        }
+                    } : {})
                 },
                 include: includeAll
             });

@@ -459,6 +459,9 @@ export function PaymentForm(props: PaymentForm) {
                                         mode="single"
                                         placeholder="Pilih tanggal pembayaran"
                                         showSearchButton={false}
+                                        initialDate={{
+                                            singleDate: data.payment_date
+                                        }}
                                         onUpdate={(dateData) => {
                                             if (dateData.singleDate) {
                                                 setData(p => ({...p, payment_date: dateData.singleDate}));

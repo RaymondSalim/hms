@@ -425,6 +425,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                     {
                         generateButton: (rowData, setActiveContent, setDialogOpen) => (
                             <MdContentCopy
+                                key={`clone-${rowData.id}`}
                                 className="h-5 w-5 cursor-pointer hover:text-green-500"
                                 onClick={() => {
                                     const {

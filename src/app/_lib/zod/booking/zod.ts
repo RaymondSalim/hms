@@ -7,7 +7,7 @@ export const bookingSchema = object({
     is_rolling: boolean().optional(),
     room_id: number({required_error: "Room ID is required "}).min(1, "Room ID should be greater than zero"),
     start_date: union([isoDateStringToDate({required_error: "Start date is required"}), date({required_error: "Start date is required"})]),
-    end_date: date().optional().nullable(),
+    end_date: union([isoDateStringToDate({required_error: "End date is required"}), date({required_error: "End date is required"})]).optional().nullable(),
     duration_id: number({required_error: "Duration ID is required"}).min(1, "Duration ID should be greater than zero").nullable().optional(),
     status_id: number({required_error: "Status ID is required"}).min(1, "Status ID should be greater than zero"),
     tenant_id: string({required_error: "Tenant ID is required"}).cuid("Invalid Tenant ID"),

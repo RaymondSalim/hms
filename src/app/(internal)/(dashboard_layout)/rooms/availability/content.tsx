@@ -194,6 +194,9 @@ export default function AvailabilityContent(props: RoomAvailabilityProps) {
                     className="ml-auto"
                     mode="range"
                     placeholder="Pilih tanggal"
+                    initialDate={{
+                        range: dates
+                    }}
                     onUpdate={(data) => {
                         if (data.range) {
                             setDates(data.range);

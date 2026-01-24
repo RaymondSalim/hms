@@ -176,6 +176,9 @@ export function BillForm(props: BillForm) {
                                         mode="single"
                                         placeholder="Pilih tanggal jatuh tempo"
                                         showSearchButton={false}
+                                        initialDate={{
+                                            singleDate: data.due_date
+                                        }}
                                         onUpdate={(dateData) => {
                                             if (dateData.singleDate) {
                                                 setData(p => ({...p, due_date: dateData.singleDate}));
