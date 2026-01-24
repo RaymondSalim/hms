@@ -28,10 +28,10 @@ describe("smartFilterFn", () => {
         expect(smartFilterFn(row as any, "date", filterValue)).toBe(false);
     });
 
-    it("falls back to string contains matching", () => {
+    it("falls back to enumMulti", () => {
         const row = makeRow("Jakarta Barat");
 
-        expect(smartFilterFn(row as any, "city", "jakarta")).toBe(true);
-        expect(smartFilterFn(row as any, "city", "surabaya")).toBe(false);
+        expect(smartFilterFn(row as any, "city", "Jakarta Barat")).toBe(true);
+        expect(smartFilterFn(row as any, "city", "Surabaya")).toBe(false);
     });
 });
