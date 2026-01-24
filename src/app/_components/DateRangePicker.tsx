@@ -144,7 +144,7 @@ export function DatePicker({
                 return;
             }
         }
-    }, []);
+    }, [initialDate]);
 
     return (
         <div className={`flex flex-wrap md:flex-nowrap gap-4 ${className || ''}`}>

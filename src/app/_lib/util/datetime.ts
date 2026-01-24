@@ -1,4 +1,5 @@
 import {format} from "date-fns";
+import {TZDate} from "@date-fns/tz";
 
 export function formatToDateTime(d: Date, showTime = true, showSeconds = true): string {
   return new Intl.DateTimeFormat("id", {
@@ -89,4 +90,29 @@ export function countMonths(start: Date, end: Date): number {
   }
 
   return Math.max(0, months);
+}
+
+export function getYYYYMMDD(date: Date): string {
+  let localDate: Date = date;
+  if (date instanceof TZDate) {
+    localDate = new Date(date.getTime());
+  }
+
+  const year = localDate.getFullYear();
+  const months = String(localDate.getMonth() + 1).padStart(2, "0");
+  const days = String(localDate.getDate()).padStart(2, "0");
+
+  return `${year}-${months}-${days}`;
+}
+
+export function getHHMM(date: Date): string {
+  let localDate: Date = date;
+  if (date instanceof TZDate) {
+    localDate = new Date(date.getTime());
+  }
+
+  const hours = String(localDate.getHours()).padStart(2, "0");
+  const minutes = String(localDate.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
 }

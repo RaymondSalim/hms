@@ -11,6 +11,7 @@ export type BaseFixtures = {
 };
 
 export async function cleanupDatabase() {
+  await prisma.event.deleteMany();
   await prisma.paymentBill.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.billItem.deleteMany();

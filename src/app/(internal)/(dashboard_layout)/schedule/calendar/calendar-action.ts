@@ -132,6 +132,8 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
             Object.assign(eventData, {
                 daysOfWeek: eventData.extendedProps.recurrence.daysOfWeek,
                 startRecur: eventData.extendedProps.recurrence.startRecur,
+                startTime: eventData.extendedProps.recurrence.startTime,
+                endTime: eventData.extendedProps.recurrence.endTime,
                 endRecur: eventData.extendedProps.recurrence.endRecur,
                 groupId: eventData.extendedProps.recurrence.groupId || `recurring_${e.id}`,
                 duration: eventData.extendedProps.recurrence.duration
