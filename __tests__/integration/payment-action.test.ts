@@ -1,70 +1,9 @@
 import {beforeEach} from "@jest/globals";
 import {Prisma} from "@prisma/client";
 import prisma from '@/app/_lib/primsa';
-import {cleanupDatabase, seedBaseFixtures, utcDate} from "./helpers";
+import {cleanupDatabase, seedBaseFixtures, seedBookingWithBills, utcDate} from "./helpers";
 import {upsertBookingAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
-
-async function seedBookingWithBills(withDeposit?: boolean) {
-    const base = await seedBaseFixtures();
-    const roomType = await prisma.roomType.create({
-        data: {
-            type: 'Standard Plus',
-            description: 'luas 3x4, jendela luar, fully furnished'
-        }
-    });
-    const room = await prisma.room.create({
-        data: {
-            room_number: '309',
-            room_type_id: roomType.id,
-            status_id: base.roomStatusId,
-            location_id: base.locationId
-        }
-    });
-    const duration = await prisma.duration.create({
-        data: {
-            duration: '3 Bulan',
-            month_count: 3
-        }
-    });
-
-    const bookingReq = await upsertBookingAction({
-        room_id: room.id,
-        start_date: utcDate(2024,5,1),
-        duration_id: duration.id,
-        status_id: base.roomStatusId,
-        fee: 2250000,
-        tenant_id: base.tenantId,
-        end_date: utcDate(2024,7,31),
-        second_resident_fee: null,
-        is_rolling: false,
-        deposit: withDeposit ? {
-            amount: 100000
-        } : undefined
-    } as any);
-
-    if (!bookingReq.success) {
-        throw new Error('Gagal membuat booking untuk test pembayaran');
-    }
-
-    const bills = await prisma.bill.findMany({
-        where: {
-            booking_id: bookingReq.success!.id
-        },
-        orderBy: {
-            id: 'asc'
-        },
-        include: {
-            bill_item: true,
-        }
-    });
-
-    return {
-        base,
-        booking: bookingReq.success!,
-        bills
-    };
-}
 
 describe('20260126 - payments & income inconsistency', () => {
     beforeEach(async () => {

@@ -6,7 +6,7 @@ import {
   upsertBookingAction
 } from '@/app/(internal)/(dashboard_layout)/bookings/booking-action';
 import {getLastDateOfBooking} from '@/app/_lib/util/booking';
-import {cleanupDatabase, seedAddonFixtures, seedBaseFixtures, utcDate} from './helpers';
+import {cleanupDatabase, seedAddonFixtures, seedBaseFixtures, toUtcDateOnly, utcDate} from './helpers';
 import {endOfMonth, getDaysInMonth, startOfMonth} from 'date-fns';
 import {BillType} from "@prisma/client";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
