@@ -31,9 +31,9 @@ export async function cleanupDatabase() {
   await prisma.bookingStatus.deleteMany();
   await prisma.duration.deleteMany();
   await prisma.tenant.deleteMany();
-  await prisma.location.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.paymentStatus.deleteMany();
+  await prisma.location.deleteMany();
 }
 
 export async function seedBaseFixtures(): Promise<BaseFixtures> {
@@ -130,3 +130,15 @@ export async function seedAddonFixtures(locationId: number) {
 
   return { addOnId: addOn.id };
 }
+
+export const utcDate = (year: number, monthIndex: number, day: number) => (
+    new Date(Date.UTC(year, monthIndex, day, 0, 0, 0))
+);
+
+export const toUtcDateOnly = (value: Date | null | undefined) => {
+  if (!value) return null;
+  const y = value.getUTCFullYear();
+  const m = String(value.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(value.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};

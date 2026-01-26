@@ -6,22 +6,10 @@ import {
   upsertBookingAction
 } from '@/app/(internal)/(dashboard_layout)/bookings/booking-action';
 import {getLastDateOfBooking} from '@/app/_lib/util/booking';
-import {cleanupDatabase, seedAddonFixtures, seedBaseFixtures} from './helpers';
+import {cleanupDatabase, seedAddonFixtures, seedBaseFixtures, utcDate} from './helpers';
 import {endOfMonth, getDaysInMonth, startOfMonth} from 'date-fns';
 import {BillType} from "@prisma/client";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
-
-const utcDate = (year: number, monthIndex: number, day: number) => (
-  new Date(Date.UTC(year, monthIndex, day, 0, 0, 0))
-);
-
-const toUtcDateOnly = (value: Date | null | undefined) => {
-  if (!value) return null;
-  const y = value.getUTCFullYear();
-  const m = String(value.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(value.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
 
 describe('upsertBookingAction integration', () => {
   beforeEach(async () => {

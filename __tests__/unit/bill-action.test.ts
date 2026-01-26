@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, test} from "@jest/globals";
 import {prismaMock} from "./singleton_prisma";
 import {
+    dedupePaymentsByLatestDate,
     generateBookingAddonsBillItems,
     generateBookingBillandBillItems,
     generatePaymentBillMappingFromPaymentsAndBills,
@@ -13,6 +14,20 @@ import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
 import {matchBillItemsToBills} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 
 describe('BillAction', () => {
+    describe('dedupePaymentsByLatestDate', () => {
+        test('keeps most recent payment_date for duplicate ids', async () => {
+            const older = {id: 1, payment_date: new Date('2024-01-01')} as Payment;
+            const newer = {id: 1, payment_date: new Date('2024-02-01')} as Payment;
+            const other = {id: 2, payment_date: new Date('2024-01-15')} as Payment;
+
+            const result = await dedupePaymentsByLatestDate([older, undefined, newer, other]);
+
+            expect(result).toHaveLength(2);
+            const payment1 = result.find(p => p.id === 1);
+            expect(payment1?.payment_date.getTime()).toBe(newer.payment_date.getTime());
+        });
+    });
+
     describe('test simulateBillPaymentAction', () => {
         test('balance is greater than outstanding', async () => {
             const today = new Date();
