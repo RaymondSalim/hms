@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
-import {AddOn, Bill, BillType, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
+import {AddOn, Bill, BillItem, BillType, BookingAddOn, Duration, Payment, PaymentBill, Prisma} from "@prisma/client";
 import {
     BillIncludeAll,
     billIncludeAll,
@@ -21,8 +21,12 @@ import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {UpsertBookingPayload} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 import {after} from 'next/server';
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+import {GenericActionsType} from "@/app/_lib/actions";
 import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
 import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 /**
  * Type definition for bills that include payment information and sum of paid amounts
@@ -30,6 +34,20 @@ import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 export type BillIncludePaymentAndSum = BillIncludePayment & {
     sumPaidAmount: Prisma.Decimal
 };
+
+export async function dedupePaymentsByLatestDate(payments: Array<Payment | undefined | null>): Promise<Payment[]> {
+    const latestById = new Map<number, Payment>();
+    for (const payment of payments) {
+        if (!payment) {
+            continue;
+        }
+        const existing = latestById.get(payment.id);
+        if (!existing || payment.payment_date.getTime() > existing.payment_date.getTime()) {
+            latestById.set(payment.id, payment);
+        }
+    }
+    return Array.from(latestById.values());
+}
 
 /**
  * Retrieves unpaid bills for a booking, ordered by due date
@@ -75,10 +93,10 @@ export async function getUnpaidBillsDueAction(booking_id?: number, args?: Prisma
         })
         .filter(b => !b.sumPaidAmount.equals(b.amount));
 
-    return {
+    return toClient({
         total: totalDue.toNumber(),
         bills: unpaidBills
-    };
+    });
 }
 
 /**
@@ -93,7 +111,6 @@ export async function simulateUnpaidBillPaymentAction(balance: number, filteredB
 
     // Ensure bookings is sorted by ascending order
     filteredBills.sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
-
     const paymentBills: OmitIDTypeAndTimestamp<PaymentBill>[] = [];
 
     for (let i = 0; i < filteredBills.length; i++) {
@@ -134,7 +151,7 @@ export async function simulateUnpaidBillPaymentAction(balance: number, filteredB
         }
     }
 
-    return {
+    return toClient({
         old: {
             balance: originalBalance,
             bills: filteredBills
@@ -143,7 +160,7 @@ export async function simulateUnpaidBillPaymentAction(balance: number, filteredB
             balance: balance,
             payments: paymentBills
         }
-    };
+    });
 }
 
 /**
@@ -183,7 +200,7 @@ export async function simulateUnpaidBillPaymentActionWithExcludePayment(balance:
         });
 
     // Run the simulation as usual - let it handle which bills get allocated to
-    return simulateUnpaidBillPaymentAction(balance, billsWithRecalculatedPayments, excludePaymentId);
+    return toClient(await simulateUnpaidBillPaymentAction(balance, billsWithRecalculatedPayments, excludePaymentId));
 }
 
 /**
@@ -258,29 +275,29 @@ export async function generatePaymentBillMappingFromPaymentsAndBills(payments: O
     return paymentBills;
 }
 
-/**
- * Creates payment-bill records for a given payment amount and bills
- * @param balance - The payment amount to allocate
- * @param bills - Array of bills with payment information
- * @param payment_id - The payment ID to create records for
- * @param trx - Optional transaction client
- * @returns Object containing remaining balance and created records
- */
-export async function createPaymentBillsAction(balance: number, bills: BillIncludePaymentAndSum[], payment_id: number, trx?: Prisma.TransactionClient) {
-    const db = trx ?? prisma;
-
-    const simulation = await simulateUnpaidBillPaymentAction(balance, bills, payment_id);
-    const {balance: newBalance, payments: paymentBills} = simulation.new;
-
-    let updatedBills = await db.paymentBill.createMany({
-        data: paymentBills
-    });
-
-    return {
-        balance: newBalance,
-        bills: updatedBills
-    };
-}
+// /**
+//  * Creates payment-bill records for a given payment amount and bills
+//  * @param balance - The payment amount to allocate
+//  * @param bills - Array of bills with payment information
+//  * @param payment_id - The payment ID to create records for
+//  * @param trx - Optional transaction client
+//  * @returns Object containing remaining balance and created records
+//  */
+// export async function createPaymentBillsAction(balance: number, bills: BillIncludePaymentAndSum[], payment_id: number, trx?: Prisma.TransactionClient) {
+//     const db = trx ?? prisma;
+//
+//     const simulation = await simulateUnpaidBillPaymentAction(balance, bills, payment_id);
+//     const {balance: newBalance, payments: paymentBills} = simulation.new;
+//
+//     let updatedBills = await db.paymentBill.createMany({
+//         data: paymentBills
+//     });
+//
+//     return toClient({
+//         balance: newBalance,
+//         bills: updatedBills
+//     });
+// }
 
 /**
  * Retrieves all bills with full booking information for a location
@@ -318,7 +335,7 @@ export async function getAllBillsIncludeAll(id?: number, locationID?: number, li
             take: limit,
             skip: offset,
         }
-    );
+    ).then(toClient);
 }
 
 /**
@@ -330,9 +347,9 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
     const {success, data, error} = billSchemaWithOptionalID.safeParse(billData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     after(() => {
@@ -375,20 +392,20 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
             res = await createBill(parsedBillData);
         }
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[upsertBillAction]", {error});
             if (error.code == "P2002") {
-                return {failure: "Invalid Bill"};
+                return toClient({failure: "Invalid Bill"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[upsertBillAction]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }
 
@@ -403,9 +420,9 @@ export async function deleteBillAction(id: number) {
     });
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.flatten()
-        };
+        });
     }
 
     after(() => {
@@ -418,15 +435,15 @@ export async function deleteBillAction(id: number) {
                 id: data.id
             }
         });
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         serverLogger.error("[deleteBillAction]", {error, bill_id: id});
 
-        return {
+        return toClient({
             failure: "error"
-        };
+        });
     }
 }
 
@@ -455,11 +472,7 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
     let allPayments: Payment[] = bills.flatMap(b => b.paymentBills.map(pb => pb.payment));
     allPayments = allPayments.concat(newPayments ?? []);
     // Remove dups
-    allPayments = allPayments.filter((item, index, self) =>
-            item != undefined && index === self.findIndex((t) => (
-                t?.id === item.id
-            ))
-    );
+    allPayments = await dedupePaymentsByLatestDate(allPayments);
 
     let generatedPaymentBills = await generatePaymentBillMappingFromPaymentsAndBills(allPayments, bills);
 
@@ -506,12 +519,12 @@ export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, li
         take: limit
     });
 
-    return {
-        ...bills,
-        total: await prisma.bill.count({
-            where: where,
-        })
-    };
+        return toClient({
+            ...bills,
+            total: await prisma.bill.count({
+                where: where,
+            })
+        });
 }
 
 /**
@@ -519,7 +532,10 @@ export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, li
  * @param billID - The bill ID to send reminder for
  * @returns Success or failure response
  */
-export async function sendBillEmailAction(billID: number) {
+export async function sendBillEmailAction(billID: number): Promise<
+    | { success: string; failure?: never }
+    | { failure: string; success?: never }
+> {
     let billData = await prisma.bill.findFirst({
         where: {
             id: billID
@@ -535,9 +551,9 @@ export async function sendBillEmailAction(billID: number) {
     });
 
     if (!billData) {
-        return {
+        return toClient({
             failure: "Bill Not Found"
-        };
+        });
     }
 
     after(() => {
@@ -565,14 +581,14 @@ export async function sendBillEmailAction(billID: number) {
         });
     } catch (error) {
         serverLogger.error("[sendBillEmailAction]", {error, billID});
-        return {
+        return toClient({
             failure: "Error"
-        };
+        });
     }
 
-    return {
+    return toClient({
         success: "Email Sent Successfully."
-    };
+    });
 
 }
 
@@ -968,6 +984,11 @@ export async function generateBookingBillandBillItems(
     };
 }
 
+type BillItemReturnType = {
+    bill: Bill | null,
+    billItem: BillItem
+};
+
 /**
  * Updates a bill item
  * @param billItemData - Bill item data to update
@@ -978,13 +999,13 @@ export async function updateBillItemAction(billItemData: {
     description?: string;
     amount?: number;
     internal_description?: string;
-}) {
+}): Promise<GenericActionsType<BillItemReturnType>> {
     const {success, data, error} = billItemUpdateSchema.safeParse(billItemData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     after(() => {
@@ -1015,20 +1036,20 @@ export async function updateBillItemAction(billItemData: {
             };
         });
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[updateBillItemAction]", {error, data});
             if (error.code == "P2025") {
-                return {failure: "Bill item tidak ditemukan"};
+                return toClient({failure: "Bill item tidak ditemukan"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[updateBillItemAction]", {error, data});
         }
 
-        return {failure: "Gagal memperbarui rincian tagihan"};
+        return toClient({failure: "Gagal memperbarui rincian tagihan"});
     }
 }
 
@@ -1037,7 +1058,7 @@ export async function updateBillItemAction(billItemData: {
  * @param id - The bill item ID to delete
  * @returns Success response with deleted bill item data or error information
  */
-export async function deleteBillItemAction(id: number) {
+export async function deleteBillItemAction(id: number): Promise<GenericActionsType<BillItemReturnType>> {
     after(() => {
         serverLogger.flush();
     });
@@ -1071,20 +1092,20 @@ export async function deleteBillItemAction(id: number) {
             };
         });
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[deleteBillItemAction]", {error, bill_id: id});
             if (error.code == "P2025") {
-                return {failure: "Bill item tidak ditemukan"};
+                return toClient({failure: "Bill item tidak ditemukan"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[deleteBillItemAction]", {error, bill_id: id});
         }
 
-        return {failure: "Gagal menghapus rincian tagihan"};
+        return toClient({failure: "Gagal menghapus rincian tagihan"});
     }
 }
 
@@ -1099,13 +1120,13 @@ export async function createBillItemAction(billItemData: {
     amount: number;
     internal_description?: string;
     type?: BillType;
-}) {
+}): Promise<GenericActionsType<BillItemReturnType>> {
     const {success, data, error} = billItemCreateSchema.safeParse(billItemData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     after(() => {
@@ -1137,19 +1158,19 @@ export async function createBillItemAction(billItemData: {
             };
         });
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[createBillItemAction]", {error});
             if (error.code == "P2003") {
-                return {failure: "Bill tidak ditemukan"};
+                return toClient({failure: "Bill tidak ditemukan"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[createBillItemAction]", {error});
         }
 
-        return {failure: "Gagal membuat rincian tagihan"};
+        return toClient({failure: "Gagal membuat rincian tagihan"});
     }
 }

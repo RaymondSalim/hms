@@ -9,6 +9,9 @@ import {depositSchema, updateDepositStatusSchema} from "@/app/_lib/zod/deposit/z
 import prisma from "@/app/_lib/primsa";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export type UpsertDepositPayload = {
     id?: number;
@@ -25,9 +28,9 @@ export async function upsertDepositAction(reqData: UpsertDepositPayload): Promis
     const {success, data, error} = depositSchema.safeParse(reqData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error.format() as any,
-        };
+        });
     }
 
     try {
@@ -40,7 +43,7 @@ export async function upsertDepositAction(reqData: UpsertDepositPayload): Promis
             });
 
             if (!existingDeposit) {
-                return {failure: "Deposit tidak ditemukan"};
+                return toClient({failure: "Deposit tidak ditemukan"});
             }
 
             // Use the original booking_id from the database
@@ -59,17 +62,17 @@ export async function upsertDepositAction(reqData: UpsertDepositPayload): Promis
             });
         }
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[upsertDepositAction][PrismaKnownError]", {error});
             if (error.code === "P2002") {
-                return {failure: "Deposit untuk booking ini sudah ada"};
+                return toClient({failure: "Deposit untuk booking ini sudah ada"});
             }
             if (error.code === "P2003") {
-                return {failure: "ID booking tidak valid"};
+                return toClient({failure: "ID booking tidak valid"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[upsertDepositAction][PrismaUnknownError]", {error});
@@ -77,7 +80,7 @@ export async function upsertDepositAction(reqData: UpsertDepositPayload): Promis
             serverLogger.error("[upsertDepositAction]", {error});
         }
 
-        return {failure: "Permintaan tidak berhasil"};
+        return toClient({failure: "Permintaan tidak berhasil"});
     }
 }
 
@@ -86,7 +89,7 @@ export async function getAllDepositsAction() {
         serverLogger.flush();
     });
     try {
-        return await getAllDeposits();
+        return toClient(await getAllDeposits());
     } catch (error) {
         serverLogger.error("[getAllDepositsAction]", {error});
         throw error;
@@ -100,21 +103,21 @@ export async function deleteDepositAction(id: number): Promise<GenericActionsTyp
     const parsedData = object({id: number().positive()}).safeParse({id});
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
         const res = await deleteDeposit(parsedData.data.id);
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         serverLogger.error("[deleteDepositAction]", {error, deposit_id: id});
-        return {
+        return toClient({
             failure: "Gagal menghapus deposit",
-        };
+        });
     }
 }
 
@@ -133,9 +136,9 @@ export async function updateDepositStatusAction(data: {
     });
 
     if (!validation.success) {
-        return {
+        return toClient({
             errors: validation.error.format() as any
-        };
+        });
     }
 
     try {
@@ -145,13 +148,13 @@ export async function updateDepositStatusAction(data: {
             refundedAmount: data.refundedAmount,
         });
 
-        return {
+        return toClient({
             success: updatedDeposit
-        };
+        });
     } catch (error) {
         serverLogger.error("[updateDepositStatusAction]", {error});
-        return {
+        return toClient({
             failure: error instanceof Error ? error.message : "Gagal memperbarui status deposit"
-        };
+        });
     }
 }

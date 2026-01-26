@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Button, Input, Popover, PopoverContent, PopoverHandler} from "@material-tailwind/react";
 import {CiCalendarDate, CiSearch} from "react-icons/ci";
 import {DateRange, DayPicker} from "react-day-picker";
@@ -9,13 +9,16 @@ import {AiOutlineLoading} from "react-icons/ai";
 import "react-day-picker/style.css";
 import {Placement} from "@floating-ui/react";
 
+type DateData = {
+    range?: DateRange,
+    singleDate?: Date,
+    searchTriggered: boolean
+}
+
 export interface DatePickerProps {
     mode?: "single" | "range";
-    onUpdate: (data: {
-        range?: DateRange,
-        singleDate?: Date,
-        searchTriggered: boolean
-    }) => void;
+    initialDate?: Pick<DateData, "range" | "singleDate">;
+    onUpdate: (data: DateData) => void;
     placeholder?: string;
     showSearchButton?: boolean;
     searchButtonText?: string;
@@ -29,6 +32,7 @@ export interface DatePickerProps {
 
 export function DatePicker({
                                mode = "range",
+                               initialDate,
                                onUpdate,
                                placeholder = "Pilih tanggal",
                                showSearchButton = true,
@@ -128,6 +132,20 @@ export function DatePicker({
         }
     };
 
+    useEffect(() => {
+        if (initialDate) {
+            if (initialDate.singleDate) {
+                setSingleDate(initialDate.singleDate);
+                return;
+            }
+
+            if (initialDate.range) {
+                setDates(initialDate.range);
+                return;
+            }
+        }
+    }, []);
+
     return (
         <div className={`flex flex-wrap md:flex-nowrap gap-4 ${className || ''}`}>
             <Popover
@@ -166,6 +184,7 @@ export function DatePicker({
                             {...(min !== undefined && {min})}
                             {...(max !== undefined && {max})}
                             showOutsideDays
+                            month={mode === "range" ? dates?.to : singleDate}
                             startMonth={new Date(today.getFullYear() - 5, today.getMonth())}
                             endMonth={new Date(today.getFullYear() + 5, today.getMonth())}
                             classNames={{

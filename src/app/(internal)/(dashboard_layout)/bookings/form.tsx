@@ -448,6 +448,9 @@ export function BookingForm(props: BookingFormProps) {
                                         mode="single"
                                         placeholder="Pilih tanggal mulai"
                                         showSearchButton={false}
+                                        initialDate={{
+                                            singleDate: bookingData.start_date
+                                        }}
                                         onUpdate={(dateData) => {
                                             if (dateData.singleDate) {
                                                 setBookingData(p => ({
@@ -466,7 +469,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                bookingData.start_date &&
+                                bookingData.start_date && bookingData.end_date == null &&
                                 <motion.div
                                     key={"duration_id"}
                                     initial={{opacity: 0, height: 0}}
@@ -513,7 +516,45 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                (bookingData.duration_id || bookingData.is_rolling) &&
+                                bookingData.end_date &&
+                                <motion.div
+                                    key={"end_date"}
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                >
+                                    <label htmlFor="end_date">
+                                        {/*@ts-expect-error weird react 19 types error*/}
+                                        <Typography variant="h6" color="blue-gray">
+                                            Tanggal Selesai
+                                        </Typography>
+                                    </label>
+                                    <DatePicker
+                                        className="w-full !ml-0"
+                                        mode="single"
+                                        placeholder="Pilih tanggal selesai"
+                                        showSearchButton={false}
+                                        initialDate={{
+                                            singleDate: bookingData.end_date
+                                        }}
+                                        onUpdate={(dateData) => {
+                                            if (dateData.singleDate) {
+                                                setBookingData(p => ({
+                                                    ...p,
+                                                    end_date: dateData.singleDate,
+                                                }));
+                                            }
+                                        }}
+                                    />
+                                    {
+                                        fieldErrors?.end_date &&
+                                        // @ts-expect-error weird react 19 types error
+                                        <Typography color="red">{fieldErrors?.end_date._errors}</Typography>
+                                    }
+                                </motion.div>
+                            }
+                            {
+                                (bookingData.duration_id || bookingData.end_date || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"price"}
                                     initial={{opacity: 0, height: 0}}
@@ -551,7 +592,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                (bookingData.duration_id || bookingData.is_rolling) &&
+                                (bookingData.duration_id || bookingData.end_date || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"status"}
                                     initial={{opacity: 0, height: 0}}
@@ -579,7 +620,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                (bookingData.duration_id || bookingData.is_rolling) &&
+                                (bookingData.duration_id || bookingData.end_date || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"deposit"}
                                     initial={{opacity: 0, height: 0}}
@@ -620,6 +661,7 @@ export function BookingForm(props: BookingFormProps) {
                                                 </Typography>
                                             </label>
                                             <CurrencyInput
+                                                disabled={!!(bookingData.id && bookingData.is_rolling)}
                                                 name={"deposit"}
                                                 value={Number(bookingData.deposit.amount) || ""}
                                                 setValue={(newValue) => {
@@ -648,6 +690,11 @@ export function BookingForm(props: BookingFormProps) {
                                                 }}
                                             />
                                             {
+                                                bookingData.id && bookingData.is_rolling &&
+                                                // @ts-expect-error weird react 19 types error
+                                                <Typography color={"blue-gray"}>Deposit tidak bisa diubah untuk Pemesanan Rolling</Typography>
+                                            }
+                                            {
                                                 fieldErrors?.deposit &&
                                                 // @ts-expect-error weird react 19 types error
                                                 <Typography color="red">{fieldErrors?.deposit._errors}</Typography>
@@ -657,7 +704,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                (bookingData.duration_id || bookingData.is_rolling) &&
+                                (bookingData.duration_id || bookingData.end_date || bookingData.is_rolling) &&
                                 <motion.div
                                     key={"second_resident"}
                                     initial={{opacity: 0, height: 0}}
@@ -723,7 +770,7 @@ export function BookingForm(props: BookingFormProps) {
                                 </motion.div>
                             }
                             {
-                                (bookingData.duration_id || bookingData.is_rolling) &&
+                                (bookingData.duration_id || bookingData.end_date ||bookingData.is_rolling) &&
                                 <motion.div
                                     initial={{opacity: 0, height: 0}}
                                     animate={{opacity: 1, height: "auto"}}
@@ -806,6 +853,9 @@ export function BookingForm(props: BookingFormProps) {
                                                             mode="single"
                                                             placeholder="Pilih tanggal mulai"
                                                             showSearchButton={false}
+                                                            initialDate={{
+                                                                singleDate: bookingData.addOns?.[index]?.start_date
+                                                            }}
                                                             onUpdate={(dateData) => {
                                                                 if (dateData.singleDate) {
                                                                     updateAddonEntry(index, "start_date", dateData.singleDate);
@@ -863,6 +913,9 @@ export function BookingForm(props: BookingFormProps) {
                                                                 mode="single"
                                                                 placeholder="Pilih tanggal selesai"
                                                                 showSearchButton={false}
+                                                                initialDate={{
+                                                                    singleDate: bookingData.addOns?.[index]?.end_date ?? undefined
+                                                                }}
                                                                 onUpdate={(dateData) => {
                                                                     if (dateData.singleDate) {
                                                                         updateAddonEntry(index, "end_date", dateData.singleDate);

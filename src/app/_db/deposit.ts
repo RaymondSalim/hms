@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/app/_lib/primsa";
-import {DepositStatus, Prisma} from '@prisma/client';
+import {BillType, DepositStatus, Prisma} from '@prisma/client';
 import {createDepositRefundExpenseTransaction} from '@/app/_db/transaction';
 
 export async function getAllDeposits() {
@@ -57,7 +57,7 @@ export async function createDeposit(data: { booking_id: number, amount: Prisma.D
                 amount: data.amount,
                 description: 'Deposit Kamar',
                 related_id: { deposit_id: deposit.id },
-                type: 'CREATED',
+                type: BillType.GENERATED
             }
         });
     }
@@ -124,7 +124,7 @@ export async function updateDepositStatus({
     tx?: Prisma.TransactionClient
 }) {
     const prismaClient = tx || prisma;
-    
+
     const deposit = await prismaClient.deposit.findUnique({
         where: {id: depositId},
         include: {

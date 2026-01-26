@@ -56,3 +56,37 @@ export function getDatesInRange(start: Date, end: Date, groupBy: "day" | string 
   return dates;
 }
 
+/**
+ * Counts months where:
+ * - First partial month does NOT count
+ * - Last month ALWAYS counts
+ * - Order-independent
+ */
+export function countMonths(start: Date, end: Date): number {
+  let s = start;
+  let e = end;
+
+  if (s > e) {
+    [s, e] = [e, s];
+  }
+
+  const startYear = s.getFullYear();
+  const startMonth = s.getMonth();
+  const startDay = s.getDate();
+
+  const endYear = e.getFullYear();
+  const endMonth = e.getMonth();
+
+  // Base calendar difference INCLUDING end month
+  let months =
+      (endYear - startYear) * 12 +
+      (endMonth - startMonth) +
+      1;
+
+  // If first month is partial, subtract it
+  if (startDay !== 1) {
+    months -= 1;
+  }
+
+  return Math.max(0, months);
+}

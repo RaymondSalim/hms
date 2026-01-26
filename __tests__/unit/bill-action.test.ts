@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, test} from "@jest/globals";
 import {prismaMock} from "./singleton_prisma";
 import {
+    dedupePaymentsByLatestDate,
     generateBookingAddonsBillItems,
     generateBookingBillandBillItems,
     generatePaymentBillMappingFromPaymentsAndBills,
@@ -13,6 +14,20 @@ import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
 import {matchBillItemsToBills} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 
 describe('BillAction', () => {
+    describe('dedupePaymentsByLatestDate', () => {
+        test('keeps most recent payment_date for duplicate ids', async () => {
+            const older = {id: 1, payment_date: new Date('2024-01-01')} as Payment;
+            const newer = {id: 1, payment_date: new Date('2024-02-01')} as Payment;
+            const other = {id: 2, payment_date: new Date('2024-01-15')} as Payment;
+
+            const result = await dedupePaymentsByLatestDate([older, undefined, newer, other]);
+
+            expect(result).toHaveLength(2);
+            const payment1 = result.find(p => p.id === 1);
+            expect(payment1?.payment_date.getTime()).toBe(newer.payment_date.getTime());
+        });
+    });
+
     describe('test simulateBillPaymentAction', () => {
         test('balance is greater than outstanding', async () => {
             const today = new Date();
@@ -81,7 +96,7 @@ describe('BillAction', () => {
                 .toBe(500000);
 
             resp.new.payments.forEach((pb, index) => {
-                expect(pb.amount?.toNumber())
+                expect(new Prisma.Decimal(pb.amount).toNumber())
                     .toEqual(
                         bills[index].bill_item?.reduce(
                             (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
@@ -156,17 +171,17 @@ describe('BillAction', () => {
             expect(resp.new.balance)
                 .toBe(0);
 
-            expect(resp.new.payments[0].amount?.toNumber())
+            expect(new Prisma.Decimal(resp.new.payments[0].amount).toNumber())
                 .toEqual(bills[0].bill_item?.reduce(
                     (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
                 ).toNumber());
 
-            expect(resp.new.payments[1].amount?.toNumber())
+            expect(new Prisma.Decimal(resp.new.payments[1].amount).toNumber())
                 .toEqual(bills[1].bill_item?.reduce(
                     (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
                 ).toNumber());
 
-            expect(resp.new.payments[2].amount?.toNumber())
+            expect(new Prisma.Decimal(resp.new.payments[2].amount).toNumber())
                 .toEqual(250000);
         });
 
@@ -257,13 +272,13 @@ describe('BillAction', () => {
             expect(resp.new.balance)
                 .toBe(900000);
 
-            expect(resp.new.payments[0].amount?.toNumber())
+            expect(new Prisma.Decimal(resp.new.payments[0].amount).toNumber())
                 .toEqual(250000);
 
-            expect(resp.new.payments[1].amount?.toNumber())
+            expect(new Prisma.Decimal(resp.new.payments[1].amount).toNumber())
                 .toBe(200000);
 
-            expect(resp.new.payments[2].amount?.toNumber())
+            expect(new Prisma.Decimal(resp.new.payments[2].amount).toNumber())
                 .toBe(150000);
         });
 
@@ -427,7 +442,7 @@ describe('BillAction', () => {
             expect(resp.new.payments.length)
                 .toBe(1);
 
-            expect(resp.new.payments[0].amount!.toNumber())
+            expect(new Prisma.Decimal(resp.new.payments[0].amount).toNumber())
                 .toBe(250000);
         });
     });
@@ -1649,7 +1664,6 @@ describe('generateBookingAddonsBillItems', () => {
         await expect(generateBookingAddonsBillItems(bookingAddons, bills)).rejects.toThrow();
     });
 });
-
 
 describe("generateRoomBillAndBillItems", () => {
     it("should generate bills and bill items for a full month starting on the 1st", async () => {

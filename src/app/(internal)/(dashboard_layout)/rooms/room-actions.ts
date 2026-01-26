@@ -7,6 +7,9 @@ import {GenericActionsType} from "@/app/_lib/actions";
 import {number, object} from "zod";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocation>): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
     after(() => {
@@ -15,9 +18,9 @@ export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocatio
     const {success, data, error} = roomWithType.safeParse(roomData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     try {
@@ -32,15 +35,15 @@ export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocatio
         }
         res = res[res.length - 1];
 
-        return {
+        return toClient({
             // @ts-ignore
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[upsertRoomAction][PrismaKnownError]", {error});
             if (error.code == "P2002") {
-                return {failure: "Room Number is taken"};
+                return toClient({failure: "Room Number is taken"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[upsertRoomAction][PrismaUnknownError]", {error});
@@ -48,12 +51,12 @@ export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocatio
             serverLogger.error("[upsertRoomAction]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }
 
 export async function getRoomsWithBookingsAction(locationID?: number, limit?: number, offset?: number) {
-    return getRoomsWithBookings(undefined, locationID, limit, offset);
+    return getRoomsWithBookings(undefined, locationID, limit, offset).then(toClient);
 }
 
 export async function deleteRoomAction(id: string): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
@@ -65,20 +68,20 @@ export async function deleteRoomAction(id: string): Promise<GenericActionsType<R
     });
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
         let res = await deleteRoom(parsedData.data.id);
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         serverLogger.error("deleteRoomAction", {error, room_id: id});
-        return {
+        return toClient({
             failure: "Error deleting guest",
-        };
+        });
     }
 }

@@ -309,6 +309,9 @@ export function ExpenseForm(props: ExpenseFormProps) {
                                         mode="single"
                                         placeholder="Pilih tanggal transaksi"
                                         showSearchButton={false}
+                                        initialDate={{
+                                            singleDate: data.date
+                                        }}
                                         onUpdate={(dateData) => {
                                             if (dateData.singleDate) {
                                                 setData(p => ({...p, date: dateData.singleDate}));

@@ -2,7 +2,10 @@
 
 import {convertGroupedTransactionsToTotals, formatToDateTime, formatToIDR, preparePieChartData} from "@/app/_lib/util";
 import React, {useEffect, useRef, useState} from "react";
-import {getGroupedIncomeExpense, getRecentTransactions} from "@/app/_db/dashboard";
+import {
+    getGroupedIncomeExpenseAction,
+    getRecentTransactionsAction
+} from "@/app/(internal)/(dashboard_layout)/dashboard/dashboard-action";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {Period} from "@/app/_enum/financial";
 import {useQuery} from "@tanstack/react-query";
@@ -75,7 +78,7 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
         ],
         queryFn: () => {
             if (periodMode === "all") {
-                return getGroupedIncomeExpense({
+                return getGroupedIncomeExpenseAction({
                     type: "all",
                     locationID: headerContext.locationID
                 });
@@ -86,14 +89,14 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                     throw new Error("Pilih rentang tanggal kustom terlebih dahulu");
                 }
 
-                return getGroupedIncomeExpense({
+                return getGroupedIncomeExpenseAction({
                     type: "custom",
                     range: customRangeForQuery,
                     locationID: headerContext.locationID
                 });
             }
 
-            return getGroupedIncomeExpense(selectedPeriod, headerContext.locationID);
+            return getGroupedIncomeExpenseAction(selectedPeriod, headerContext.locationID);
         },
         enabled: periodMode !== "custom" || Boolean(customRangeForQuery),
     });
@@ -113,7 +116,7 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
 
     const {data: recentTransactions, isLoading: isRecentLoading, isSuccess: isRecentSuccess} = useQuery({
         queryKey: ["recentTransactions", headerContext.locationID],
-        queryFn: () => getRecentTransactions(headerContext.locationID),
+        queryFn: () => getRecentTransactionsAction(headerContext.locationID),
     });
 
     // Category Breakdown
@@ -195,6 +198,9 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                     {
                         periodMode === "custom" &&
                         <DatePicker
+                            initialDate={{
+                                range: customRange
+                            }}
                             onUpdate={({range}) => {
                                 setPeriodMode("custom");
                                 setCustomRange(range);

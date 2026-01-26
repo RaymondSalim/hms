@@ -199,12 +199,13 @@ export function PaymentForm(props: PaymentForm) {
         queryKey: ['payment.simulation', 'balance', data.amount?.toNumber(), 'booking_id', data.booking_id, isEditMode ? paymentIdToExclude : undefined],
         enabled: Boolean(data.amount && data.booking_id && data.payment_date && unpaidBillsDataSuccess),
         queryFn: async () => {
+            let amount = new Prisma.Decimal(data.amount!);
             if (isEditMode && paymentIdToExclude) {
                 // Exclude the current payment from the simulation
-                return simulateUnpaidBillPaymentActionWithExcludePayment(data.amount!.toNumber(), data.booking_id!, paymentIdToExclude);
+                return simulateUnpaidBillPaymentActionWithExcludePayment(amount.toNumber(), data.booking_id!, paymentIdToExclude);
             } else {
-                // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
-                return simulateUnpaidBillPaymentAction(data.amount!.toNumber(), unpaidBillsData!.bills);
+                // @ts-expect-error invalid type BillIncludeAll and BillIncludePaymentAndSum
+                return simulateUnpaidBillPaymentAction(amount.toNumber(), unpaidBillsData!.bills);
             }
         }
     });
@@ -455,6 +456,9 @@ export function PaymentForm(props: PaymentForm) {
                                         mode="single"
                                         placeholder="Pilih tanggal pembayaran"
                                         showSearchButton={false}
+                                        initialDate={{
+                                            singleDate: data.payment_date
+                                        }}
                                         onUpdate={(dateData) => {
                                             if (dateData.singleDate) {
                                                 setData(p => ({...p, payment_date: dateData.singleDate}));

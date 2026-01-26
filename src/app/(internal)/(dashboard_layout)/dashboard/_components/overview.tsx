@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./styles/overview.module.css";
-import {getOverviewData} from "@/app/_db/dashboard";
+import {getOverviewDataAction} from "@/app/(internal)/(dashboard_layout)/dashboard/dashboard-action";
 import {AiOutlineLoading} from "react-icons/ai";
 import {useHeader} from "@/app/_context/HeaderContext";
 import {useQuery} from "@tanstack/react-query";
@@ -13,7 +13,7 @@ export default function Overview() {
     const dashboardContext = useHeader();
     const {data, isLoading, isSuccess} = useQuery({
         queryKey: ['dashboard.overview', dashboardContext.locationID],
-        queryFn: () => getOverviewData(dashboardContext.locationID)
+        queryFn: () => getOverviewDataAction(dashboardContext.locationID)
     });
 
     // Popover open state: 'check_in', 'check_out', 'available', or null

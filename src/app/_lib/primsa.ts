@@ -2,8 +2,9 @@ import {Prisma, PrismaClient} from '@prisma/client';
 import QueryEvent = Prisma.QueryEvent;
 
 const prismaClientSingleton = () => {
+    const shouldLog = !(["production", "test"].includes(process.env.NODE_ENV));
     let prisma = new PrismaClient({
-        log: process.env.NODE_ENV != "production" ? [
+        log: shouldLog ? [
             {
                 emit: 'event',
                 level: 'query',
@@ -12,7 +13,7 @@ const prismaClientSingleton = () => {
         ] : undefined,
     });
 
-    if (process.env.NODE_ENV != "production") {
+    if (shouldLog) {
         // @ts-expect-error due to conditional block for logging (L5)
         prisma.$on('query', (e: QueryEvent) => {
             console.groupCollapsed('Query: ' + e.query);

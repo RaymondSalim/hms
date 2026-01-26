@@ -4,9 +4,12 @@ import {locationObject, locationObjectWithID, locationObjectWithOptionalID} from
 import {number, object, typeToFlattenedError} from "zod";
 import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
 import {Location} from "@prisma/client";
-import {createLocation, deleteLocation, updateLocationByID, upsertLocation} from "@/app/_db/location";
+import {createLocation, deleteLocation, getLocations, updateLocationByID, upsertLocation} from "@/app/_db/location";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export type LocationActionsType<T = OmitIDTypeAndTimestamp<Location>> = {
     success?: Location,
@@ -24,23 +27,23 @@ export async function createLocationAction(prevState: LocationActionsType, formD
     });
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.flatten()
-        };
+        });
     }
 
     try {
         let res = await createLocation(data);
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         serverLogger.error("[createLocationAction]", {error});
 
-        return {
+        return toClient({
             failure: "error"
-        };
+        });
     }
 }
 
@@ -55,9 +58,9 @@ export async function updateLocationAction(prevState: LocationActionsType, formD
     });
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.flatten()
-        };
+        });
     }
 
     try {
@@ -67,15 +70,15 @@ export async function updateLocationAction(prevState: LocationActionsType, formD
             id: undefined
         });
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         serverLogger.error("[updateLocationAction]", {error});
 
-        return {
+        return toClient({
             failure: "error"
-        };
+        });
     }
 }
 
@@ -86,23 +89,23 @@ export async function upsertLocationAction(locationData: OmitTimestamp<Location>
     const {success, error, data} = locationObjectWithOptionalID.safeParse(locationData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.flatten()
-        };
+        });
     }
 
     try {
         let res = await upsertLocation(data);
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         serverLogger.error("[upsertLocationAction]", {error});
 
-        return {
+        return toClient({
             failure: "error"
-        };
+        });
     }
 }
 
@@ -112,22 +115,26 @@ export async function deleteLocationAction(id: number): Promise<LocationActionsT
     });
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.flatten()
-        };
+        });
     }
 
     try {
         let res = await deleteLocation(data!.id);
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         serverLogger.error("[deleteLocationAction]", {error, location_id: id});
 
-        return {
+        return toClient({
             failure: "error"
-        };
+        });
     }
+}
+
+export async function getLocationsAction(...args: Parameters<typeof getLocations>) {
+    return getLocations(...args).then(toClient);
 }

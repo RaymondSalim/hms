@@ -5,7 +5,7 @@ import React, {use, useEffect} from "react";
 import Link from "next/link";
 import {useQuery} from "@tanstack/react-query";
 import {AiOutlineLoading} from "react-icons/ai";
-import {getAllPayments} from "@/app/_db/payment";
+import {getAllPaymentsAction} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
 import PaymentsContent from "@/app/(internal)/(dashboard_layout)/payments/content";
 
 export type PaymentPageQueryParams = {
@@ -37,7 +37,7 @@ export default function PaymentPage(props: {
     isSuccess
   } = useQuery({
     queryKey: ['payments', 'location_id', headerContext.locationID],
-    queryFn: () => getAllPayments(undefined, headerContext.locationID)
+    queryFn: () => getAllPaymentsAction(undefined, headerContext.locationID)
   });
 
   return (

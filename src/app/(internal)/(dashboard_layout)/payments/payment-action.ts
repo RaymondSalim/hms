@@ -1,8 +1,8 @@
 "use server";
 
-import {createPayment, deletePayment, getPaymentStatus, updatePaymentByID} from "@/app/_db/payment";
+import {createPayment, deletePayment, getAllPayments, getPaymentStatus, updatePaymentByID} from "@/app/_db/payment";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
-import {DepositStatus, Payment, Prisma, TransactionType} from "@prisma/client";
+import {Booking, DepositStatus, Payment, Prisma, TransactionType} from "@prisma/client";
 import {number, object} from "zod";
 import {paymentSchema} from "@/app/_lib/zod/payment/zod";
 import prisma from "@/app/_lib/primsa";
@@ -15,6 +15,10 @@ import {DeleteObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s
 import {getBookingByID} from "@/app/_db/bookings";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+import {GenericActionsType} from "@/app/_lib/actions";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 export async function createPaymentBillsFromBillAllocations(
     manualAllocations: Record<number, number>,
@@ -46,16 +50,16 @@ export async function createPaymentBillsFromBillAllocations(
 export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & {
     allocationMode?: 'auto' | 'manual',
     manualAllocations?: Record<number, number>
-}) {
+}): Promise<GenericActionsType<Booking>> {
     after(() => {
         serverLogger.flush();
     });
     const {success, data, error} = paymentSchema.safeParse(reqData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     const booking = await getBookingByID(data?.booking_id, {
@@ -63,9 +67,9 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
     });
 
     if (!booking) {
-        return {
+        return toClient({
             failure: "Booking not found"
-        };
+        });
     }
 
     const file = data?.payment_proof_file;
@@ -91,9 +95,9 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
         }
     } catch (error) {
         serverLogger.warn("[upsertPaymentAction] error uploading to s3 with err: ", {error});
-        return {
+        return toClient({
             failure: "Internal Server Error"
-        };
+        });
     }
 
     let allocationMode = reqData.allocationMode || 'auto';
@@ -176,17 +180,17 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
     });
 
     if (trxRes.success) {
-        return {
+        return toClient({
             success: trxRes.data
-        };
+        });
     }
 
-    return {
+    return toClient({
         failure: trxRes.error
-    };
+    });
 }
 
-export async function deletePaymentAction(id: number) {
+export async function deletePaymentAction(id: number): Promise<GenericActionsType<Payment>> {
     after(() => {
         serverLogger.flush();
     });
@@ -195,9 +199,9 @@ export async function deletePaymentAction(id: number) {
     });
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     let payment = await prisma.payment.findFirst({
@@ -207,9 +211,9 @@ export async function deletePaymentAction(id: number) {
     });
 
     if (!payment) {
-        return {
+        return toClient({
             failure: "payment not found"
-        };
+        });
     }
 
     const client = new S3Client({region: process.env.AWS_REGION});
@@ -242,20 +246,24 @@ export async function deletePaymentAction(id: number) {
             }
         }
 
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         serverLogger.error("[deletePaymentAction]", {error});
-        return {
+        return toClient({
             failure: "Error deleting payment",
-        };
+        });
     }
 
 }
 
 export async function getPaymentStatusAction() {
-    return getPaymentStatus();
+    return getPaymentStatus().then(toClient);
+}
+
+export async function getAllPaymentsAction(...args: Parameters<typeof getAllPayments>) {
+    return getAllPayments(...args).then(toClient);
 }
 
 // Helper function to get deposit ID for a booking

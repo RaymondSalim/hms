@@ -10,6 +10,9 @@ import prisma from "@/app/_lib/primsa";
 import {PartialBy} from "@/app/_db/db";
 import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
+import {serializeForClient} from "@/app/_lib/util/prisma";
+
+const toClient = <T>(value: T) => serializeForClient(value);
 
 // Action to update guests
 export async function upsertGuestAction(guestData: Partial<Guest>): Promise<GenericActionsType<GuestIncludeAll>> {
@@ -19,9 +22,9 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
     const {success, data, error} = guestSchemaWithOptionalID.safeParse(guestData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     try {
@@ -33,20 +36,20 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
             res = await createGuest(data);
         }
 
-        return {
+        return toClient({
             success: res
-        };
+        });
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             serverLogger.error("[register]", {error});
             if (error.code == "P2002") {
-                return {failure: "Alamat Email sudah terdaftar"};
+                return toClient({failure: "Alamat Email sudah terdaftar"});
             }
         } else if (error instanceof PrismaClientUnknownRequestError) {
             serverLogger.error("[register]", {error});
         }
 
-        return {failure: "Request unsuccessful"};
+        return toClient({failure: "Request unsuccessful"});
     }
 }
 
@@ -59,21 +62,21 @@ export async function deleteGuestAction(id: string): Promise<GenericActionsType<
     });
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
         let res = await deleteGuest(parsedData.data.id);
-        return {
+        return toClient({
             success: res,
-        };
+        });
     } catch (error) {
         serverLogger.error("[deleteGuestAction]", {error, guest_id: id});
-        return {
+        return toClient({
             failure: "Error deleting guest",
-        };
+        });
     }
 }
 
@@ -86,13 +89,13 @@ export async function upsertGuestStayAction(guestStayData: Partial<GuestStay>): 
     const {success, data, error} = guestStaySchema.safeParse(guestStayData);
 
     if (!success) {
-        return {
+        return toClient({
             errors: error?.format()
-        };
+        });
     }
 
     try {
-        return await prisma.$transaction(async (prismaTrx) => {
+        return prisma.$transaction(async (prismaTrx) => {
             let guestStay;
 
             if (data.id) {
@@ -192,10 +195,10 @@ export async function upsertGuestStayAction(guestStayData: Partial<GuestStay>): 
             return {success: guestStay};
         }, {
             timeout: 25000
-        });
+        }).then(toClient);
     } catch (error) {
         serverLogger.error("[upsertGuestStayAction]", {error});
-        return {failure: "Error processing guest stay."};
+        return toClient({failure: "Error processing guest stay."});
     }
 }
 
@@ -207,13 +210,13 @@ export async function deleteGuestStayAction(id: number): Promise<GenericActionsT
     const parsedData = object({id: number().positive()}).safeParse({id});
 
     if (!parsedData.success) {
-        return {
+        return toClient({
             errors: parsedData.error.format()
-        };
+        });
     }
 
     try {
-        return await prisma.$transaction(async (prismaTrx) => {
+        return prisma.$transaction(async (prismaTrx) => {
             const guestStay = await prismaTrx.guestStay.findUnique({
                 where: {id: parsedData.data.id},
                 include: {
@@ -245,10 +248,10 @@ export async function deleteGuestStayAction(id: number): Promise<GenericActionsT
             });
 
             return {success: guestStay};
-        });
+        }).then(toClient);
     } catch (error) {
         serverLogger.error("[deleteGuestStayAction]", {error, guest_stay_id: id});
-        return {failure: "Error deleting guest stay."};
+        return toClient({failure: "Error deleting guest stay."});
     }
 }
 
