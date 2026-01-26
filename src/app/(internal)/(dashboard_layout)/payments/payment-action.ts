@@ -190,7 +190,7 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
     });
 }
 
-export async function deletePaymentAction(id: number) {
+export async function deletePaymentAction(id: number): Promise<GenericActionsType<Payment>> {
     after(() => {
         serverLogger.flush();
     });

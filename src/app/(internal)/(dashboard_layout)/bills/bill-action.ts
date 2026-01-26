@@ -35,6 +35,20 @@ export type BillIncludePaymentAndSum = BillIncludePayment & {
     sumPaidAmount: Prisma.Decimal
 };
 
+export async function dedupePaymentsByLatestDate(payments: Array<Payment | undefined | null>): Promise<Payment[]> {
+    const latestById = new Map<number, Payment>();
+    for (const payment of payments) {
+        if (!payment) {
+            continue;
+        }
+        const existing = latestById.get(payment.id);
+        if (!existing || payment.payment_date.getTime() > existing.payment_date.getTime()) {
+            latestById.set(payment.id, payment);
+        }
+    }
+    return Array.from(latestById.values());
+}
+
 /**
  * Retrieves unpaid bills for a booking, ordered by due date
  * @param booking_id - The booking ID to get unpaid bills for
@@ -458,11 +472,7 @@ export async function syncBillsWithPaymentDate(bookingID: number, trx: Prisma.Tr
     let allPayments: Payment[] = bills.flatMap(b => b.paymentBills.map(pb => pb.payment));
     allPayments = allPayments.concat(newPayments ?? []);
     // Remove dups
-    allPayments = allPayments.filter((item, index, self) =>
-            item != undefined && index === self.findIndex((t) => (
-                t?.id === item.id
-            ))
-    );
+    allPayments = await dedupePaymentsByLatestDate(allPayments);
 
     let generatedPaymentBills = await generatePaymentBillMappingFromPaymentsAndBills(allPayments, bills);
 

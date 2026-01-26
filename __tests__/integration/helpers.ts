@@ -1,132 +1,213 @@
 import prisma from '@/app/_lib/primsa';
+import {upsertBookingAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
 
 export type BaseFixtures = {
-  locationId: number;
-  roomStatusId: number;
-  roomTypeId: number;
-  roomId: number;
-  bookingStatusId: number;
-  durationId: number;
-  tenantId: string;
+    locationId: number;
+    roomStatusId: number;
+    roomTypeId: number;
+    roomId: number;
+    bookingStatusId: number;
+    durationId: number;
+    tenantId: string;
 };
 
 export async function cleanupDatabase() {
-  await prisma.paymentBill.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.billItem.deleteMany();
-  await prisma.bill.deleteMany();
-  await prisma.bookingAddOn.deleteMany();
-  await prisma.deposit.deleteMany();
-  await prisma.checkInOutLog.deleteMany();
-  await prisma.penalty.deleteMany();
-  await prisma.guestStay.deleteMany();
-  await prisma.guest.deleteMany();
-  await prisma.booking.deleteMany();
-  await prisma.addOnPricing.deleteMany();
-  await prisma.addOn.deleteMany();
-  await prisma.roomTypeDuration.deleteMany();
-  await prisma.room.deleteMany();
-  await prisma.roomStatus.deleteMany();
-  await prisma.roomType.deleteMany();
-  await prisma.bookingStatus.deleteMany();
-  await prisma.duration.deleteMany();
-  await prisma.tenant.deleteMany();
-  await prisma.location.deleteMany();
-  await prisma.transaction.deleteMany();
-  await prisma.paymentStatus.deleteMany();
+    await prisma.paymentBill.deleteMany();
+    await prisma.payment.deleteMany();
+    await prisma.billItem.deleteMany();
+    await prisma.bill.deleteMany();
+    await prisma.bookingAddOn.deleteMany();
+    await prisma.deposit.deleteMany();
+    await prisma.checkInOutLog.deleteMany();
+    await prisma.penalty.deleteMany();
+    await prisma.guestStay.deleteMany();
+    await prisma.guest.deleteMany();
+    await prisma.booking.deleteMany();
+    await prisma.addOnPricing.deleteMany();
+    await prisma.addOn.deleteMany();
+    await prisma.roomTypeDuration.deleteMany();
+    await prisma.room.deleteMany();
+    await prisma.roomStatus.deleteMany();
+    await prisma.roomType.deleteMany();
+    await prisma.bookingStatus.deleteMany();
+    await prisma.duration.deleteMany();
+    await prisma.tenant.deleteMany();
+    await prisma.transaction.deleteMany();
+    await prisma.paymentStatus.deleteMany();
+    await prisma.location.deleteMany();
 }
 
 export async function seedBaseFixtures(): Promise<BaseFixtures> {
-  const location = await prisma.location.create({
-    data: {
-      name: 'Lokasi Test',
-      address: 'Alamat Test',
-    },
-  });
+    const location = await prisma.location.create({
+        data: {
+            name: 'Lokasi Test',
+            address: 'Alamat Test',
+        },
+    });
 
-  const roomStatus = await prisma.roomStatus.create({
-    data: {
-      status: 'Tersedia',
-    },
-  });
+    const roomStatus = await prisma.roomStatus.create({
+        data: {
+            status: 'Tersedia',
+        },
+    });
 
-  const roomType = await prisma.roomType.create({
-    data: {
-      type: 'Single Test',
-      description: 'Kamar uji',
-    },
-  });
+    const roomType = await prisma.roomType.create({
+        data: {
+            type: 'Single Test',
+            description: 'Kamar uji',
+        },
+    });
 
-  const room = await prisma.room.create({
-    data: {
-      room_number: '101',
-      location_id: location.id,
-      status_id: roomStatus.id,
-      room_type_id: roomType.id,
-    },
-  });
+    const room = await prisma.room.create({
+        data: {
+            room_number: '101',
+            location_id: location.id,
+            status_id: roomStatus.id,
+            room_type_id: roomType.id,
+        },
+    });
 
-  const bookingStatus = await prisma.bookingStatus.create({
-    data: {
-      status: 'Aktif',
-    },
-  });
+    const bookingStatus = await prisma.bookingStatus.create({
+        data: {
+            status: 'Aktif',
+        },
+    });
 
-  const duration = await prisma.duration.create({
-    data: {
-      duration: '3 Bulan',
-      month_count: 3,
-    },
-  });
+    const duration = await prisma.duration.create({
+        data: {
+            duration: '3 Bulan',
+            month_count: 3,
+        },
+    });
 
-  const tenant = await prisma.tenant.create({
-    data: {
-      name: 'Tenant Test',
-      id_number: 'ID-TEST-001',
-      email: 'tenant@test.local',
-      phone: '0800000000',
-    },
-  });
+    const tenant = await prisma.tenant.create({
+        data: {
+            name: 'Tenant Test',
+            id_number: 'ID-TEST-001',
+            email: 'tenant@test.local',
+            phone: '0800000000',
+        },
+    });
 
-  return {
-    locationId: location.id,
-    roomStatusId: roomStatus.id,
-    roomTypeId: roomType.id,
-    roomId: room.id,
-    bookingStatusId: bookingStatus.id,
-    durationId: duration.id,
-    tenantId: tenant.id,
-  };
+    return {
+        locationId: location.id,
+        roomStatusId: roomStatus.id,
+        roomTypeId: roomType.id,
+        roomId: room.id,
+        bookingStatusId: bookingStatus.id,
+        durationId: duration.id,
+        tenantId: tenant.id,
+    };
 }
 
 export async function seedAddonFixtures(locationId: number) {
-  const addOn = await prisma.addOn.create({
-    data: {
-      name: 'Internet Test',
-      description: 'Addon uji',
-      requires_input: false,
-      location_id: locationId,
-    },
-  });
+    const addOn = await prisma.addOn.create({
+        data: {
+            name: 'Internet Test',
+            description: 'Addon uji',
+            requires_input: false,
+            location_id: locationId,
+        },
+    });
 
-  await prisma.addOnPricing.createMany({
-    data: [
-      {
-        addon_id: addOn.id,
-        interval_start: 0,
-        interval_end: 0,
-        is_full_payment: true,
-        price: 300000,
-      },
-      {
-        addon_id: addOn.id,
-        interval_start: 1,
-        interval_end: null,
-        is_full_payment: false,
-        price: 100000,
-      },
-    ],
-  });
+    await prisma.addOnPricing.createMany({
+        data: [
+            {
+                addon_id: addOn.id,
+                interval_start: 0,
+                interval_end: 0,
+                is_full_payment: true,
+                price: 300000,
+            },
+            {
+                addon_id: addOn.id,
+                interval_start: 1,
+                interval_end: null,
+                is_full_payment: false,
+                price: 100000,
+            },
+        ],
+    });
 
-  return { addOnId: addOn.id };
+    return {addOnId: addOn.id};
 }
+
+export async function seedBookingWithBills(withDeposit?: boolean) {
+    const base = await seedBaseFixtures();
+    const roomType = await prisma.roomType.create({
+        data: {
+            type: 'Standard Plus',
+            description: 'luas 3x4, jendela luar, fully furnished'
+        }
+    });
+    const room = await prisma.room.create({
+        data: {
+            room_number: '309',
+            room_type_id: roomType.id,
+            status_id: base.roomStatusId,
+            location_id: base.locationId
+        }
+    });
+    const duration = await prisma.duration.create({
+        data: {
+            duration: '3 Bulan',
+            month_count: 3
+        }
+    });
+
+    const bookingReq = await upsertBookingAction({
+        room_id: room.id,
+        start_date: utcDate(2024, 5, 1),
+        duration_id: duration.id,
+        status_id: base.bookingStatusId,
+        fee: 2250000,
+        tenant_id: base.tenantId,
+        end_date: utcDate(2024, 7, 31),
+        second_resident_fee: null,
+        is_rolling: false,
+        deposit: withDeposit ? {
+            amount: 100000
+        } : undefined
+    } as any);
+
+    if (!bookingReq.success) {
+        throw new Error('Gagal membuat booking untuk test pembayaran');
+    }
+
+    const bills = await prisma.bill.findMany({
+        where: {
+            booking_id: bookingReq.success!.id
+        },
+        orderBy: {
+            id: 'asc'
+        },
+        include: {
+            bill_item: true,
+        }
+    });
+
+    const booking = await prisma.booking.findFirstOrThrow({
+        where: {id: bookingReq.success!.id},
+        include: {
+            deposit: true
+        }
+    });
+
+    return {
+        base,
+        booking: booking,
+        bills
+    };
+}
+
+export const utcDate = (year: number, monthIndex: number, day: number) => (
+    new Date(Date.UTC(year, monthIndex, day, 0, 0, 0))
+);
+
+export const toUtcDateOnly = (value: Date | null | undefined) => {
+    if (!value) return null;
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(value.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};

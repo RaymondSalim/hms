@@ -258,7 +258,7 @@ export default function BillsContent({bills, queryParams}: BillsContentProps) {
     return (
         <>
             <TableContent<typeof bills[0]>
-                name={"Pemesanan"}
+                name={"Tagihan"}
                 initialContents={dataState}
                 columns={columns}
                 groupByOptions={[

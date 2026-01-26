@@ -6,7 +6,7 @@ import {Button, Input, Radio, Typography} from "@material-tailwind/react";
 import {useQuery} from "@tanstack/react-query";
 import {SelectComponent, SelectOption} from "@/app/_components/input/select";
 import {getLocations} from "@/app/_db/location";
-import {instanceof as zInstanceOf, ZodFormattedError} from "zod";
+import {ZodFormattedError} from "zod";
 import {DatePicker} from "@/app/_components/DateRangePicker";
 import {fileToBase64, formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {getBookingsWithUnpaidBillsAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
@@ -204,11 +204,8 @@ export function PaymentForm(props: PaymentForm) {
                 // Exclude the current payment from the simulation
                 return simulateUnpaidBillPaymentActionWithExcludePayment(amount.toNumber(), data.booking_id!, paymentIdToExclude);
             } else {
-                // @ts-expect-error billIncludeAll and BillIncludePaymentAndSum
-                const a = zInstanceOf<BillIncludePaymentAndSum>(BillIncludePaymentAndSum);
-                const {data, error} = a.safeParse(unpaidBillsData!.bills);
-                if (error) return;
-                return simulateUnpaidBillPaymentAction(amount.toNumber(), data);
+                // @ts-expect-error invalid type BillIncludeAll and BillIncludePaymentAndSum
+                return simulateUnpaidBillPaymentAction(amount.toNumber(), unpaidBillsData!.bills);
             }
         }
     });

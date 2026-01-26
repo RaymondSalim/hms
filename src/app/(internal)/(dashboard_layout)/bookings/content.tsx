@@ -37,7 +37,6 @@ import {BookingsIncludeAll} from "@/app/_db/bookings";
 import {usePathname, useRouter} from "next/navigation";
 import {BookingPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bookings/page";
 import {DepositStatus, Prisma} from "@prisma/client";
-import {SelectOption} from "@/app/_components/input/select";
 import {MdContentCopy} from "react-icons/md";
 import {toast} from "react-toastify";
 import CurrencyInput from "@/app/_components/input/currencyInput";
@@ -61,13 +60,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
 
     const [newQueryParams, setNewQueryParams] = useState<typeof queryParams>(queryParams);
     const [bookingsState, setBookingsState] = useState<BookingsIncludeAll[]>(bookings);
-    let [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
-    let [confirmationDialogContent, setConfirmationDialogContent] = useState({title: "", body: ""});
-    let [onConfirm, setOnConfirm] = useState(() => () => {
-    });
-    let [onCancel, setOnCancel] = useState(() => () => {
-    });
-
     // End of Stay dialog states
     const [showEndOfStayDialog, setShowEndOfStayDialog] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<BookingsIncludeAll | null>(null);
@@ -146,31 +138,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             toast.error(e.message || "Gagal menyimpan perubahan.");
             throw e;
         }
-    };
-
-    const handleDelete = (data: number) => {
-        return new Promise((resolve, reject) => {
-            setConfirmationDialogContent({
-                title: "Konfirmasi Hapus",
-                body: "Menghapus pemesanan ini akan menghapus semua pembayaran dan tagihan yang terkait (termasuk yang sudah lampau). Tindakan ini tidak dapat dibatalkan. Harap pastikan Anda benar-benar ingin menghapus pemesanan ini."
-            });
-            setOnConfirm(() => async () => {
-                try {
-                    const result = await deleteBookingAction(data);
-                    resolve(result);
-                } catch (e: any) {
-                    toast.error(e.message || "Gagal menghapus pemesanan.");
-                    reject(e);
-                } finally {
-                    setShowConfirmationDialog(false);
-                }
-            });
-            setOnCancel(() => () => {
-                setShowConfirmationDialog(false);
-                reject("Cancelled");
-            });
-            setShowConfirmationDialog(true);
-        });
     };
 
     const handleCheckInOut = (booking: BookingsIncludeAll, action: CheckInOutType) => {
@@ -314,15 +281,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         }),
     ];
 
-    const filterKeys: SelectOption<string>[] = columns
-        .filter(c => (
-            c.enableColumnFilter && c.header && c.id
-        ))
-        .map(c => ({
-            label: c.header!.toString(),
-            value: c.id!,
-        }));
-
     if (!headerContext.locationID) {
         // @ts-ignore
         columns.splice(1, 0, columnHelper.accessor(row => row.rooms?.locations?.name, {
@@ -358,7 +316,9 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
             }}
             delete={{
                 // @ts-ignore
-                mutationFn: handleDelete,
+                mutationFn: deleteBookingAction,
+                requireConfirmation: true,
+                confirmationDialogBody: "Menghapus pemesanan ini TIDAK akan menghapus semua pembayaran dan tagihan yang terkait (termasuk yang sudah lampau). Harap pastikan Anda benar-benar ingin menghapus pemesanan ini."
             }}
             additionalActions={{
                 position: "before",
@@ -485,39 +445,6 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
                             </Button>
                         </div>
                     </Dialog>
-
-                    {/*@ts-expect-error weird react 19 types error*/}
-                    <Dialog
-                        key={"confirmation-dialog"}
-                        open={showConfirmationDialog}
-                        handler={() => setShowConfirmationDialog(prev => !prev)}
-                        className={"p-4"}
-                    >
-                        {/*@ts-expect-error weird react 19 types error*/}
-                        <DialogHeader>{confirmationDialogContent.title}</DialogHeader>
-                        {/*@ts-expect-error weird react 19 types error*/}
-                        <DialogBody>
-                            {/*@ts-expect-error weird react 19 types error*/}
-                            <Typography>{confirmationDialogContent.body}</Typography>
-                        </DialogBody>
-                        {/*@ts-expect-error weird react 19 types error*/}
-                        <DialogFooter>
-                            {/*@ts-expect-error weird react 19 types error*/}
-                            <Button
-                                variant="text"
-                                color="red"
-                                onClick={onCancel}
-                                className="mr-1"
-                            >
-                                <span>Batal</span>
-                            </Button>
-                            {/*@ts-expect-error weird react 19 types error*/}
-                            <Button variant="gradient" color="green" onClick={onConfirm}>
-                                <span>Konfirmasi</span>
-                            </Button>
-                        </DialogFooter>
-                    </Dialog>
-
                     {selectedBooking && (
                         <EndOfStayForm
                             booking={selectedBooking}
