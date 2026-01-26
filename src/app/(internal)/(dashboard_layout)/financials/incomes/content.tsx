@@ -92,7 +92,7 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
 
     return (
         <TableContent<typeof incomes[0]>
-            name={"Pengeluaran"}
+            name={"Pemasukan"}
             initialContents={dataState}
             columns={columns}
             form={
@@ -108,6 +108,8 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
             delete={{
                 // @ts-expect-error weird type error
                 mutationFn: deleteTransactionAction,
+                requireConfirmation: true,
+                confirmationDialogBody: "Menghapus pemasukan ini juga akan menghapus semua pembayaran yang terkait. Harap pastikan Anda benar-benar ingin menghapus pembayaran ini."
             }}
             // additionalActions={{
             //     position: "before",

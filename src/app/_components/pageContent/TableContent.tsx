@@ -13,7 +13,7 @@ import {
     getSortedRowModel,
     useReactTable
 } from "@tanstack/react-table";
-import {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useRef, useState} from "react";
+import React, {cloneElement, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useRef, useState} from "react";
 import TanTable, {RowAction, smartFilterFn} from "@/app/_components/tanTable/tanTable";
 import styles from "@/app/(internal)/(dashboard_layout)/data-center/locations/components/searchBarAndCreate.module.css";
 import {Button, Dialog, IconButton, Input, Option, Select, Typography} from "@material-tailwind/react";
@@ -72,7 +72,9 @@ export type TableContentProps<T extends { id: number | string }, _TReturn = Gene
         )
 
     upsert: CustomMutationOptions<T, _TReturn, DefaultError, Partial<T>>,
-    delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number>,
+    delete: CustomMutationOptions<T, _TReturn, DefaultError, string | number> & {
+        confirmationDialogBody?: string
+    },
 
     columns: ColumnDef<T, any>[],
     groupBy?: string[],
@@ -235,6 +237,8 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
 
     const columnHelper = createColumnHelper<T>();
 
+    const deleteDialogBody = props.delete.confirmationDialogBody ?? "Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.";
+
     const columns = useMemo(() => [
         ...props.columns,
         columnHelper.display({
@@ -264,7 +268,7 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                                 }}
                                 delete={() => {
                                     setActiveContent(contentsState.find(l => l.id == cellProps.row.original.id));
-                                    setDeleteDialogOpen(true);
+                                        setDeleteDialogOpen(true);
                                 }}
                             />
                             {
@@ -611,7 +615,11 @@ export function TableContent<T extends { id: number | string }>(props: TableCont
                 className={"p-8"}
             >
                 <h2 className={"text-xl font-semibold text-black mb-4"}>Hapus {props.name}</h2>
-                <span>Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat dibatalkan.</span>
+                {/* @ts-expect-error weird react 19 types error */}
+                <Typography variant="small" color="red"
+                            className="mt-1">
+                    {deleteDialogBody}
+                </Typography>
                 {
                     deleteMutationResponse?.failure &&
                     // @ts-expect-error weird react 19 types error
