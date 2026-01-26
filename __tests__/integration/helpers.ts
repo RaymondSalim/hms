@@ -159,7 +159,7 @@ export async function seedBookingWithBills(withDeposit?: boolean) {
         room_id: room.id,
         start_date: utcDate(2024, 5, 1),
         duration_id: duration.id,
-        status_id: base.roomStatusId,
+        status_id: base.bookingStatusId,
         fee: 2250000,
         tenant_id: base.tenantId,
         end_date: utcDate(2024, 7, 31),

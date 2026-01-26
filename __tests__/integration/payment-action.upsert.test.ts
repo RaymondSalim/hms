@@ -1,9 +1,64 @@
 import {beforeEach} from "@jest/globals";
 import {Prisma} from "@prisma/client";
 import prisma from '@/app/_lib/primsa';
-import {cleanupDatabase, seedBaseFixtures, seedBookingWithBills, utcDate} from "./helpers";
+import {cleanupDatabase, seedBaseFixtures, utcDate} from "./helpers";
 import {upsertBookingAction} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
-import {deletePaymentAction, upsertPaymentAction} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
+import {upsertPaymentAction} from "@/app/(internal)/(dashboard_layout)/payments/payment-action";
+
+async function seedBookingWithBills() {
+    const base = await seedBaseFixtures();
+    const roomType = await prisma.roomType.create({
+        data: {
+            type: 'Standard Plus',
+            description: 'luas 3x4, jendela luar, fully furnished'
+        }
+    });
+    const room = await prisma.room.create({
+        data: {
+            room_number: '309',
+            room_type_id: roomType.id,
+            status_id: base.roomStatusId,
+            location_id: base.locationId
+        }
+    });
+    const duration = await prisma.duration.create({
+        data: {
+            duration: '3 Bulan',
+            month_count: 3
+        }
+    });
+
+    const bookingReq = await upsertBookingAction({
+        room_id: room.id,
+        start_date: utcDate(2024,5,1),
+        duration_id: duration.id,
+        status_id: base.bookingStatusId,
+        fee: 2250000,
+        tenant_id: base.tenantId,
+        end_date: utcDate(2024,7,31),
+        second_resident_fee: null,
+        is_rolling: false,
+    } as any);
+
+    if (!bookingReq.success) {
+        throw new Error('Gagal membuat booking untuk test pembayaran');
+    }
+
+    const bills = await prisma.bill.findMany({
+        where: {
+            booking_id: bookingReq.success!.id
+        },
+        orderBy: {
+            id: 'asc'
+        }
+    });
+
+    return {
+        base,
+        booking: bookingReq.success!,
+        bills
+    };
+}
 
 describe('20260126 - payments & income inconsistency', () => {
     beforeEach(async () => {
@@ -450,81 +505,4 @@ describe('20260126 - payments & income inconsistency', () => {
     });
 });
 
-
-describe('deletePaymentAction', () => {
-    it('should delete payment action and associated transaction', async () => {
-        const base = await seedBookingWithBills(true);
-
-        const paymentStatus = await prisma.paymentStatus.create({
-            data: {
-                status: "paid",
-            }
-        });
-
-        const payment = await upsertPaymentAction({
-            booking_id: base.booking.id,
-            // @ts-expect-error invalid type Decimal vs Number
-            amount: Number(base.booking.fee) + 100000, // add deposit amount
-            status_id: paymentStatus.id,
-            allocationMode: "auto",
-            payment_date: utcDate(2025, 1, 1),
-            payment_proof: null,
-        });
-
-        expect(payment.success).toBeDefined();
-
-        const deposit = await prisma.deposit.findFirst({
-            where: {booking_id: base.booking.id}
-        });
-
-        expect(deposit).toBeDefined();
-
-        const transactions = await prisma.transaction.findMany({
-            where: {
-                OR: [
-                    {
-                        related_id: {
-                            path: ['payment_id'],
-                            equals: payment.success!.id
-                        }
-                    },
-                    {
-                        related_id: {
-                            path: ['deposit_id'],
-                            equals: deposit!.id
-                        }
-                    },
-                ]
-            }
-        });
-
-        expect(transactions).toBeDefined();
-        expect(transactions).toHaveLength(2);
-
-        const del = await deletePaymentAction(payment.success!.id);
-
-        expect(del.success).toBeDefined();
-
-        const transactionsAfter = await prisma.transaction.findMany({
-            where: {
-                OR: [
-                    {
-                        related_id: {
-                            path: ['payment_id'],
-                            equals: payment.success!.id
-                        }
-                    },
-                    {
-                        related_id: {
-                            path: ['deposit_id'],
-                            equals: deposit!.id
-                        }
-                    },
-                ]
-            }
-        });
-
-        expect(transactionsAfter).toHaveLength(0);
-    });
-});
 

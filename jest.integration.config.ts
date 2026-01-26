@@ -15,6 +15,7 @@ if (!process.env.DATABASE_URL) {
 const config: Config = {
   clearMocks: true,
   collectCoverage: false,
+  maxWorkers: 1,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
