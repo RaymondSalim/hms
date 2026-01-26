@@ -1,7 +1,7 @@
 "use server";
 
 import {transactionSchema} from "@/app/_lib/zod/transaction/zod";
-import {Prisma, Transaction} from "@prisma/client";
+import {DepositStatus, Prisma, Transaction} from "@prisma/client";
 import {GenericActionsType} from "@/app/_lib/actions";
 import prisma from "@/app/_lib/primsa";
 import {after} from "next/server";
@@ -76,10 +76,37 @@ export async function deleteTransactionAction(id: number): Promise<GenericAction
         serverLogger.flush();
     });
     try {
-        const deletedTransaction = await prisma.transaction.delete({
-            where: { id },
+        const res = await prisma.$transaction(async (tx) => {
+            let deletedTransaction = await tx.transaction.delete({
+                where: { id },
+            });
+
+            // @ts-expect-error invalid type
+            const depositId = deletedTransaction?.related_id?.deposit_id;
+            if (depositId) {
+                await tx.deposit.update({
+                    where: { id: depositId },
+                    data: {
+                        status: DepositStatus.UNPAID,
+                        applied_at: null,
+                        refunded_amount: null,
+                        refunded_at: null,
+                    }
+                });
+            }
+
+            // @ts-expect-error invalid type
+            const paymentId = deletedTransaction?.related_id?.payment_id;
+            if (paymentId) {
+                await tx.payment.delete({
+                    where: { id: paymentId },
+                });
+            }
+
+            return deletedTransaction;
         });
-        return toClient({ success: deletedTransaction });
+
+        return toClient({ success: res });
     } catch (error) {
         serverLogger.error("[deleteTransactionAction]", {error, transaction_id: id});
         return toClient({ failure: "Error deleting transaction" });
