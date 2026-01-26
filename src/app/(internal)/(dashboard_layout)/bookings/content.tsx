@@ -152,7 +152,7 @@ export default function BookingsContent({bookings, queryParams}: BookingsContent
         return new Promise((resolve, reject) => {
             setConfirmationDialogContent({
                 title: "Konfirmasi Hapus",
-                body: "Menghapus pemesanan ini akan menghapus semua pembayaran dan tagihan yang terkait (termasuk yang sudah lampau). Tindakan ini tidak dapat dibatalkan. Harap pastikan Anda benar-benar ingin menghapus pemesanan ini."
+                body: "Menghapus pemesanan ini TIDAK akan menghapus semua pembayaran dan tagihan yang terkait (termasuk yang sudah lampau). Harap pastikan Anda benar-benar ingin menghapus pemesanan ini."
             });
             setOnConfirm(() => async () => {
                 try {

@@ -37,7 +37,7 @@ export async function upsertTransactionAction(
             result = await prisma.transaction.update({
                 where: { id: data.id },
                 data: {
-                    amount: new Prisma.Decimal(data.amount),
+                    amount: new Prisma.Decimal(data.amount).round(),
                     description: data.description,
                     date: data.date,
                     category: data.category,
@@ -50,7 +50,7 @@ export async function upsertTransactionAction(
             // Create a new transaction
             result = await prisma.transaction.create({
                 data: {
-                    amount: new Prisma.Decimal(data.amount),
+                    amount: new Prisma.Decimal(data.amount).round(),
                     description: data.description,
                     date: data.date,
                     category: data.category,

@@ -51,6 +51,7 @@ export default function IncomesContent({incomes, refetchFn}: IncomesContentProps
         }),
         columnHelper.accessor(row => row.booking?.id || "", {
             id: "booking_id",
+            meta: {filterType: "enumMulti"},
             header: "Booking ID",
             cell: props => props.row.original.booking?.id ? `#${props.row.original.booking.id}` : "-"
         }),
