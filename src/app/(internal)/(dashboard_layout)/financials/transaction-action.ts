@@ -83,7 +83,7 @@ export async function deleteTransactionAction(id: number): Promise<GenericAction
 
             // @ts-expect-error invalid type
             const depositId = deletedTransaction?.related_id?.deposit_id;
-            if (depositId) {
+            if (depositId && await tx.deposit.findFirst({where: {id: depositId}}) != null) {
                 await tx.deposit.update({
                     where: { id: depositId },
                     data: {
@@ -97,7 +97,7 @@ export async function deleteTransactionAction(id: number): Promise<GenericAction
 
             // @ts-expect-error invalid type
             const paymentId = deletedTransaction?.related_id?.payment_id;
-            if (paymentId) {
+            if (paymentId && await prisma.payment.findFirst({where: {id: paymentId}}) != null) {
                 await tx.payment.delete({
                     where: { id: paymentId },
                 });
