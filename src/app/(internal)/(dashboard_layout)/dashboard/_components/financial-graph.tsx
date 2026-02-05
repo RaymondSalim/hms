@@ -19,7 +19,7 @@ export default function FinancialGraph() {
         isSuccess,
     } = useQuery({
         queryKey: ["groupedIncomeExpense", selectedPeriod, headerContext.locationID],
-        queryFn: () => getGroupedIncomeExpense(selectedPeriod, headerContext.locationID),
+        queryFn: () => getGroupedIncomeExpense(selectedPeriod, headerContext.locationID, true),
     });
 
     useEffect(() => {
