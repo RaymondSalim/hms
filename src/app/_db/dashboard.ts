@@ -11,17 +11,25 @@ export interface GroupedIncomeExpense {
     labels: string[];
     incomeData: Transaction[][];
     expenseData: Transaction[][];
+    deposit?: {
+        income: Transaction[][];
+        expense: Transaction[][];
+    }
 }
 
 export interface SimplifiedIncomeExpense {
     labels: string[];
     incomeData: number[];
     expenseData: number[];
+    deposit?: {
+        income: number[];
+        expense: number[];
+    }
 }
 
-type PresetIncomeExpenseArgs = { type: "preset"; period: Period; locationID?: number };
-type AllTimeIncomeExpenseArgs = { type: "all"; locationID?: number };
-type CustomIncomeExpenseArgs = { type: "custom"; range: { startDate: Date; endDate: Date }; locationID?: number };
+type PresetIncomeExpenseArgs = { type: "preset"; period: Period };
+type AllTimeIncomeExpenseArgs = { type: "all" };
+type CustomIncomeExpenseArgs = { type: "custom"; range: { startDate: Date; endDate: Date } };
 
 export type GroupedIncomeExpenseArgs = PresetIncomeExpenseArgs | AllTimeIncomeExpenseArgs | CustomIncomeExpenseArgs;
 
@@ -50,7 +58,7 @@ function normalizeGroupedIncomeExpenseArgs(
         type: periodOrOptions.type,
         period: periodOrOptions.type === "preset" ? periodOrOptions.period : undefined,
         range: periodOrOptions.type === "custom" ? periodOrOptions.range : undefined,
-        locationID: periodOrOptions.locationID ?? locationID,
+        locationID: locationID,
     };
 }
 
@@ -113,7 +121,10 @@ export async function getOverviewData(locationID?: number) {
     ]);
 
     // Get available rooms count using the centralized function
-    const roomAvailability: RoomTypeWithRoomCountAndAvailability[] = await getRoomTypeAvailability(locationID, { from: today, to: sevenDaysAhead });
+    const roomAvailability: RoomTypeWithRoomCountAndAvailability[] = await getRoomTypeAvailability(locationID, {
+        from: today,
+        to: sevenDaysAhead
+    });
     const availableRooms = roomAvailability.reduce((sum: number, rt: RoomTypeWithRoomCountAndAvailability) => sum + rt.roomLeft, 0);
 
     return {
@@ -172,7 +183,8 @@ export async function getUpcomingEvents(locationID?: number) {
 
 export async function getGroupedIncomeExpense(
     periodOrOptions: Period | GroupedIncomeExpenseArgs,
-    locationID?: number
+    locationID?: number,
+    splitDeposit?: boolean
 ): Promise<GroupedIncomeExpense> {
     const normalizedArgs = normalizeGroupedIncomeExpenseArgs(periodOrOptions, locationID);
     const now = new Date();
@@ -211,7 +223,7 @@ export async function getGroupedIncomeExpense(
         }
     } else if (normalizedArgs.type === "all") {
         const earliestTransaction = await prisma.transaction.aggregate({
-            _min: { date: true },
+            _min: {date: true},
             where: {
                 location_id: normalizedArgs.locationID,
             },
@@ -251,58 +263,76 @@ export async function getGroupedIncomeExpense(
 
     // Fetch income transactions
     const incomeTransactions = await prisma.transaction.findMany({
-            where: {
-                date: { gte: startDateNormalized, lte: endDateNormalized },
-                location_id: normalizedArgs.locationID,
-                type: TransactionType.INCOME,
-            },
-        orderBy: { date: "asc" },
-        });
+        where: {
+            date: {gte: startDateNormalized, lte: endDateNormalized},
+            location_id: normalizedArgs.locationID,
+            type: TransactionType.INCOME,
+            ...(splitDeposit ? {category: {not: 'Deposit'}} : {}),
+        },
+        orderBy: {date: "asc"},
+    });
+
+    const depositIncomeTransactions = await prisma.transaction.findMany({
+        where: {
+            date: {gte: startDateNormalized, lte: endDateNormalized},
+            location_id: normalizedArgs.locationID,
+            type: TransactionType.INCOME,
+            category: {equals: 'Deposit'},
+        },
+        orderBy: {date: "asc"},
+    });
 
     // Fetch expense transactions
     const expenseTransactions = await prisma.transaction.findMany({
-            where: {
-                date: { gte: startDateNormalized, lte: endDateNormalized },
-                location_id: normalizedArgs.locationID,
-                type: TransactionType.EXPENSE,
-            },
-        orderBy: { date: "asc" },
+        where: {
+            date: {gte: startDateNormalized, lte: endDateNormalized},
+            location_id: normalizedArgs.locationID,
+            type: TransactionType.EXPENSE,
+            ...(splitDeposit ? {category: {not: 'Deposit'}} : {}),
+        },
+        orderBy: {date: "asc"},
+    });
+
+    const depositExpenseTransactions = await prisma.transaction.findMany({
+        where: {
+            date: {gte: startDateNormalized, lte: endDateNormalized},
+            location_id: normalizedArgs.locationID,
+            type: TransactionType.EXPENSE,
+            category: {equals: 'Deposit'},
+        },
+        orderBy: {date: "asc"},
     });
 
     // Group transactions based on date
-    const groupedIncome: { [key: string]: Transaction[] } = {};
-    incomeTransactions.forEach((tx) => {
-        const dateKey = groupBy === "day" ? format(tx.date, "dd-MMM-yyyy") : format(tx.date, "MMM yyyy");
-        if (!groupedIncome[dateKey]) {
-            groupedIncome[dateKey] = [];
-        }
-        groupedIncome[dateKey].push(tx);
-        });
+    const groupedIncome = await groupTransactionsByPeriod(incomeTransactions, groupBy);
+    const groupedDepositIncome = await groupTransactionsByPeriod(depositIncomeTransactions, groupBy);
 
-    const groupedExpense: { [key: string]: Transaction[] } = {};
-    expenseTransactions.forEach((tx) => {
-        const dateKey = groupBy === "day" ? format(tx.date, "dd-MMM-yyyy") : format(tx.date, "MMM yyyy");
-        if (!groupedExpense[dateKey]) {
-            groupedExpense[dateKey] = [];
-        }
-        groupedExpense[dateKey].push(tx);
-    });
+    const groupedExpense = await groupTransactionsByPeriod(expenseTransactions, groupBy);
+    const groupedDepositExpense = await groupTransactionsByPeriod(depositExpenseTransactions, groupBy);
 
     // Merge into a complete timeline with grouped transactions
     const results = dateRange.map((date) => ({
         date,
         income: groupedIncome[date] || [],
+        depositIncome: groupedDepositIncome[date] || [],
         expense: groupedExpense[date] || [],
-        }));
+        depositExpense: groupedDepositExpense[date] || [],
+    }));
 
     const labels = results.map((item) => item.date);
     const incomeData = results.map((item) => item.income); // Array of arrays of Transaction
+    const depositIncomeData = results.map((item) => item.depositIncome);
     const expenseData = results.map((item) => item.expense); // Array of arrays of Transaction
+    const depositExpenseData = results.map((item) => item.depositExpense);
 
     return {
         labels,
         incomeData,
         expenseData,
+        deposit: {
+            income: depositIncomeData,
+            expense: depositExpenseData,
+        }
     };
 }
 
@@ -451,14 +481,32 @@ async function getCheckOutWithExtras(now: Date, sevenDaysAhead: Date, locationID
 /**
  * Returns the 10 most recent transactions, optionally filtered by location.
  */
-export async function getRecentTransactions(locationID?: number): Promise<Transaction[]> {
+export async function getRecentTransactions(locationID?: number, includeDeposit?: boolean): Promise<Transaction[]> {
     return prisma.transaction.findMany({
         where: {
             location_id: locationID,
+            ...(includeDeposit ? {
+                category: {
+                    not: 'Deposit'
+                }
+            } : {})
         },
         orderBy: {
             date: "desc",
         },
         take: 10,
     });
+}
+
+export async function groupTransactionsByPeriod(trxs: Transaction[], groupBy: "day" | "month") {
+    const groupedExpense: { [key: string]: Transaction[] } = {};
+    trxs.forEach(tx => {
+        const dateKey = groupBy === "day" ? format(tx.date, "dd-MMM-yyyy") : format(tx.date, "MMM yyyy");
+        if (!groupedExpense[dateKey]) {
+            groupedExpense[dateKey] = [];
+        }
+        groupedExpense[dateKey].push(tx);
+    });
+
+    return groupedExpense;
 }

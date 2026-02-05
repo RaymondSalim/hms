@@ -21,7 +21,7 @@ import {DatePicker} from "@/app/_components/DateRangePicker";
 import {DateRange} from "react-day-picker";
 
 type PeriodMode = "preset" | "all" | "custom";
-type ExpandableSection = "transactionsTable" | "category" | "graph" | "recent";
+type ExpandableSection = "transactionsTable" | "depositTransactionsTable" | "category" | "graph" | "recent";
 
 ChartJS.register(ArcElement, Colors);
 
@@ -37,16 +37,22 @@ export default function FinancialSummaryPage() {
     const [netIncome, setNetIncome] = useState<number | null>(null);
 
     const [transactions, setTransactions] = useState<IncomeExpenseGraphProps['data'] | undefined>(undefined);
+    const [isTransactionsReady, setIsTransactionsReady] = useState<boolean>(false);
     const [expandedSection, setExpandedSection] = useState<ExpandableSection | null>(null);
-const baseOrder: Record<ExpandableSection, string> = {
+
+    const [recentTransactionsIncludeDeposit, setRecentTransactionsIncludeDeposit] = useState<boolean>(false);
+
+    const baseOrder: Record<ExpandableSection, string> = {
     transactionsTable: "order-1 xl:col-span-1",
     category: "order-2 xl:col-span-1",
     graph: "order-3 xl:col-span-1",
-    recent: "order-4 xl:col-span-1",
+    depositTransactionsTable: "order-4 xl:col-span-1",
+    recent: "order-5 xl:col-span-1",
 };
 const getSectionClass = (key: ExpandableSection) => expandedSection === key ? "order-first xl:col-span-2" : baseOrder[key];
 const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
     transactionsTable: null,
+    depositTransactionsTable: null,
     category: null,
     graph: null,
     recent: null,
@@ -77,11 +83,11 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
             headerContext.locationID
         ],
         queryFn: () => {
+            setIsTransactionsReady(false);
             if (periodMode === "all") {
                 return getGroupedIncomeExpenseAction({
                     type: "all",
-                    locationID: headerContext.locationID
-                });
+                }, headerContext.locationID, true);
             }
 
             if (periodMode === "custom") {
@@ -92,11 +98,10 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                 return getGroupedIncomeExpenseAction({
                     type: "custom",
                     range: customRangeForQuery,
-                    locationID: headerContext.locationID
-                });
+                }, headerContext.locationID, true);
             }
 
-            return getGroupedIncomeExpenseAction(selectedPeriod, headerContext.locationID);
+            return getGroupedIncomeExpenseAction(selectedPeriod, headerContext.locationID, true);
         },
         enabled: periodMode !== "custom" || Boolean(customRangeForQuery),
     });
@@ -115,8 +120,8 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
     }, [expandedSection]);
 
     const {data: recentTransactions, isLoading: isRecentLoading, isSuccess: isRecentSuccess} = useQuery({
-        queryKey: ["recentTransactions", headerContext.locationID],
-        queryFn: () => getRecentTransactionsAction(headerContext.locationID),
+        queryKey: ["recentTransactions", headerContext.locationID, recentTransactionsIncludeDeposit],
+        queryFn: () => getRecentTransactionsAction(headerContext.locationID, !recentTransactionsIncludeDeposit),
     });
 
     // Category Breakdown
@@ -128,8 +133,8 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
 
     function updateCategoryBreakdownData() {
         if (groupedIncomeExpense) {
-            const allIncomeData = groupedIncomeExpense.incomeData.flat();
-            const allExpensesData = groupedIncomeExpense.expenseData.flat();
+            const allIncomeData = [...groupedIncomeExpense.incomeData.flat(), ...(groupedIncomeExpense.deposit?.income?.flat() || [])];
+            const allExpensesData = [...groupedIncomeExpense.expenseData.flat(), ...(groupedIncomeExpense.deposit?.expense?.flat() || [])];
 
             const incomePieChartData = preparePieChartData(allIncomeData);
             const expensePieChartData = preparePieChartData(allExpensesData);
@@ -153,6 +158,7 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
             setNetIncome(inc - exp);
 
             updateCategoryBreakdownData();
+            setIsTransactionsReady(true);
         }
     }, [isTransactionsSuccess, groupedIncomeExpense]);
 
@@ -284,7 +290,7 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                                     </Button>
                                 </div>
                                 {
-                                    isTransactionsSuccess &&
+                                    isTransactionsReady &&
                                     <table className="min-w-full border border-gray-300 mt-4">
                                         <thead>
                                         <tr className="bg-gray-100">
@@ -349,11 +355,10 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                                             </Button>
                                         </>
                                     ))}
-
                                 </div>
                                 <div className={"flex flex-shrink items-center justify-center px-8"}>
                                     {
-                                        isTransactionsSuccess && (
+                                        isTransactionsReady && (
                                             categoryBreakdownData ?
                                                 <Pie
                                                     // @ts-expect-error weird plugin error
@@ -430,13 +435,67 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                                 </div>
                                 <IncomeExpenseGraph
                                     showPeriodPicker={false}
-                                    isSuccess={isTransactionsSuccess}
+                                    isSuccess={isTransactionsReady}
                                     isLoading={isTransactionsLoading}
                                     data={transactions}
                                     period={undefined}
                                     setPeriod={undefined}
                                 />
                             </CardBody>
+                        </Card>
+                    </div>
+
+                    <div ref={(el) => { sectionRefs.current.depositTransactionsTable = el; }} className={`w-full ${getSectionClass("depositTransactionsTable")}`}>
+                        {/* @ts-expect-error weird react 19 types error */}
+                        <Card className="shadow-md max-h-[80dvh] h-fit overflow-auto">
+                            {/* @ts-expect-error weird react 19 types error */}
+                            <CardBody className="pt-0 px-8 pb-8 overflow-x-auto">
+                                <div className="-mx-8 px-8 pt-8 sticky top-0 z-10 flex items-start justify-between bg-white pb-2">
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Typography variant="h5" className="font-semibold">Pemasukan & Pengeluaran (Deposit)</Typography>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Button size="sm" variant="text" className="min-w-fit"
+                                            aria-label={expandedSection === "depositTransactionsTable" ? "Kembalikan" : "Perlebar"}
+                                            onClick={() => setExpandedSection(expandedSection === "depositTransactionsTable" ? null : "depositTransactionsTable")}>
+                                        {expandedSection === "depositTransactionsTable" ? <FiMinimize2/> : <FiMaximize2/>}
+                                    </Button>
+                                </div>
+                                {
+                                    isTransactionsReady && transactions!.deposit &&
+                                    <table className="min-w-full border border-gray-300 mt-4">
+                                        <thead>
+                                        <tr className="bg-gray-100">
+                                            <th className="px-4 py-2 border">Tanggal</th>
+                                            <th className="px-4 py-2 border">Pemasukan</th>
+                                            <th className="px-4 py-2 border">Pengeluaran</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {transactions &&
+                                            transactions.labels.map((date, idx) => (
+                                                <tr key={date}>
+                                                    <td className="px-4 py-2 border">{date}</td>
+                                                    <td className="px-4 py-2 border">{formatToIDR(transactions.deposit!.income[idx])}</td>
+                                                    <td className="px-4 py-2 border">{formatToIDR(transactions.deposit!.expense[idx])}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                }
+                                {
+                                    isTransactionsLoading &&
+                                    <div className={"flex items-center justify-center"}>
+                                        <AiOutlineLoading size={"3rem"} className={"animate-spin my-8"}/>
+                                    </div>
+                                }
+                            </CardBody>
+                            {/* @ts-expect-error weird react 19 types error */}
+                            <CardFooter className="p-4">
+                                {/* @ts-expect-error weird react 19 types error */}
+                                <Typography variant="small" className="text-gray-600">
+                                    Data per tanggal: {formatToDateTime(new Date())}
+                                </Typography>
+                            </CardFooter>
                         </Card>
                     </div>
 
@@ -453,6 +512,22 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                                             aria-label={expandedSection === "recent" ? "Kembalikan" : "Perlebar"}
                                             onClick={() => setExpandedSection(expandedSection === "recent" ? null : "recent")}>
                                         {expandedSection === "recent" ? <FiMinimize2/> : <FiMaximize2/>}
+                                    </Button>
+                                </div>
+                                <div className={"flex gap-x-2 overflow-x-auto flex-shrink-0"}>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Button variant={recentTransactionsIncludeDeposit ? 'filled' : 'outlined'}
+                                            size={"sm"}
+                                            className={"min-h-fit min-w-fit rounded-full whitespace-nowrap"}
+                                            onClick={() => setRecentTransactionsIncludeDeposit(true)}>
+                                        Dengan Deposit
+                                    </Button>
+                                    {/* @ts-expect-error weird react 19 types error */}
+                                    <Button variant={!recentTransactionsIncludeDeposit ? 'filled' : 'outlined'}
+                                            size={"sm"}
+                                            className={"min-h-fit min-w-fit rounded-full whitespace-nowrap"}
+                                            onClick={() => setRecentTransactionsIncludeDeposit(false)}>
+                                        Tanpa Deposit
                                     </Button>
                                 </div>
                                 <div className={"overflow-auto"}>
@@ -495,7 +570,6 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                         </Card>
                     </div>
                 </div>
-
             </div>
         </div>
     );
