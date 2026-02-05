@@ -18,7 +18,7 @@ export default function FinancialGraph() {
         isLoading,
         isSuccess,
     } = useQuery({
-        queryKey: ["transaction", selectedPeriod, headerContext.locationID],
+        queryKey: ["groupedIncomeExpense", selectedPeriod, headerContext.locationID],
         queryFn: () => getGroupedIncomeExpense(selectedPeriod, headerContext.locationID),
     });
 
