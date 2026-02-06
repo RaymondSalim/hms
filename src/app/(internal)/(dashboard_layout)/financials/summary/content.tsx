@@ -121,7 +121,7 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
 
     const {data: recentTransactions, isLoading: isRecentLoading, isSuccess: isRecentSuccess} = useQuery({
         queryKey: ["recentTransactions", headerContext.locationID, recentTransactionsIncludeDeposit],
-        queryFn: () => getRecentTransactionsAction(headerContext.locationID, !recentTransactionsIncludeDeposit),
+        queryFn: () => getRecentTransactionsAction(headerContext.locationID, recentTransactionsIncludeDeposit),
     });
 
     // Category Breakdown

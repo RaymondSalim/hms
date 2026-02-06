@@ -485,7 +485,7 @@ export async function getRecentTransactions(locationID?: number, includeDeposit?
     return prisma.transaction.findMany({
         where: {
             location_id: locationID,
-            ...(includeDeposit ? {
+            ...(!includeDeposit ? {
                 category: {
                     not: 'Deposit'
                 }

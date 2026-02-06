@@ -159,8 +159,21 @@ describe("getRecentTransactions", () => {
     prismaMock.transaction.findMany.mockResolvedValue([] as any);
   });
 
-  test("when includeDeposit is true, excludes Deposit category from results", async () => {
+  test("when includeDeposit is true, does not filter by category (deposits included)", async () => {
     await getRecentTransactions(undefined, true);
+
+    const call = prismaMock.transaction.findMany.mock.calls[0][0];
+    expect(call?.where?.category).toBeUndefined();
+    expect(prismaMock.transaction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { date: "desc" },
+        take: 10,
+      })
+    );
+  });
+
+  test("when includeDeposit is false, excludes Deposit category", async () => {
+    await getRecentTransactions(undefined, false);
 
     expect(prismaMock.transaction.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -171,13 +184,6 @@ describe("getRecentTransactions", () => {
         take: 10,
       })
     );
-  });
-
-  test("when includeDeposit is false, does not filter by category", async () => {
-    await getRecentTransactions(undefined, false);
-
-    const call = prismaMock.transaction.findMany.mock.calls[0][0];
-    expect(call?.where?.category).toBeUndefined();
   });
 
   test("passes location_id to findMany when provided", async () => {
