@@ -6,6 +6,7 @@ import {CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, Point
 import {Line} from "react-chartjs-2";
 import {AiOutlineLoading} from "react-icons/ai";
 import {Period} from "@/app/_enum/financial";
+import {SimplifiedIncomeExpense} from "@/app/_db/dashboard";
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 
@@ -24,11 +25,7 @@ export type IncomeExpenseGraphProps = (
     title?: ReactElement;
     isSuccess: boolean;
     isLoading: boolean;
-    data?: {
-        labels: string[];
-        incomeData: number[];
-        expenseData: number[];
-    }
+    data?: SimplifiedIncomeExpense
 };
 
 export default function IncomeExpenseGraph({
