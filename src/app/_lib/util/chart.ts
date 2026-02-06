@@ -3,16 +3,23 @@ import {GroupedIncomeExpense, SimplifiedIncomeExpense} from "@/app/_db/dashboard
 import type {ChartData} from "chart.js";
 
 export function convertGroupedTransactionsToTotals(groupedData: GroupedIncomeExpense): SimplifiedIncomeExpense {
-  const { labels, incomeData, expenseData } = groupedData;
+  const { labels, incomeData, expenseData, deposit } = groupedData;
 
   const totalIncomeData = incomeData.map((transactions) => transactions.reduce((sum, tx) => sum + Number(tx.amount), 0));
 
   const totalExpenseData = expenseData.map((transactions) => transactions.reduce((sum, tx) => sum + Number(tx.amount), 0));
 
+  const totalDepositExpenseData = deposit?.expense.map((transactions) => transactions.reduce((sum, tx) => sum + Number(tx.amount), 0));
+  const totalDepositIncomeData = deposit?.income.map((transactions) => transactions.reduce((sum, tx) => sum + Number(tx.amount), 0));
+
   return {
     labels,
     incomeData: totalIncomeData,
     expenseData: totalExpenseData,
+    deposit: (totalDepositExpenseData && totalDepositIncomeData) ?{
+      expense: totalDepositExpenseData,
+      income: totalDepositIncomeData,
+    } : undefined,
   };
 }
 
