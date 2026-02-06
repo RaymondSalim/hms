@@ -108,6 +108,7 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
 
     useEffect(() => {
         setTransactions(undefined);
+        setIsTransactionsReady(false);
         setTotalIncome(null);
         setTotalExpense(null);
         setNetIncome(null);
@@ -461,7 +462,7 @@ const sectionRefs = useRef<Record<ExpandableSection, HTMLDivElement | null>>({
                                     </Button>
                                 </div>
                                 {
-                                    isTransactionsReady && transactions!.deposit &&
+                                    isTransactionsReady && transactions?.deposit &&
                                     <table className="min-w-full border border-gray-300 mt-4">
                                         <thead>
                                         <tr className="bg-gray-100">
