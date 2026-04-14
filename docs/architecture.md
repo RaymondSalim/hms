@@ -145,10 +145,10 @@ Rules implemented in code:
 
 ```mermaid
 flowchart TD
-  C[Cronicle / scheduler] --> MB[/api/cron/monthly-billing]
-  C --> ER[/api/tasks/email/invoice-reminder]
+  C["Cronicle / scheduler"] --> MB["/api/cron/monthly-billing"]
+  C --> ER["/api/tasks/email/invoice-reminder"]
   MB --> B[(bills table)]
-  ER --> M[mailer transport]
+  ER --> M["mailer transport"]
   ER --> EL[(emaillogs table)]
 ```
 
