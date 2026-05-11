@@ -7,7 +7,7 @@ import {generateRandomPassword} from "@/app/_lib/util";
 import prisma from "@/app/_lib/primsa";
 import bcrypt from "bcrypt";
 import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
-import {after} from "next/server";
+import {withRequestId} from "@/app/_lib/actions";
 import {serverLogger} from "@/app/_lib/axiom/server";
 
 type ResetPasswordType = {
@@ -18,10 +18,7 @@ type ResetPasswordType = {
     }
 }
 
-export async function resetPasswordAction(prevState: ResetPasswordType, formData: FormData): Promise<ResetPasswordType> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const resetPasswordAction = withRequestId(async (prevState: ResetPasswordType, formData: FormData): Promise<ResetPasswordType> => {
     const {success, data, error} = resetSchema.safeParse({
         email: formData.get('email'),
     });
@@ -82,4 +79,4 @@ export async function resetPasswordAction(prevState: ResetPasswordType, formData
     }
 
     return {success: "Jika terdapat akun yang terdaftar dengan alamat email ini, tautan untuk mengatur ulang kata sandi telah dikirim. Silakan periksa email Anda dan ikuti instruksi yang diberikan."};
-}
+});

@@ -27,7 +27,7 @@ import {
     updateBookingByID
 } from "@/app/_db/bookings";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {updateDepositStatus} from "@/app/_db/deposit";
 import {revalidateTag} from "next/cache";
@@ -44,7 +44,6 @@ import {
     subDays
 } from "date-fns";
 import {id as indonesianLocale} from "date-fns/locale";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 import BillItemUncheckedCreateWithoutBillInput = Prisma.BillItemUncheckedCreateWithoutBillInput;
@@ -127,7 +126,7 @@ function processAddonsForPeriod(
 
 export type UpsertBookingPayload = OmitTimestamp<BookingsIncludeAll>
 
-export async function upsertBookingAction(reqData: UpsertBookingPayload): Promise<GenericActionsType<Booking>> {
+export const upsertBookingAction = withAction(async (reqData: UpsertBookingPayload): Promise<GenericActionsType<Booking>> => {
     const {success, data, error} = bookingSchema.safeParse(reqData);
 
     if (!success) {
@@ -135,10 +134,6 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload): Promis
             errors: error?.format()
         });
     }
-
-    after(() => {
-        serverLogger.flush();
-    });
 
     // Handle rolling bookings
     if (data.is_rolling) {
@@ -551,7 +546,7 @@ export async function upsertBookingAction(reqData: UpsertBookingPayload): Promis
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
 export async function getAllBookingsAction(...args: Parameters<typeof getAllBookings>) {
     return getAllBookings(...args).then(toClient);
@@ -561,10 +556,7 @@ export async function getBookingsWithUnpaidBillsAction(...args: Parameters<typeo
     return getBookingsWithUnpaidBills(...args).then(toClient);
 }
 
-export async function deleteBookingAction(id: number) {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteBookingAction = withAction(async (id: number) => {
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -591,16 +583,15 @@ export async function deleteBookingAction(id: number) {
             failure: "Error deleting booking",
         });
     }
+});
 
-}
-
-export async function checkInOutAction(data: {
+export const checkInOutAction = withAction(async (data: {
     booking_id: number,
     action: CheckInOutType,
     depositStatus?: string,
     refundedAmount?: number,
     eventDate?: Date
-}): Promise<GenericActionsType<CheckInOutLog>> {
+}): Promise<GenericActionsType<CheckInOutLog>> => {
     const booking = await prisma.booking.findFirst({
         where: {
             id: data.booking_id
@@ -672,15 +663,12 @@ export async function checkInOutAction(data: {
             success: checkInOutLog
         };
     }).then(toClient);
-}
+});
 
 export async function matchBillItemsToBills(
     billItemsByDueDate: Map<Date, Omit<BillItem, "bill_id">[]>,
     bills: Pick<Bill, "due_date" | "id">[]
 ): Promise<Map<number, Omit<BillItem, "bill_id">[]>> {
-    after(() => {
-        serverLogger.flush();
-    });
     // Sort bills by due_date for easier matching
     const sortedBills = bills.sort((a, b) => a.due_date.getTime() - b.due_date.getTime());
 
@@ -725,10 +713,10 @@ export async function matchBillItemsToBills(
  * @param data - An object containing the bookingId and endDate.
  * @returns A success or failure response.
  */
-export async function scheduleEndOfStayAction(data: {
+export const scheduleEndOfStayAction = withAction(async (data: {
     bookingId: number;
     endDate: Date;
-}): Promise<GenericActionsType<boolean>> {
+}): Promise<GenericActionsType<boolean>> => {
     const {bookingId, endDate} = data;
 
     const booking = await prisma.booking.findFirst({
@@ -763,7 +751,7 @@ export async function scheduleEndOfStayAction(data: {
     } catch (error) {
         return toClient({failure: "Gagal memperbarui pemesanan."});
     }
-}
+});
 
 /**
  * Generates the initial set of bills for a new rolling booking.
@@ -858,9 +846,6 @@ export async function generateInitialBillsForRollingBooking(booking: Pick<Bookin
  * @returns The new bill object if one was created, otherwise null.
  */
 export async function generateNextMonthlyBill(booking: BookingIncludeAddons, existingBills: Bill[], date: Date): Promise<Prisma.BillCreateInput | null> {
-    after(() => {
-        serverLogger.flush();
-    });
 
     if (existingBills.length === 0) {
         return null;
@@ -988,11 +973,11 @@ async function cleanupInvalidBills(bookingId: number, endDate: Date, tx: Prisma.
  * @param data - An object containing the bookingId, addonId, and endDate.
  * @returns A success or failure response.
  */
-export async function scheduleEndOfAddonAction(data: {
+export const scheduleEndOfAddonAction = withAction(async (data: {
     bookingId: number;
     addonId: string;
     endDate: Date;
-}): Promise<GenericActionsType<boolean>> {
+}): Promise<GenericActionsType<boolean>> => {
     const {bookingId, addonId, endDate} = data;
 
     const bookingAddon = await prisma.bookingAddOn.findFirst({
@@ -1040,4 +1025,4 @@ export async function scheduleEndOfAddonAction(data: {
     } catch (error) {
         return toClient({failure: "Gagal memperbarui layanan tambahan."});
     }
-}
+});

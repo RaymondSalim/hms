@@ -2,9 +2,8 @@
 
 import {transactionSchema} from "@/app/_lib/zod/transaction/zod";
 import {DepositStatus, Prisma, Transaction} from "@prisma/client";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import prisma from "@/app/_lib/primsa";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 import {getTransactionsWithBookingInfo} from "@/app/_db/transaction";
@@ -15,12 +14,9 @@ const toClient = <T>(value: T) => serializeForClient(value);
  * Creates or Updates a transaction based on the presence of an ID.
  * @param transactionData The transaction data object.
  */
-export async function upsertTransactionAction(
+export const upsertTransactionAction = withAction(async (
     transactionData: Partial<Transaction>
-): Promise<GenericActionsType<Transaction>> {
-    after(() => {
-        serverLogger.flush();
-    });
+): Promise<GenericActionsType<Transaction>> => {
     const { success, data, error } = transactionSchema.safeParse(transactionData);
 
     if (!success) {
@@ -68,13 +64,10 @@ export async function upsertTransactionAction(
             failure: 'An error occurred while processing the transaction.',
         });
     }
-}
+});
 
 // Action to delete a Transaction
-export async function deleteTransactionAction(id: number): Promise<GenericActionsType<Transaction>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteTransactionAction = withAction(async (id: number): Promise<GenericActionsType<Transaction>> => {
     try {
         const res = await prisma.$transaction(async (tx) => {
             let deletedTransaction = await tx.transaction.delete({
@@ -111,7 +104,7 @@ export async function deleteTransactionAction(id: number): Promise<GenericAction
         serverLogger.error("[deleteTransactionAction]", {error, transaction_id: id});
         return toClient({ failure: "Error deleting transaction" });
     }
-}
+});
 
 export async function getTransactionsWithBookingInfoAction(
     ...args: Parameters<typeof getTransactionsWithBookingInfo>

@@ -28,6 +28,7 @@ import {
     Typography
 } from "@material-tailwind/react";
 import {useMutation, UseMutationResult} from "@tanstack/react-query";
+import {GenericActionsType} from "@/app/_lib/actions";
 import {MdClose, MdDelete, MdEdit, MdEmail, MdSave} from "react-icons/md";
 import {toast} from "react-toastify";
 import {BillPageQueryParams} from "@/app/(internal)/(dashboard_layout)/bills/page";
@@ -782,10 +783,7 @@ const DetailsDialogContent = ({activeData, setShowDialog, onBillUpdate}: {
 
 const EmailConfirmationDialog = ({activeData, sendBillEmailMutation, setShowDialog}: {
     activeData: BillIncludeBookingAndPayments;
-    sendBillEmailMutation: UseMutationResult<{ failure: string, success?: undefined } | {
-        success: string,
-        failure?: undefined
-    }, Error, number, unknown>
+    sendBillEmailMutation: UseMutationResult<GenericActionsType<string>, Error, number, unknown>
     setShowDialog: React.Dispatch<React.SetStateAction<boolean>>
 }) => {
     return (

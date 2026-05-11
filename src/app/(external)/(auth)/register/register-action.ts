@@ -4,7 +4,7 @@ import {registerSchema} from "@/app/_lib/zod/auth/zod";
 import {createUser, findUserByEmail} from "@/app/_db/user";
 import bcrypt from "bcrypt";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
-import {after} from "next/server";
+import {withRequestId} from "@/app/_lib/actions";
 import {serverLogger} from "@/app/_lib/axiom/server";
 
 export type ResetUserType = {
@@ -17,10 +17,7 @@ export type ResetUserType = {
     }
 }
 
-export async function registerUser(prevState: ResetUserType, formData: FormData): Promise<ResetUserType> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const registerUser = withRequestId(async (prevState: ResetUserType, formData: FormData): Promise<ResetUserType> => {
     const {success, data, error} = registerSchema.safeParse({
         email: formData.get('email'),
         password: formData.get('password'),
@@ -64,4 +61,4 @@ export async function registerUser(prevState: ResetUserType, formData: FormData)
     }
 
     return { success: "Registrasi berhasil" };
-}
+});

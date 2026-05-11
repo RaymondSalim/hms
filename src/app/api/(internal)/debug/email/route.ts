@@ -4,12 +4,8 @@ import nodemailerClient from "@/app/_lib/mailer";
 import {emailSchema} from "@/app/_lib/zod/email/zod";
 import {getToken} from "@auth/core/jwt";
 import {serverLogger, withAxiom} from "@/app/_lib/axiom/server";
-import {after} from "next/server";
 
 export const POST = withAxiom(async (request: Request) => {
-    after(() => {
-        serverLogger.flush();
-    });
 
     const token = await getToken({
         req: request,

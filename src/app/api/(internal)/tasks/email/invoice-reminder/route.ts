@@ -4,7 +4,6 @@ import {SettingsKey} from "@/app/_enum/setting";
 import pLimit from "p-limit";
 import {generateBillEmailReminders} from "@/app/api/(internal)/tasks/email/invoice-reminder/invoice-reminder-action";
 import {serverLogger, withAxiom} from "@/app/_lib/axiom/server";
-import {after} from "next/server";
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -17,10 +16,6 @@ export const GET = withAxiom(async (request: Request) => {
             status: 401,
         });
     }
-
-    after(() => {
-        serverLogger.flush();
-    });
 
     let emailReminderEnabled = await prisma.setting.findFirst({
         where: {

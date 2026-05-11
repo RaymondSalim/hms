@@ -3,7 +3,7 @@ import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import {createPenalty, deletePenalty, updatePenaltyByID} from "@/app/_db/penalty";
 import {number, object} from "zod";
 import {penaltySchema, penaltySchemaWithID} from "@/app/_lib/zod/penalties/zod";
-import {after} from "next/server";
+import {withRequestId} from "@/app/_lib/actions";
 import {serverLogger} from "@/app/_lib/axiom/server";
 
 export type PenaltyActionsType<T = OmitIDTypeAndTimestamp<Penalty>> = {
@@ -12,10 +12,7 @@ export type PenaltyActionsType<T = OmitIDTypeAndTimestamp<Penalty>> = {
     errors?: Partial<Penalty>;
 };
 
-export async function createPenaltyAction(prevState: PenaltyActionsType, formData: FormData): Promise<PenaltyActionsType> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const createPenaltyAction = withRequestId(async (prevState: PenaltyActionsType, formData: FormData): Promise<PenaltyActionsType> => {
     const parsedData = penaltySchema.safeParse({
         amount: parseFloat(formData.get("amount") as string),
         description: formData.get("description"),
@@ -45,12 +42,9 @@ export async function createPenaltyAction(prevState: PenaltyActionsType, formDat
             failure: "Error creating penalty",
         };
     }
-}
+});
 
-export async function updatePenaltyAction(prevState: PenaltyActionsType, formData: FormData): Promise<PenaltyActionsType> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const updatePenaltyAction = withRequestId(async (prevState: PenaltyActionsType, formData: FormData): Promise<PenaltyActionsType> => {
     const parsedData = penaltySchemaWithID.safeParse({
         id: parseInt(formData.get("id") as string),
         amount: parseFloat(formData.get("amount") as string),
@@ -81,12 +75,9 @@ export async function updatePenaltyAction(prevState: PenaltyActionsType, formDat
             failure: "Error updating penalty",
         };
     }
-}
+});
 
-export async function deletePenaltyAction(prevState: PenaltyActionsType<Pick<Penalty, "id">>, formData: FormData): Promise<PenaltyActionsType<Pick<Penalty, "id">>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deletePenaltyAction = withRequestId(async (prevState: PenaltyActionsType<Pick<Penalty, "id">>, formData: FormData): Promise<PenaltyActionsType<Pick<Penalty, "id">>> => {
     const parsedData = object({ id: number().positive() }).safeParse({
         id: parseInt(formData.get("id") as string),
     });
@@ -110,4 +101,4 @@ export async function deletePenaltyAction(prevState: PenaltyActionsType<Pick<Pen
             failure: "Error deleting penalty",
         };
     }
-}
+});

@@ -8,7 +8,6 @@ import {Provider} from "@auth/core/providers";
 import {signInSchema} from "@/app/_lib/zod/auth/zod";
 import {ZodError} from "zod";
 import bcrypt from "bcrypt";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 
 class InvalidCredentialsError extends CredentialsSignin {
@@ -27,9 +26,6 @@ const providers: Provider[] = [
             },
         },
         authorize: async (credentials) => {
-            after(() => {
-                serverLogger.flush();
-            });
             try {
                 let user = null;
 
@@ -96,9 +92,6 @@ export const {handlers, signIn, signOut, auth} = NextAuth({
             return baseUrl;
         },
         async jwt({token, user}) {
-            after(() => {
-                serverLogger.flush();
-            });
             if (user) {
                 token.user = user;
             }

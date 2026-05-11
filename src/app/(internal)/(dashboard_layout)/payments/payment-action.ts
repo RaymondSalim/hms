@@ -13,10 +13,9 @@ import {
 } from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
 import {DeleteObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {getBookingByID} from "@/app/_db/bookings";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
@@ -47,13 +46,10 @@ export async function createPaymentBillsFromBillAllocations(
     }
 }
 
-export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Payment> & {
+export const upsertPaymentAction = withAction(async (reqData: OmitIDTypeAndTimestamp<Payment> & {
     allocationMode?: 'auto' | 'manual',
     manualAllocations?: Record<number, number>
-}): Promise<GenericActionsType<Booking>> {
-    after(() => {
-        serverLogger.flush();
-    });
+}): Promise<GenericActionsType<Booking>> => {
     const {success, data, error} = paymentSchema.safeParse(reqData);
 
     if (!success) {
@@ -188,12 +184,9 @@ export async function upsertPaymentAction(reqData: OmitIDTypeAndTimestamp<Paymen
     return toClient({
         failure: trxRes.error
     });
-}
+});
 
-export async function deletePaymentAction(id: number): Promise<GenericActionsType<Payment>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deletePaymentAction = withAction(async (id: number): Promise<GenericActionsType<Payment>> => {
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -255,8 +248,7 @@ export async function deletePaymentAction(id: number): Promise<GenericActionsTyp
             failure: "Error deleting payment",
         });
     }
-
-}
+});
 
 export async function getPaymentStatusAction() {
     return getPaymentStatus().then(toClient);

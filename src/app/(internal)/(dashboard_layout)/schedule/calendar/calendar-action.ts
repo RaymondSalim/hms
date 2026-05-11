@@ -4,8 +4,7 @@ import {EventApi} from "@fullcalendar/core";
 import prisma from "@/app/_lib/primsa";
 import {CalenderEventTypes, CheckInOutType} from "@/app/(internal)/(dashboard_layout)/bookings/enum";
 import {Event} from "@prisma/client";
-import {GenericActionsType} from "@/app/_lib/actions";
-import {after} from "next/server";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
@@ -144,10 +143,7 @@ export async function getCalendarEvents(locationID?: number, dateRange?: Calende
     return toClient(events);
 }
 
-export async function deleteCalendarEvent(id: number): Promise<GenericActionsType<boolean>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteCalendarEvent = withAction(async (id: number): Promise<GenericActionsType<boolean>> => {
     try {
         await prisma.event.delete({
             where: {
@@ -164,4 +160,4 @@ export async function deleteCalendarEvent(id: number): Promise<GenericActionsTyp
     return toClient({
         success: true,
     });
-}
+});
