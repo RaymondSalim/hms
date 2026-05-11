@@ -2,21 +2,17 @@
 
 import {Duration} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {number, object, ZodIssueCode} from "zod";
 import {durationSchemaWithOptionalID} from "@/app/_lib/zod/duration/zod";
 import {createDuration, deleteDuration, getSortedDurations, updateDurationByID} from "@/app/_db/duration";
 import {IntersectionToUnion} from "@/app/_lib/util";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
-export async function upsertDurationAction(roomData: Partial<Duration>): Promise<GenericActionsType<Duration>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertDurationAction = withAction(async (roomData: Partial<Duration>): Promise<GenericActionsType<Duration>> => {
     const {success, data, error} = durationSchemaWithOptionalID.safeParse(roomData);
 
     if (!success) {
@@ -60,12 +56,9 @@ export async function upsertDurationAction(roomData: Partial<Duration>): Promise
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
-export async function deleteDurationAction(id: string): Promise<GenericActionsType<Duration>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteDurationAction = withAction(async (id: string): Promise<GenericActionsType<Duration>> => {
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -94,7 +87,7 @@ export async function deleteDurationAction(id: string): Promise<GenericActionsTy
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
 export async function getSortedDurationsAction() {
     return getSortedDurations().then(toClient);

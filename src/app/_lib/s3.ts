@@ -1,6 +1,5 @@
 import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {Readable} from 'stream';
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 
 const client = new S3Client({region: process.env.AWS_REGION});
@@ -18,9 +17,6 @@ export type GetObjectReturnType = {
 }
 
 export async function getObject(bucket: string, key: string): Promise<GetObjectReturnType> {
-    after(() => {
-        serverLogger.flush();
-    });
     const getObjectCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
 
     try {

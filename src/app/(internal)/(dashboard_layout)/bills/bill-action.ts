@@ -19,10 +19,9 @@ import {number, object} from "zod";
 import nodemailerClient, {EMAIL_TEMPLATES, withTemplate} from "@/app/_lib/mailer";
 import {formatToDateTime, formatToIDR} from "@/app/_lib/util";
 import {UpsertBookingPayload} from "@/app/(internal)/(dashboard_layout)/bookings/booking-action";
-import {after} from 'next/server';
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import BillUncheckedCreateInput = Prisma.BillUncheckedCreateInput;
 import BillItemUncheckedCreateInput = Prisma.BillItemUncheckedCreateInput;
 
@@ -343,7 +342,7 @@ export async function getAllBillsIncludeAll(id?: number, locationID?: number, li
  * @param billData - Bill data to create or update
  * @returns Success response with bill data or error information
  */
-export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, "id">) {
+export const upsertBillAction = withAction(async (billData: PartialBy<OmitTimestamp<Bill>, "id">) => {
     const {success, data, error} = billSchemaWithOptionalID.safeParse(billData);
 
     if (!success) {
@@ -351,10 +350,6 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
             errors: error?.format()
         });
     }
-
-    after(() => {
-        serverLogger.flush();
-    });
 
     try {
         let res;
@@ -407,27 +402,23 @@ export async function upsertBillAction(billData: PartialBy<OmitTimestamp<Bill>, 
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
 /**
  * Deletes a bill by ID
  * @param id - The bill ID to delete
  * @returns Success response with deleted bill data or error information
  */
-export async function deleteBillAction(id: number) {
+export const deleteBillAction = withAction(async (id: number) => {
     const {success, error, data} = object({id: number().positive()}).safeParse({
         id: id
     });
 
     if (!success) {
         return toClient({
-            errors: error?.flatten()
+            errors: error?.format()
         });
     }
-
-    after(() => {
-        serverLogger.flush();
-    });
 
     try {
         let res = await prisma.bill.delete({
@@ -445,7 +436,7 @@ export async function deleteBillAction(id: number) {
             failure: "error"
         });
     }
-}
+});
 
 /**
  * Synchronizes payment-bill records for a booking based on payment dates
@@ -532,10 +523,10 @@ export async function getUpcomingUnpaidBillsWithUsersByDate(targetDate: Date, li
  * @param billID - The bill ID to send reminder for
  * @returns Success or failure response
  */
-export async function sendBillEmailAction(billID: number): Promise<
+export const sendBillEmailAction = withAction(async (billID: number): Promise<
     | { success: string; failure?: never }
     | { failure: string; success?: never }
-> {
+> => {
     let billData = await prisma.bill.findFirst({
         where: {
             id: billID
@@ -555,10 +546,6 @@ export async function sendBillEmailAction(billID: number): Promise<
             failure: "Bill Not Found"
         });
     }
-
-    after(() => {
-        serverLogger.flush();
-    });
 
     const tenant = billData.bookings.tenants!;
     const currBillAmount = billData.bill_item.reduce(
@@ -589,8 +576,7 @@ export async function sendBillEmailAction(billID: number): Promise<
     return toClient({
         success: "Email Sent Successfully."
     });
-
-}
+});
 
 /**
  * Generates bill items for booking add-ons and maps them to bills by due date
@@ -994,12 +980,12 @@ type BillItemReturnType = {
  * @param billItemData - Bill item data to update
  * @returns Success response with updated bill item data or error information
  */
-export async function updateBillItemAction(billItemData: {
+export const updateBillItemAction = withAction(async (billItemData: {
     id: number;
     description?: string;
     amount?: number;
     internal_description?: string;
-}): Promise<GenericActionsType<BillItemReturnType>> {
+}): Promise<GenericActionsType<BillItemReturnType>> => {
     const {success, data, error} = billItemUpdateSchema.safeParse(billItemData);
 
     if (!success) {
@@ -1007,10 +993,6 @@ export async function updateBillItemAction(billItemData: {
             errors: error?.format()
         });
     }
-
-    after(() => {
-        serverLogger.flush();
-    });
 
     try {
         const res = await prisma.$transaction(async (tx) => {
@@ -1051,17 +1033,14 @@ export async function updateBillItemAction(billItemData: {
 
         return toClient({failure: "Gagal memperbarui rincian tagihan"});
     }
-}
+});
 
 /**
  * Deletes a bill item
  * @param id - The bill item ID to delete
  * @returns Success response with deleted bill item data or error information
  */
-export async function deleteBillItemAction(id: number): Promise<GenericActionsType<BillItemReturnType>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteBillItemAction = withAction(async (id: number): Promise<GenericActionsType<BillItemReturnType>> => {
 
     try {
         const res = await prisma.$transaction(async (tx) => {
@@ -1107,20 +1086,20 @@ export async function deleteBillItemAction(id: number): Promise<GenericActionsTy
 
         return toClient({failure: "Gagal menghapus rincian tagihan"});
     }
-}
+});
 
 /**
  * Creates a new bill item
  * @param billItemData - Bill item data to create
  * @returns Success response with created bill item data or error information
  */
-export async function createBillItemAction(billItemData: {
+export const createBillItemAction = withAction(async (billItemData: {
     bill_id: number;
     description: string;
     amount: number;
     internal_description?: string;
     type?: BillType;
-}): Promise<GenericActionsType<BillItemReturnType>> {
+}): Promise<GenericActionsType<BillItemReturnType>> => {
     const {success, data, error} = billItemCreateSchema.safeParse(billItemData);
 
     if (!success) {
@@ -1128,10 +1107,6 @@ export async function createBillItemAction(billItemData: {
             errors: error?.format()
         });
     }
-
-    after(() => {
-        serverLogger.flush();
-    });
 
     try {
         const res = await prisma.$transaction(async (tx) => {
@@ -1173,4 +1148,4 @@ export async function createBillItemAction(billItemData: {
 
         return toClient({failure: "Gagal membuat rincian tagihan"});
     }
-}
+});

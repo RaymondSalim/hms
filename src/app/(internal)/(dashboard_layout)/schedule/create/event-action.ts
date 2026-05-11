@@ -5,17 +5,13 @@ import {Event, Prisma} from "@prisma/client";
 import {eventSchemaWithOptionalID} from "@/app/_lib/zod/event/zod";
 import {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
 import {createEvent, updateEventByID} from "@/app/_db/event";
-import {GenericActionsType} from "@/app/_lib/actions";
-import {after} from "next/server";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
-export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>): Promise<GenericActionsType<Event>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertEventAction = withAction(async (reqData: OmitIDTypeAndTimestamp<Event>): Promise<GenericActionsType<Event>> => {
     const {success, data, error} = eventSchemaWithOptionalID.safeParse(reqData);
 
     if (!success) {
@@ -66,4 +62,4 @@ export async function upsertEventAction(reqData: OmitIDTypeAndTimestamp<Event>):
     return toClient({
         success: res
     });
-}
+});

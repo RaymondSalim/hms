@@ -5,20 +5,16 @@ import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@p
 import {siteUserSchemaWithOptionalID} from "@/app/_lib/zod/user/zod";
 import {createUser, deleteUser, getUserByID, updateUser} from "@/app/_db/user";
 import {auth} from "@/app/_lib/auth";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {object, string} from "zod";
 import bcrypt from "bcrypt";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
 // Action to update site users
-export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise<GenericActionsType<SiteUser>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertSiteUserAction = withAction(async (userData: Partial<SiteUser>): Promise<GenericActionsType<SiteUser>> => {
     const session = await auth();
 
     if (session && session.user) {
@@ -74,12 +70,9 @@ export async function upsertSiteUserAction(userData: Partial<SiteUser>): Promise
 
         return toClient({failure: "Update unsuccessful"});
     }
-}
+});
 
-export async function deleteUserAction(id: string): Promise<GenericActionsType<Pick<SiteUser, "id">>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteUserAction = withAction(async (id: string): Promise<GenericActionsType<Pick<SiteUser, "id">>> => {
     const session = await auth();
 
     if (session && session.user) {
@@ -114,4 +107,4 @@ export async function deleteUserAction(id: string): Promise<GenericActionsType<P
             failure: "error"
         });
     }
-}
+});

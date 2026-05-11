@@ -3,19 +3,15 @@
 import {RoomType} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {createRoomType, deleteRoomType, updateRoomTypeByID} from "@/app/_db/room";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {number, object} from "zod";
 import {roomTypeSchemaWithOptionalID} from "@/app/_lib/zod/rooms/roomtypes";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
-export async function upsertRoomTypeAction(roomData: Partial<RoomType>): Promise<GenericActionsType<RoomType>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertRoomTypeAction = withAction(async (roomData: Partial<RoomType>): Promise<GenericActionsType<RoomType>> => {
     const {success, data, error} = roomTypeSchemaWithOptionalID.safeParse(roomData);
 
     if (!success) {
@@ -52,12 +48,9 @@ export async function upsertRoomTypeAction(roomData: Partial<RoomType>): Promise
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
-export async function deleteRoomTypeAction(id: string): Promise<GenericActionsType<RoomType>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteRoomTypeAction = withAction(async (id: string): Promise<GenericActionsType<RoomType>> => {
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -86,4 +79,4 @@ export async function deleteRoomTypeAction(id: string): Promise<GenericActionsTy
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});

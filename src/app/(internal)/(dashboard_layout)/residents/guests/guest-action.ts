@@ -2,23 +2,19 @@
 
 import {Guest, GuestStay, Prisma} from "@prisma/client";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {number, object} from "zod";
 import {guestSchemaWithOptionalID, guestStaySchema} from "@/app/_lib/zod/guests/zod";
 import {createGuest, deleteGuest, GuestIncludeAll, updateGuestByID} from "@/app/_db/guest";
 import prisma from "@/app/_lib/primsa";
 import {PartialBy} from "@/app/_db/db";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
 // Action to update guests
-export async function upsertGuestAction(guestData: Partial<Guest>): Promise<GenericActionsType<GuestIncludeAll>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertGuestAction = withAction(async (guestData: Partial<Guest>): Promise<GenericActionsType<GuestIncludeAll>> => {
     const {success, data, error} = guestSchemaWithOptionalID.safeParse(guestData);
 
     if (!success) {
@@ -51,12 +47,9 @@ export async function upsertGuestAction(guestData: Partial<Guest>): Promise<Gene
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
-export async function deleteGuestAction(id: string): Promise<GenericActionsType<GuestIncludeAll>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteGuestAction = withAction(async (id: string): Promise<GenericActionsType<GuestIncludeAll>> => {
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -78,14 +71,11 @@ export async function deleteGuestAction(id: string): Promise<GenericActionsType<
             failure: "Error deleting guest",
         });
     }
-}
+});
 
 
 // Action to Create or Update Guest Stay
-export async function upsertGuestStayAction(guestStayData: Partial<GuestStay>): Promise<GenericActionsType<any>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertGuestStayAction = withAction(async (guestStayData: Partial<GuestStay>): Promise<GenericActionsType<any>> => {
     const {success, data, error} = guestStaySchema.safeParse(guestStayData);
 
     if (!success) {
@@ -200,13 +190,10 @@ export async function upsertGuestStayAction(guestStayData: Partial<GuestStay>): 
         serverLogger.error("[upsertGuestStayAction]", {error});
         return toClient({failure: "Error processing guest stay."});
     }
-}
+});
 
 // Action to Delete Guest Stay
-export async function deleteGuestStayAction(id: number): Promise<GenericActionsType<GuestStay>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteGuestStayAction = withAction(async (id: number): Promise<GenericActionsType<GuestStay>> => {
     const parsedData = object({id: number().positive()}).safeParse({id});
 
     if (!parsedData.success) {
@@ -253,7 +240,7 @@ export async function deleteGuestStayAction(id: number): Promise<GenericActionsT
         serverLogger.error("[deleteGuestStayAction]", {error, guest_stay_id: id});
         return toClient({failure: "Error deleting guest stay."});
     }
-}
+});
 
 type GuestStayWithMonthlyFee = GuestStay & {
     total_fee: Prisma.Decimal

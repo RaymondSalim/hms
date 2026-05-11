@@ -5,7 +5,7 @@ import {number, object, typeToFlattenedError} from "zod";
 import {OmitIDTypeAndTimestamp, OmitTimestamp} from "@/app/_db/db";
 import {Location} from "@prisma/client";
 import {createLocation, deleteLocation, getLocations, updateLocationByID, upsertLocation} from "@/app/_db/location";
-import {after} from "next/server";
+import {withRequestId} from "@/app/_lib/actions";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
@@ -17,10 +17,7 @@ export type LocationActionsType<T = OmitIDTypeAndTimestamp<Location>> = {
     errors?: typeToFlattenedError<T>
 }
 
-export async function createLocationAction(prevState: LocationActionsType, formData: FormData): Promise<LocationActionsType> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const createLocationAction = withRequestId(async (prevState: LocationActionsType, formData: FormData): Promise<LocationActionsType> => {
     const { success, error, data } = locationObject.safeParse({
         name: formData.get('name'),
         address: formData.get('address'),
@@ -45,12 +42,9 @@ export async function createLocationAction(prevState: LocationActionsType, formD
             failure: "error"
         });
     }
-}
+});
 
-export async function updateLocationAction(prevState: LocationActionsType, formData: FormData): Promise<LocationActionsType> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const updateLocationAction = withRequestId(async (prevState: LocationActionsType, formData: FormData): Promise<LocationActionsType> => {
     let { success, error, data } = locationObjectWithID.safeParse({
         id: formData.get('id'),
         name: formData.get('name'),
@@ -80,12 +74,9 @@ export async function updateLocationAction(prevState: LocationActionsType, formD
             failure: "error"
         });
     }
-}
+});
 
-export async function upsertLocationAction(locationData: OmitTimestamp<Location>): Promise<LocationActionsType> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertLocationAction = withRequestId(async (locationData: OmitTimestamp<Location>): Promise<LocationActionsType> => {
     const {success, error, data} = locationObjectWithOptionalID.safeParse(locationData);
 
     if (!success) {
@@ -107,7 +98,7 @@ export async function upsertLocationAction(locationData: OmitTimestamp<Location>
             failure: "error"
         });
     }
-}
+});
 
 export async function deleteLocationAction(id: number): Promise<LocationActionsType<Pick<Location, "id">>> {
     const { success, error, data } = object({ id: number().positive() }).safeParse({

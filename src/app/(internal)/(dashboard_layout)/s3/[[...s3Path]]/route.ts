@@ -1,12 +1,9 @@
-import {after, NextResponse} from "next/server";
+import {NextResponse} from "next/server";
 import * as process from "node:process";
 import {getObject} from "@/app/_lib/s3";
 import {serverLogger, withAxiom} from "@/app/_lib/axiom/server";
 
 export const GET = withAxiom(async (request: Request, props: { params: Promise<{ s3Path: string[] }> }) => {
-    after(() => {
-        serverLogger.flush();
-    });
 
     const params = await props.params;
     const fullPath = params.s3Path.join('/');

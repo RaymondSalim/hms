@@ -611,7 +611,7 @@ export function TenantForm(props: TenantFormProps) {
                                             <input type="file" accept="image/png, image/jpg, image/jpeg, image/webp"
                                                    onChange={(e) => {
                                                        const file = e.target.files?.[0];
-                                                       if (file?.size && file?.size > 5120000) {
+                                                       if (file?.size && file?.size > 3072000) {
                                                            toast.error("Ukuran Gambar Terlalu Besar");
                                                            e.target.value = "";
                                                        } else {
@@ -621,7 +621,7 @@ export function TenantForm(props: TenantFormProps) {
                                                    className="w-full font-semibold text-sm bg-white border file:cursor-pointer cursor-pointer file:border-0 file:py-3 file:px-4 file:mr-4 file:bg-gray-100 file:hover:bg-gray-200 file:text-gray-500 rounded"/>
                                             <p className="text-xs mt-2">PNG, JPG, JPEG, WEBP diperbolehkan. Ukuran
                                                 maksimum
-                                                gambar adalah 5MB</p>
+                                                gambar adalah 3MB</p>
                                             {
                                                 fieldErrors?.family_certificate_file_data &&
                                                 // @ts-expect-error weird react 19 types error
