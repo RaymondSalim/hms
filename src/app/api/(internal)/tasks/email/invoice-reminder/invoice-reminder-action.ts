@@ -1,3 +1,4 @@
+import {Prisma} from "@prisma/client";
 import {PartialBy} from "@/app/_db/db";
 import {Options} from "nodemailer/lib/mailer";
 import {getUpcomingUnpaidBillsWithUsersByDate} from "@/app/(internal)/(dashboard_layout)/bills/bill-action";
@@ -21,12 +22,14 @@ export async function generateBillEmailReminders(targetDate: Date = new Date()) 
             if (!tenant) continue;
             if (!tenant.email) continue;
 
-            const billAmount = (bill.bill_item ?? []).reduce((prev, bi) => bi.amount.toNumber() + prev, 0);
+            const billAmount = (bill.bill_item ?? []).reduce(
+                (acc, bi) => acc.add(bi.amount), new Prisma.Decimal(0)
+            );
             const template = await withTemplate(
                 EMAIL_TEMPLATES.BILL_REMINDER,
                 tenant.name,
                 bill.id.toString(),
-                formatToIDR(billAmount),
+                formatToIDR(billAmount.toNumber()),
                 formatToDateTime(bill.due_date),
             );
 
