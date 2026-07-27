@@ -2,7 +2,7 @@
 
 import {Tenant} from "@prisma/client";
 import {PrismaClientKnownRequestError} from "@prisma/client/runtime/library";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {object, string} from "zod";
 import {
     createTenant,
@@ -16,17 +16,13 @@ import {tenantSchemaWithOptionalID} from "@/app/_lib/zod/tenant/zod";
 import {DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {OmitTimestamp, PartialBy} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
 // Action to update tenants
-export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<GenericActionsType<TenantWithRoomsAndSecondResident>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertTenantAction = withAction(async (tenantData: Partial<Tenant>): Promise<GenericActionsType<TenantWithRoomsAndSecondResident>> => {
     const {success, data, error} = tenantSchemaWithOptionalID.safeParse(tenantData);
 
     if (!success) {
@@ -211,12 +207,9 @@ export async function upsertTenantAction(tenantData: Partial<Tenant>): Promise<G
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
-export async function deleteTenantAction(id: string): Promise<GenericActionsType<TenantWithRooms>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteTenantAction = withAction(async (id: string): Promise<GenericActionsType<TenantWithRooms>> => {
     const parsedData = object({id: string().min(1, "ID is required")}).safeParse({
         id: id,
     });
@@ -238,7 +231,7 @@ export async function deleteTenantAction(id: string): Promise<GenericActionsType
             failure: "Error deleting tenant",
         });
     }
-}
+});
 
 export async function getTenantsWithRoomsAction(
     ...args: Parameters<typeof getTenantsWithRooms>

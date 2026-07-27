@@ -3,18 +3,14 @@
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {roomWithType} from "@/app/_lib/zod/rooms/zod";
 import {createRoom, deleteRoom, getRoomsWithBookings, RoomsWithTypeAndLocation, updateRoomByID} from "@/app/_db/room";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction} from "@/app/_lib/actions";
 import {number, object} from "zod";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
 
-export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocation>): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertRoomAction = withAction(async (roomData: Partial<RoomsWithTypeAndLocation>): Promise<GenericActionsType<RoomsWithTypeAndLocation>> => {
     const {success, data, error} = roomWithType.safeParse(roomData);
 
     if (!success) {
@@ -53,16 +49,13 @@ export async function upsertRoomAction(roomData: Partial<RoomsWithTypeAndLocatio
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
 export async function getRoomsWithBookingsAction(locationID?: number, limit?: number, offset?: number) {
     return getRoomsWithBookings(undefined, locationID, limit, offset).then(toClient);
 }
 
-export async function deleteRoomAction(id: string): Promise<GenericActionsType<RoomsWithTypeAndLocation>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteRoomAction = withAction(async (id: string): Promise<GenericActionsType<RoomsWithTypeAndLocation>> => {
     const parsedData = object({id: number().positive()}).safeParse({
         id: id,
     });
@@ -84,4 +77,4 @@ export async function deleteRoomAction(id: string): Promise<GenericActionsType<R
             failure: "Error deleting guest",
         });
     }
-}
+});

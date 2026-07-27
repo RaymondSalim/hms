@@ -3,7 +3,6 @@
 import {Booking, Prisma, Transaction} from "@prisma/client";
 import {OmitIDTypeAndTimestamp} from "@/app/_db/db";
 import prisma from "@/app/_lib/primsa";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import TransactionFindManyArgs = Prisma.TransactionFindManyArgs;
 
@@ -19,9 +18,6 @@ export async function getTransactions(args: TransactionFindManyArgs) {
 }
 
 export async function getTransactionsWithBookingInfo(args: TransactionFindManyArgs): Promise<TransactionWithBookingInfo[]> {
-    after(() => {
-        serverLogger.flush();
-    });
     // First get the basic transactions
     const transactions = await prisma.transaction.findMany(args);
 

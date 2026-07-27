@@ -7,7 +7,7 @@ import {object, string} from "zod";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
 import {AddonSchema} from "@/app/_lib/zod/addon/zod";
 import {serverLogger} from "@/app/_lib/axiom/server";
-import {after} from "next/server";
+import {withAction} from "@/app/_lib/actions";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
 const toClient = <T>(value: T) => serializeForClient(value);
@@ -30,10 +30,7 @@ export type AddonIncludePricing = Prisma.AddOnGetPayload<{
     activeBookingsCount: number
 };
 
-export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertAddonAction = withAction(async (reqData: OmitIDTypeAndTimestamp<AddOn>) => {
     const {success, data, error} = AddonSchema.safeParse(reqData);
 
     if (!success) {
@@ -136,12 +133,9 @@ export async function upsertAddonAction(reqData: OmitIDTypeAndTimestamp<AddOn>) 
 
         return toClient({failure: "Request unsuccessful"});
     }
-}
+});
 
-export async function deleteAddOnAction(id: string) {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteAddOnAction = withAction(async (id: string) => {
     const parsedData = object({id: string().uuid()}).safeParse({
         id: id,
     });
@@ -168,8 +162,7 @@ export async function deleteAddOnAction(id: string) {
             failure: "Error deleting addon",
         });
     }
-
-}
+});
 
 export async function getAddonsByLocation(id?: number) {
     const addons = await prisma.addOn.findMany({

@@ -5,7 +5,6 @@ import prisma from "@/app/_lib/primsa";
 import {PartialBy} from "@/app/_db/db";
 import * as util from "node:util";
 import {serverLogger} from "@/app/_lib/axiom/server";
-import {after} from "next/server";
 
 enum EmailStatus {
     SUCCESS = "SUCCESS",
@@ -52,9 +51,6 @@ class NodemailerSingleton {
     }
 
     public async sendMail(mailOptions: PartialBy<Options, "from">) {
-        after(() => {
-            serverLogger.flush();
-        });
         mailOptions.from = mailOptions.from ?? NodemailerSingleton.DEFAULT_FROM;
         try {
             const response = await this.client.sendMail(mailOptions);

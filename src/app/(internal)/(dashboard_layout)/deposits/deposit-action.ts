@@ -4,10 +4,9 @@ import {Deposit, DepositStatus, Prisma} from "@prisma/client";
 import {number, object} from "zod";
 import {createDeposit, deleteDeposit, getAllDeposits, updateDeposit, updateDepositStatus,} from "@/app/_db/deposit";
 import {PrismaClientKnownRequestError, PrismaClientUnknownRequestError} from "@prisma/client/runtime/library";
-import {GenericActionsType} from "@/app/_lib/actions";
+import {GenericActionsType, withAction, withRequestId} from "@/app/_lib/actions";
 import {depositSchema, updateDepositStatusSchema} from "@/app/_lib/zod/deposit/zod";
 import prisma from "@/app/_lib/primsa";
-import {after} from "next/server";
 import {serverLogger} from "@/app/_lib/axiom/server";
 import {serializeForClient} from "@/app/_lib/util/prisma";
 
@@ -21,10 +20,7 @@ export type UpsertDepositPayload = {
     refunded_amount?: Prisma.Decimal | string | number | null;
 };
 
-export async function upsertDepositAction(reqData: UpsertDepositPayload): Promise<GenericActionsType<Deposit>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const upsertDepositAction = withAction(async (reqData: UpsertDepositPayload): Promise<GenericActionsType<Deposit>> => {
     const {success, data, error} = depositSchema.safeParse(reqData);
 
     if (!success) {
@@ -82,24 +78,18 @@ export async function upsertDepositAction(reqData: UpsertDepositPayload): Promis
 
         return toClient({failure: "Permintaan tidak berhasil"});
     }
-}
+});
 
-export async function getAllDepositsAction() {
-    after(() => {
-        serverLogger.flush();
-    });
+export const getAllDepositsAction = withRequestId(async () => {
     try {
         return toClient(await getAllDeposits());
     } catch (error) {
         serverLogger.error("[getAllDepositsAction]", {error});
         throw error;
     }
-}
+});
 
-export async function deleteDepositAction(id: number): Promise<GenericActionsType<Deposit>> {
-    after(() => {
-        serverLogger.flush();
-    });
+export const deleteDepositAction = withAction(async (id: number): Promise<GenericActionsType<Deposit>> => {
     const parsedData = object({id: number().positive()}).safeParse({id});
 
     if (!parsedData.success) {
@@ -119,16 +109,13 @@ export async function deleteDepositAction(id: number): Promise<GenericActionsTyp
             failure: "Gagal menghapus deposit",
         });
     }
-}
+});
 
-export async function updateDepositStatusAction(data: {
+export const updateDepositStatusAction = withAction(async (data: {
     depositId: number;
     newStatus: DepositStatus;
     refundedAmount?: Prisma.Decimal | number;
-}): Promise<GenericActionsType<Deposit>> {
-    after(() => {
-        serverLogger.flush();
-    });
+}): Promise<GenericActionsType<Deposit>> => {
     const validation = updateDepositStatusSchema.safeParse({
         id: data.depositId,
         status: data.newStatus,
@@ -157,4 +144,4 @@ export async function updateDepositStatusAction(data: {
             failure: error instanceof Error ? error.message : "Gagal memperbarui status deposit"
         });
     }
-}
+});
